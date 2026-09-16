@@ -16,7 +16,7 @@ const F = (name) => `${ASSETS}/furniture/${name}`;
 const C = (name) => `${ASSETS}/characters/${name}`;
 
 const CHARACTER_MODELS = {
-  victor: C('character-q.glb'), // placeholder until the Mixamo male arrives
+  victor: '/assets/mixamo/victor.glb?v=1', // Mixamo character with idle animation
   odette: '/assets/mixamo/odette.glb?v=2', // Mixamo character with idle animation
 };
 
