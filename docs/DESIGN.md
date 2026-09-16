@@ -1,6 +1,6 @@
 # Prompt Arena: Mystery — Design Doc
 
-Status: v0.2 — decisions locked 2026-09-17. Working title; the case itself is still unnamed.
+Status: v0.3 — decisions locked 2026-09-17. Working title; the case itself is still unnamed.
 Standalone design: no game code or mechanics are derived from earlier Prompt Arena editions.
 
 ## 1. Concept
@@ -15,7 +15,22 @@ server-authoritative case file. There is no keyword matching, no scripted dialog
 no deterministic answer engine to satisfy yourself against — if you can say it to a suspect,
 they can respond to it.
 
-## 2. Locked decisions
+## 2. Design principles
+
+Three failure modes this project is explicitly designed against:
+
+1. **The AI must never feel bolted-on.** Suspects *are* the game: live-generated, goal-driven,
+   emotional, and aware of what you have already asked. Authored Q&A exists only as an outage
+   fallback — it is never the normal path.
+2. **The game never grades your wording.** Interrogation is free text and nothing is
+   keyword-matched. The only graded moment is the final accusation, and it is judged on
+   conclusion (culprit + method + motive) with paraphrase-tolerant matching and an admin
+   override.
+3. **Flakiness is a design input.** Paid capacity, retries and failover, streaming, a circuit
+   breaker, visible in-character "thinking" states, and a documented degradation path so the
+   event can never stall.
+
+## 3. Locked decisions
 
 | # | Decision | Why |
 |---|----------|-----|
@@ -27,7 +42,7 @@ they can respond to it.
 | D6 | **Single paid LLM provider** behind our own provider adapter (retries, failover, streaming, spend tracking) | Free tiers rate-limit under event load; event budget is ~$10-40; adapter stays model-agnostic so the provider can be swapped after the bake-off |
 | D7 | **Text input v1; voice later** | Typing on a shared laptop fits 3-person teams; push-to-talk Whisper is a stretch goal |
 
-## 3. System architecture
+## 4. System architecture
 
 ```
 Browser (React + React Three Fiber)
@@ -36,7 +51,7 @@ Browser (React + React Three Fiber)
 Cloudflare Worker (Hono)
   |- auth: team codes (HMAC cookie sessions)
   |- game state: unlock graph, clue discovery, accusations
-  |- LLM pipeline: prompt build -> cache -> provider -> guardrails
+  |- LLM pipeline: prompt build -> provider -> guardrails
   |- scoring + leaderboard API (projector + team views)
   +- admin console (pause, hints, broadcasts, kill switch)
         |
@@ -51,40 +66,50 @@ Message flow for one interrogation:
 
 1. Client POSTs `{character, text}` with the team's session cookie.
 2. Worker loads the team's `progress.unlocked` set — **the only facts this NPC may know**.
-3. Canonical Q&A cache: if the question matches an authored Q&A for this character and unlock
-   set, stream the scripted answer (no LLM call).
-4. Otherwise: build messages = character system prompt (persona + unlocked facts + hard rules)
-   + recent transcript; enqueue through the concurrency limiter; stream tokens back over SSE.
-5. Post-checks: deny/strip anything referencing locked fact ids; log the transcript with the
-   rule/source that fired (audit and dispute evidence).
-6. Reveal conditions are evaluated **only server-side**; the client learns facts solely via
+3. Build messages = character system prompt (persona + goals + unlocked facts + exemplars +
+   hard rules) + conversation memory; enqueue through the concurrency limiter; stream tokens
+   back over SSE.
+4. Post-checks: deny/strip anything referencing locked fact ids; log the transcript with the
+   source that produced it (audit and dispute evidence).
+5. Reveal conditions are evaluated **only server-side**; the client learns facts solely via
    unlocked state.
 
-## 4. LLM strategy
+## 5. LLM and believability
 
 Load budget: 70 teams, peak roughly **3-6 requests/second**; generation target p50 < 2s
 (streaming masks latency). Free tiers (10-30 RPM shared) are 10-15x under capacity — not
 usable for the event.
 
-Layers, in order of use:
+Pipeline, in order:
 
-1. **Canonical Q&A per character** — authored questions map to scripted answers. Cache-first.
-   Also the fallback when the provider is down.
-2. **Prompt caching** — a character's system prompt is identical for all teams sharing an
-   unlock set; keep it stable (no timestamps, no per-team text) so provider-side caching hits.
-3. **Semantic cache** (phase 2) — normalize and embed incoming questions; serve near-duplicates.
-4. **Provider adapter** — model chain with retries and failover, global concurrency cap,
-   per-call timeouts, token accounting, streaming.
-5. **Kill switch** — admin flips NPCs to canonical-only mode if the provider degrades mid-event.
+1. **Live generation** — the default and only normal path. A character's system prompt is
+   stable across teams sharing an unlock set (no timestamps, no per-team text) so provider-side
+   prompt caching cuts cost without changing answers.
+2. **Provider adapter** — our own: model chain with retries and failover, global concurrency
+   cap, per-call timeouts, streaming, token accounting.
+3. **Degradation ladder** — retry -> failover model -> authored canonical answer -> in-voice
+   deflect. The admin kill switch forces the bottom of the ladder.
+4. **Semantic cache** (phase 2, opt-in) — only for near-verbatim repeats under peak load;
+   never allowed to make a suspect feel canned.
 
-Hard rules baked into every NPC prompt: answer only from your fact sheet; never invent case
-facts; deflect in character when the sheet has nothing; stay under N sentences; never reveal
-the solution.
+Believability requirements (what keeps it from feeling fake):
 
-Pre-event: a bake-off script tests 2-3 candidate models on ~20 canonical questions, scored on
-tone, consistency, latency and cost, before the provider/model is finalised.
+- Each suspect has a persona, private goals, an emotional baseline, and relationships.
+- Conversation memory: they remember earlier questions, hold grudges, and call back to what
+  you said; near-duplicate questions are answered differently, not replayed.
+- Suspects can lie, evade, deflect, get angry, or warm up — the case file defines the
+  boundary between what is *true* and what they *will say*.
+- Few-shot voice exemplars per character in the system prompt; ban on filler phrasing.
+- Streaming makes latency read as performance; "thinking" states are in-character.
 
-## 5. Story and content model
+Hard rules baked into every NPC prompt: answer only from your sheet; never invent case facts;
+deflect in character when the sheet has nothing; stay under N sentences; never reveal the
+solution.
+
+Pre-event: a bake-off script tests 2-3 candidate models on ~30 live interrogation prompts,
+scored on tone, consistency, latency and cost, before the provider/model is finalised.
+
+## 6. Story and content model
 
 Content is the critical path — start writing immediately.
 
@@ -103,6 +128,8 @@ case:
   characters:
     - id: marina_h
       persona: "..."           # voice, mannerisms, what she wants
+      goals: ["protect her sister", "get her contract renewed"]
+      demeanor: guarded        # how she starts; can shift during play
       facts:
         - id: marina_alibi
           text: "Claims she was on stage at 9pm."
@@ -115,7 +142,7 @@ case:
     - id: clue_letter_found
       where: { room: dressing_room, hotspot: coat_rack }
       grants: [marina_letter]
-  canonical_qa:                # cache-first answers per character (also offline fallback)
+  canonical_qa:                # OUTAGE FALLBACK ONLY — never the normal path
     - character: marina_h
       q: "where were you at 9pm"
       a: "..."
@@ -128,17 +155,18 @@ Tooling:
 - Bot playthrough: a scripted interrogator that plays the whole case through the public API,
   proving it is solvable; the same harness doubles as a 70-team load test.
 
-## 6. Scoring and leaderboard
+## 7. Scoring and leaderboard
 
-- A team is **solved** when its accusation matches the solution (culprit + method + motive),
-  checked server-side. An LLM judge may paraphrase-match free-form accusations; admin can
-  override.
+- The accusation is a structured form: pick the culprit, describe method and motive in your
+  own words. Judgment is conclusion-based — server rules plus a paraphrase-tolerant LLM judge —
+  never keyword-based, and the admin can override on review. Resubmissions are allowed;
+  ranking uses the first correct submission time.
 - Ranking: solved teams by `solved_at`; unsolved teams by clues discovered, then fewer hints.
 - Views: team screen and projector `/leaderboard`, refreshed every few seconds (SSE later).
 - Anti-cheat: rate limits (minimum interval between prompts + per-team window caps),
   server-side truth, full transcript audit trail, zero solution data in the client bundle.
 
-## 7. Event operations (BYO laptops)
+## 8. Event operations (BYO laptops)
 
 - One URL + 70 team codes. **Test day**: every team opens the game once so the 3D assets are
   cached locally before the event.
@@ -149,18 +177,19 @@ Tooling:
 - Event-day runbook: to be written at M5 (start/pause, hint broadcast, kill switch, team
   reset, dispute handling).
 
-## 8. Open questions
+## 9. Open questions
 
 - LLM provider and model choice (bake-off decides)
 - Case premise, cast, and writer
-- Keep token spend on the leaderboard as a non-ranking "style stat" (fun, not ranking)?
+- How much authored canonical Q&A to pre-write for the degradation ladder
 - Venue/date specifics, which drive rehearsals and the load test
 
-## 9. Roadmap (target: event in 1-3 months)
+## 10. Roadmap (target: event in 1-3 months)
 
 - M1 (in progress): repo, design doc, Worker skeleton, D1 schema
 - M1: auth + team codes + leaderboard shell
-- M2: case schema + validator + bot playthrough; dialogue engine for 2 characters; model bake-off
+- M2: case schema + validator + bot playthrough; dialogue engine for 2 suspects (memory,
+  goals, voice exemplars); accusation judge; model bake-off
 - M3: 3D room pipeline (R3F, one room end to end), hotspot interaction, streaming chat UI
 - M4: full case, hint and deadline systems, admin console
 - M5: event ops: preload/test day, 70-team load test, runbook, rehearsal
