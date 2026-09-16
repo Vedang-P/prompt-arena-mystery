@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.wrangler/
+.dev.vars
+.dev.vars.*
+*.local
+content/teams.csv
+content/teams-printable.txt
+.DS_Store
+*.log
