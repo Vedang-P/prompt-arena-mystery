@@ -24,6 +24,7 @@ export default function App() {
   const [loginBusy, setLoginBusy] = useState(false);
   const [won, setWon] = useState(null);
   const [notebookOpen, setNotebookOpen] = useState(false);
+  const [boneInfo, setBoneInfo] = useState({});
 
   const loadGame = async () => {
     try {
@@ -208,6 +209,9 @@ export default function App() {
           focus={focusHotspot}
           onCharacter={openCharacter}
           onClue={findClue}
+          onDebug={(id, name) =>
+            setBoneInfo((prev) => (prev[id] === name ? prev : { ...prev, [id]: name }))
+          }
         />
         <div className="vignette" />
       </div>
@@ -222,6 +226,9 @@ export default function App() {
             {state.llm ? 'live AI suspects' : 'AI offline'}
           </span>
           <span className="badge">evidence {state.discovered.length}</span>
+          {focusHotspot && (
+            <span className="badge">head: {boneInfo[focusHotspot.character] ?? '…'}</span>
+          )}
           <button
             className="btn accuse"
             onClick={() => {

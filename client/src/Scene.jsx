@@ -143,6 +143,7 @@ function Character({
   focused = false,
   showLabel = true,
   onMeasure,
+  onBone,
 }) {
   const group = useRef();
   const headBone = useRef(null);
@@ -162,16 +163,17 @@ function Character({
         if (n.includes('head') && !n.includes('top')) headBone.current = o;
       }
     });
+    onBone?.(headBone.current ? headBone.current.name : null);
     const box = new THREE.Box3().setFromObject(scene);
     onMeasure?.(box.max.y - box.min.y);
-  }, [scene, onMeasure]);
+  }, [scene, onMeasure, onBone]);
 
   // While the player is talking to this character, gently lift the head so
   // they face the camera, then release it back to the animation.
   useFrame((_, delta) => {
     const bone = headBone.current;
     if (!bone) return;
-    const target = focused ? -0.7 : 0;
+    const target = focused ? -1.15 : 0;
     const next = THREE.MathUtils.damp(headAngle.current, target, 4, delta);
     const step = next - headAngle.current;
     if (Math.abs(step) > 0.0001) bone.rotateX(step);
@@ -444,7 +446,7 @@ function Piano({ position, rotation = [0, -1.1, 0] }) {
 
 // ---------- rooms ----------
 
-function Ballroom({ room, state, focusId, onMeasure, onCharacter, onClue }) {
+function Ballroom({ room, state, focusId, onMeasure, onBone, onCharacter, onClue }) {
   return (
     <group>
       <Shell width={18} depth={12} height={4.9} tint="#6d4a44" />
@@ -504,6 +506,7 @@ function Ballroom({ room, state, focusId, onMeasure, onCharacter, onClue }) {
             focused={focusId === h.character}
             showLabel={focusId !== h.character}
             onMeasure={(height) => onMeasure(h.character, height)}
+            onBone={(name) => onBone(h.character, name)}
             onClick={() => onCharacter(h)}
           />
         ) : h.clue === 'sheet_music' ? (
@@ -523,7 +526,7 @@ function Ballroom({ room, state, focusId, onMeasure, onCharacter, onClue }) {
   );
 }
 
-function Vestibule({ room, state, focusId, onMeasure, onCharacter, onClue }) {
+function Vestibule({ room, state, focusId, onMeasure, onBone, onCharacter, onClue }) {
   return (
     <group>
       <Shell width={11} depth={9} height={4.2} tint="#47525c" />
@@ -545,6 +548,7 @@ function Vestibule({ room, state, focusId, onMeasure, onCharacter, onClue }) {
             focused={focusId === h.character}
             showLabel={focusId !== h.character}
             onMeasure={(height) => onMeasure(h.character, height)}
+            onBone={(name) => onBone(h.character, name)}
             onClick={() => onCharacter(h)}
           />
         ) : h.clue === 'stage_door' ? (
@@ -621,7 +625,7 @@ function CameraRig({ focusInfo }) {
   return null;
 }
 
-export default function Scene({ state, roomId, focus, onCharacter, onClue }) {
+export default function Scene({ state, roomId, focus, onCharacter, onClue, onDebug }) {
   const room = state.rooms.find((r) => r.id === roomId) ?? state.rooms[0];
   const isBallroom = room.id === 'ballroom';
   const [heights, setHeights] = useState({});
@@ -651,6 +655,8 @@ export default function Scene({ state, roomId, focus, onCharacter, onClue }) {
     () => new THREE.Vector3(...(focusInfo?.look ?? [0, 1.4, 0])),
     [focusInfo]
   );
+
+  const noteBone = useCallback((id, name) => onDebug?.(id, name), [onDebug]);
 
   return (
     <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 2.3, 7.8], fov: 46 }}>
@@ -689,6 +695,7 @@ export default function Scene({ state, roomId, focus, onCharacter, onClue }) {
             state={state}
             focusId={focus?.character}
             onMeasure={measure}
+            onBone={noteBone}
             onCharacter={onCharacter}
             onClue={onClue}
           />
@@ -698,6 +705,7 @@ export default function Scene({ state, roomId, focus, onCharacter, onClue }) {
             state={state}
             focusId={focus?.character}
             onMeasure={measure}
+            onBone={noteBone}
             onCharacter={onCharacter}
             onClue={onClue}
           />
