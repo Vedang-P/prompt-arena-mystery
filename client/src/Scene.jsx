@@ -212,6 +212,10 @@ function Shell({ width, depth, height, tint }) {
           <meshStandardMaterial color="#171310" roughness={0.7} />
         </mesh>
       ))}
+      <mesh position={[0, height, 0]} rotation-x={Math.PI / 2}>
+        <planeGeometry args={[width, depth]} />
+        <meshStandardMaterial color="#14100d" roughness={1} />
+      </mesh>
     </group>
   );
 }
@@ -273,17 +277,27 @@ function Chandelier({ position }) {
   });
   return (
     <group position={position}>
+      <mesh position={[0, 0.75, 0]}>
+        <cylinderGeometry args={[0.015, 0.015, 1.5, 6]} />
+        <meshStandardMaterial color="#3a2f18" metalness={0.8} roughness={0.5} />
+      </mesh>
       <mesh rotation-x={Math.PI / 2}>
         <torusGeometry args={[0.85, 0.045, 10, 40]} />
         <meshStandardMaterial color="#8a6b2f" metalness={0.85} roughness={0.35} />
       </mesh>
       {candles.map((p, i) => (
-        <mesh key={i} position={p}>
-          <sphereGeometry args={[0.065, 10, 10]} />
-          <meshStandardMaterial color="#ffe6b0" emissive="#ffcf88" emissiveIntensity={2.6} />
-        </mesh>
+        <group key={i} position={p}>
+          <mesh position={[0, 0.14, 0]}>
+            <cylinderGeometry args={[0.035, 0.035, 0.28, 8]} />
+            <meshStandardMaterial color="#f2e6c8" />
+          </mesh>
+          <mesh position={[0, 0.32, 0]}>
+            <sphereGeometry args={[0.045, 8, 8]} />
+            <meshStandardMaterial color="#ffdf9a" emissive="#ffb84d" emissiveIntensity={3} />
+          </mesh>
+        </group>
       ))}
-      <pointLight color="#ffd9a0" intensity={2.6} distance={15} decay={0} />
+      <pointLight color="#ffd9a0" intensity={2.2} distance={14} decay={0} />
     </group>
   );
 }
@@ -335,7 +349,7 @@ function Ballroom({ room, state, onCharacter, onClue }) {
       <Shell width={18} depth={12} height={4.9} tint="#6d4a44" />
       <Floor width={18} depth={12} repeat={[7, 5]} />
       <Stage />
-      <Chandelier position={[0, 4.1, 1.6]} />
+      <Chandelier position={[0, 3.5, 1.2]} />
 
       {/* east wall: bar */}
       <GLTFModel url={F('kitchenBar.glb')} position={[7.2, 0, 2.2]} rotation={[0, -Math.PI / 2, 0]} />
@@ -346,8 +360,8 @@ function Ballroom({ room, state, onCharacter, onClue }) {
       {/* west wall: library corner */}
       <GLTFModel url={F('bookcaseClosed.glb')} position={[-7.9, 0, -2.6]} rotation={[0, Math.PI / 2, 0]} />
       <GLTFModel url={F('bookcaseOpen.glb')} position={[-7.9, 0, -0.9]} rotation={[0, Math.PI / 2, 0]} />
-      <GLTFModel url={F('loungeSofa.glb')} position={[-6.4, 0, 2.6]} rotation={[0, 0.5, 0]} />
-      <GLTFModel url={F('lampRoundFloor.glb')} position={[-5.1, 0, 4.3]} />
+      <GLTFModel url={F('loungeSofa.glb')} position={[-6.9, 0, 2.4]} rotation={[0, Math.PI / 2, 0]} />
+      <GLTFModel url={F('lampRoundFloor.glb')} position={[-6.6, 0, 4.4]} />
       <GLTFModel url={F('desk.glb')} position={[-6.9, 0, 0.7]} rotation={[0, Math.PI / 2, 0]} />
       <GLTFModel url={F('chairDesk.glb')} position={[-5.9, 0, 0.7]} rotation={[0, -Math.PI / 2, 0]} />
       <GLTFModel url={F('rugRectangle.glb')} position={[-6.3, 0.02, 2.2]} scale={1.6} />
@@ -446,17 +460,18 @@ export default function Scene({ state, roomId, onCharacter, onClue }) {
   const isBallroom = room.id === 'ballroom';
 
   return (
-    <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 2.7, 8.5], fov: 46 }}>
+    <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 2.3, 7.8], fov: 46 }}>
       <color attach="background" args={['#080604']} />
       <fog attach="fog" args={['#080604', 15, 36]} />
       <Suspense fallback={null}>
         <Environment files={`${ASSETS}/env/ballroom_2k.hdr`} background={false} />
-        <EnvironmentIntensity value={0.75} />
-        <ambientLight intensity={0.28} color="#7a6f60" />
+        <EnvironmentIntensity value={0.42} />
+        <ambientLight intensity={0.14} color="#6b6055" />
+        <pointLight position={[6.4, 2.3, 2.2]} intensity={1.2} distance={9} decay={0} color="#ffc890" />
         <directionalLight
           position={[5, 9, 6]}
-          intensity={0.65}
-          color="#a8b8d8"
+          intensity={0.5}
+          color="#9fb0cc"
           castShadow
           shadow-mapSize={[2048, 2048]}
           shadow-camera-left={-12}
@@ -470,7 +485,7 @@ export default function Scene({ state, roomId, onCharacter, onClue }) {
           position={[0, 4.6, -2]}
           angle={0.7}
           penumbra={0.9}
-          intensity={1.6}
+          intensity={1.3}
           distance={16}
           decay={0}
           color="#ffd2a0"
@@ -484,9 +499,9 @@ export default function Scene({ state, roomId, onCharacter, onClue }) {
           enablePan={false}
           enableDamping
           dampingFactor={0.08}
-          target={[0, 1.4, 0]}
+          target={[0, 1.5, -0.3]}
           minDistance={5}
-          maxDistance={14}
+          maxDistance={13}
           minPolarAngle={Math.PI / 4}
           maxPolarAngle={Math.PI / 2.15}
           minAzimuthAngle={-1.1}
