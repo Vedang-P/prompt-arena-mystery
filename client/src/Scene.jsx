@@ -643,11 +643,11 @@ export default function Scene({ state, roomId, focus, onCharacter, onClue, onDeb
     if (!focus) return null;
     const height = heights[focus.character] || 1.9;
     return {
-      look: [focus.position[0], focus.position[1] + height * 0.9, focus.position[2]],
+      look: [focus.position[0], focus.position[1] + height * 0.6, focus.position[2]],
       camera: [
         focus.position[0] + height * 0.03,
-        focus.position[1] + height * 0.72,
-        focus.position[2] + height * 0.5,
+        focus.position[1] + height * 0.55,
+        focus.position[2] + height * 1.35,
       ],
     };
   }, [focus, heights]);
@@ -665,7 +665,7 @@ export default function Scene({ state, roomId, focus, onCharacter, onClue, onDeb
     if (!effect) return;
     if (focusInfo) {
       effect.target = dofTarget;
-      effect.focusRange = 1.4;
+      effect.focusRange = 2.2;
     } else {
       effect.target = null;
       effect.focusDistance = 14;
