@@ -31,6 +31,9 @@ characters:
     persona: "The orchestra's violinist: precise, anxious, speaks in short clipped sentences."
     goals: ["Get the violin back before the morning train", "Avoid embarrassing the orchestra"]
     demeanor: guarded
+    deflections:
+      - "Odette looks at the clock above the door and says nothing."
+      - "She presses her lips together. \"I have told you what I know.\""
     facts:
       - id: odette_lockbox
         text: "The violin was in its case in the vestibule during the power cut."
@@ -50,6 +53,9 @@ characters:
     persona: "The pianist: charming, over-polite, answers questions with questions."
     goals: ["Leave before the police arrive", "Keep his debts secret"]
     demeanor: cooperative
+    deflections:
+      - "Victor smiles, plays a soft chord, and lets the silence answer for him."
+      - "\"You ask sharp questions for someone with such a kind face.\" He turns back to the keys."
     facts:
       - id: victor_alibi
         text: "He claims he was at the piano through the whole power cut."

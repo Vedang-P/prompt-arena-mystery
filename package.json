@@ -7,6 +7,7 @@
   "scripts": {
     "build:case": "node scripts/build-case.mjs",
     "validate:case": "node scripts/build-case.mjs --check",
+    "test:engine": "npm run build:case && node scripts/test-engine.mjs",
     "dev": "npm run build:case && wrangler dev",
     "dev:web": "vite",
     "build": "npm run build:case && vite build",
