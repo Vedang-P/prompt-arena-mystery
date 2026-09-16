@@ -116,7 +116,8 @@ try {
   }
 
   if (wants('dialogue')) {
-    await sleep(3000);
+    await page.waitForSelector('button.hotspot', { timeout: 40000 });
+    await sleep(1500);
     await clickSelectorText('button.hotspot', 'Odette');
     await page.waitForSelector('.ask-bar', { timeout: 20000 });
     await sleep(3200);

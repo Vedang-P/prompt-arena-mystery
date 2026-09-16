@@ -17,7 +17,7 @@ const C = (name) => `${ASSETS}/characters/${name}`;
 
 const CHARACTER_MODELS = {
   victor: '/assets/mixamo/victor.glb?v=1', // Mixamo character with idle animation
-  odette: '/assets/mixamo/odette.glb?v=2', // Mixamo character with idle animation
+  odette: '/assets/mixamo/odette.glb?v=3', // Mixamo character with rumba animation
 };
 
 // Kenney's furniture kit ships at roughly half human scale; these bring each
@@ -516,7 +516,7 @@ function Ballroom({ room, state, focusId, onMeasure, onCharacter, onClue }) {
               found={state.discovered.includes(h.clue)}
               onClick={() => onClue(h)}
               pad={[2.4, 2, 2]}
-              labelY={1.55}
+              labelY={1.25}
             />
           </group>
         ) : null

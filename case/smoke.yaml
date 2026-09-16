@@ -15,7 +15,7 @@ rooms:
     name: "The Ballroom"
     scene: ballroom.glb
     hotspots:
-      - { id: victor, type: character, character: victor, label: "Victor, the pianist", position: [3.1, 0, -1.5] }
+      - { id: victor, type: character, character: victor, label: "Victor, the pianist", position: [2.4, 0, -1.0] }
       - { id: odette, type: character, character: odette, label: "Odette, the violinist", position: [-2.4, 0, 0.9] }
       - { id: piano, type: clue, clue: sheet_music, label: "Grand piano", position: [4.3, 0, -2.4] }
 
