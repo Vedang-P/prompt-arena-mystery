@@ -1,0 +1,91 @@
+# Smoke case — a tiny 3-clue mystery used to build and test the engine.
+# It is NOT the event case. It exercises every schema feature:
+# clue gating (requires), fact unlocking, deny disposition, canonical Q&A fallback.
+
+title: "The Vanishing Violin"
+
+solution:                              # SERVER-ONLY. Never reaches the client or a prompt.
+  culprit: victor
+  method: "Took the violin from its case during the power cut, using the stage door key he copied from Odette's spare."
+  motive: "Sell it to pay off a private card game debt."
+
+rooms:
+  - id: ballroom
+    name: "The Ballroom"
+    scene: ballroom.glb
+    hotspots:
+      - { id: victor, type: character, character: victor, label: "Victor, the pianist", position: [1.2, 0, -2.0] }
+      - { id: odette, type: character, character: odette, label: "Odette, the violinist", position: [-1.0, 0, -1.4] }
+      - { id: piano, type: clue, clue: sheet_music, label: "Grand piano", position: [2.4, 0, -2.6] }
+
+  - id: vestibule
+    name: "Backstage Vestibule"
+    scene: vestibule.glb
+    hotspots:
+      - { id: stage_door_hotspot, type: clue, clue: stage_door, label: "Stage door", position: [0, 0, 3.0] }
+      - { id: umbrella_stand, type: clue, clue: ticket_stub, label: "Umbrella stand", position: [1.8, 0, 2.2] }
+
+characters:
+  - id: odette
+    name: "Odette"
+    persona: "The orchestra's violinist: precise, anxious, speaks in short clipped sentences."
+    goals: ["Get the violin back before the morning train", "Avoid embarrassing the orchestra"]
+    demeanor: guarded
+    facts:
+      - id: odette_lockbox
+        text: "The violin was in its case in the vestibule during the power cut."
+        unlock: always
+        disposition: admit
+      - id: odette_key
+        text: "She keeps a spare stage door key under the umbrella stand; Victor knew about it."
+        unlock: { requires: [ticket_stub] }
+        disposition: admit
+      - id: odette_secret
+        text: "She let Victor borrow the stage door key last week and fears that makes her look guilty."
+        unlock: { requires: [stage_door, ticket_stub] }
+        disposition: deny
+
+  - id: victor
+    name: "Victor"
+    persona: "The pianist: charming, over-polite, answers questions with questions."
+    goals: ["Leave before the police arrive", "Keep his debts secret"]
+    demeanor: cooperative
+    facts:
+      - id: victor_alibi
+        text: "He claims he was at the piano through the whole power cut."
+        unlock: always
+        disposition: admit
+      - id: victor_debts
+        text: "He owes a large sum to a private card game in the city."
+        unlock: { requires: [sheet_music] }
+        disposition: deny
+      - id: victor_key
+        text: "He copied the stage door key from Odette's spare a week ago."
+        unlock: { requires: [stage_door, ticket_stub] }
+        disposition: deny
+
+clues:
+  - id: sheet_music
+    name: "Marked sheet music"
+    description: "A score with sums circled in pencil — amounts, not notes."
+    grants: [victor_debts]
+  - id: stage_door
+    name: "Stage door"
+    description: "Locked, but the keyhole is scratched — recently used from the inside."
+    grants: []
+  - id: ticket_stub
+    name: "Torn ticket stub"
+    description: "A pawn shop ticket dated last week, tucked under the umbrella stand."
+    requires: [stage_door]
+    grants: [odette_key]
+
+canonical_qa:                          # outage fallback only — never the normal path
+  - character: victor
+    q: "where were you during the power cut"
+    a: "Exactly where a pianist should be — at the piano, waiting for the lights."
+  - character: odette
+    q: "where is the violin"
+    a: "It was in its case, and then it was not. That is all I know."
+  - character: odette
+    q: "who had a key to the vestibule"
+    a: "The stage door key lives under the umbrella stand. Anyone could have watched me use it."

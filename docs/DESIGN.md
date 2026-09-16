@@ -124,7 +124,9 @@ case:
     - id: dressing_room
       name: "Dressing Room"
       scene: dressing_room.glb
-      hotspots: [marina_h, vanity_mirror, coat_rack]
+      hotspots:
+        - { id: marina, type: character, character: marina_h, label: "Marina H", position: [1.2, 0, -2.0] }
+        - { id: coat_rack, type: clue, clue: letter, label: "Coat rack", position: [-1.5, 0, 0.5] }
   characters:
     - id: marina_h
       persona: "..."           # voice, mannerisms, what she wants
@@ -133,14 +135,15 @@ case:
       facts:
         - id: marina_alibi
           text: "Claims she was on stage at 9pm."
-          topics: [alibi, "9pm", stage]
           unlock: always
         - id: marina_letter
           text: "Received a threatening letter last week."
-          unlock: { requires: [clue_letter_found] }
+          unlock: { requires: [letter] }   # clue-gated knowledge
+          disposition: deny      # she knows it, but will not admit it unless pressed
   clues:
-    - id: clue_letter_found
-      where: { room: dressing_room, hotspot: coat_rack }
+    - id: letter
+      name: "Threatening letter"
+      description: "Unsigned, postmarked two days before the murder."
       grants: [marina_letter]
   canonical_qa:                # OUTAGE FALLBACK ONLY — never the normal path
     - character: marina_h
