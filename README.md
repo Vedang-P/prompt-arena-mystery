@@ -4,9 +4,9 @@ Working title. A live AI-interrogation whodunit: **70 teams x 3 players, 3 hours
 case, one live leaderboard**. Teams explore 3D rooms and question AI suspects by typing; the
 organiser watches the truth from an admin console.
 
-Next edition of [prompt-arena](https://github.com/Vedang-P/prompt-arena) — the deterministic
-CRT-terminal challenge that ran 150+ players. This game reuses that proven Cloudflare stack
-with a new LLM-first gameplay model.
+The LLM is the game here: every interrogation is generated live and grounded in a
+server-authoritative case file. Nothing in this design derives from earlier Prompt Arena
+editions; no game code or mechanics carry over.
 
 ## Status
 
