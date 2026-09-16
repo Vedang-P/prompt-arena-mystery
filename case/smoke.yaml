@@ -35,6 +35,13 @@ characters:
     deflections:
       - "Odette looks at the clock above the door and says nothing."
       - "She presses her lips together. \"I have told you what I know.\""
+      - "She studies the stage door as if it were the only thing in the room."
+      - "\"The orchestra will be waiting on me. Is there anything else?\""
+    snubs:                                # used when the player repeats themselves or talks nonsense
+      - "Odette stares at you for a long moment. \"Was that a question, detective?\""
+      - "She exhales slowly. \"If you have something to ask, ask it plainly.\""
+      - "\"I am tired,\" she says, \"and you are wasting what is left of the evening.\""
+      - "Odette turns away and fusses with her bow, saying nothing at all."
     facts:
       - id: odette_lockbox
         text: "The violin was in its case in the vestibule during the power cut."
@@ -61,6 +68,13 @@ characters:
     deflections:
       - "Victor smiles, plays a soft chord, and lets the silence answer for him."
       - "\"You ask sharp questions for someone with such a kind face.\" He turns back to the keys."
+      - "\"Careful,\" Victor says gently. \"You'll wear that question out.\""
+      - "He rests his hands on the keys without pressing a single one."
+    snubs:                                # used when the player repeats themselves or talks nonsense
+      - "Victor plays a lazy trill. \"Come now, detective. Ask me something interesting.\""
+      - "\"A riddle? How theatrical.\" He tilts his head, still smiling. \"Try again.\""
+      - "He hums a phrase from the last number and offers you nothing else."
+      - "\"I answer questions,\" he says, \"not noises. Usually.\""
     facts:
       - id: victor_alibi
         text: "He claims he was at the piano through the whole power cut."

@@ -70,6 +70,9 @@ for (const ch of c.characters ?? []) {
   if (ch.deflections !== undefined && (!Array.isArray(ch.deflections) || !ch.deflections.every(isStr))) {
     err(`character "${ch.id}": deflections must be a list of non-empty strings`);
   }
+  if (ch.snubs !== undefined && (!Array.isArray(ch.snubs) || !ch.snubs.every(isStr))) {
+    err(`character "${ch.id}": snubs must be a list of non-empty strings`);
+  }
   for (const f of ch.facts ?? []) {
     if (!isStr(f.id)) {
       err(`character "${ch.id}": fact missing id`);

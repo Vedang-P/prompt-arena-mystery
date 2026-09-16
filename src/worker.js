@@ -12,6 +12,8 @@ import {
   conclusionMatches,
   deflection,
   discover,
+  isNoise,
+  isRepeat,
   judgeMessages,
   publicCase,
   unlockedFactList,
@@ -172,6 +174,15 @@ app.post('/api/interrogate', async (c) => {
   const history = historyRows.results.reverse();
   const messages = buildMessages(characterId, discovered, history, text);
 
+  const previousPlayer = [...history].reverse().find((m) => m.role === 'player')?.content ?? '';
+  const repeat = isRepeat(text, previousPlayer);
+  const noise = isNoise(text);
+  const priorFallbacks = await c.env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM messages WHERE team_id = ? AND character = ? AND role = 'npc' AND source IN ('deflect','snub')"
+  )
+    .bind(auth.teamId, characterId)
+    .first();
+
   await c.env.DB.prepare(
     'INSERT INTO messages(team_id, character, role, content, source) VALUES (?,?,?,?,?)'
   )
@@ -214,9 +225,15 @@ app.post('/api/interrogate', async (c) => {
     // tell the client to swap the partial text out.
     let final = reply.trim();
     if (!final || !/([.!?…]|["'”’)\]])\s*$/.test(final)) {
-      const canned = canonicalAnswer(characterId, text);
-      source = canned ? 'canonical' : 'deflect';
-      final = canned ?? deflection(characterId);
+      const canned = !repeat && !noise ? canonicalAnswer(characterId, text) : null;
+      if (canned) {
+        source = 'canonical';
+        final = canned;
+      } else {
+        const snub = repeat || noise;
+        source = snub ? 'snub' : 'deflect';
+        final = deflection(characterId, (priorFallbacks?.n ?? 0) + 1, snub);
+      }
       await send('reset', { text: final });
     }
 
