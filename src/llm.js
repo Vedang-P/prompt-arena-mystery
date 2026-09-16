@@ -13,6 +13,18 @@ export function makeLLM(env, onEvent = () => {}) {
     .filter((m, i, all) => m && all.indexOf(m) === i);
   if (!base || !key || !chain.length) return null;
 
+  // Optional gateway headers, pipe-separated: key:value|key:value
+  const extraHeaders = Object.fromEntries(
+    (env.LLM_EXTRA_HEADERS || '')
+      .split('|')
+      .map((pair) => pair.trim())
+      .filter(Boolean)
+      .map((pair) => {
+        const split = pair.indexOf(':');
+        return split === -1 ? [pair, ''] : [pair.slice(0, split).trim(), pair.slice(split + 1).trim()];
+      })
+  );
+
   const maxConcurrent = Number(env.LLM_MAX_CONCURRENT || 10);
   let active = 0;
   const waiters = [];
@@ -57,6 +69,7 @@ export function makeLLM(env, onEvent = () => {}) {
         headers: {
           'content-type': 'application/json',
           authorization: `Bearer ${key}`,
+          ...extraHeaders,
         },
         body: JSON.stringify({
           model,
