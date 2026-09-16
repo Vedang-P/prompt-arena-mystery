@@ -145,9 +145,21 @@ function Character({
   onMeasure,
   onBone,
 }) {
+  const root = useRef();
   const group = useRef();
   const headBone = useRef(null);
+  const baseYaw = rotation[1];
   const [hover, setHover] = useState(false);
+
+  // While focused, turn the whole body to face the camera.
+  useFrame((state, delta) => {
+    const g = root.current;
+    if (!g) return;
+    const targetYaw = focused
+      ? Math.atan2(state.camera.position.x - position[0], state.camera.position.z - position[2])
+      : baseYaw;
+    g.rotation.y = THREE.MathUtils.damp(g.rotation.y, targetYaw, 3.5, delta);
+  });
   const { scene, animations } = useGLTF(url);
   const { actions, names } = useAnimations(animations, group);
 
@@ -179,7 +191,7 @@ function Character({
   }, [actions, names, clip]);
 
   return (
-    <group position={position} rotation={rotation}>
+    <group ref={root} position={position} rotation={rotation}>
       <group ref={group}>
         <primitive object={scene} />
       </group>
@@ -632,10 +644,10 @@ export default function Scene({ state, roomId, focus, onCharacter, onClue, onDeb
     const height = heights[focus.character] || 1.9;
     const headY = focus.position[1] + height * 0.92;
     return {
-      look: [focus.position[0], headY - height * 0.03, focus.position[2]],
+      look: [focus.position[0], headY - height * 0.02, focus.position[2]],
       camera: [
-        focus.position[0] + height * 0.07,
-        headY + height * 0.05,
+        focus.position[0] + height * 0.03,
+        headY + height * 0.03,
         focus.position[2] + height * 0.5,
       ],
     };
@@ -645,6 +657,22 @@ export default function Scene({ state, roomId, focus, onCharacter, onClue, onDeb
     () => new THREE.Vector3(...(focusInfo?.look ?? [0, 1.4, 0])),
     [focusInfo]
   );
+
+  // Drive the depth-of-field focus directly on the effect instance; the
+  // declarative target prop is only applied at construction time.
+  const dofRef = useRef();
+  useEffect(() => {
+    const effect = dofRef.current;
+    if (!effect) return;
+    if (focusInfo) {
+      effect.target = dofTarget;
+      effect.focusRange = 1.4;
+    } else {
+      effect.target = null;
+      effect.focusDistance = 14;
+      effect.focusRange = 30;
+    }
+  }, [focusInfo, dofTarget]);
 
   const noteBone = useCallback((id, name) => onDebug?.(id, name), [onDebug]);
 
@@ -716,7 +744,7 @@ export default function Scene({ state, roomId, focus, onCharacter, onClue, onDeb
       </Suspense>
       <CameraRig focusInfo={focusInfo} />
       <EffectComposer>
-        <DepthOfField target={dofTarget} focalLength={0.035} bokehScale={8} height={480} />
+        <DepthOfField ref={dofRef} focusDistance={14} focusRange={30} bokehScale={6} height={480} />
         <Bloom intensity={0.28} luminanceThreshold={0.72} mipmapBlur />
         <Vignette offset={0.28} darkness={0.62} />
         <Noise opacity={0.025} />
