@@ -642,12 +642,11 @@ export default function Scene({ state, roomId, focus, onCharacter, onClue, onDeb
   const focusInfo = useMemo(() => {
     if (!focus) return null;
     const height = heights[focus.character] || 1.9;
-    const headY = focus.position[1] + height * 0.92;
     return {
-      look: [focus.position[0], headY - height * 0.02, focus.position[2]],
+      look: [focus.position[0], focus.position[1] + height * 0.9, focus.position[2]],
       camera: [
         focus.position[0] + height * 0.03,
-        headY + height * 0.03,
+        focus.position[1] + height * 0.72,
         focus.position[2] + height * 0.5,
       ],
     };
