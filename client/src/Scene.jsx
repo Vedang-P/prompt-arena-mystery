@@ -605,20 +605,23 @@ export default function Scene({ state, roomId, focus, onCharacter, onClue }) {
   const isBallroom = room.id === 'ballroom';
   const [heights, setHeights] = useState({});
 
+  // Skinned meshes can report bogus bounds, so clamp to a believable range:
+  // outside 1.4-2.4 m we assume the standard 1.9 m human.
   const measure = useCallback((id, height) => {
-    setHeights((prev) => (prev[id] ? prev : { ...prev, [id]: height }));
+    const safe = height > 1.4 && height < 2.4 ? height : 1.9;
+    setHeights((prev) => (prev[id] === safe ? prev : { ...prev, [id]: safe }));
   }, []);
 
   const focusInfo = useMemo(() => {
     if (!focus) return null;
-    const height = heights[focus.character] || 2.1;
-    const headY = focus.position[1] + height * 0.88;
+    const height = heights[focus.character] || 1.9;
+    const headY = focus.position[1] + height * 0.87;
     return {
       look: [focus.position[0], headY, focus.position[2]],
       camera: [
-        focus.position[0] + height * 0.2,
-        headY + height * 0.04,
-        focus.position[2] + height * 1.1,
+        focus.position[0] + height * 0.1,
+        headY + height * 0.02,
+        focus.position[2] + height * 0.8,
       ],
     };
   }, [focus, heights]);
