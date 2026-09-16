@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import {
   Environment,
@@ -133,7 +133,16 @@ function Prop({ model, position, rotation = [0, 0, 0] }) {
   );
 }
 
-function Character({ url, label, clip = 'idle', position = [0, 0, 0], rotation = [0, 0, 0], onClick }) {
+function Character({
+  url,
+  label,
+  clip = 'idle',
+  position = [0, 0, 0],
+  rotation = [0, 0, 0],
+  onClick,
+  showLabel = true,
+  onMeasure,
+}) {
   const group = useRef();
   const [hover, setHover] = useState(false);
   const { scene, animations } = useGLTF(url);
@@ -146,7 +155,9 @@ function Character({ url, label, clip = 'idle', position = [0, 0, 0], rotation =
         o.receiveShadow = true;
       }
     });
-  }, [scene]);
+    const box = new THREE.Box3().setFromObject(scene);
+    onMeasure?.(box.max.y - box.min.y);
+  }, [scene, onMeasure]);
 
   useEffect(() => {
     const name = names.includes(clip) ? clip : names[0];
@@ -183,17 +194,19 @@ function Character({ url, label, clip = 'idle', position = [0, 0, 0], rotation =
         <cylinderGeometry args={[0.55, 0.55, 2.2, 8]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
-      <Html position={[0, 2.45, 0]} center distanceFactor={12} zIndexRange={[30, 0]}>
-        <button
-          className="hotspot"
-          onClick={(e) => {
-            e.stopPropagation();
-            onClick();
-          }}
-        >
-          {label}
-        </button>
-      </Html>
+      {showLabel && (
+        <Html position={[0, 2.45, 0]} center distanceFactor={12} zIndexRange={[30, 0]}>
+          <button
+            className="hotspot"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClick();
+            }}
+          >
+            {label}
+          </button>
+        </Html>
+      )}
     </group>
   );
 }
@@ -412,7 +425,7 @@ function Piano({ position, rotation = [0, -1.1, 0] }) {
 
 // ---------- rooms ----------
 
-function Ballroom({ room, state, onCharacter, onClue }) {
+function Ballroom({ room, state, focusId, onMeasure, onCharacter, onClue }) {
   return (
     <group>
       <Shell width={18} depth={12} height={4.9} tint="#6d4a44" />
@@ -469,6 +482,8 @@ function Ballroom({ room, state, onCharacter, onClue }) {
             clip="idle"
             position={h.position}
             rotation={[0, h.character === 'victor' ? 0.5 : -0.5, 0]}
+            showLabel={focusId !== h.character}
+            onMeasure={(height) => onMeasure(h.character, height)}
             onClick={() => onCharacter(h)}
           />
         ) : h.clue === 'sheet_music' ? (
@@ -488,7 +503,7 @@ function Ballroom({ room, state, onCharacter, onClue }) {
   );
 }
 
-function Vestibule({ room, state, onCharacter, onClue }) {
+function Vestibule({ room, state, focusId, onMeasure, onCharacter, onClue }) {
   return (
     <group>
       <Shell width={11} depth={9} height={4.2} tint="#47525c" />
@@ -507,6 +522,8 @@ function Vestibule({ room, state, onCharacter, onClue }) {
             url={CHARACTER_MODELS[h.character]}
             label={h.label}
             position={h.position}
+            showLabel={focusId !== h.character}
+            onMeasure={(height) => onMeasure(h.character, height)}
             onClick={() => onCharacter(h)}
           />
         ) : h.clue === 'stage_door' ? (
@@ -543,23 +560,23 @@ function EnvironmentIntensity({ value }) {
   return null;
 }
 
-function CameraRig({ focus }) {
+function CameraRig({ focusInfo }) {
   const { camera, controls } = useThree();
   const desiredPosition = useRef(new THREE.Vector3(0, 2.3, 7.8));
   const desiredLook = useRef(new THREE.Vector3(0, 1.5, -0.3));
   const transitioning = useRef(false);
 
   useEffect(() => {
-    if (focus) {
-      desiredPosition.current.set(focus.position[0] + 0.5, focus.position[1] + 1.7, focus.position[2] + 2.15);
-      desiredLook.current.set(focus.position[0], focus.position[1] + 1.68, focus.position[2]);
+    if (focusInfo) {
+      desiredPosition.current.set(...focusInfo.camera);
+      desiredLook.current.set(...focusInfo.look);
     } else {
       desiredPosition.current.set(0, 2.3, 7.8);
       desiredLook.current.set(0, 1.5, -0.3);
     }
     transitioning.current = true;
-    if (controls) controls.enabled = !focus;
-  }, [focus, controls]);
+    if (controls) controls.enabled = !focusInfo;
+  }, [focusInfo, controls]);
 
   useFrame((_, delta) => {
     if (!transitioning.current) return;
@@ -586,12 +603,29 @@ function CameraRig({ focus }) {
 export default function Scene({ state, roomId, focus, onCharacter, onClue }) {
   const room = state.rooms.find((r) => r.id === roomId) ?? state.rooms[0];
   const isBallroom = room.id === 'ballroom';
-  const focusTarget = useMemo(
-    () =>
-      focus
-        ? new THREE.Vector3(focus.position[0], focus.position[1] + 1.68, focus.position[2])
-        : new THREE.Vector3(0, 1.4, 0),
-    [focus]
+  const [heights, setHeights] = useState({});
+
+  const measure = useCallback((id, height) => {
+    setHeights((prev) => (prev[id] ? prev : { ...prev, [id]: height }));
+  }, []);
+
+  const focusInfo = useMemo(() => {
+    if (!focus) return null;
+    const height = heights[focus.character] || 2.1;
+    const headY = focus.position[1] + height * 0.88;
+    return {
+      look: [focus.position[0], headY, focus.position[2]],
+      camera: [
+        focus.position[0] + height * 0.2,
+        headY + height * 0.04,
+        focus.position[2] + height * 1.1,
+      ],
+    };
+  }, [focus, heights]);
+
+  const dofTarget = useMemo(
+    () => new THREE.Vector3(...(focusInfo?.look ?? [0, 1.4, 0])),
+    [focusInfo]
   );
 
   return (
@@ -626,9 +660,23 @@ export default function Scene({ state, roomId, focus, onCharacter, onClue }) {
           color="#ffd2a0"
         />
         {isBallroom ? (
-          <Ballroom room={room} state={state} onCharacter={onCharacter} onClue={onClue} />
+          <Ballroom
+            room={room}
+            state={state}
+            focusId={focus?.character}
+            onMeasure={measure}
+            onCharacter={onCharacter}
+            onClue={onClue}
+          />
         ) : (
-          <Vestibule room={room} state={state} onCharacter={onCharacter} onClue={onClue} />
+          <Vestibule
+            room={room}
+            state={state}
+            focusId={focus?.character}
+            onMeasure={measure}
+            onCharacter={onCharacter}
+            onClue={onClue}
+          />
         )}
         <OrbitControls
           makeDefault
@@ -644,9 +692,9 @@ export default function Scene({ state, roomId, focus, onCharacter, onClue }) {
           maxAzimuthAngle={1.1}
         />
       </Suspense>
-      <CameraRig focus={focus} />
+      <CameraRig focusInfo={focusInfo} />
       <EffectComposer>
-        <DepthOfField target={focusTarget} focalLength={0.06} bokehScale={4} height={480} />
+        <DepthOfField target={dofTarget} focalLength={0.06} bokehScale={4} height={480} />
         <Bloom intensity={0.28} luminanceThreshold={0.72} mipmapBlur />
         <Vignette offset={0.28} darkness={0.62} />
         <Noise opacity={0.035} />
