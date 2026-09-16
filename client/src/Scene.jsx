@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, useThree } from '@react-three/fiber';
 import {
   Environment,
   Html,
@@ -19,33 +19,63 @@ const CHARACTER_MODELS = {
   odette: C('character-n.glb'), // elegant dark-haired woman
 };
 
-const FURNITURE = [
-  'bookcaseClosed.glb',
-  'bookcaseOpen.glb',
-  'loungeSofa.glb',
-  'loungeChair.glb',
-  'lampRoundFloor.glb',
-  'lampRoundTable.glb',
-  'kitchenBar.glb',
-  'stoolBar.glb',
-  'tableCloth.glb',
-  'table.glb',
-  'tableGlass.glb',
-  'chair.glb',
-  'chairCushion.glb',
-  'chairDesk.glb',
-  'desk.glb',
-  'sideTable.glb',
-  'rugRectangle.glb',
-  'rugRound.glb',
-  'rugSquare.glb',
-  'pottedPlant.glb',
-  'plantSmall1.glb',
-  'plantSmall2.glb',
-  'doorway.glb',
-];
+// Kenney's furniture kit ships at roughly half human scale; these bring each
+// piece to believable real-world size (metres).
+const SCALE = {
+  'chair.glb': 2.0,
+  'chairCushion.glb': 2.0,
+  'chairDesk.glb': 2.1,
+  'desk.glb': 2.0,
+  'table.glb': 2.3,
+  'tableCloth.glb': 2.3,
+  'tableGlass.glb': 2.3,
+  'sideTable.glb': 1.9,
+  'loungeSofa.glb': 2.0,
+  'loungeChair.glb': 2.0,
+  'bookcaseClosed.glb': 2.2,
+  'bookcaseOpen.glb': 2.2,
+  'kitchenBar.glb': 2.6,
+  'stoolBar.glb': 2.4,
+  'lampRoundFloor.glb': 2.0,
+  'lampRoundTable.glb': 1.9,
+  'pottedPlant.glb': 2.6,
+  'plantSmall1.glb': 2.8,
+  'plantSmall2.glb': 2.8,
+  'doorway.glb': 2.3,
+  'rugRectangle.glb': 1.7,
+  'rugRound.glb': 3.4,
+  'rugSquare.glb': 2.0,
+};
 
-for (const name of FURNITURE) useGLTF.preload(F(name));
+// Colour grading: Kenney's palette is pastel, so each piece is multiplied
+// towards the room's oxblood / dark-walnut palette.
+const TINT = {
+  'chair.glb': '#8a6a4a',
+  'chairCushion.glb': '#8a6a4a',
+  'chairDesk.glb': '#7a5a3e',
+  'desk.glb': '#6b4a33',
+  'table.glb': '#7a5a3e',
+  'tableCloth.glb': '#6b4a33',
+  'tableGlass.glb': '#7a5a3e',
+  'sideTable.glb': '#6b4a33',
+  'loungeSofa.glb': '#8a4a44',
+  'loungeChair.glb': '#8a4a44',
+  'bookcaseClosed.glb': '#6b4a33',
+  'bookcaseOpen.glb': '#6b4a33',
+  'kitchenBar.glb': '#6b4a33',
+  'stoolBar.glb': '#7a5a3e',
+  'lampRoundFloor.glb': '#c8a878',
+  'lampRoundTable.glb': '#c8a878',
+  'pottedPlant.glb': '#7a8a5a',
+  'plantSmall1.glb': '#7a8a5a',
+  'plantSmall2.glb': '#7a8a5a',
+  'doorway.glb': '#6b4a33',
+  'rugRectangle.glb': '#3f4a56',
+  'rugRound.glb': '#7a3a36',
+  'rugSquare.glb': '#4a4038',
+};
+
+for (const name of Object.keys(SCALE)) useGLTF.preload(F(name));
 for (const url of Object.values(CHARACTER_MODELS)) useGLTF.preload(url);
 
 // ---------- primitives ----------
@@ -55,11 +85,29 @@ function GLTFModel({
   position = [0, 0, 0],
   rotation = [0, 0, 0],
   scale = 1,
+  tint,
   castShadow = true,
   receiveShadow = true,
 }) {
   const { scene } = useGLTF(url);
-  const model = useMemo(() => scene.clone(true), [scene]);
+  const model = useMemo(() => {
+    const root = scene.clone(true);
+    if (tint) {
+      const colour = new THREE.Color(tint);
+      root.traverse((o) => {
+        if (o.isMesh && o.material) {
+          const recolor = (mat) => {
+            const clone = mat.clone();
+            clone.color.multiply(colour);
+            return clone;
+          };
+          o.material = Array.isArray(o.material) ? o.material.map(recolor) : recolor(o.material);
+        }
+      });
+    }
+    return root;
+  }, [scene, tint]);
+
   useEffect(() => {
     model.traverse((o) => {
       if (o.isMesh) {
@@ -68,7 +116,20 @@ function GLTFModel({
       }
     });
   }, [model, castShadow, receiveShadow]);
+
   return <primitive object={model} position={position} rotation={rotation} scale={scale} />;
+}
+
+function Prop({ model, position, rotation = [0, 0, 0] }) {
+  return (
+    <GLTFModel
+      url={F(model)}
+      position={position}
+      rotation={rotation}
+      scale={SCALE[model] ?? 1}
+      tint={TINT[model]}
+    />
+  );
 }
 
 function Character({ url, label, clip = 'idle', position = [0, 0, 0], rotation = [0, 0, 0], onClick }) {
@@ -176,11 +237,18 @@ function ClueMarker({ hotspot, found, onClick, pad = [1.7, 2, 1.7], labelY = 1.7
   );
 }
 
-function SceneProp({ url, hotspot, found, onClick, scale = 1 }) {
+function SceneProp({ model, hotspot, found, onClick, offset = [0, 0, 0], labelY }) {
+  const [x, y, z] = hotspot.position;
   return (
     <group>
-      <GLTFModel url={url} position={hotspot.position} scale={scale} />
-      <ClueMarker hotspot={hotspot} found={found} onClick={onClick} />
+      <Prop model={model} position={[x + offset[0], y + offset[1], z + offset[2]]} />
+      <ClueMarker
+        hotspot={hotspot}
+        found={found}
+        onClick={onClick}
+        labelY={labelY ?? 1.7}
+        pad={[1.6, 2, 1.6]}
+      />
     </group>
   );
 }
@@ -234,7 +302,7 @@ function Floor({ width, depth, repeat = [7, 5] }) {
   return (
     <mesh rotation-x={-Math.PI / 2} receiveShadow>
       <planeGeometry args={[width, depth]} />
-      <meshStandardMaterial map={diffuse} roughnessMap={rough} color="#c8a888" roughness={0.85} />
+      <meshStandardMaterial map={diffuse} roughnessMap={rough} color="#b09070" roughness={0.85} />
     </mesh>
   );
 }
@@ -304,7 +372,7 @@ function Chandelier({ position }) {
 
 function Piano({ position, rotation = [0, -1.1, 0] }) {
   return (
-    <group position={position} rotation={rotation}>
+    <group position={position} rotation={rotation} scale={1.12}>
       <mesh castShadow position={[0, 0.66, 0]}>
         <boxGeometry args={[1.7, 0.22, 1.35]} />
         <meshStandardMaterial color="#0c0c10" roughness={0.35} metalness={0.1} />
@@ -351,35 +419,45 @@ function Ballroom({ room, state, onCharacter, onClue }) {
       <Stage />
       <Chandelier position={[0, 3.5, 1.2]} />
 
-      {/* east wall: bar */}
-      <GLTFModel url={F('kitchenBar.glb')} position={[7.2, 0, 2.2]} rotation={[0, -Math.PI / 2, 0]} />
-      <GLTFModel url={F('stoolBar.glb')} position={[6.0, 0, 0.9]} rotation={[0, Math.PI / 2, 0]} />
-      <GLTFModel url={F('stoolBar.glb')} position={[6.0, 0, 2.2]} rotation={[0, Math.PI / 2, 0]} />
-      <GLTFModel url={F('stoolBar.glb')} position={[6.0, 0, 3.5]} rotation={[0, Math.PI / 2, 0]} />
+      {/* dance circle */}
+      <Prop model="rugRound.glb" position={[0, 0.02, 0.4]} />
 
-      {/* west wall: library corner */}
-      <GLTFModel url={F('bookcaseClosed.glb')} position={[-7.9, 0, -2.6]} rotation={[0, Math.PI / 2, 0]} />
-      <GLTFModel url={F('bookcaseOpen.glb')} position={[-7.9, 0, -0.9]} rotation={[0, Math.PI / 2, 0]} />
-      <GLTFModel url={F('loungeSofa.glb')} position={[-6.9, 0, 2.4]} rotation={[0, Math.PI / 2, 0]} />
-      <GLTFModel url={F('lampRoundFloor.glb')} position={[-6.6, 0, 4.4]} />
-      <GLTFModel url={F('desk.glb')} position={[-6.9, 0, 0.7]} rotation={[0, Math.PI / 2, 0]} />
-      <GLTFModel url={F('chairDesk.glb')} position={[-5.9, 0, 0.7]} rotation={[0, -Math.PI / 2, 0]} />
-      <GLTFModel url={F('rugRectangle.glb')} position={[-6.3, 0.02, 2.2]} scale={1.6} />
+      {/* west lounge */}
+      <Prop model="loungeSofa.glb" position={[-8.0, 0, 1.2]} rotation={[0, Math.PI / 2, 0]} />
+      <Prop model="loungeChair.glb" position={[-6.7, 0, 0.1]} rotation={[0, 0.4, 0]} />
+      <Prop model="loungeChair.glb" position={[-6.7, 0, 2.3]} rotation={[0, -0.4, 0]} />
+      <Prop model="sideTable.glb" position={[-7.0, 0, 1.2]} />
+      <Prop model="rugRectangle.glb" position={[-6.9, 0.02, 1.2]} />
+      <Prop model="lampRoundFloor.glb" position={[-7.7, 0, 3.6]} />
 
-      {/* centre: two salon tables */}
-      <GLTFModel url={F('tableCloth.glb')} position={[-2.9, 0, 1.4]} />
-      <GLTFModel url={F('chair.glb')} position={[-3.9, 0, 2.1]} rotation={[0, 0.7, 0]} />
-      <GLTFModel url={F('chairCushion.glb')} position={[-1.9, 0, 2.2]} rotation={[0, -0.8, 0]} />
-      <GLTFModel url={F('table.glb')} position={[1.4, 0, 2.9]} />
-      <GLTFModel url={F('chairCushion.glb')} position={[0.4, 0, 3.4]} rotation={[0, 0.9, 0]} />
-      <GLTFModel url={F('chair.glb')} position={[2.4, 0, 3.2]} rotation={[0, -0.9, 0]} />
-      <GLTFModel url={F('rugRound.glb')} position={[0.2, 0.02, 1.8]} scale={1.4} />
-      <GLTFModel url={F('lampRoundTable.glb')} position={[-3.0, 0.78, 1.4]} scale={0.7} />
+      {/* library wall */}
+      <Prop model="bookcaseClosed.glb" position={[-8.5, 0, -1.4]} rotation={[0, Math.PI / 2, 0]} />
+      <Prop model="bookcaseOpen.glb" position={[-8.5, 0, -3.0]} rotation={[0, Math.PI / 2, 0]} />
+      <Prop model="desk.glb" position={[-7.4, 0, -3.4]} rotation={[0, Math.PI / 2, 0]} />
+      <Prop model="chairDesk.glb" position={[-6.5, 0, -3.4]} rotation={[0, -Math.PI / 2, 0]} />
+
+      {/* east bar */}
+      <Prop model="kitchenBar.glb" position={[8.3, 0, 1.0]} rotation={[0, -Math.PI / 2, 0]} />
+      <Prop model="kitchenBar.glb" position={[8.3, 0, 2.5]} rotation={[0, -Math.PI / 2, 0]} />
+      <Prop model="stoolBar.glb" position={[7.2, 0, 0.9]} rotation={[0, Math.PI / 2, 0]} />
+      <Prop model="stoolBar.glb" position={[7.2, 0, 2.0]} rotation={[0, Math.PI / 2, 0]} />
+      <Prop model="stoolBar.glb" position={[7.2, 0, 3.1]} rotation={[0, Math.PI / 2, 0]} />
+
+      {/* cabaret tables near the floor */}
+      <Prop model="table.glb" position={[-0.9, 0, 4.4]} />
+      <Prop model="chairCushion.glb" position={[-1.9, 0, 4.7]} rotation={[0, 0.9, 0]} />
+      <Prop model="chairCushion.glb" position={[0.1, 0, 4.2]} rotation={[0, -2.2, 0]} />
+      <Prop model="table.glb" position={[3.1, 0, 4.5]} />
+      <Prop model="chairCushion.glb" position={[2.1, 0, 4.8]} rotation={[0, 0.9, 0]} />
+      <Prop model="chairCushion.glb" position={[4.1, 0, 4.3]} rotation={[0, -2.2, 0]} />
+      <Prop model="tableCloth.glb" position={[-4.6, 0, 4.2]} />
+      <Prop model="chair.glb" position={[-5.6, 0, 4.5]} rotation={[0, 0.9, 0]} />
+      <Prop model="chair.glb" position={[-3.6, 0, 4.0]} rotation={[0, -2.2, 0]} />
 
       {/* greenery */}
-      <GLTFModel url={F('pottedPlant.glb')} position={[5.9, 0, -4.6]} />
-      <GLTFModel url={F('plantSmall1.glb')} position={[-8.2, 0, 4.6]} />
-      <GLTFModel url={F('plantSmall2.glb')} position={[8.2, 0, -4.7]} />
+      <Prop model="pottedPlant.glb" position={[-8.3, 0, 4.9]} />
+      <Prop model="plantSmall1.glb" position={[8.4, 0, -4.6]} />
+      <Prop model="plantSmall2.glb" position={[-8.4, 0, -4.6]} />
 
       {room.hotspots.map((h) =>
         h.type === 'character' ? (
@@ -389,7 +467,7 @@ function Ballroom({ room, state, onCharacter, onClue }) {
             label={h.label}
             clip="idle"
             position={h.position}
-            rotation={[0, h.character === 'victor' ? 0.7 : -0.6, 0]}
+            rotation={[0, h.character === 'victor' ? 0.5 : -0.5, 0]}
             onClick={() => onCharacter(h)}
           />
         ) : h.clue === 'sheet_music' ? (
@@ -399,8 +477,8 @@ function Ballroom({ room, state, onCharacter, onClue }) {
               hotspot={h}
               found={state.discovered.includes(h.clue)}
               onClick={() => onClue(h)}
-              pad={[2.2, 2, 1.8]}
-              labelY={1.5}
+              pad={[2.4, 2, 2]}
+              labelY={1.55}
             />
           </group>
         ) : null
@@ -414,12 +492,12 @@ function Vestibule({ room, state, onCharacter, onClue }) {
     <group>
       <Shell width={11} depth={9} height={4.2} tint="#47525c" />
       <Floor width={11} depth={9} repeat={[5, 4]} />
-      <GLTFModel url={F('lampRoundFloor.glb')} position={[-4.4, 0, -3.2]} />
-      <GLTFModel url={F('pottedPlant.glb')} position={[4.5, 0, -3.4]} />
-      <GLTFModel url={F('rugSquare.glb')} position={[0, 0.02, -0.8]} scale={1.8} />
-      <GLTFModel url={F('loungeChair.glb')} position={[-3.6, 0, 1.6]} rotation={[0, 0.9, 0]} />
-      <GLTFModel url={F('tableGlass.glb')} position={[-1.9, 0, 2.2]} />
-      <GLTFModel url={F('bookcaseOpen.glb')} position={[4.6, 0, 0.6]} rotation={[0, -Math.PI / 2, 0]} />
+      <Prop model="lampRoundFloor.glb" position={[-4.3, 0, -2.9]} />
+      <Prop model="pottedPlant.glb" position={[4.4, 0, -3.2]} />
+      <Prop model="rugSquare.glb" position={[0, 0.02, -0.6]} />
+      <Prop model="loungeChair.glb" position={[-3.6, 0, 1.7]} rotation={[0, 0.9, 0]} />
+      <Prop model="tableGlass.glb" position={[-1.9, 0, 2.3]} />
+      <Prop model="bookcaseOpen.glb" position={[4.6, 0, 0.8]} rotation={[0, -Math.PI / 2, 0]} />
 
       {room.hotspots.map((h) =>
         h.type === 'character' ? (
@@ -430,14 +508,23 @@ function Vestibule({ room, state, onCharacter, onClue }) {
             position={h.position}
             onClick={() => onCharacter(h)}
           />
-        ) : (
+        ) : h.clue === 'stage_door' ? (
           <SceneProp
             key={h.id}
-            url={h.clue === 'stage_door' ? F('doorway.glb') : F('sideTable.glb')}
+            model="doorway.glb"
             hotspot={h}
             found={state.discovered.includes(h.clue)}
             onClick={() => onClue(h)}
-            scale={h.clue === 'stage_door' ? 1.15 : 1}
+            offset={[0, 0, -0.75]}
+            labelY={2.1}
+          />
+        ) : (
+          <SceneProp
+            key={h.id}
+            model="sideTable.glb"
+            hotspot={h}
+            found={state.discovered.includes(h.clue)}
+            onClick={() => onClue(h)}
           />
         )
       )}
