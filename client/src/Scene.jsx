@@ -147,7 +147,6 @@ function Character({
 }) {
   const group = useRef();
   const headBone = useRef(null);
-  const headAngle = useRef(0);
   const [hover, setHover] = useState(false);
   const { scene, animations } = useGLTF(url);
   const { actions, names } = useAnimations(animations, group);
@@ -168,17 +167,8 @@ function Character({
     onMeasure?.(box.max.y - box.min.y);
   }, [scene, onMeasure, onBone]);
 
-  // While the player is talking to this character, gently lift the head so
-  // they face the camera, then release it back to the animation.
-  useFrame((_, delta) => {
-    const bone = headBone.current;
-    if (!bone) return;
-    const target = focused ? -1.15 : 0;
-    const next = THREE.MathUtils.damp(headAngle.current, target, 4, delta);
-    const step = next - headAngle.current;
-    if (Math.abs(step) > 0.0001) bone.rotateX(step);
-    headAngle.current = next;
-  });
+  // The "look at the player" head lift is baked into the idle animation
+  // itself (scripts/blender/bake_head.py) — doing it here would fight the mixer.
 
   useEffect(() => {
     const name = names.includes(clip) ? clip : names[0];
