@@ -30,7 +30,7 @@ export function Login({ onLogin, error, busy }) {
   );
 }
 
-export function ChatPanel({ character, messages, typing, onAsk, disabled, error }) {
+export function DialogueOverlay({ character, messages, typing, onAsk, disabled, error, onClose }) {
   const [text, setText] = useState('');
   const logRef = useRef(null);
 
@@ -47,37 +47,47 @@ export function ChatPanel({ character, messages, typing, onAsk, disabled, error 
   };
 
   return (
-    <div className="chat">
-      <div className="chat-head">
-        <div>
-          <strong>{character.name}</strong>
-          <span className="chat-sub">answers in character · remembers you</span>
-        </div>
-      </div>
-      <div className="chat-log" ref={logRef}>
+    <div className="dialogue">
+      <div className="bubble-column" ref={logRef}>
         {messages.length === 0 && (
-          <p className="chat-empty">They look at you, waiting. Ask anything.</p>
+          <div className="bubble">
+            <div className="bubble-text muted">They look at you, waiting.</div>
+          </div>
         )}
         {messages.map((m, i) => (
-          <div key={i} className={`msg ${m.role === 'player' ? 'player' : 'npc'}`}>
-            {m.role !== 'player' && <span className="msg-name">{character.name}</span>}
-            <p>{m.content || (typing && i === messages.length - 1 ? '…' : '')}</p>
+          <div key={i} className={`bubble ${m.role === 'player' ? 'player' : ''}`}>
+            {m.role !== 'player' && (
+              <img className="avatar" src={`/assets/portraits/${character.id}.png`} alt="" />
+            )}
+            <div className="bubble-text">
+              {m.content || (typing && i === messages.length - 1 ? '…' : '')}
+            </div>
           </div>
         ))}
       </div>
-      {error && <p className="chat-error">{error}</p>}
-      <form className="chat-form" onSubmit={send}>
+
+      {error && <p className="dialogue-error">{error}</p>}
+
+      <form className="ask-bar" onSubmit={send}>
         <input
+          autoFocus
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={disabled ? 'The case is closed.' : 'Ask what you want to know…'}
+          placeholder={disabled ? 'The case is closed.' : 'Type here or speak into your microphone...'}
           disabled={disabled}
-          autoFocus
+          spellCheck={false}
         />
-        <button className="btn primary" type="submit" disabled={typing || disabled || !text.trim()}>
-          Ask
+        <button className="ask-ok" type="submit" disabled={typing || disabled || !text.trim()}>
+          OK
         </button>
       </form>
+
+      <div className="name-card">
+        <span className="name-card-name">{character.name}</span>
+        <button className="leave-btn" onClick={onClose}>
+          leave conversation
+        </button>
+      </div>
     </div>
   );
 }

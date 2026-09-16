@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import Scene from './Scene.jsx';
-import { AccuseModal, ChatPanel, Login, Notebook, Notice } from './Panels.jsx';
+import { AccuseModal, DialogueOverlay, Login, Notebook, Notice } from './Panels.jsx';
 import { accuse, discoverClue, getHistory, getState, interrogate, login } from './api.js';
 
 function mergeUnlocked(existing, added) {
@@ -23,6 +23,7 @@ export default function App() {
   const [loginError, setLoginError] = useState(null);
   const [loginBusy, setLoginBusy] = useState(false);
   const [won, setWon] = useState(null);
+  const [notebookOpen, setNotebookOpen] = useState(false);
 
   const loadGame = async () => {
     try {
@@ -63,6 +64,7 @@ export default function App() {
 
   const openCharacter = async (hotspot) => {
     setChatError(null);
+    setNotebookOpen(false);
     setActiveChar(hotspot.character);
     if (!chats[hotspot.character]) {
       try {
@@ -151,6 +153,18 @@ export default function App() {
     [state, activeChar]
   );
 
+  const focusHotspot = useMemo(() => {
+    if (!state || !activeChar) return null;
+    for (const room of state.rooms) {
+      for (const h of room.hotspots) {
+        if (h.type === 'character' && h.character === activeChar) return h;
+      }
+    }
+    return null;
+  }, [state, activeChar]);
+
+  const room = state?.rooms.find((r) => r.id === roomId) ?? state?.rooms?.[0];
+
   if (phase === 'loading') {
     return (
       <div className="center-screen">
@@ -187,68 +201,78 @@ export default function App() {
 
   return (
     <div className="app">
-      <header className="topbar">
-        <div className="brand">
-          <span className="brand-title">{state.title}</span>
-          <span className="brand-sub">Prompt Arena: Mystery</span>
+      <div className="scene-layer">
+        <Scene
+          state={state}
+          roomId={roomId}
+          focus={focusHotspot}
+          onCharacter={openCharacter}
+          onClue={findClue}
+        />
+        <div className="vignette" />
+      </div>
+
+      <header className="hud-top">
+        <div className="location">
+          <span className="location-name">{room.name}</span>
+          <span className="location-sub">Prompt Arena: Mystery</span>
         </div>
         <div className="meta">
           <span className={`badge ${state.llm ? 'live' : 'off'}`}>
-            {state.llm ? 'live AI suspects' : 'AI offline — canned answers'}
+            {state.llm ? 'live AI suspects' : 'AI offline'}
           </span>
-          <span className="badge">{state.team}</span>
           <span className="badge">evidence {state.discovered.length}</span>
+          <button
+            className="btn accuse"
+            onClick={() => {
+              setAccuseResult(null);
+              setAccuseOpen(true);
+            }}
+          >
+            Accuse
+          </button>
         </div>
       </header>
 
-      <div className="stage">
-        <div className="scene-wrap">
-          <Scene state={state} roomId={roomId} onCharacter={openCharacter} onClue={findClue} />
-          <div className="vignette" />
-        </div>
-        <aside className="side">
-          {activeCharacter ? (
-            <ChatPanel
-              character={activeCharacter}
-              messages={chats[activeCharacter.id] ?? []}
-              typing={typing}
-              onAsk={ask}
-              error={chatError}
-              disabled={state.solved}
-            />
-          ) : (
-            <Notebook state={state} />
-          )}
-        </aside>
-      </div>
+      <button
+        className={`notebook-toggle ${notebookOpen ? 'open' : ''}`}
+        onClick={() => setNotebookOpen((o) => !o)}
+      >
+        <span className="notebook-icon">▤</span>
+        <span className="notebook-label">Notebook</span>
+      </button>
 
-      <footer className="tabs">
-        {state.rooms.map((room) => (
-          <button
-            key={room.id}
-            className={`tab ${room.id === roomId ? 'active' : ''}`}
-            onClick={() => {
-              setRoomId(room.id);
-              setActiveChar(null);
-            }}
-          >
-            {room.name}
-          </button>
-        ))}
-        <span className="spacer" />
-        <button className="btn ghost" onClick={() => setActiveChar(null)} disabled={!activeChar}>
-          Notebook
-        </button>
-        <button
-          className="btn accuse"
-          onClick={() => {
-            setAccuseResult(null);
-            setAccuseOpen(true);
-          }}
-        >
-          Accuse
-        </button>
-      </footer>
+      {notebookOpen && (
+        <div className="notebook-panel">
+          <Notebook state={state} onClose={() => setNotebookOpen(false)} />
+        </div>
+      )}
+
+      {!activeChar && (
+        <footer className="room-tabs">
+          {state.rooms.map((r) => (
+            <button
+              key={r.id}
+              className={`tab ${r.id === roomId ? 'active' : ''}`}
+              onClick={() => setRoomId(r.id)}
+            >
+              {r.name}
+            </button>
+          ))}
+        </footer>
+      )}
+
+      {activeCharacter && (
+        <DialogueOverlay
+          character={activeCharacter}
+          messages={chats[activeCharacter.id] ?? []}
+          typing={typing}
+          onAsk={ask}
+          error={chatError}
+          disabled={state.solved}
+          onClose={() => setActiveChar(null)}
+        />
+      )}
 
       {notice && <Notice notice={notice} onClose={() => setNotice(null)} />}
       {accuseOpen && (

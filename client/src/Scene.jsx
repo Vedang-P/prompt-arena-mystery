@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { Canvas, useThree } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import {
   Environment,
   Html,
@@ -8,6 +8,7 @@ import {
   useGLTF,
   useTexture,
 } from '@react-three/drei';
+import { EffectComposer, DepthOfField, Vignette, Noise, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 
 const ASSETS = '/assets';
@@ -542,9 +543,56 @@ function EnvironmentIntensity({ value }) {
   return null;
 }
 
-export default function Scene({ state, roomId, onCharacter, onClue }) {
+function CameraRig({ focus }) {
+  const { camera, controls } = useThree();
+  const desiredPosition = useRef(new THREE.Vector3(0, 2.3, 7.8));
+  const desiredLook = useRef(new THREE.Vector3(0, 1.5, -0.3));
+  const transitioning = useRef(false);
+
+  useEffect(() => {
+    if (focus) {
+      desiredPosition.current.set(focus.position[0] + 0.35, focus.position[1] + 1.62, focus.position[2] + 1.8);
+      desiredLook.current.set(focus.position[0], focus.position[1] + 1.42, focus.position[2]);
+    } else {
+      desiredPosition.current.set(0, 2.3, 7.8);
+      desiredLook.current.set(0, 1.5, -0.3);
+    }
+    transitioning.current = true;
+    if (controls) controls.enabled = !focus;
+  }, [focus, controls]);
+
+  useFrame((_, delta) => {
+    if (!transitioning.current) return;
+    const k = 1 - Math.pow(0.0005, Math.min(delta, 0.05));
+    camera.position.lerp(desiredPosition.current, k);
+    if (controls && controls.enabled) {
+      controls.target.lerp(desiredLook.current, k);
+      controls.update();
+    } else {
+      camera.lookAt(desiredLook.current);
+    }
+    if (camera.position.distanceTo(desiredPosition.current) < 0.03) {
+      transitioning.current = false;
+      if (controls) {
+        controls.target.copy(desiredLook.current);
+        if (controls.enabled) controls.update();
+      }
+    }
+  });
+
+  return null;
+}
+
+export default function Scene({ state, roomId, focus, onCharacter, onClue }) {
   const room = state.rooms.find((r) => r.id === roomId) ?? state.rooms[0];
   const isBallroom = room.id === 'ballroom';
+  const focusTarget = useMemo(
+    () =>
+      focus
+        ? new THREE.Vector3(focus.position[0], focus.position[1] + 1.42, focus.position[2])
+        : new THREE.Vector3(0, 1.4, 0),
+    [focus]
+  );
 
   return (
     <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 2.3, 7.8], fov: 46 }}>
@@ -583,6 +631,7 @@ export default function Scene({ state, roomId, onCharacter, onClue }) {
           <Vestibule room={room} state={state} onCharacter={onCharacter} onClue={onClue} />
         )}
         <OrbitControls
+          makeDefault
           enablePan={false}
           enableDamping
           dampingFactor={0.08}
@@ -595,6 +644,13 @@ export default function Scene({ state, roomId, onCharacter, onClue }) {
           maxAzimuthAngle={1.1}
         />
       </Suspense>
+      <CameraRig focus={focus} />
+      <EffectComposer>
+        <DepthOfField target={focusTarget} focalLength={0.05} bokehScale={6} height={480} />
+        <Bloom intensity={0.28} luminanceThreshold={0.72} mipmapBlur />
+        <Vignette offset={0.28} darkness={0.62} />
+        <Noise opacity={0.035} />
+      </EffectComposer>
     </Canvas>
   );
 }
