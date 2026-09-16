@@ -615,13 +615,13 @@ export default function Scene({ state, roomId, focus, onCharacter, onClue }) {
   const focusInfo = useMemo(() => {
     if (!focus) return null;
     const height = heights[focus.character] || 1.9;
-    const headY = focus.position[1] + height * 0.87;
+    const headY = focus.position[1] + height * 0.92;
     return {
-      look: [focus.position[0], headY, focus.position[2]],
+      look: [focus.position[0], headY - height * 0.03, focus.position[2]],
       camera: [
-        focus.position[0] + height * 0.1,
-        headY + height * 0.02,
-        focus.position[2] + height * 0.8,
+        focus.position[0] + height * 0.07,
+        headY + height * 0.05,
+        focus.position[2] + height * 0.55,
       ],
     };
   }, [focus, heights]);
@@ -697,10 +697,10 @@ export default function Scene({ state, roomId, focus, onCharacter, onClue }) {
       </Suspense>
       <CameraRig focusInfo={focusInfo} />
       <EffectComposer>
-        <DepthOfField target={dofTarget} focalLength={0.06} bokehScale={4} height={480} />
+        <DepthOfField target={dofTarget} focalLength={0.06} bokehScale={3} height={480} />
         <Bloom intensity={0.28} luminanceThreshold={0.72} mipmapBlur />
         <Vignette offset={0.28} darkness={0.62} />
-        <Noise opacity={0.035} />
+        <Noise opacity={0.025} />
       </EffectComposer>
     </Canvas>
   );
