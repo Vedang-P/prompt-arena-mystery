@@ -140,10 +140,13 @@ function Character({
   position = [0, 0, 0],
   rotation = [0, 0, 0],
   onClick,
+  focused = false,
   showLabel = true,
   onMeasure,
 }) {
   const group = useRef();
+  const headBone = useRef(null);
+  const headAngle = useRef(0);
   const [hover, setHover] = useState(false);
   const { scene, animations } = useGLTF(url);
   const { actions, names } = useAnimations(animations, group);
@@ -154,10 +157,26 @@ function Character({
         o.castShadow = true;
         o.receiveShadow = true;
       }
+      if (!headBone.current && o.isBone) {
+        const n = o.name.toLowerCase();
+        if (n.includes('head') && !n.includes('top')) headBone.current = o;
+      }
     });
     const box = new THREE.Box3().setFromObject(scene);
     onMeasure?.(box.max.y - box.min.y);
   }, [scene, onMeasure]);
+
+  // While the player is talking to this character, gently lift the head so
+  // they face the camera, then release it back to the animation.
+  useFrame((_, delta) => {
+    const bone = headBone.current;
+    if (!bone) return;
+    const target = focused ? -0.7 : 0;
+    const next = THREE.MathUtils.damp(headAngle.current, target, 4, delta);
+    const step = next - headAngle.current;
+    if (Math.abs(step) > 0.0001) bone.rotateX(step);
+    headAngle.current = next;
+  });
 
   useEffect(() => {
     const name = names.includes(clip) ? clip : names[0];
@@ -482,6 +501,7 @@ function Ballroom({ room, state, focusId, onMeasure, onCharacter, onClue }) {
             clip="idle"
             position={h.position}
             rotation={[0, h.character === 'victor' ? 0.5 : -0.5, 0]}
+            focused={focusId === h.character}
             showLabel={focusId !== h.character}
             onMeasure={(height) => onMeasure(h.character, height)}
             onClick={() => onCharacter(h)}
@@ -522,6 +542,7 @@ function Vestibule({ room, state, focusId, onMeasure, onCharacter, onClue }) {
             url={CHARACTER_MODELS[h.character]}
             label={h.label}
             position={h.position}
+            focused={focusId === h.character}
             showLabel={focusId !== h.character}
             onMeasure={(height) => onMeasure(h.character, height)}
             onClick={() => onCharacter(h)}
@@ -621,7 +642,7 @@ export default function Scene({ state, roomId, focus, onCharacter, onClue }) {
       camera: [
         focus.position[0] + height * 0.07,
         headY + height * 0.05,
-        focus.position[2] + height * 0.55,
+        focus.position[2] + height * 0.5,
       ],
     };
   }, [focus, heights]);
@@ -697,7 +718,7 @@ export default function Scene({ state, roomId, focus, onCharacter, onClue }) {
       </Suspense>
       <CameraRig focusInfo={focusInfo} />
       <EffectComposer>
-        <DepthOfField target={dofTarget} focalLength={0.06} bokehScale={3} height={480} />
+        <DepthOfField target={dofTarget} focalLength={0.035} bokehScale={8} height={480} />
         <Bloom intensity={0.28} luminanceThreshold={0.72} mipmapBlur />
         <Vignette offset={0.28} darkness={0.62} />
         <Noise opacity={0.025} />
