@@ -15,16 +15,16 @@ rooms:
     name: "The Ballroom"
     scene: ballroom.glb
     hotspots:
-      - { id: victor, type: character, character: victor, label: "Victor, the pianist", position: [1.2, 0, -2.0] }
-      - { id: odette, type: character, character: odette, label: "Odette, the violinist", position: [-1.0, 0, -1.4] }
-      - { id: piano, type: clue, clue: sheet_music, label: "Grand piano", position: [2.4, 0, -2.6] }
+      - { id: victor, type: character, character: victor, label: "Victor, the pianist", position: [3.1, 0, -1.5] }
+      - { id: odette, type: character, character: odette, label: "Odette, the violinist", position: [-2.4, 0, 0.9] }
+      - { id: piano, type: clue, clue: sheet_music, label: "Grand piano", position: [4.3, 0, -2.4] }
 
   - id: vestibule
     name: "Backstage Vestibule"
     scene: vestibule.glb
     hotspots:
-      - { id: stage_door_hotspot, type: clue, clue: stage_door, label: "Stage door", position: [0, 0, 3.0] }
-      - { id: umbrella_stand, type: clue, clue: ticket_stub, label: "Umbrella stand", position: [1.8, 0, 2.2] }
+      - { id: stage_door_hotspot, type: clue, clue: stage_door, label: "Stage door", position: [0, 0, -3.6] }
+      - { id: umbrella_stand, type: clue, clue: ticket_stub, label: "Umbrella stand", position: [2.6, 0, 1.4] }
 
 characters:
   - id: odette
