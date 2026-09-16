@@ -551,8 +551,8 @@ function CameraRig({ focus }) {
 
   useEffect(() => {
     if (focus) {
-      desiredPosition.current.set(focus.position[0] + 0.35, focus.position[1] + 1.62, focus.position[2] + 1.8);
-      desiredLook.current.set(focus.position[0], focus.position[1] + 1.42, focus.position[2]);
+      desiredPosition.current.set(focus.position[0] + 0.5, focus.position[1] + 1.7, focus.position[2] + 2.15);
+      desiredLook.current.set(focus.position[0], focus.position[1] + 1.68, focus.position[2]);
     } else {
       desiredPosition.current.set(0, 2.3, 7.8);
       desiredLook.current.set(0, 1.5, -0.3);
@@ -589,7 +589,7 @@ export default function Scene({ state, roomId, focus, onCharacter, onClue }) {
   const focusTarget = useMemo(
     () =>
       focus
-        ? new THREE.Vector3(focus.position[0], focus.position[1] + 1.42, focus.position[2])
+        ? new THREE.Vector3(focus.position[0], focus.position[1] + 1.68, focus.position[2])
         : new THREE.Vector3(0, 1.4, 0),
     [focus]
   );
@@ -646,7 +646,7 @@ export default function Scene({ state, roomId, focus, onCharacter, onClue }) {
       </Suspense>
       <CameraRig focus={focus} />
       <EffectComposer>
-        <DepthOfField target={focusTarget} focalLength={0.05} bokehScale={6} height={480} />
+        <DepthOfField target={focusTarget} focalLength={0.06} bokehScale={4} height={480} />
         <Bloom intensity={0.28} luminanceThreshold={0.72} mipmapBlur />
         <Vignette offset={0.28} darkness={0.62} />
         <Noise opacity={0.035} />

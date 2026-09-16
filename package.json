@@ -9,6 +9,7 @@
     "validate:case": "node scripts/build-case.mjs --check",
     "test:engine": "npm run build:case && node scripts/test-engine.mjs",
     "gen:team": "node scripts/make-team.mjs",
+    "import:mixamo": "blender --background --python scripts/blender/import_mixamo.py",
     "dev": "npm run build:case && wrangler dev",
     "dev:web": "vite",
     "build": "npm run build:case && vite build",
