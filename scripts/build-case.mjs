@@ -80,8 +80,13 @@ for (const ch of c.characters ?? []) {
     if (f.disposition !== undefined && !['admit', 'deny', 'deflect'].includes(f.disposition)) {
       err(`fact "${f.id}": disposition must be admit | deny | deflect`);
     }
-    if (f.unlock !== 'always' && !(isObj(f.unlock) && Array.isArray(f.unlock.requires))) {
-      err(`fact "${f.id}": unlock must be "always" or { requires: [clue ids] }`);
+    const unlockOk =
+      f.unlock === 'always' ||
+      (isObj(f.unlock) &&
+        ((Array.isArray(f.unlock.requires) && f.unlock.requires.length > 0) ||
+          (Array.isArray(f.unlock.after) && f.unlock.after.length > 0)));
+    if (!unlockOk) {
+      err(`fact "${f.id}": unlock must be "always" or { requires: [clues] } and/or { after: [facts] }`);
     }
     factIndex.set(f.id, { character: ch.id, unlock: f.unlock });
   }
@@ -105,6 +110,9 @@ for (const [factId, meta] of factIndex) {
   if (!isObj(meta.unlock)) continue;
   for (const r of meta.unlock.requires ?? []) {
     if (!clueIds.has(r)) err(`fact "${factId}": requires unknown clue "${r}"`);
+  }
+  for (const a of meta.unlock.after ?? []) {
+    if (!factIndex.has(a)) err(`fact "${factId}": after unknown fact "${a}"`);
   }
 }
 
@@ -150,6 +158,11 @@ if (!isObj(c.solution)) {
   if (!charIds.has(c.solution.culprit)) err(`solution.culprit "${c.solution.culprit}" is not a character`);
   if (!isStr(c.solution.method)) err('solution.method is required');
   if (!isStr(c.solution.motive)) err('solution.motive is required');
+  if (c.solution.required_clues !== undefined) {
+    const ok =
+      Array.isArray(c.solution.required_clues) && c.solution.required_clues.every((id) => clueIds.has(id));
+    if (!ok) err('solution.required_clues must be a list of known clue ids');
+  }
 }
 
 // ---------- canonical q&a ----------
@@ -174,18 +187,36 @@ while (grew) {
 for (const id of clueIndex.keys()) {
   if (!reachable.has(id)) err(`clue "${id}" is unreachable (circular or unsatisfiable "requires")`);
 }
-for (const [factId, meta] of factIndex) {
-  if (!isObj(meta.unlock)) continue;
-  for (const r of meta.unlock.requires ?? []) {
-    if (!reachable.has(r)) warn(`fact "${factId}" can never unlock (requires unreachable clue "${r}")`);
+const reachableFacts = new Set();
+let factsGrew = true;
+while (factsGrew) {
+  factsGrew = false;
+  for (const [factId, meta] of factIndex) {
+    if (reachableFacts.has(factId)) continue;
+    if (meta.unlock === 'always') {
+      reachableFacts.add(factId);
+      factsGrew = true;
+      continue;
+    }
+    const cluesOk = (meta.unlock?.requires ?? []).every((r) => reachable.has(r));
+    const factsOk = (meta.unlock?.after ?? []).every((a) => reachableFacts.has(a));
+    if (cluesOk && factsOk) {
+      reachableFacts.add(factId);
+      factsGrew = true;
+    }
   }
+}
+for (const factId of factIndex.keys()) {
+  if (!reachableFacts.has(factId)) err(`fact "${factId}" can never unlock (unsatisfiable requires/after)`);
 }
 
 // ---------- dead content ----------
 const requiredClues = new Set();
 for (const clue of clueIndex.values()) for (const r of clue.requires ?? []) requiredClues.add(r);
 for (const meta of factIndex.values()) {
-  if (isObj(meta.unlock)) for (const r of meta.unlock.requires ?? []) requiredClues.add(r);
+  if (!isObj(meta.unlock)) continue;
+  for (const r of meta.unlock.requires ?? []) requiredClues.add(r);
+  for (const a of meta.unlock.after ?? []) requiredClues.add(a);
 }
 for (const [id, clue] of clueIndex) {
   if (!(clue.grants ?? []).length && !requiredClues.has(id)) {

@@ -8,6 +8,7 @@ solution:                              # SERVER-ONLY. Never reaches the client o
   culprit: victor
   method: "Took the violin from its case during the power cut, using the stage door key he copied from Odette's spare."
   motive: "Sell it to pay off a private card game debt."
+  required_clues: [sheet_music, stage_door, ticket_stub]   # evidence needed to accuse
 
 rooms:
   - id: ballroom
@@ -47,6 +48,10 @@ characters:
         text: "She let Victor borrow the stage door key last week and fears that makes her look guilty."
         unlock: { requires: [stage_door, ticket_stub] }
         disposition: deny
+      - id: odette_warning
+        text: "Once she hears the debts are known, she admits she saw Victor arguing with the manager about money last week."
+        unlock: { after: [victor_debts] }
+        disposition: admit
 
   - id: victor
     name: "Victor"
@@ -68,6 +73,10 @@ characters:
       - id: victor_key
         text: "He copied the stage door key from Odette's spare a week ago."
         unlock: { requires: [stage_door, ticket_stub] }
+        disposition: deny
+      - id: victor_slip
+        text: "Pressed with Odette's warning, he admits the argument — but claims it was about a loan, not the violin."
+        unlock: { after: [odette_warning] }
         disposition: deny
 
 clues:

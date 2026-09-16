@@ -8,10 +8,9 @@ CREATE TABLE IF NOT EXISTS teams (
 
 CREATE TABLE IF NOT EXISTS progress (
   team_id INTEGER PRIMARY KEY REFERENCES teams(id),
-  unlocked TEXT NOT NULL DEFAULT '[]',    -- JSON array of unlocked fact ids (server-authoritative)
-  clues_found INTEGER NOT NULL DEFAULT 0,
+  discovered TEXT NOT NULL DEFAULT '[]',    -- JSON array of clue ids (server-authoritative)
   hints_used INTEGER NOT NULL DEFAULT 0,
-  accusation TEXT,                        -- JSON {culprit, method, motive}
+  accusation TEXT,                          -- JSON of the latest accusation
   solved INTEGER NOT NULL DEFAULT 0,
   solved_at TEXT,
   started_at TEXT,
@@ -25,9 +24,9 @@ CREATE TABLE IF NOT EXISTS messages (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   team_id INTEGER NOT NULL,
   character TEXT NOT NULL,
-  role TEXT NOT NULL,                     -- 'player' | 'npc' | 'system'
+  role TEXT NOT NULL,                     -- 'player' | 'npc'
   content TEXT NOT NULL,
-  source TEXT,                            -- cache | llm | fallback (audit)
+  source TEXT,                            -- player | llm | canonical | deflect (audit)
   req_id TEXT,                            -- idempotency key from client
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -54,4 +53,4 @@ CREATE TABLE IF NOT EXISTS config (
   value TEXT NOT NULL
 );
 INSERT OR IGNORE INTO config(key, value) VALUES ('paused', '0');
-INSERT OR IGNORE INTO config(key, value) VALUES ('event_started', '0');
+INSERT OR IGNORE INTO config(key, value) VALUES ('event_started', '1');

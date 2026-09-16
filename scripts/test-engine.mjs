@@ -3,10 +3,12 @@
 //   npm run test:engine   (compiles case/smoke.yaml first)
 
 import assert from 'node:assert/strict';
+import { caseData } from '../src/case.js';
 import {
   buildMessages,
   canonicalAnswer,
   checkCulprit,
+  conclusionMatches,
   deflection,
   discover,
   publicCase,
@@ -32,7 +34,7 @@ console.log('engine — smoke case');
 test('public case leaks no facts, solution, or authoring data', () => {
   const json = JSON.stringify(publicCase());
   for (const leak of [
-    'victor_debts', 'odette_secret', 'victor_key', 'odette_key',
+    'victor_debts', 'odette_secret', 'victor_key', 'odette_key', 'odette_warning', 'victor_slip',
     'solution', 'culprit', 'canonical_qa', 'deny', 'persona',
   ]) {
     assert.ok(!json.includes(leak), `publicCase leaked "${leak}"`);
@@ -60,10 +62,13 @@ test('the ticket stub is gated behind the stage door', () => {
   assert.deepEqual(result.missing, ['stage_door']);
 });
 
-test('the sheet music unlocks exactly the debt fact', () => {
+test('the sheet music unlocks the debt thread', () => {
   const result = discover([], 'sheet_music');
   assert.equal(result.ok, true);
-  assert.deepEqual(result.newlyUnlocked.map((f) => f.fact), ['victor_debts']);
+  assert.deepEqual(
+    result.newlyUnlocked.map((f) => f.fact).sort(),
+    ['odette_warning', 'victor_debts', 'victor_slip']
+  );
 });
 
 test('stage door alone unlocks nothing; the stub then unlocks the rest', () => {
@@ -84,6 +89,21 @@ test('discovering the same clue twice is safe and unlocks nothing new', () => {
   assert.equal(result.ok, true);
   assert.equal(result.alreadyFound, true);
   assert.deepEqual(result.newlyUnlocked, []);
+});
+
+test('knowledge cascades through conversation facts', () => {
+  const early = unlockedFactList([]).map((f) => f.fact);
+  assert.ok(!early.includes('odette_warning'));
+  assert.ok(!early.includes('victor_slip'));
+
+  const withMusic = unlockedFactList(['sheet_music']).map((f) => f.fact);
+  assert.ok(withMusic.includes('victor_debts'));
+  assert.ok(withMusic.includes('odette_warning'));
+  assert.ok(withMusic.includes('victor_slip'));
+});
+
+test('the case declares required evidence for an accusation', () => {
+  assert.deepEqual(caseData.solution.required_clues, ['sheet_music', 'stage_door', 'ticket_stub']);
 });
 
 test('victor starts knowing his alibi, not his debts', () => {
@@ -137,6 +157,14 @@ test('culprit check is deterministic', () => {
   assert.equal(checkCulprit('victor'), true);
   assert.equal(checkCulprit('odette'), false);
   assert.equal(checkCulprit(''), false);
+});
+
+test('conclusion matching is tolerant but not free', () => {
+  assert.equal(
+    conclusionMatches('He copied the stage door key and took it during the power cut', caseData.solution.method),
+    true
+  );
+  assert.equal(conclusionMatches('the butler did it with a candlestick', caseData.solution.method), false);
 });
 
 test('deflection returns an authored line, or a generic fallback', () => {

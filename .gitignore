@@ -4,6 +4,8 @@ dist/
 src/generated/
 .dev.vars
 .dev.vars.*
+!.dev.vars.example
+cookies.txt
 *.local
 case/teams.csv
 case/teams-printable.txt

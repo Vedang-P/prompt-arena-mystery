@@ -29,9 +29,3 @@ export const allFacts = () => [...facts.values()];
 
 export const toDiscoveredSet = (value) =>
   value instanceof Set ? value : new Set(value ?? []);
-
-export function factUnlocked(fact, discovered) {
-  if (fact.unlock === 'always') return true;
-  const requires = fact.unlock?.requires ?? [];
-  return requires.every((r) => discovered.has(r));
-}

@@ -1,0 +1,6 @@
+SESSION_SECRET=change-me
+CODE_PEPPER=change-me
+# Live AI suspects (optional). Any OpenAI-compatible endpoint works.
+# LLM_BASE_URL=https://opencode.ai/zen/v1
+# LLM_API_KEY=
+# LLM_MODEL=
