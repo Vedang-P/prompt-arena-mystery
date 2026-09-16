@@ -143,7 +143,6 @@ function Character({
   focused = false,
   showLabel = true,
   onMeasure,
-  onBone,
 }) {
   const root = useRef();
   const group = useRef();
@@ -174,10 +173,9 @@ function Character({
         if (n.includes('head') && !n.includes('top')) headBone.current = o;
       }
     });
-    onBone?.(headBone.current ? headBone.current.name : null);
     const box = new THREE.Box3().setFromObject(scene);
     onMeasure?.(box.max.y - box.min.y);
-  }, [scene, onMeasure, onBone]);
+  }, [scene, onMeasure]);
 
   // The "look at the player" head lift is baked into the idle animation
   // itself (scripts/blender/bake_head.py) — doing it here would fight the mixer.
@@ -218,7 +216,7 @@ function Character({
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
       {showLabel && (
-        <Html position={[0, 2.45, 0]} center distanceFactor={12} zIndexRange={[30, 0]}>
+        <Html position={[0, 2.45, 0]} center distanceFactor={10} zIndexRange={[30, 0]}>
           <button
             className="hotspot"
             onClick={(e) => {
@@ -239,7 +237,7 @@ function ClueMarker({ hotspot, found, onClick, pad = [1.7, 2, 1.7], labelY = 1.7
   const [x, y, z] = hotspot.position;
   return (
     <group>
-      <Html position={[x, y + labelY, z]} center distanceFactor={12} zIndexRange={[30, 0]}>
+      <Html position={[x, y + labelY, z]} center distanceFactor={10} zIndexRange={[30, 0]}>
         <button
           className={`hotspot ${found ? 'found' : ''}`}
           onClick={(e) => {
@@ -448,7 +446,7 @@ function Piano({ position, rotation = [0, -1.1, 0] }) {
 
 // ---------- rooms ----------
 
-function Ballroom({ room, state, focusId, onMeasure, onBone, onCharacter, onClue }) {
+function Ballroom({ room, state, focusId, onMeasure, onCharacter, onClue }) {
   return (
     <group>
       <Shell width={18} depth={12} height={4.9} tint="#6d4a44" />
@@ -508,7 +506,6 @@ function Ballroom({ room, state, focusId, onMeasure, onBone, onCharacter, onClue
             focused={focusId === h.character}
             showLabel={focusId !== h.character}
             onMeasure={(height) => onMeasure(h.character, height)}
-            onBone={(name) => onBone(h.character, name)}
             onClick={() => onCharacter(h)}
           />
         ) : h.clue === 'sheet_music' ? (
@@ -528,7 +525,7 @@ function Ballroom({ room, state, focusId, onMeasure, onBone, onCharacter, onClue
   );
 }
 
-function Vestibule({ room, state, focusId, onMeasure, onBone, onCharacter, onClue }) {
+function Vestibule({ room, state, focusId, onMeasure, onCharacter, onClue }) {
   return (
     <group>
       <Shell width={11} depth={9} height={4.2} tint="#47525c" />
@@ -550,7 +547,6 @@ function Vestibule({ room, state, focusId, onMeasure, onBone, onCharacter, onClu
             focused={focusId === h.character}
             showLabel={focusId !== h.character}
             onMeasure={(height) => onMeasure(h.character, height)}
-            onBone={(name) => onBone(h.character, name)}
             onClick={() => onCharacter(h)}
           />
         ) : h.clue === 'stage_door' ? (
@@ -627,7 +623,7 @@ function CameraRig({ focusInfo }) {
   return null;
 }
 
-export default function Scene({ state, roomId, focus, onCharacter, onClue, onDebug }) {
+export default function Scene({ state, roomId, focus, onCharacter, onClue }) {
   const room = state.rooms.find((r) => r.id === roomId) ?? state.rooms[0];
   const isBallroom = room.id === 'ballroom';
   const [heights, setHeights] = useState({});
@@ -673,8 +669,6 @@ export default function Scene({ state, roomId, focus, onCharacter, onClue, onDeb
     }
   }, [focusInfo, dofTarget]);
 
-  const noteBone = useCallback((id, name) => onDebug?.(id, name), [onDebug]);
-
   return (
     <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 2.3, 7.8], fov: 46 }}>
       <color attach="background" args={['#080604']} />
@@ -712,7 +706,6 @@ export default function Scene({ state, roomId, focus, onCharacter, onClue, onDeb
             state={state}
             focusId={focus?.character}
             onMeasure={measure}
-            onBone={noteBone}
             onCharacter={onCharacter}
             onClue={onClue}
           />
@@ -722,7 +715,6 @@ export default function Scene({ state, roomId, focus, onCharacter, onClue, onDeb
             state={state}
             focusId={focus?.character}
             onMeasure={measure}
-            onBone={noteBone}
             onCharacter={onCharacter}
             onClue={onClue}
           />

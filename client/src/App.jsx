@@ -24,7 +24,6 @@ export default function App() {
   const [loginBusy, setLoginBusy] = useState(false);
   const [won, setWon] = useState(null);
   const [notebookOpen, setNotebookOpen] = useState(false);
-  const [boneInfo, setBoneInfo] = useState({});
 
   const loadGame = async () => {
     try {
@@ -120,13 +119,14 @@ export default function App() {
         unlocked: mergeUnlocked(s.unlocked, res.newlyUnlocked ?? []),
       }));
       setNotice({
+        kicker: 'Evidence logged',
         title: res.clue.name,
         body: res.clue.description,
         facts: res.newlyUnlocked,
       });
     } catch (e) {
       if (e.status === 409) {
-        setNotice({ title: 'Locked', body: 'Something else has to come first.' });
+        setNotice({ kicker: 'Sealed', title: 'Locked', body: 'Something else has to come first.' });
       }
     }
   };
@@ -181,9 +181,10 @@ export default function App() {
   if (phase === 'solved') {
     return (
       <div className="center-screen">
-        <div className="login-card solved">
-          <h1>Case closed</h1>
-          <p className="sub">{state.title}</p>
+        <div className="login-card certificate">
+          <p className="login-kicker">The case is closed</p>
+          <h1 className="login-title">Solved</h1>
+          <p className="login-sub">{state.title}</p>
           {won && (
             <div className="solved-details">
               <p>
@@ -194,7 +195,7 @@ export default function App() {
               <p className="solved-quote">“{won.motive}”</p>
             </div>
           )}
-          <p className="hint">The leaderboard is watching you.</p>
+          <p className="login-hint">The leaderboard is watching you.</p>
         </div>
       </div>
     );
@@ -209,28 +210,27 @@ export default function App() {
           focus={focusHotspot}
           onCharacter={openCharacter}
           onClue={findClue}
-          onDebug={(id, name) =>
-            setBoneInfo((prev) => (prev[id] === name ? prev : { ...prev, [id]: name }))
-          }
         />
         <div className="vignette" />
       </div>
 
       <header className="hud-top">
         <div className="location">
-          <span className="location-name">{room.name}</span>
-          <span className="location-sub">Prompt Arena: Mystery</span>
+          <h1 className="location-name">{room.name}</h1>
+          <p className="location-kicker">{state.title}</p>
         </div>
-        <div className="meta">
-          <span className={`badge ${state.llm ? 'live' : 'off'}`}>
-            {state.llm ? 'live AI suspects' : 'AI offline'}
+        <div className="case-bar">
+          <span className="case-stat">
+            <i className={`dot ${state.llm ? '' : 'off'}`} />
+            {state.llm ? 'Suspects live' : 'Suspects offline'}
           </span>
-          <span className="badge">evidence {state.discovered.length}</span>
-          {focusHotspot && (
-            <span className="badge">head: {boneInfo[focusHotspot.character] ?? '…'}</span>
-          )}
+          <span className="case-divider" />
+          <span className="case-stat">
+            Exhibits <b>{state.discovered.length}</b>
+          </span>
+          <span className="case-divider" />
           <button
-            className="btn accuse"
+            className="btn wine"
             onClick={() => {
               setAccuseResult(null);
               setAccuseOpen(true);
@@ -245,7 +245,7 @@ export default function App() {
         className={`notebook-toggle ${notebookOpen ? 'open' : ''}`}
         onClick={() => setNotebookOpen((o) => !o)}
       >
-        <span className="notebook-icon">▤</span>
+        <span className="notebook-icon">◆</span>
         <span className="notebook-label">Notebook</span>
       </button>
 
@@ -272,6 +272,7 @@ export default function App() {
       {activeCharacter && (
         <DialogueOverlay
           character={activeCharacter}
+          subtitle={focusHotspot?.label?.split(',')[1]?.trim() ?? null}
           messages={chats[activeCharacter.id] ?? []}
           typing={typing}
           onAsk={ask}
