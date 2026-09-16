@@ -183,42 +183,50 @@ app.post('/api/interrogate', async (c) => {
   return streamSSE(c, async (stream) => {
     let reply = '';
     let source = llm ? 'llm' : 'unconfigured';
+    let clientGone = false;
 
-    await stream.writeSSE({
-      event: 'meta',
-      data: JSON.stringify({ character: characterId }),
-    });
+    // A dropped client connection must not abort the LLM call or the transcript
+    // insert — otherwise the conversation loses the reply entirely.
+    const send = async (event, data) => {
+      if (clientGone) return;
+      try {
+        await stream.writeSSE({ event, data: JSON.stringify(data) });
+      } catch {
+        clientGone = true;
+      }
+    };
+
+    await send('meta', { character: characterId });
 
     if (llm) {
       try {
         for await (const delta of llm.stream(messages, { maxTokens: 220, temperature: 0.7 })) {
           reply += delta;
-          await stream.writeSSE({ event: 'delta', data: JSON.stringify({ text: delta }) });
+          await send('delta', { text: delta });
         }
       } catch (e) {
         console.log(JSON.stringify({ type: 'llm_failed', character: characterId, detail: String(e?.message ?? e) }));
       }
     }
 
-    if (!reply.trim()) {
+    // A stream that died mid-sentence would otherwise be stored truncated
+    // forever. If the reply does not look finished, replace it wholesale and
+    // tell the client to swap the partial text out.
+    let final = reply.trim();
+    if (!final || !/([.!?…]|["'”’)\]])\s*$/.test(final)) {
       const canned = canonicalAnswer(characterId, text);
-      if (canned) {
-        source = 'canonical';
-        reply = canned;
-      } else {
-        source = 'deflect';
-        reply = deflection(characterId);
-      }
-      await stream.writeSSE({ event: 'delta', data: JSON.stringify({ text: reply }) });
+      source = canned ? 'canonical' : 'deflect';
+      final = canned ?? deflection(characterId);
+      await send('reset', { text: final });
     }
 
     await c.env.DB.prepare(
       'INSERT INTO messages(team_id, character, role, content, source) VALUES (?,?,?,?,?)'
     )
-      .bind(auth.teamId, characterId, 'npc', reply.trim(), source)
+      .bind(auth.teamId, characterId, 'npc', final, source)
       .run();
 
-    await stream.writeSSE({ event: 'done', data: JSON.stringify({ source }) });
+    await send('done', { source });
   });
 });
 

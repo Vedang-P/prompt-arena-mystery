@@ -30,7 +30,7 @@ export const accuse = (payload) =>
     body: JSON.stringify(payload),
   }).then(json);
 
-export async function interrogate(character, text, { onDelta, onDone } = {}) {
+export async function interrogate(character, text, { onDelta, onReset, onDone } = {}) {
   const res = await fetch('/api/interrogate', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -58,6 +58,7 @@ export async function interrogate(character, text, { onDelta, onDone } = {}) {
           continue;
         }
         if (event === 'delta') onDelta?.(data.text);
+        else if (event === 'reset') onReset?.(data.text);
         else if (event === 'done') onDone?.(data);
       } else if (line === '') event = 'message';
     }

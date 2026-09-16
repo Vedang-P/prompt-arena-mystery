@@ -50,18 +50,45 @@ export function DialogueOverlay({
 }) {
   const [text, setText] = useState('');
   const logRef = useRef(null);
+  const busyRef = useRef(false);
 
   useEffect(() => {
-    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+    const el = logRef.current;
+    if (!el) return;
+    const raf = requestAnimationFrame(() => {
+      el.scrollTop = el.scrollHeight;
+    });
+    return () => cancelAnimationFrame(raf);
   }, [messages, typing]);
+
+  useEffect(() => {
+    busyRef.current = typing;
+  }, [typing]);
 
   const send = (e) => {
     e.preventDefault();
     const value = text.trim();
-    if (!value || typing || disabled) return;
+    if (!value || typing || disabled || busyRef.current) return;
+    busyRef.current = true;
     setText('');
     onAsk(value);
   };
+
+  // Never render an empty turn: drop contentless messages unless they are the
+  // one currently streaming (those get the typing dots).
+  const turns = [];
+  messages.forEach((m, i) => {
+    const pending = typing && i === messages.length - 1 && m.role === 'npc' && !m.content;
+    if (!m.content && !pending) return;
+    const prev = turns[turns.length - 1];
+    turns.push({
+      key: i,
+      role: m.role,
+      content: m.content,
+      pending,
+      beginsTurn: m.role === 'npc' && (!prev || prev.role === 'player'),
+    });
+  });
 
   return (
     <div className="dialogue">
@@ -69,31 +96,26 @@ export function DialogueOverlay({
         {messages.length === 0 && (
           <p className="stage-direction">— They look at you, waiting. —</p>
         )}
-        {messages.map((m, i) => {
-          if (m.role === 'player') {
-            return (
-              <div key={i} className="turn player">
-                <p className="line player">{m.content}</p>
-              </div>
-            );
-          }
-          const streaming = typing && i === messages.length - 1 && !m.content;
-          const beginsTurn = i === 0 || messages[i - 1].role === 'player';
-          return (
-            <div key={i} className="turn npc">
-              {beginsTurn && <div className="speaker">{character.name}</div>}
-              {streaming ? (
+        {turns.map((t) =>
+          t.role === 'player' ? (
+            <div key={t.key} className="turn player">
+              <p className="line player">{t.content}</p>
+            </div>
+          ) : (
+            <div key={t.key} className="turn npc">
+              {t.beginsTurn && <div className="speaker">{character.name}</div>}
+              {t.pending ? (
                 <p className="line npc typing">
                   <i />
                   <i />
                   <i />
                 </p>
               ) : (
-                <p className="line npc">{m.content}</p>
+                <p className="line npc">{t.content}</p>
               )}
             </div>
-          );
-        })}
+          )
+        )}
       </div>
 
       {error && <p className="dialogue-error">{error}</p>}

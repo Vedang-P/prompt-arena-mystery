@@ -2,15 +2,21 @@ import bpy, os
 from mathutils import Vector, Quaternion
 
 BASE = r"C:\Users\vedang\Desktop\Prompt Arena!!!\prompt-arena-mystery"
-SRC = os.path.join(BASE, "client", "public", "assets", "mixamo", "odette.fbx")
-OUT_GLB = os.path.join(BASE, "client", "public", "assets", "mixamo", "odette.glb")
+NAME = os.environ.get("NAME", "odette")
+SRC = os.path.join(BASE, "client", "public", "assets", "mixamo", f"{NAME}.fbx")
+OUT_GLB = os.path.join(BASE, "client", "public", "assets", "mixamo", f"{NAME}.glb")
 TMP = r"C:\Users\vedang\AppData\Local\Temp\opencode"
 
 # Bakes a "look at the player" head pitch into the idle clip, then renders the
 # face from the game's full-body dialogue camera so the gaze can be checked.
-# +X pitches the chin DOWN on this rig; 0.20 reads as eye contact at 1.35h away.
-DELTA = float(os.environ.get("HEAD_DELTA", "0.20"))
-TAG = os.environ.get("HEAD_TAG", "check")
+# Calibrated against renders (odette, 2026-09): +X pitches the chin DOWN on
+# Mixamo rigs, and the rig's rest head sits slightly chin-up, so -0.25 rad with
+# LOCK reads as level eye contact 1.35h away. LOCK replaces the clip's own head
+# keys with that one constant pose, killing the idle's stare-at-the-floor phase.
+DELTA = float(os.environ.get("HEAD_DELTA", "-0.25"))
+TAG = os.environ.get("HEAD_TAG", NAME)
+LOCK = os.environ.get("LOCK", "1") == "1"
+NS = int(os.environ.get("SAMPLES", "8"))
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.fbx(filepath=SRC, automatic_bone_orientation=True, use_anim=True)
@@ -43,7 +49,8 @@ offset = Quaternion((1, 0, 0), DELTA)
 by_index = {fc.array_index: fc for fc in fcurves}
 for frame in frames:
     values = {idx: fc.evaluate(frame) for idx, fc in by_index.items()}
-    q = Quaternion((values[0], values[1], values[2], values[3])) @ offset
+    base = Quaternion((values[0], values[1], values[2], values[3]))
+    q = offset if LOCK else base @ offset
     for idx in range(4):
         by_index[idx].keyframe_points.insert(frame, q[idx], options={"REPLACE"})
 for fc in by_index.values():
@@ -152,7 +159,7 @@ lo = bpy.data.objects.new("sun", light)
 lo.rotation_euler = (0.9, 0.2, 0.6)
 scene.collection.objects.link(lo)
 
-sample = [f0, f0 + (f1 - f0) // 3, f0 + 2 * (f1 - f0) // 3, f1]
+sample = [f0 + i * (f1 - f0) // NS for i in range(NS)] + [f1]
 for i, f in enumerate(sample):
     scene.frame_set(f)
     bpy.context.view_layer.update()

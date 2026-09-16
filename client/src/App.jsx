@@ -95,6 +95,16 @@ export default function App() {
             list[list.length - 1] = last;
             return { ...prev, [character]: list };
           }),
+        onReset: (full) =>
+          setChats((prev) => {
+            const list = [...(prev[character] ?? [])];
+            const last = list[list.length - 1];
+            if (last && last.role === 'npc') {
+              list[list.length - 1] = { ...last, content: full };
+              return { ...prev, [character]: list };
+            }
+            return prev;
+          }),
       });
     } catch (e) {
       setChatError(e.status === 429 ? 'Give them a moment to breathe.' : 'The line went dead. Try again.');
@@ -106,6 +116,13 @@ export default function App() {
         return { ...prev, [character]: list };
       });
     } finally {
+      // Never leave an empty bubble behind, whatever the stream did.
+      setChats((prev) => {
+        const list = (prev[character] ?? []).map((m) =>
+          m.role === 'npc' && !m.content ? { ...m, content: '(…the conversation stalls.)' } : m
+        );
+        return { ...prev, [character]: list };
+      });
       setTyping(false);
     }
   };
@@ -220,11 +237,6 @@ export default function App() {
           <p className="location-kicker">{state.title}</p>
         </div>
         <div className="case-bar">
-          <span className="case-stat">
-            <i className={`dot ${state.llm ? '' : 'off'}`} />
-            {state.llm ? 'Suspects live' : 'Suspects offline'}
-          </span>
-          <span className="case-divider" />
           <span className="case-stat">
             Exhibits <b>{state.discovered.length}</b>
           </span>

@@ -17,7 +17,7 @@ const C = (name) => `${ASSETS}/characters/${name}`;
 
 const CHARACTER_MODELS = {
   victor: C('character-q.glb'), // placeholder until the Mixamo male arrives
-  odette: '/assets/mixamo/odette.glb', // Mixamo character with idle animation
+  odette: '/assets/mixamo/odette.glb?v=2', // Mixamo character with idle animation
 };
 
 // Kenney's furniture kit ships at roughly half human scale; these bring each
