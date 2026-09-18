@@ -13,8 +13,7 @@
     {
       "binding": "DB",
       "database_name": "prompt-arena-mystery-db",
-      // replace with the id from: npx wrangler d1 create prompt-arena-mystery-db
-      "database_id": "00000000-0000-0000-0000-000000000000"
+      "database_id": "f8b16acf-66c1-48bf-a611-936a76148a4b"
     }
   ],
   "observability": { "enabled": true }
