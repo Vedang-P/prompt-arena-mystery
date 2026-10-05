@@ -8,10 +8,10 @@ import { EffectComposer, Bloom, Vignette, Noise } from '@react-three/postprocess
 import * as THREE from 'three';
 
 const ACTOR_COLORS = {
-  sameer: '#7d3f3a',
-  parth: '#3d5a80',
-  mother: '#6b4b6e',
-  officer: '#4a4436',
+  sameer: '#2b3350',
+  parth: '#2b3350',
+  mother: '#2b3350',
+  officer: '#2b3350',
 };
 
 const BACKDROPS = {
@@ -32,10 +32,10 @@ const SHOTS = {
     two: { pos: [0.2, 2.1, 3.9], look: [0, 1.3, 0.2] },
   },
   police_station: {
-    wide: { pos: [0, 1.62, 5.8], look: [0, 1.2, -0.2] },
-    two: { pos: [0, 1.5, 3.7], look: [0, 1.18, -0.2] },
-    close_officer: { pos: [-1.5, 1.45, 3.0], look: [0.4, 1.1, -0.6] },
-    close_mother: { pos: [1.4, 1.5, 3.0], look: [0.2, 1.32, 0.4] },
+    wide: { pos: [0, 1.55, 5.4], look: [0, 1.15, -0.1] },
+    two: { pos: [0, 1.5, 3.8], look: [0, 1.2, 0] },
+    close_officer: { pos: [-0.9, 1.5, 3.1], look: [0.5, 1.1, -0.5] },
+    close_mother: { pos: [0.6, 1.5, 3.1], look: [-0.15, 1.3, 0.6] },
   },
   sameer_room: {
     wide: { pos: [0, 1.6, 5.4], look: [0, 1.2, 0.2] },
@@ -71,18 +71,57 @@ function useModelAvailability(ids) {
 }
 
 function StandIn({ character, pose }) {
-  const color = ACTOR_COLORS[character] ?? '#39405c';
+  const color = ACTOR_COLORS[character] ?? '#2c3550';
   const y = pose === 'sit' ? -0.2 : 0;
   return (
     <group position={[0, y, 0]}>
-      <mesh position={[0, 0.92, 0]} castShadow>
-        <capsuleGeometry args={[0.21, 0.78, 6, 12]} />
-        <meshStandardMaterial color={color} roughness={0.85} />
-      </mesh>
-      <mesh position={[0, 1.58, 0]} castShadow>
-        <sphereGeometry args={[0.155, 18, 18]} />
+      <mesh position={[0, 0.86, 0]} castShadow>
+        <capsuleGeometry args={[0.13, 0.72, 6, 12]} />
         <meshStandardMaterial color={color} roughness={0.9} />
       </mesh>
+      <mesh position={[0, 1.52, 0]} castShadow>
+        <sphereGeometry args={[0.14, 16, 16]} />
+        <meshStandardMaterial color={color} roughness={0.9} />
+      </mesh>
+    </group>
+  );
+}
+
+// 3D furniture the actors physically need, on top of the painted backdrop.
+function ForeProps({ sceneId, cast }) {
+  if (sceneId !== 'police_station') return null;
+  return (
+    <group>
+      <group position={[0.5, 0, 0.22]}>
+        <mesh position={[0, 0.4, 0]} castShadow receiveShadow>
+          <boxGeometry args={[1.9, 0.8, 0.7]} />
+          <meshStandardMaterial color="#453a2c" roughness={0.9} />
+        </mesh>
+        <mesh position={[0, 0.83, 0]}>
+          <boxGeometry args={[2.05, 0.08, 0.78]} />
+          <meshStandardMaterial color="#594c39" roughness={0.85} />
+        </mesh>
+        <mesh position={[-0.5, 0.91, 0.02]} castShadow>
+          <boxGeometry args={[0.45, 0.09, 0.32]} />
+          <meshStandardMaterial color="#d9d2be" roughness={0.7} />
+        </mesh>
+        <mesh position={[0.4, 0.91, -0.08]} castShadow>
+          <boxGeometry args={[0.36, 0.07, 0.28]} />
+          <meshStandardMaterial color="#c9c2ae" roughness={0.7} />
+        </mesh>
+      </group>
+      {/* a warm desk lamp so the officer separates from the painted crowd */}
+      <group position={[1.35, 0.86, 0.15]}>
+        <mesh position={[0, 0.12, 0]}>
+          <cylinderGeometry args={[0.03, 0.05, 0.24, 8]} />
+          <meshStandardMaterial color="#1d1d24" />
+        </mesh>
+        <mesh position={[0, 0.3, 0]}>
+          <coneGeometry args={[0.16, 0.16, 12, 1, true]} />
+          <meshStandardMaterial color="#c9995a" side={THREE.DoubleSide} roughness={0.8} />
+        </mesh>
+        <pointLight position={[0, 0.26, 0]} color="#ffca82" intensity={1.4} distance={4.5} decay={0} />
+      </group>
     </group>
   );
 }
@@ -172,13 +211,19 @@ function ShotCamera({ sceneId, shot }) {
   const { camera } = useThree();
   const target = useRef(new THREE.Vector3(0, 1.3, 0));
   const desired = useRef(new THREE.Vector3(0, 2.4, 7));
+  const first = useRef(true);
   const current = SHOTS[sceneId]?.[shot] ?? SHOTS[sceneId]?.wide;
 
   desired.current.set(...(current?.pos ?? [0, 2.4, 7]));
   target.current.set(...(current?.look ?? [0, 1.3, 0]));
 
   useFrame((_, delta) => {
-    camera.position.lerp(desired.current, 1 - Math.pow(0.002, delta));
+    if (first.current) {
+      camera.position.copy(desired.current);
+      first.current = false;
+    } else {
+      camera.position.lerp(desired.current, 1 - Math.pow(0.002, delta));
+    }
     const look = target.current;
     camera.lookAt(look.x, look.y, look.z);
   });
@@ -489,6 +534,7 @@ export default function Cinema({ sceneId, shot, cast = [] }) {
           <directionalLight position={[-3, 6, 5]} intensity={1.05} color="#e6ecff" />
           <directionalLight position={[4, 4, -4]} intensity={0.5} color="#7d90c8" />
           <Suspense fallback={null}>
+            <ForeProps sceneId={sceneId} cast={cast} />
             {cast.map((c) => (
               <Actor key={c.character} id={c.character} {...c} available={available[c.character]} blob />
             ))}

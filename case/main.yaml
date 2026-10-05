@@ -86,9 +86,9 @@ acts:
         shot: wide
         seconds: 9
         cast:
-          - { character: sameer, at: [-0.6, 0.8], rot: 0.25 }
-          - { character: mother, at: [0.2, 0.9], rot: 0.1 }
-          - { character: officer, at: [0.4, -0.9], rot: -0.2, pose: sit }
+          - { character: sameer, at: [-0.9, 0.6], rot: 0.25 }
+          - { character: mother, at: [-0.3, 0.78], rot: 0.1 }
+          - { character: officer, at: [0.5, -0.08], rot: -0.2, pose: sit }
         lines:
           - { speaker: narrator, text: "The police station is crowded and migraine-inducing, as all government offices are. The officer is having a masala dosa, flipping through cases with greasy fingers." }
 
@@ -97,9 +97,9 @@ acts:
         shot: two
         seconds: 12
         cast:
-          - { character: sameer, at: [-0.6, 0.8], rot: 0.25 }
-          - { character: mother, at: [0.2, 0.9], rot: 0.1 }
-          - { character: officer, at: [0.4, -0.9], rot: -0.2, pose: sit }
+          - { character: sameer, at: [-0.9, 0.6], rot: 0.25 }
+          - { character: mother, at: [-0.3, 0.78], rot: 0.1 }
+          - { character: officer, at: [0.5, -0.08], rot: -0.2, pose: sit }
         lines:
           - { speaker: mother, text: "My son is missing! We can't contact him. His name is Parth." }
           - { speaker: officer, text: "How long has it been since you last saw him, ma'am?" }
@@ -112,9 +112,9 @@ acts:
         shot: close_officer
         seconds: 12
         cast:
-          - { character: sameer, at: [-0.6, 0.8], rot: 0.25 }
-          - { character: mother, at: [0.2, 0.9], rot: 0.1 }
-          - { character: officer, at: [0.4, -0.9], rot: -0.2, pose: sit }
+          - { character: sameer, at: [-0.9, 0.6], rot: 0.25 }
+          - { character: mother, at: [-0.3, 0.78], rot: 0.1 }
+          - { character: officer, at: [0.5, -0.08], rot: -0.2, pose: sit }
         lines:
           - { speaker: officer, text: "When and where did you last see him?" }
           - { speaker: sameer, text: "In the park. Yesterday evening." }
@@ -126,7 +126,7 @@ acts:
         shot: close_mother
         seconds: 9
         cast:
-          - { character: mother, at: [0.2, 0.9], rot: 0.1 }
+          - { character: mother, at: [-0.3, 0.78], rot: 0.1 }
         lines:
           - { speaker: mother, text: "I didn't call him. He told me you had left early." }
           - { speaker: narrator, text: "Sameer and Parth's mother look at each other in confusion. Parth had lied to both of them. But why?" }
@@ -136,9 +136,9 @@ acts:
         shot: wide
         seconds: 8
         cast:
-          - { character: sameer, at: [-0.6, 0.8], rot: 0.25 }
-          - { character: mother, at: [0.2, 0.9], rot: 0.1 }
-          - { character: officer, at: [0.4, -0.9], rot: -0.2, pose: sit }
+          - { character: sameer, at: [-0.9, 0.6], rot: 0.25 }
+          - { character: mother, at: [-0.3, 0.78], rot: 0.1 }
+          - { character: officer, at: [0.5, -0.08], rot: -0.2, pose: sit }
         lines:
           - { speaker: officer, text: "We'll file the missing person case — but I can't give you any guarantee." }
           - { speaker: narrator, text: "No clue. A dead end. They leave the station with nothing." }

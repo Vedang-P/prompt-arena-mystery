@@ -10,8 +10,16 @@ export default function ActDirector({ act, characters = [], onComplete, busy }) 
   const beats = useMemo(() => act?.beats ?? [], [act]);
   const names = useMemo(() => Object.fromEntries(characters.map((c) => [c.id, c.name])), [characters]);
 
-  const [phase, setPhase] = useState('card');
-  const [beatIndex, setBeatIndex] = useState(0);
+  // Dev aid: ?beat=<id> jumps straight to a beat (used by the screenshot harness).
+  const startIndex = useMemo(() => {
+    const id = new URLSearchParams(window.location.search).get('beat');
+    if (!id) return 0;
+    const idx = beats.findIndex((b) => b.id === id);
+    return idx === -1 ? 0 : idx;
+  }, [beats]);
+
+  const [phase, setPhase] = useState(startIndex > 0 ? 'play' : 'card');
+  const [beatIndex, setBeatIndex] = useState(startIndex);
   const [lineIndex, setLineIndex] = useState(0);
   const [fade, setFade] = useState(false);
   const timer = useRef(null);

@@ -117,6 +117,23 @@ try {
     await sleep(700);
     await shot('05-act1-teaser');
   }
+
+  // Jump straight to specific beats on the local dev server (fast visual loop):
+  //   SHOT_BASE=http://localhost:5173 SHOT_BEATS=station_open,room_voicenote npm run shot beats
+  if (wants('beats')) {
+    const ids = (
+      process.env.SHOT_BEATS ?? 'gazebo_call,hall_mother,station_open,station_q2,room_voicenote,room_end'
+    )
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    for (const id of ids) {
+      await page.goto(`${BASE}/?beat=${id}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+      await page.waitForSelector('.cinema-subtitles, .phone-note', { timeout: 30000 });
+      await sleep(8000);
+      await shot(`beat-${id}`);
+    }
+  }
 } finally {
   await browser.close();
 }
