@@ -238,6 +238,23 @@ export default function App() {
     );
   }
 
+  // Dev/testing: ?beat=<id> always replays the cinematic from that beat, even
+  // after the act is complete (the screenshot harness and live feedback use this).
+  const devBeat = new URLSearchParams(window.location.search).get('beat');
+  if (devBeat && state?.acts?.length) {
+    const cinematic = state.acts.find((a) => a.type === 'cinematic') ?? state.acts[0];
+    if (cinematic?.type === 'cinematic') {
+      return (
+        <ActDirector
+          act={cinematic}
+          characters={state.characters}
+          busy={actBusy}
+          onComplete={() => finishAct(cinematic.id)}
+        />
+      );
+    }
+  }
+
   if (currentAct?.type === 'cinematic') {
     return (
       <ActDirector

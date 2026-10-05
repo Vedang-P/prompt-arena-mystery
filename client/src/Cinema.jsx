@@ -163,6 +163,19 @@ function ActorModel({ url }) {
   const { scene, animations } = useGLTF(url);
   const { actions, names } = useAnimations(animations, root);
 
+  // Mixamo character downloads can come in with wet-looking vinyl materials;
+  // matte them so clothes read as cloth under the scene lights.
+  useEffect(() => {
+    scene.traverse((o) => {
+      if (!o.isMesh || !o.material) return;
+      for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
+        if (m.roughness !== undefined) m.roughness = Math.max(m.roughness, 0.6);
+        if (m.metalness !== undefined) m.metalness = Math.min(m.metalness, 0.06);
+        if (m.envMapIntensity !== undefined) m.envMapIntensity = 0.45;
+      }
+    });
+  }, [scene]);
+
   useEffect(() => {
     if (!names.length) {
       relaxPose(scene);
@@ -533,6 +546,7 @@ export default function Cinema({ sceneId, shot, cast = [] }) {
           <ambientLight intensity={1.1} color="#cdd7ee" />
           <directionalLight position={[-3, 6, 5]} intensity={1.05} color="#e6ecff" />
           <directionalLight position={[4, 4, -4]} intensity={0.5} color="#7d90c8" />
+          <pointLight position={[0, 2.3, 2.6]} intensity={0.6} distance={10} decay={0} color="#dbe4ff" />
           <Suspense fallback={null}>
             <ForeProps sceneId={sceneId} cast={cast} />
             {cast.map((c) => (
