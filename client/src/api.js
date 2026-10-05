@@ -18,6 +18,13 @@ export const login = (code) =>
 
 export const getState = () => fetch('/api/state').then(json);
 
+export const completeAct = (act) =>
+  fetch('/api/act/complete', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ act }),
+  }).then(json);
+
 export const discoverClue = (id) =>
   fetch(`/api/clues/${id}/discover`, { method: 'POST' }).then(json);
 

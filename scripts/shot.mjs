@@ -2,7 +2,7 @@
 // drops screenshots into ./shots so UI work can be reviewed instead of guessed.
 //
 //   npm run shot            (all steps)
-//   npm run shot dialogue   (only dialogue steps, still logs in first)
+//   npm run shot act0       (Act 0 cinematic only, still logs in first)
 //
 // Expects a dev server (vite proxy or wrangler) at SHOT_BASE.
 import fs from 'node:fs/promises';
@@ -89,54 +89,33 @@ try {
   await page.waitForSelector('.login-card', { timeout: 30000 });
   await page.type('.login-card input', TEAM_CODE);
   await page.click('.login-card button[type=submit]');
-  await page.waitForSelector('.hud-top', { timeout: 30000 });
+  await page.waitForSelector('.cinema, .hud-top, .act-teaser', { timeout: 40000 });
 
-  if (wants('hall')) {
-    await sleep(9000);
-    await shot('02-hall');
+  // A team that already finished Act 0 lands on the teaser; replay for shots.
+  if (await page.$('.act-teaser')) {
+    await clickSelectorText('.act-teaser button', 'Replay');
+    await sleep(900);
   }
 
-  if (wants('notebook')) {
-    await page.waitForSelector('.notebook-toggle', { timeout: 15000 });
-    await clickSelectorText('.notebook-toggle');
-    await page.waitForSelector('.notebook-panel', { timeout: 10000 });
-    await sleep(600);
-    await shot('03-notebook');
-    await clickSelectorText('.notebook-close', 'Close');
-    await sleep(600);
+  if (wants('act0')) {
+    await page.waitForSelector('.cinema', { timeout: 30000 });
+    await sleep(1200);
+    await shot('02-act0-card');
+    await page.waitForSelector('.cinema-subtitles', { timeout: 20000 });
+    await sleep(5000);
+    await shot('03-act0-beat');
   }
 
-  if (wants('accusation')) {
-    await clickSelectorText('.case-bar .btn');
-    await page.waitForSelector('.modal-backdrop', { timeout: 10000 });
-    await sleep(600);
-    await shot('04-accusation');
-    await page.mouse.click(90, Math.round(HEIGHT / 2));
-    await sleep(600);
-  }
-
-  if (wants('dialogue')) {
-    await page.waitForSelector('button.hotspot', { timeout: 40000 });
-    await sleep(1500);
-    await clickSelectorText('button.hotspot', 'Odette');
-    await page.waitForSelector('.ask-bar', { timeout: 20000 });
-    await sleep(3200);
-    await shot('05-dialogue');
-    await page.type('.ask-bar input', 'Where is the violin?');
-    await page.keyboard.press('Enter');
-    await sleep(16000);
-    await shot('06-dialogue-answer');
-  }
-
-  // Optional: clue toast + room switch for completeness.
-  if (wants('clue')) {
-    await clickSelectorText('.leave-btn', 'Leave');
-    await sleep(2500);
-    await clickSelectorText('.tab', 'Vestibule');
-    await sleep(2000);
-    await clickSelectorText('button.hotspot', 'Stage door');
-    await sleep(1600);
-    await shot('07-clue-toast');
+  if (wants('end') || wants('act0')) {
+    await page.waitForSelector('.cinema-subtitles', { timeout: 20000 });
+    await clickSelectorText('.cinema-buttons button', 'Skip act');
+    await page.waitForSelector('.cinema-endcard', { timeout: 15000 });
+    await sleep(900);
+    await shot('04-act0-end');
+    await clickSelectorText('.cinema-endcard button', 'Enter the room');
+    await page.waitForSelector('.act-teaser', { timeout: 15000 });
+    await sleep(700);
+    await shot('05-act1-teaser');
   }
 } finally {
   await browser.close();

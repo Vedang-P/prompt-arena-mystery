@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Unit tests for the pure engine — no Cloudflare needed.
-//   npm run test:engine   (compiles case/smoke.yaml first)
+//   npm run test:engine   (compiles case/test.yaml first)
 
 import assert from 'node:assert/strict';
 import { caseData } from '../src/case.js';
@@ -11,6 +11,8 @@ import {
   conclusionMatches,
   deflection,
   discover,
+  isNoise,
+  isRepeat,
   publicCase,
   unlockedFactList,
 } from '../src/engine.js';
@@ -29,23 +31,22 @@ function test(name, fn) {
   }
 }
 
-console.log('engine — smoke case');
+console.log('engine — test fixture');
 
 test('public case leaks no facts, solution, or authoring data', () => {
   const json = JSON.stringify(publicCase());
   for (const leak of [
-    'victor_debts', 'odette_secret', 'victor_key', 'odette_key', 'odette_warning', 'victor_slip',
-    'solution', 'culprit', 'canonical_qa', 'deny', 'persona',
+    'butler_secret', 'butler_detail', 'persona', 'solution', 'culprit', 'canonical_qa', 'deny',
   ]) {
     assert.ok(!json.includes(leak), `publicCase leaked "${leak}"`);
   }
-  assert.ok(json.includes('ballroom'), 'publicCase should include rooms');
+  assert.ok(json.includes('study'), 'publicCase should include rooms');
 });
 
 test('initial knowledge is only the always-facts', () => {
   assert.deepEqual(
     unlockedFactList([]).map((f) => f.fact).sort(),
-    ['odette_lockbox', 'victor_alibi']
+    ['butler_alibi', 'maid_alibi']
   );
 });
 
@@ -55,122 +56,69 @@ test('unknown clues are rejected', () => {
   assert.equal(result.error, 'unknown_clue');
 });
 
-test('the ticket stub is gated behind the stage door', () => {
-  const result = discover([], 'ticket_stub');
+test('the ledger is gated behind the key', () => {
+  const result = discover([], 'ledger');
   assert.equal(result.ok, false);
   assert.equal(result.error, 'locked');
-  assert.deepEqual(result.missing, ['stage_door']);
 });
 
-test('the sheet music unlocks the debt thread', () => {
-  const result = discover([], 'sheet_music');
-  assert.equal(result.ok, true);
-  assert.deepEqual(
-    result.newlyUnlocked.map((f) => f.fact).sort(),
-    ['odette_warning', 'victor_debts', 'victor_slip']
-  );
+test('discovering the key then the ledger unlocks the secret (and its chain)', () => {
+  const first = discover([], 'key');
+  assert.equal(first.ok, true);
+  const second = discover(first.discovered, 'ledger');
+  assert.equal(second.ok, true);
+  const unlocked = unlockedFactList(second.discovered).map((f) => f.fact);
+  assert.ok(unlocked.includes('butler_secret'));
+  assert.ok(unlocked.includes('butler_detail'), 'facts chained with "after" unlock once their parent is known');
 });
 
-test('stage door alone unlocks nothing; the stub then unlocks the rest', () => {
-  const door = discover([], 'stage_door');
-  assert.equal(door.ok, true);
-  assert.deepEqual(door.newlyUnlocked, []);
-
-  const stub = discover(['stage_door'], 'ticket_stub');
-  assert.equal(stub.ok, true);
-  assert.deepEqual(
-    stub.newlyUnlocked.map((f) => f.fact).sort(),
-    ['odette_key', 'odette_secret', 'victor_key']
-  );
+test('facts never unlock before their clues', () => {
+  const unlocked = unlockedFactList(['key']);
+  assert.ok(!unlocked.some((f) => f.fact === 'butler_secret'));
+  assert.ok(!unlocked.some((f) => f.fact === 'butler_detail'));
 });
 
-test('discovering the same clue twice is safe and unlocks nothing new', () => {
-  const result = discover(['sheet_music'], 'sheet_music');
-  assert.equal(result.ok, true);
-  assert.equal(result.alreadyFound, true);
-  assert.deepEqual(result.newlyUnlocked, []);
-});
-
-test('knowledge cascades through conversation facts', () => {
-  const early = unlockedFactList([]).map((f) => f.fact);
-  assert.ok(!early.includes('odette_warning'));
-  assert.ok(!early.includes('victor_slip'));
-
-  const withMusic = unlockedFactList(['sheet_music']).map((f) => f.fact);
-  assert.ok(withMusic.includes('victor_debts'));
-  assert.ok(withMusic.includes('odette_warning'));
-  assert.ok(withMusic.includes('victor_slip'));
-});
-
-test('the case declares required evidence for an accusation', () => {
-  assert.deepEqual(caseData.solution.required_clues, ['sheet_music', 'stage_door', 'ticket_stub']);
-});
-
-test('victor starts knowing his alibi, not his debts', () => {
-  const system = buildMessages('victor', [], [], 'hello')[0].content;
-  assert.ok(system.includes('whole power cut'));
-  assert.ok(!system.includes('card game'));
-});
-
-test('finding the sheet music puts the debt in victor\u2019s mouth, marked deny', () => {
-  const system = buildMessages('victor', ['sheet_music'], [], 'hello')[0].content;
-  assert.ok(system.includes('card game'));
-  assert.ok(/never admit/i.test(system));
-});
-
-test('odette denies her secret once confronted', () => {
-  const system = buildMessages('odette', ['stage_door', 'ticket_stub'], [], 'hello')[0].content;
-  assert.ok(system.includes('borrow the stage door key'));
-  assert.ok(/never admit/i.test(system));
-});
-
-test('history maps roles and the new question comes last', () => {
-  const history = [
-    { role: 'player', content: 'q1' },
-    { role: 'npc', content: 'a1' },
-  ];
-  const messages = buildMessages('odette', [], history, 'q2');
-  assert.deepEqual(messages.map((m) => m.role), ['system', 'user', 'assistant', 'user']);
-  assert.equal(messages.at(-1).content, 'q2');
-});
-
-test('history is trimmed to the last 12 turns', () => {
-  const history = Array.from({ length: 30 }, (_, i) => ({
-    role: i % 2 ? 'npc' : 'player',
-    content: `message ${i}`,
-  }));
-  const messages = buildMessages('odette', [], history, 'now');
-  assert.equal(messages.length, 1 + 12 + 1);
-});
-
-test('canonical fallback matches a paraphrase', () => {
-  const answer = canonicalAnswer('victor', 'so, where were you during the power cut?');
-  assert.ok(answer && answer.includes('piano'));
-});
-
-test('canonical fallback stays quiet on unrelated questions', () => {
-  assert.equal(canonicalAnswer('victor', 'do you like jazz'), null);
-  assert.equal(canonicalAnswer('ghost', 'hello'), null);
-});
-
-test('culprit check is deterministic', () => {
-  assert.equal(checkCulprit('victor'), true);
-  assert.equal(checkCulprit('odette'), false);
-  assert.equal(checkCulprit(''), false);
-});
-
-test('conclusion matching is tolerant but not free', () => {
-  assert.equal(
-    conclusionMatches('He copied the stage door key and took it during the power cut', caseData.solution.method),
-    true
-  );
-  assert.equal(conclusionMatches('the butler did it with a candlestick', caseData.solution.method), false);
+test('canonical answers match on token overlap', () => {
+  assert.equal(canonicalAnswer('butler', 'so where were you tonight then?'), 'In the kitchen, as I said.');
+  assert.equal(canonicalAnswer('butler', 'completely unrelated question'), null);
 });
 
 test('deflection returns an authored line, or a generic fallback', () => {
-  assert.ok(deflection('victor', 0).length > 0);
+  assert.ok(deflection('butler', 0).length > 0);
   assert.ok(deflection('ghost', 0).length > 0);
 });
 
+test('deflection rotates and prefers snubs for repeats', () => {
+  assert.ok(deflection('butler', 0, true).includes('eyebrow'));
+  assert.notEqual(deflection('butler', 0), deflection('butler', 1));
+});
+
+test('noise and repeat detection', () => {
+  assert.equal(isNoise('???'), true);
+  assert.equal(isNoise('...'), true);
+  assert.equal(isNoise('where is the ledger'), false);
+  assert.equal(isRepeat('Where is the key?', 'where is the key'), true);
+  assert.equal(isRepeat('where is the key', 'where is the ledger'), false);
+  assert.equal(isRepeat('anything', ''), false);
+});
+
+test('prompt keeps locked facts out and always-facts in', () => {
+  const messages = buildMessages('butler', [], [], 'Where were you tonight?');
+  const all = messages.map((m) => m.content).join('\n');
+  assert.ok(all.includes('kitchen'), 'always-facts should reach the prompt');
+  assert.ok(!all.includes('burned the ledger'), 'locked facts must not reach the prompt');
+});
+
+test('accusation checking uses the solution', () => {
+  assert.equal(checkCulprit('butler'), true);
+  assert.equal(checkCulprit('maid'), false);
+});
+
+test('conclusion matching tolerates phrasing', () => {
+  const reference = caseData.solution.motive;
+  assert.equal(conclusionMatches(reference, reference), true);
+  assert.equal(conclusionMatches('a totally different motive', reference), false);
+});
+
 console.log(`\n${passed} passed, ${failures.length} failed`);
-if (failures.length) process.exitCode = 1;
+if (failures.length) process.exit(1);

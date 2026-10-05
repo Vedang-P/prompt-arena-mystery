@@ -93,6 +93,16 @@ export function discover(discoveredValue, clueId) {
 export function publicCase() {
   return {
     title: caseData.title,
+    subtitle: caseData.subtitle ?? null,
+    acts: (caseData.acts ?? []).map((act) => ({
+      id: act.id,
+      type: act.type,
+      title: act.title,
+      entry_room: act.entry_room ?? null,
+      objective: act.objective ?? null,
+      scenes: act.scenes ?? [],
+      beats: act.beats ?? [],
+    })),
     rooms: (caseData.rooms ?? []).map((room) => ({
       id: room.id,
       name: room.name,

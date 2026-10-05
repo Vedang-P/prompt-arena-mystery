@@ -1,0 +1,251 @@
+# The Moon's Dark Side — production case.
+# Act 0 is a cinematic autoplay. Act 1+ are interactive.
+# Authoring rules live in scripts/build-case.mjs.
+
+title: "The Moon's Dark Side"
+subtitle: "A Prompt Arena Mystery"
+
+acts:
+  - id: act0
+    type: cinematic
+    title: "The Vanishing"
+    scenes: [gazebo, parth_home, police_station, sameer_room]
+    beats:
+      - id: gazebo_dusk
+        room: gazebo
+        shot: wide
+        seconds: 9
+        cast:
+          - { character: sameer, at: [-0.7, 0.1], rot: 0.55, pose: sit }
+          - { character: parth, at: [0.75, 0.05], rot: -0.55, pose: sit }
+        lines:
+          - { speaker: narrator, text: "An eventful day for Sameer and Parth — the beach, the streets, and now the park, as evening settles around the gazebo." }
+          - { speaker: parth, text: "Nothing, man. Just trying to get an internship." }
+          - { speaker: sameer, text: "Same. Honestly, today was the first time I didn't think about Jade Street all day." }
+
+      - id: gazebo_talk
+        room: gazebo
+        shot: two
+        seconds: 11
+        cast:
+          - { character: sameer, at: [-0.7, 0.1], rot: 0.55, pose: sit }
+          - { character: parth, at: [0.75, 0.05], rot: -0.55, pose: sit }
+        lines:
+          - { speaker: parth, text: "You know how it goes — recruiters ghost you after making you run around." }
+          - { speaker: sameer, text: "Dude, Jade Street just ghosted me. Let me have some hope — maybe they're still deciding." }
+          - { speaker: parth, text: "Right. The AI reviewing your resume would take three days?" }
+
+      - id: gazebo_call
+        room: gazebo
+        shot: close_parth
+        seconds: 11
+        cast:
+          - { character: sameer, at: [-0.7, 0.1], rot: 0.55, pose: sit }
+          - { character: parth, at: [0.75, 0.05], rot: -0.55, pose: sit }
+        lines:
+          - { speaker: narrator, text: "Parth's phone rings. He picks it up and listens — not a word, only a slow glance at Sameer." }
+          - { speaker: parth, text: "Alright, I gotta go. Mum's calling. Tomorrow — same time?" }
+          - { speaker: sameer, text: "Yeah, yeah, dude." }
+          - { speaker: narrator, text: "Parth leaves earlier than usual. Sameer walks home alone." }
+
+      - id: gazebo_nextday
+        room: gazebo
+        shot: wide
+        seconds: 10
+        cast:
+          - { character: sameer, at: [-0.4, 0.3], rot: 0.2 }
+        lines:
+          - { speaker: narrator, text: "The next day, Sameer is back at the park. Fifteen minutes pass. Then the calls — one, two… the fifth in ten minutes. No answer." }
+          - { speaker: sameer, text: "Pick up, man. This isn't funny." }
+
+      - id: hall_mother
+        room: parth_home
+        shot: two
+        seconds: 11
+        cast:
+          - { character: sameer, at: [-0.6, 0.6], rot: 0.3 }
+          - { character: mother, at: [0.7, -0.2], rot: -0.35 }
+        lines:
+          - { speaker: mother, text: "Oh hello beta. You and Parth got bored already?" }
+          - { speaker: sameer, text: "No, aunty — Parth didn't come at all. I came to take him with me." }
+          - { speaker: mother, text: "But he left home about an hour ago..?" }
+          - { speaker: sameer, text: "What?!" }
+
+      - id: hall_search
+        room: parth_home
+        shot: wide
+        seconds: 9
+        cast:
+          - { character: sameer, at: [-0.6, 0.6], rot: 0.3 }
+          - { character: mother, at: [0.7, -0.2], rot: -0.35 }
+        lines:
+          - { speaker: narrator, text: "His favourite cafe. The football stands. The library. The park again. Two, three hours of calling. Parth is nowhere to be found." }
+
+      - id: station_open
+        room: police_station
+        shot: wide
+        seconds: 9
+        cast:
+          - { character: sameer, at: [-0.6, 0.8], rot: 0.25 }
+          - { character: mother, at: [0.2, 0.9], rot: 0.1 }
+          - { character: officer, at: [0.4, -0.9], rot: -0.2, pose: sit }
+        lines:
+          - { speaker: narrator, text: "The police station is crowded and migraine-inducing, as all government offices are. The officer is having a masala dosa, flipping through cases with greasy fingers." }
+
+      - id: station_q1
+        room: police_station
+        shot: two
+        seconds: 12
+        cast:
+          - { character: sameer, at: [-0.6, 0.8], rot: 0.25 }
+          - { character: mother, at: [0.2, 0.9], rot: 0.1 }
+          - { character: officer, at: [0.4, -0.9], rot: -0.2, pose: sit }
+        lines:
+          - { speaker: mother, text: "My son is missing! We can't contact him. His name is Parth." }
+          - { speaker: officer, text: "How long has it been since you last saw him, ma'am?" }
+          - { speaker: sameer, text: "Somewhere between two and three hours." }
+          - { speaker: officer, text: "Missing cases can only be filed after 48 hours. Have you checked his friends' homes?" }
+          - { speaker: mother, text: "Yes. Everywhere we can think of." }
+
+      - id: station_q2
+        room: police_station
+        shot: close_officer
+        seconds: 12
+        cast:
+          - { character: sameer, at: [-0.6, 0.8], rot: 0.25 }
+          - { character: mother, at: [0.2, 0.9], rot: 0.1 }
+          - { character: officer, at: [0.4, -0.9], rot: -0.2, pose: sit }
+        lines:
+          - { speaker: officer, text: "When and where did you last see him?" }
+          - { speaker: sameer, text: "In the park. Yesterday evening." }
+          - { speaker: officer, text: "Was there anything odd about him, when you last saw him?" }
+          - { speaker: sameer, text: "He left early — after getting a call from his mother." }
+
+      - id: station_lie
+        room: police_station
+        shot: close_mother
+        seconds: 9
+        cast:
+          - { character: mother, at: [0.2, 0.9], rot: 0.1 }
+        lines:
+          - { speaker: mother, text: "I didn't call him. He told me you had left early." }
+          - { speaker: narrator, text: "Sameer and Parth's mother look at each other in confusion. Parth had lied to both of them. But why?" }
+
+      - id: station_end
+        room: police_station
+        shot: wide
+        seconds: 8
+        cast:
+          - { character: sameer, at: [-0.6, 0.8], rot: 0.25 }
+          - { character: mother, at: [0.2, 0.9], rot: 0.1 }
+          - { character: officer, at: [0.4, -0.9], rot: -0.2, pose: sit }
+        lines:
+          - { speaker: officer, text: "We'll file the missing person case — but I can't give you any guarantee." }
+          - { speaker: narrator, text: "No clue. A dead end. They leave the station with nothing." }
+
+      - id: room_beep
+        room: sameer_room
+        shot: close_desk
+        seconds: 9
+        cast:
+          - { character: sameer, at: [0.2, 0.6], rot: 0.15, pose: sit }
+        lines:
+          - { speaker: narrator, text: "Sameer goes home stressed. Cold leftovers, no energy to cook. Just as he's about to sleep — a beep." }
+          - { speaker: narrator, text: "A notification from Parth. A voice note." }
+
+      - id: room_call
+        room: sameer_room
+        shot: two
+        seconds: 7
+        cast:
+          - { character: sameer, at: [0.2, 0.6], rot: 0.15, pose: sit }
+        lines:
+          - { speaker: sameer, text: "Come on, pick up. Please." }
+          - { speaker: narrator, text: "The call doesn't connect. There is nothing left to do but listen." }
+
+      - id: room_voicenote
+        room: sameer_room
+        shot: close_desk
+        seconds: 18
+        overlay: phone_voicenote
+        cast:
+          - { character: sameer, at: [0.2, 0.6], rot: 0.15, pose: sit }
+        lines:
+          - { speaker: voice, text: "The moon has a dark side you never see," }
+          - { speaker: voice, text: "Some secrets even light can't reach," }
+          - { speaker: voice, text: "Look where his thoughts rest," }
+          - { speaker: voice, text: "Where he hides what he knows best." }
+          - { speaker: voice, text: "The room may hold what he never said," }
+          - { speaker: voice, text: "A truth better left unread." }
+          - { speaker: voice, text: "So tread carefully, and look behind…" }
+          - { speaker: voice, text: "You may not like what you're about to find." }
+
+      - id: room_end
+        room: sameer_room
+        shot: wide
+        seconds: 9
+        cast:
+          - { character: sameer, at: [0.2, 0.6], rot: 0.15, pose: sit }
+        lines:
+          - { speaker: narrator, text: "Shivers run down his spine. The voice is deep, mocking, warped — it doesn't belong to Parth." }
+          - { speaker: sameer, text: "Jade Street ghosted me… but you didn't. Who are you?" }
+
+  - id: act1
+    type: interactive
+    title: "The Room"
+    entry_room: parth_room
+    objective: "Search Parth's room. Find what he was hiding."
+
+rooms:
+  - id: gazebo
+    name: "The Park Gazebo"
+    scene: gazebo
+    hotspots: []
+  - id: parth_home
+    name: "Parth's House"
+    scene: parth_home
+    hotspots: []
+  - id: police_station
+    name: "Police Station"
+    scene: police_station
+    hotspots: []
+  - id: sameer_room
+    name: "Sameer's Room"
+    scene: sameer_room
+    hotspots: []
+  - id: parth_room
+    name: "Parth's Room"
+    scene: parth_room
+    hotspots: []
+
+characters:
+  - id: sameer
+    name: "Sameer"
+    persona: "The player character: anxious, sarcastic, loyal to Parth. Talks to himself when scared."
+    goals: ["Find Parth", "Make sense of the voice note"]
+    demeanor: anxious
+    deflections: []
+    snubs: []
+  - id: parth
+    name: "Parth"
+    persona: "The missing friend: charming, evasive, keeps secrets behind jokes. Anything he says is a clue."
+    goals: ["Keep his secrets", "Protect Sameer from what he knows"]
+    demeanor: charming
+    deflections: []
+    snubs: []
+  - id: mother
+    name: "Parth's Mother"
+    persona: "Grieving, hopeful, guilty about the last conversation. Measure every word — she is hiding something too."
+    goals: ["Get her son back", "Not be blamed"]
+    demeanor: guarded
+    deflections: []
+    snubs: []
+  - id: officer
+    name: "Officer Rao"
+    persona: "Cynical station officer, powered by masala dosa and procedure. Warms up if you bring him something real."
+    goals: ["Close the file with the least work possible", "Not miss an actual crime under his nose"]
+    demeanor: cooperative
+    deflections: []
+    snubs: []
+
+clues: []

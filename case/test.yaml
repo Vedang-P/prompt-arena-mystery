@@ -1,0 +1,75 @@
+# Engine test fixture — NOT game content. A miniature case that exercises
+# clue gating, fact unlocking, dispositions and the canonical fallback.
+
+title: "Engine Fixture"
+
+solution:
+  culprit: butler
+  method: "Took the ledger and burned it."
+  motive: "To hide the debts."
+  required_clues: [ledger]
+
+rooms:
+  - id: study
+    name: "The Study"
+    scene: study
+    hotspots:
+      - { id: butler_spot, type: character, character: butler, label: "The Butler", position: [0, 0, 0] }
+      - { id: drawer_spot, type: clue, clue: key, label: "Drawer", position: [1.4, 0, -0.4] }
+      - { id: desk_spot, type: clue, clue: ledger, label: "Ledger", position: [-1.2, 0, 0.6] }
+
+characters:
+  - id: butler
+    name: "The Butler"
+    persona: "Old, precise, unimpressed."
+    goals: ["Protect the household"]
+    demeanor: guarded
+    deflections:
+      - "The butler adjusts his cuffs and says nothing."
+      - "The butler inspects a speck of dust on the mantelpiece."
+    snubs:
+      - "The butler raises one eyebrow. \"Indeed.\""
+      - "The butler sighs through his nose. \"Will that be all, sir?\""
+    facts:
+      - id: butler_alibi
+        text: "He claims he was in the kitchen all evening."
+        unlock: always
+        disposition: admit
+      - id: butler_secret
+        text: "He burned the ledger to hide the master's debts."
+        unlock: { requires: [ledger] }
+        disposition: deny
+      - id: butler_detail
+        text: "The ashes were still warm when the maid found them."
+        unlock: { after: [butler_secret] }
+        disposition: deflect
+  - id: maid
+    name: "The Maid"
+    persona: "Nervous, eager to help."
+    goals: ["Keep her job"]
+    demeanor: cooperative
+    deflections:
+      - "The maid pretends to be very busy with a duster."
+    snubs:
+      - "The maid blinks at you. \"Sorry, sir?\""
+    facts:
+      - id: maid_alibi
+        text: "She was polishing the silver until midnight."
+        unlock: always
+        disposition: admit
+
+clues:
+  - id: key
+    name: "Drawer key"
+    description: "A small brass key, still warm."
+    grants: []
+  - id: ledger
+    name: "Charred ledger"
+    description: "What is left of it. The corners are missing."
+    requires: [key]
+    grants: [butler_secret]
+
+canonical_qa:
+  - character: butler
+    q: "where were you tonight"
+    a: "In the kitchen, as I said."

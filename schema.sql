@@ -8,6 +8,10 @@ CREATE TABLE IF NOT EXISTS teams (
 
 CREATE TABLE IF NOT EXISTS progress (
   team_id INTEGER PRIMARY KEY REFERENCES teams(id),
+  act TEXT NOT NULL DEFAULT 'act0',          -- current act id (act0, act1, ...)
+  flags TEXT NOT NULL DEFAULT '{}',          -- JSON of story flags (puzzles, choices, penalties)
+  score INTEGER NOT NULL DEFAULT 0,
+  penalties INTEGER NOT NULL DEFAULT 0,
   discovered TEXT NOT NULL DEFAULT '[]',    -- JSON array of clue ids (server-authoritative)
   hints_used INTEGER NOT NULL DEFAULT 0,
   accusation TEXT,                          -- JSON of the latest accusation

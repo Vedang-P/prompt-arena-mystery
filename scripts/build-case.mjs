@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // Validates a case file and compiles it to a JS module for the Worker.
 //
-//   node scripts/build-case.mjs                      # validate + compile case/smoke.yaml
+//   node scripts/build-case.mjs                      # validate + compile case/main.yaml
 //   node scripts/build-case.mjs --check              # validate only
-//   node scripts/build-case.mjs --case case/main.yaml --out src/generated/case.js
+//   node scripts/build-case.mjs --case case/test.yaml --out src/generated/case.js
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -15,7 +15,7 @@ const flag = (name, fallback) => {
   return i === -1 ? fallback : argv[i + 1];
 };
 const CHECK = argv.includes('--check');
-const CASE_PATH = resolve(flag('--case', 'case/smoke.yaml'));
+const CASE_PATH = resolve(flag('--case', 'case/main.yaml'));
 const OUT_PATH = resolve(flag('--out', 'src/generated/case.js'));
 
 const errors = [];
@@ -57,7 +57,7 @@ function collectIds(items, label) {
   }
   return ids;
 }
-collectIds(c.rooms, 'rooms');
+const roomIds = collectIds(c.rooms, 'rooms');
 const charIds = collectIds(c.characters, 'characters');
 const clueIds = collectIds(c.clues, 'clues');
 
@@ -155,7 +155,9 @@ for (const clueId of clueIndex.keys()) {
 }
 
 // ---------- solution ----------
-if (!isObj(c.solution)) {
+if (c.solution === undefined) {
+  if (!Array.isArray(c.acts) || !c.acts.length) err('solution is required (or provide acts)');
+} else if (!isObj(c.solution)) {
   err('solution is required');
 } else {
   if (!charIds.has(c.solution.culprit)) err(`solution.culprit "${c.solution.culprit}" is not a character`);
@@ -165,6 +167,58 @@ if (!isObj(c.solution)) {
     const ok =
       Array.isArray(c.solution.required_clues) && c.solution.required_clues.every((id) => clueIds.has(id));
     if (!ok) err('solution.required_clues must be a list of known clue ids');
+  }
+}
+
+// ---------- acts ----------
+if (c.acts !== undefined) {
+  if (!Array.isArray(c.acts) || !c.acts.length) err('acts must be a non-empty list');
+  const actIds = new Set();
+  const speakers = new Set(['narrator', 'voice', ...charIds]);
+  for (const act of c.acts ?? []) {
+    if (!isStr(act.id)) {
+      err('act missing id');
+      continue;
+    }
+    if (actIds.has(act.id)) err(`duplicate act id "${act.id}"`);
+    actIds.add(act.id);
+    if (!['cinematic', 'interactive'].includes(act.type)) {
+      err(`act "${act.id}": type must be cinematic | interactive`);
+      continue;
+    }
+    if (!isStr(act.title)) warn(`act "${act.id}" has no title`);
+    if (act.type === 'cinematic') {
+      if (!Array.isArray(act.beats) || !act.beats.length) {
+        err(`act "${act.id}": cinematic act needs beats`);
+        continue;
+      }
+      const beatIds = new Set();
+      for (const b of act.beats) {
+        const where = `act "${act.id}"/beat "${b?.id ?? '?'}"`;
+        if (!isStr(b?.id)) {
+          err(`${where}: missing id`);
+          continue;
+        }
+        if (beatIds.has(b.id)) err(`${where}: duplicate beat id`);
+        beatIds.add(b.id);
+        if (!roomIds.has(b.room)) err(`${where}: unknown room "${b.room}"`);
+        if (!isStr(b.shot)) err(`${where}: shot is required`);
+        if (!Number.isFinite(b.seconds) || b.seconds <= 0) err(`${where}: seconds must be a positive number`);
+        if (!Array.isArray(b.lines) || !b.lines.length) err(`${where}: lines are required`);
+        for (const ln of b.lines ?? []) {
+          if (!speakers.has(ln?.speaker)) err(`${where}: unknown speaker "${ln?.speaker}"`);
+          if (!isStr(ln?.text)) err(`${where}: every line needs text`);
+        }
+        for (const cst of b.cast ?? []) {
+          if (!charIds.has(cst?.character)) err(`${where}: unknown cast character "${cst?.character}"`);
+          if (!Array.isArray(cst?.at) || cst.at.length !== 2 || !cst.at.every(Number.isFinite)) {
+            err(`${where}: cast "${cst?.character}" needs at: [x, z]`);
+          }
+        }
+      }
+    } else if (!roomIds.has(act.entry_room)) {
+      err(`act "${act.id}": unknown entry_room "${act.entry_room}"`);
+    }
   }
 }
 

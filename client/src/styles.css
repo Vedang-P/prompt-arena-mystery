@@ -1,34 +1,35 @@
 /* Prompt Arena: Mystery — art direction
-   Playbill serif type, brass and oxblood on warm black, parchment case files. */
+   Moon-noir: moonlight and indigo on cold black, in-world documents on pale paper.
+   (Variable names kept from the playbill build; values are the reskin.) */
 
 :root {
   color-scheme: dark;
 
-  --ink: #f2e9d8;
-  --ink-soft: #cdbfa4;
-  --muted: #8f8168;
-  --brass: #c9a24a;
-  --brass-bright: #e3c273;
-  --brass-soft: rgba(201, 162, 74, 0.42);
-  --brass-faint: rgba(201, 162, 74, 0.16);
+  --ink: #e6ebf7;
+  --ink-soft: #b9c3da;
+  --muted: #74809c;
+  --brass: #8ba6dd;
+  --brass-bright: #b7ccf5;
+  --brass-soft: rgba(139, 166, 221, 0.45);
+  --brass-faint: rgba(139, 166, 221, 0.15);
 
-  --wine: #7a2029;
-  --wine-deep: #4c1218;
-  --danger: #d07a5e;
+  --wine: #8a2f3d;
+  --wine-deep: #511722;
+  --danger: #e08a7a;
 
-  --paper: #e9dcba;
-  --paper-2: #ddcda6;
-  --paper-line: rgba(88, 66, 36, 0.3);
-  --ink-paper: #241a0e;
-  --ink-paper-soft: #5c4a2e;
-  --ink-paper-faint: #7c6438;
+  --paper: #dde3ee;
+  --paper-2: #ccd4e4;
+  --paper-line: rgba(36, 48, 78, 0.3);
+  --ink-paper: #101725;
+  --ink-paper-soft: #3c4a66;
+  --ink-paper-faint: #62718f;
 
   --font-display: 'Playfair Display', 'Times New Roman', serif;
   --font-body: 'EB Garamond', Georgia, serif;
 
-  --glass: rgba(13, 10, 7, 0.78);
-  --glass-border: rgba(201, 162, 74, 0.22);
-  --shadow-deep: 0 26px 70px rgba(0, 0, 0, 0.62);
+  --glass: rgba(9, 12, 22, 0.78);
+  --glass-border: rgba(139, 166, 221, 0.22);
+  --shadow-deep: 0 26px 70px rgba(0, 0, 0, 0.66);
   --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
 }
 
@@ -44,7 +45,7 @@ body,
 
 body {
   margin: 0;
-  background: #070504;
+  background: #05070f;
   color: var(--ink);
   font-family: var(--font-body);
   font-size: 16px;
@@ -723,9 +724,9 @@ h4 {
   padding: 13px 17px;
   font-size: 17.5px;
   line-height: 1.55;
-  color: #f4e9cd;
-  background: linear-gradient(180deg, rgba(58, 38, 30, 0.9), rgba(38, 24, 19, 0.9));
-  border: 1px solid rgba(201, 162, 74, 0.22);
+  color: #e9eefb;
+  background: linear-gradient(180deg, rgba(28, 36, 58, 0.9), rgba(15, 20, 36, 0.9));
+  border: 1px solid rgba(139, 166, 221, 0.24);
   border-left: 3px solid var(--brass);
   border-radius: 3px;
   backdrop-filter: blur(10px);
@@ -819,8 +820,8 @@ h4 {
   display: flex;
   align-items: center;
   padding: 0 20px;
-  background: linear-gradient(180deg, rgba(58, 38, 30, 0.88), rgba(35, 22, 18, 0.88));
-  border: 1px solid rgba(201, 162, 74, 0.22);
+  background: linear-gradient(180deg, rgba(28, 36, 58, 0.88), rgba(13, 18, 33, 0.88));
+  border: 1px solid rgba(139, 166, 221, 0.22);
   border-right: none;
   border-radius: 2px 0 0 2px;
   backdrop-filter: blur(12px);
@@ -1281,4 +1282,277 @@ h4 {
   .name-card {
     display: none;
   }
+}
+
+/* ---------- Act 0 cinema ---------- */
+
+.cinema {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: #04060c;
+  overflow: hidden;
+}
+
+.cinema-stage {
+  position: absolute;
+  inset: 0;
+}
+
+.cinema-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 7vh;
+  background: #020306;
+  z-index: 3;
+}
+.cinema-bar.top { top: 0; }
+.cinema-bar.bottom { bottom: 0; }
+
+.cinema-fade {
+  position: absolute;
+  inset: 0;
+  background: #020306;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  z-index: 4;
+  pointer-events: none;
+}
+.cinema-fade.on { opacity: 1; }
+
+.cinema-titlecard {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  z-index: 6;
+  animation: cinema-card-in 1.4s ease both;
+}
+@keyframes cinema-card-in {
+  from { opacity: 0; letter-spacing: 0.02em; }
+  to { opacity: 1; }
+}
+
+.cinema-act-kicker {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+.cinema-act-title {
+  margin: 0;
+  font-size: 64px;
+  color: #eef2fc;
+  text-shadow: 0 6px 40px rgba(120, 150, 220, 0.35);
+}
+
+.cinema-act-sub {
+  margin: 0;
+  font-style: italic;
+  font-size: 19px;
+  color: var(--ink-soft);
+}
+
+.cinema-subtitles {
+  position: absolute;
+  left: 50%;
+  bottom: calc(7vh + 92px);
+  transform: translateX(-50%);
+  width: min(880px, 86vw);
+  text-align: center;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.cinema-line {
+  display: inline-block;
+  margin: 0;
+  padding: 14px 22px;
+  background: rgba(6, 9, 18, 0.72);
+  border: 1px solid rgba(139, 166, 221, 0.16);
+  border-radius: 3px;
+  font-size: 22px;
+  line-height: 1.5;
+  color: #eef2fc;
+  backdrop-filter: blur(8px);
+  animation: cinema-line-in 0.35s ease both;
+}
+@keyframes cinema-line-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.cinema-line.narration {
+  background: none;
+  border: none;
+  backdrop-filter: none;
+  font-style: italic;
+  color: #c3cde4;
+  font-size: 21px;
+}
+
+.cinema-line.voice {
+  font-style: italic;
+  color: #cdd8f7;
+  text-shadow: 0 0 18px rgba(130, 160, 230, 0.55);
+}
+
+.cinema-speaker {
+  display: block;
+  font-style: normal;
+  font-size: 11px;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--brass-bright);
+  margin-bottom: 6px;
+}
+
+.cinema-controls {
+  position: absolute;
+  right: 34px;
+  bottom: calc(7vh + 18px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  z-index: 7;
+}
+
+.cinema-progress {
+  display: flex;
+  gap: 5px;
+}
+.cinema-progress .seg {
+  width: 22px;
+  height: 3px;
+  background: rgba(139, 166, 221, 0.22);
+  border-radius: 2px;
+}
+.cinema-progress .seg.done { background: rgba(139, 166, 221, 0.7); }
+.cinema-progress .seg.active { background: var(--brass-bright); }
+
+.cinema-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.phone-note {
+  position: absolute;
+  left: 34px;
+  bottom: calc(7vh + 40px);
+  width: 380px;
+  z-index: 7;
+  padding: 18px 20px 22px;
+  background: linear-gradient(180deg, rgba(16, 22, 40, 0.94), rgba(9, 12, 24, 0.94));
+  border: 1px solid rgba(139, 166, 221, 0.28);
+  border-radius: 14px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+}
+
+.phone-note-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.phone-note-from {
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: #eef2fc;
+}
+.phone-note-kind {
+  font-size: 11.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.phone-note-wave {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 44px;
+  margin-bottom: 14px;
+}
+.phone-note-wave i {
+  flex: 1;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #9db7e8, #5d7ab8);
+  animation: wave 1.1s ease-in-out infinite alternate;
+}
+@keyframes wave {
+  from { transform: scaleY(0.45); opacity: 0.6; }
+  to { transform: scaleY(1); opacity: 1; }
+}
+
+.phone-note-line {
+  margin: 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 21px;
+  line-height: 1.5;
+  color: #dfe7fa;
+  text-shadow: 0 0 20px rgba(130, 160, 230, 0.5);
+}
+
+.cinema-endcard {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 8;
+  background: radial-gradient(ellipse at 50% 40%, #0a1020 0%, #04060c 70%);
+  animation: cinema-card-in 0.9s ease both;
+}
+
+.cinema-act-subtitle {
+  margin: 0 0 8px;
+  font-size: 26px;
+  color: #cfd8ee;
+}
+
+.cinema-act-hint {
+  margin: 0 0 18px;
+  font-style: italic;
+  color: var(--muted);
+}
+
+.act-teaser .act-objective {
+  margin: 14px 0;
+  font-style: italic;
+  color: var(--ink-soft);
+  font-size: 18px;
+}
+
+/* illustrated cinema stage (2.5D: art backdrop + 3D actors) */
+.cinema-illustrated {
+  position: absolute;
+  inset: 0;
+}
+.cinema-backdrop {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center 62%;
+  transform: scale(1.02);
+}
+.cinema-backdrop-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 62%, rgba(4, 6, 14, 0) 40%, rgba(3, 4, 10, 0.72) 100%),
+    linear-gradient(180deg, rgba(3, 5, 12, 0.5) 0%, rgba(3, 5, 12, 0) 26%, rgba(3, 5, 12, 0) 68%, rgba(2, 3, 8, 0.78) 100%);
+}
+.cinema-illustrated canvas {
+  position: relative;
+  z-index: 2;
 }

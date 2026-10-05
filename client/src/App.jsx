@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import Scene from './Scene.jsx';
+import ActDirector from './ActDirector.jsx';
 import { AccuseModal, DialogueOverlay, Login, Notebook, Notice } from './Panels.jsx';
-import { accuse, discoverClue, getHistory, getState, interrogate, login } from './api.js';
+import { accuse, completeAct, discoverClue, getHistory, getState, interrogate, login } from './api.js';
 
 function mergeUnlocked(existing, added) {
   const seen = new Set(existing.map((f) => f.fact));
@@ -24,6 +25,25 @@ export default function App() {
   const [loginBusy, setLoginBusy] = useState(false);
   const [won, setWon] = useState(null);
   const [notebookOpen, setNotebookOpen] = useState(false);
+  const [actBusy, setActBusy] = useState(false);
+
+  const currentAct = useMemo(
+    () => state?.acts?.find((a) => a.id === state.act) ?? state?.acts?.[0] ?? null,
+    [state]
+  );
+
+  const finishAct = async (actId) => {
+    setActBusy(true);
+    try {
+      const res = await completeAct(actId);
+      setState((s) => ({ ...s, act: res.act }));
+    } catch {
+      // Network hiccup: let them in anyway so a dropped packet can't stall the event.
+      setState((s) => ({ ...s, act: 'act1' }));
+    } finally {
+      setActBusy(false);
+    }
+  };
 
   const loadGame = async () => {
     try {
@@ -213,6 +233,37 @@ export default function App() {
             </div>
           )}
           <p className="login-hint">The leaderboard is watching you.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (currentAct?.type === 'cinematic') {
+    return (
+      <ActDirector
+        act={currentAct}
+        characters={state.characters}
+        busy={actBusy}
+        onComplete={() => finishAct(currentAct.id)}
+      />
+    );
+  }
+
+  if (currentAct?.type === 'interactive') {
+    return (
+      <div className="center-screen">
+        <div className="login-card act-teaser">
+          <p className="login-kicker">Act I</p>
+          <h1 className="login-title">{currentAct.title}</h1>
+          <p className="login-sub">{state.subtitle}</p>
+          <p className="act-objective">{currentAct.objective}</p>
+          <p className="login-hint">
+            Team {state.team} — Act 0 complete. The room, the laptop and the diary arrive in the next
+            build.
+          </p>
+          <button className="btn ghost" onClick={() => setState((s) => ({ ...s, act: 'act0' }))}>
+            Replay the vanishing
+          </button>
         </div>
       </div>
     );

@@ -14,3 +14,8 @@ case/teams-printable.txt
 .DS_Store
 *.log
 shots/
+
+# raw source art + Mixamo downloads (no redistribution, large)
+assets/character models/
+assets/animations/
+assets/pictures/

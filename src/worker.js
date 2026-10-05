@@ -100,12 +100,39 @@ app.get('/api/state', async (c) => {
     paused: false,
     llm: !!(c.env.LLM_API_KEY && c.env.LLM_BASE_URL && c.env.LLM_MODEL),
     ...publicCase(),
+    act: auth.progress.act ?? 'act0',
     discovered,
     unlocked: unlockedFactList(discovered),
     hintsUsed: auth.progress.hints_used,
     solved: !!auth.progress.solved,
     serverTime: new Date().toISOString(),
   });
+});
+
+// Advance the act timeline. Act 0 is a cinematic: the client reports completion.
+app.post('/api/act/complete', async (c) => {
+  const auth = await requireTeam(c);
+  if (!auth) return c.json({ error: 'unauthorized' }, 401);
+  const body = await c.req.json().catch(() => ({}));
+  const actId = String(body.act || '');
+  const acts = caseData.acts ?? [];
+  const act = acts.find((a) => a.id === actId);
+  if (!act) return c.json({ error: 'unknown_act' }, 404);
+
+  const current = auth.progress.act ?? 'act0';
+  const currentIndex = acts.findIndex((a) => a.id === current);
+  const actIndex = acts.findIndex((a) => a.id === actId);
+  if (actIndex > currentIndex) return c.json({ error: 'act_locked', current }, 409);
+
+  const next = acts[Math.min(actIndex + 1, acts.length - 1)] ?? act;
+  const stored = actIndex >= currentIndex ? next.id : current;
+  await c.env.DB.prepare('UPDATE progress SET act = ? WHERE team_id = ?')
+    .bind(stored, auth.teamId)
+    .run();
+  await c.env.DB.prepare('INSERT INTO events(team_id, type, detail) VALUES (?,?,?)')
+    .bind(auth.teamId, 'act_complete', JSON.stringify({ act: actId, next: stored }))
+    .run();
+  return c.json({ act: stored });
 });
 
 app.post('/api/clues/:id/discover', async (c) => {

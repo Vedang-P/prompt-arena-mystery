@@ -15,10 +15,7 @@ const ASSETS = '/assets';
 const F = (name) => `${ASSETS}/furniture/${name}`;
 const C = (name) => `${ASSETS}/characters/${name}`;
 
-const CHARACTER_MODELS = {
-  victor: '/assets/mixamo/victor.glb?v=1', // Mixamo character with idle animation
-  odette: '/assets/mixamo/odette.glb?v=3', // Mixamo character with rumba animation
-};
+const CHARACTER_URL = (id) => `/assets/mixamo/${id}.glb`;
 
 // Kenney's furniture kit ships at roughly half human scale; these bring each
 // piece to believable real-world size (metres).
@@ -77,7 +74,6 @@ const TINT = {
 };
 
 for (const name of Object.keys(SCALE)) useGLTF.preload(F(name));
-for (const url of Object.values(CHARACTER_MODELS)) useGLTF.preload(url);
 
 // ---------- primitives ----------
 
@@ -498,7 +494,7 @@ function Ballroom({ room, state, focusId, onMeasure, onCharacter, onClue }) {
         h.type === 'character' ? (
           <Character
             key={h.id}
-            url={CHARACTER_MODELS[h.character]}
+            url={CHARACTER_URL(h.character)}
             label={h.label}
             clip="idle"
             position={h.position}
@@ -541,7 +537,7 @@ function Vestibule({ room, state, focusId, onMeasure, onCharacter, onClue }) {
         h.type === 'character' ? (
           <Character
             key={h.id}
-            url={CHARACTER_MODELS[h.character]}
+            url={CHARACTER_URL(h.character)}
             label={h.label}
             position={h.position}
             focused={focusId === h.character}
