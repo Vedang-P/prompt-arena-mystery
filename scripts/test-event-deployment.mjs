@@ -13,13 +13,13 @@ async function call(route, body, expected=200) {
   assert.equal(response.status,expected,route);
   return response;
 }
-assert.equal((await(await call('/api/health')).json()).version,'1.1.0');
+assert.equal((await(await call('/api/health')).json()).version,'1.1.1');
 const config=await(await call('/api/auth/config')).json();assert.equal(config.eventMode,true);assert.equal(config.guest,false);
 await call('/api/login',{code:(await fs.readFile(codeFile,'utf8')).trim()});
 const state=await(await call('/api/state')).json();assert.equal(state.team,'Instructor preview');assert.equal(state.acts.length,9);assert.equal(state.puzzles.length,46);
 await call('/api/guest',{},403);await call('/api/practice',{act:'act8'},403);await call('/api/accuse',{culprit:'sameer'},403);
 const manifest=await(await call('/assets/audio/prologue/manifest.json')).json();assert(Object.keys(manifest).length>=40);
-for (const path of ['/assets/cast/sameer.glb','/assets/cast/officer.glb','/assets/cinema/gazebo.glb',Object.values(manifest)[0].url,'/assets/audio/dusk.mp3','/credits.html']) {
+for (const path of ['/assets/cast/sameer.glb','/assets/cast/officer.glb','/assets/cinema/gazebo.glb','/assets/cinema/tree_small_02.glb','/assets/cinema/tree_background.glb','/assets/cinema/park_sunrise_1k.hdr','/assets/env/tiles_Diffuse.jpg','/assets/signs/police.svg',Object.values(manifest)[0].url,'/assets/audio/dusk.mp3','/credits.html']) {
   const response=await call(path);assert((await response.arrayBuffer()).byteLength>100,path);
 }
 const timings=await Promise.all(Array.from({length:70},async()=>{const start=performance.now();const s=await(await call('/api/state')).json();assert.equal(s.team,state.team);return performance.now()-start;}));

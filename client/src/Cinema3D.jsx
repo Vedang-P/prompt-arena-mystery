@@ -6,6 +6,7 @@ import Actor from './Actor.jsx';
 import { RoomEnvironment, RoomLighting } from './Scene.jsx';
 import { useSettings } from './Settings.jsx';
 import { SceneLoading, WorldBoundary } from './WorldBoundary.jsx';
+import { BEDROOM, POLICE, DESK_SEAT } from './SceneLayout.js';
 export const BACKDROPS = {};
 const CLOSE={close_parth:'parth',close_mother:'mother',close_officer:'officer'};
 const SEAT={sameer:.4707,parth:.4903,mother:.5212,officer:.4915};
@@ -16,7 +17,8 @@ function ShotCamera({roomId,shot,cast,speaker,paused}) {
   const seated=person?.pose==='sit';
   const center=person?[person.at[0],(seated?1.29:1.63)+(person.y??0),person.at[1]]:[0,1.1,0];
   const angle=person?.rot??0,portrait=!!person&&shot!=='wide',distance=portrait?1.72:6.2;
-  const cameraAt=portrait?[center[0]+Math.sin(angle)*distance+.12,center[1]+.06,center[2]+Math.cos(angle)*distance]:[.35,2.15,distance];
+  const cameraAt=portrait?[center[0]+Math.sin(angle)*distance+.12,center[1]+.06,center[2]+Math.cos(angle)*distance]:roomId==='police_station'?[4.3,2.6,6.3]:[.35,2.4,7.2];
+  if(!portrait&&roomId==='police_station')center.splice(0,3,0,1.15,-.8);
   const target=new Vector3(...center),desired=new Vector3(...cameraAt),animated=new Vector3();
   useFrame(({camera},dt)=>{
     const key=roomId+shot+focus;
@@ -29,14 +31,20 @@ function ShotCamera({roomId,shot,cast,speaker,paused}) {
 function Ready({ onReady }) { const callback=useRef(onReady); callback.current=onReady; useEffect(()=>{callback.current?.();},[]); return null; }
 export default function Cinema({sceneId='gazebo',shot='wide',cast=[],speaker,ending=false,paused=false,onReady}) {
   const {quality}=useSettings();
-  const people=useMemo(()=>cast.map(c=>{
+  const people=useMemo(()=>{
+    const people=[...cast];
+    if(sceneId==='police_station'&&people.some(c=>c.character==='mother')){
+      for(const character of ['sameer','officer'])if(!people.some(c=>c.character===character))people.push({character});
+    }
+    return people.map(c=>{
     if(sceneId==='gazebo'&&c.pose==='sit')return {...c,at:[c.character==='sameer'?-.54:.54,.99],rot:0,y:.66-(SEAT[c.character]??.48)};
-    if(sceneId==='sameer_room'&&c.character==='sameer'&&c.pose==='sit')return {...c,at:[1.3,-.6],rot:Math.PI/2,y:.49-SEAT.sameer};
-    if(sceneId==='police_station'&&c.character==='officer')return {...c,at:[1.9,-.3],pose:'sit',rot:Math.PI,y:.49-SEAT.officer};
+    if(sceneId==='sameer_room'&&c.character==='sameer'&&c.pose==='sit')return {...c,at:[BEDROOM.chair[0],BEDROOM.chair[2]],rot:Math.PI/2,y:DESK_SEAT-SEAT.sameer};
+    if(sceneId==='police_station'&&c.character==='officer')return {...c,at:POLICE.officer,pose:'sit',rot:0,y:DESK_SEAT-SEAT.officer};
+    if(sceneId==='police_station'&&POLICE[c.character])return {...c,at:POLICE[c.character],rot:Math.PI,y:0};
     return {...c,y:0};
-  }),[cast,sceneId]);
+  });},[cast,sceneId]);
   return <WorldBoundary key={sceneId}><Canvas shadows={quality!=='low'} dpr={[1,quality==='high'?1.5:1]} camera={{position:[0,2.15,6.2],fov:39}}>
-    <color attach="background" args={['#10171c']}/><fog attach="fog" args={['#10171c',18,48]}/>
+    <color attach="background" args={['#10171c']}/><fog attach="fog" args={[sceneId==='gazebo'?'#9bafa5':'#10171c',28,85]}/>
     <Suspense fallback={<SceneLoading/>}>
       <RoomLighting roomId={sceneId} quality={quality}/><RoomEnvironment roomId={sceneId}/>
       <spotLight position={[0,4,5]} angle={.7} penumbra={1} color="#ffdfbe" intensity={24} distance={13}/>

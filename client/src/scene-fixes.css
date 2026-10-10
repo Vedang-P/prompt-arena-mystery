@@ -1,0 +1,21 @@
+.prologue,.cinematic-story{display:flex;flex-direction:column;max-height:100dvh;min-height:0;box-sizing:border-box;cursor:auto}
+.cinema-footer{position:relative;z-index:10;flex:none;margin-top:auto;box-sizing:border-box;width:100%;padding:16px clamp(12px,3vw,40px) max(14px,env(safe-area-inset-bottom));background:linear-gradient(#0b151ee8,#081016);max-height:55dvh;overflow:auto}
+.prologue .cinema-subtitles,.cinematic-story .cinematic-caption{position:static;transform:none;width:min(850px,100%);max-width:850px;margin:0 auto 14px;box-sizing:border-box;padding:0;pointer-events:auto;max-height:28dvh;overflow:auto;text-align:center;background:none}
+.cinematic-caption p{font-size:clamp(14px,1.5vw,19px);line-height:1.6;margin:8px 0;color:#f1f2e9}
+.prologue .subtitle-card{padding:12px 20px;border:0;background:none;box-shadow:none}
+.prologue .cinema-controls,.cinematic-story .cinematic-tools{position:static;transform:none;display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:0;min-height:42px;box-sizing:border-box}
+.prologue .cinema-progress{flex:1 1 160px;max-width:450px;min-width:0;width:auto}
+.prologue .cinema-progress .seg{width:auto;min-width:0}
+.prologue .cinema-buttons{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;max-width:100%}
+.cinema-footer .btn{box-sizing:border-box;white-space:normal;overflow-wrap:anywhere;min-height:40px;max-width:100%;flex-shrink:1;padding:10px 14px;font-size:11px;letter-spacing:.05em}
+.prologue .cinema-bar.bottom,.cinematic-story .cinema-bar.bottom{display:none}
+.cinematic-story .story-scene-title{z-index:7;top:20px;left:24px;right:24px}.cinematic-story .cinema-bar.top{height:85px;background:linear-gradient(#091016e8,#09101690,transparent)}
+.cinematic-story .cinematic-tools>span{flex:1 1 42px;margin:0}
+.prologue .scene-caption{top:72px;left:24px;right:24px;z-index:7}
+.prologue .prologue-header{left:24px;right:24px;top:20px;gap:12px}
+.cinema-titlecard,.cinema-endcard{box-sizing:border-box;overflow:auto;padding:70px 20px 30px}
+.object-actions{display:flex;flex-direction:column;gap:4px;width:180px;max-width:42vw}
+.object-anchor{border:1px solid #d4b67c66;background:#10212aeb;color:#ece4ce;border-radius:5px;padding:8px 10px;font:11px/1.4 Inter,sans-serif;white-space:normal;cursor:pointer;text-align:center}
+.object-anchor:hover,.object-anchor:focus-visible{background:#d4b67c;color:#142029}.object-anchor:disabled{opacity:.6;cursor:default}
+@media(max-width:700px){.cinema-footer{padding:10px 12px max(12px,env(safe-area-inset-bottom));max-height:55dvh}.prologue .cinema-controls{flex-direction:column;align-items:stretch;gap:10px}.prologue .cinema-progress{flex:0 0 3px;width:100%;max-width:none}.prologue .cinema-buttons{justify-content:center;width:100%;gap:6px}.cinema-footer .btn{padding:10px;flex:1 1 auto;font-size:10px}.prologue .cinema-subtitles,.cinematic-story .cinematic-caption{width:100%;max-height:25dvh;margin-bottom:10px}.prologue .subtitle-card{padding:6px}.prologue-header span{letter-spacing:.05em}.prologue .prologue-header{left:14px;right:14px;gap:8px}.prologue .scene-caption{left:14px;right:14px;top:68px}.cinematic-story .story-scene-title{top:24px;left:16px}.cinematic-story .cinematic-tools{gap:6px}.cinematic-story .cinematic-tools>span{flex:0 0 100%}.cinematic-caption p{font-size:14px}.pause-label{top:105px;right:14px}.object-actions{width:150px}.object-anchor{font-size:10px}}
+@media(max-height:500px){.cinema-footer{max-height:60dvh;padding-top:8px}.prologue .cinema-subtitles,.cinematic-story .cinematic-caption{max-height:20dvh;margin-bottom:6px}.subtitle-card p{font-size:13px}.prologue .subtitle-card{padding:4px 8px}.cinema-footer .btn{min-height:34px;padding:8px 10px}.scene-caption{font-size:10px}.message-wave{height:22px;margin:5px 0}.prologue .cinema-controls{flex-direction:row}.prologue .cinema-progress{flex:1 1 100px}.prologue .cinema-buttons{width:auto}.pause-label{top:102px;padding:8px}.cinematic-story .story-scene-title h2{font-size:20px}}

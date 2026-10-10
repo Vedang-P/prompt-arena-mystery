@@ -25,6 +25,17 @@ https://polyhaven.com/a/park_bench
 https://polyhaven.com/a/grass_path_2
 Textures capped at 1024px. Tree mesh optimized in Blender; GLBs packed and
 compressed for browser delivery. Bench scale adjusted to match the seated rig.
+Tree LODs preserve separate foliage/trunk materials; distant trees use a lower
+detail export of the same source. Lantern brackets mounted on gazebo columns.
+
+Bryanston Park Sunrise HDRI: Dario Barresi, Poly Haven, CC0, 1k HDR.
+https://polyhaven.com/a/bryanston_park_sunrise
+
+Police station floor: Interior Tiles, Charlotte Baglioni, Poly Haven, CC0.
+Diffuse, roughness and OpenGL normal textures at 1k.
+https://polyhaven.com/a/interior_tiles
+Station signs are original SVG graphics. Furniture origins, desk surfaces and
+seat heights measured in Blender and used by shared scene placements.
 
 Octagonal gazebo: Innerscene, CC0 original exterior model.
 https://www.innerscene.com/tools/library/3d-parts/octagonal-gazebo-original-exterior-model-07eaba19

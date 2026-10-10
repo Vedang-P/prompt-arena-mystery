@@ -1,5 +1,6 @@
 import './styles-scene.css';
-import { CinemaProp, ParkGround } from './CinemaAssets.jsx';
+import { CinemaProp, ParkGround, WindTree } from './CinemaAssets.jsx';
+import { BEDROOM, POLICE, DESK_TOP, DESK_SEAT, PARTH_ANCHORS } from './SceneLayout.js';
 import Actor, { actorURL } from './Actor.jsx';
 import { useSettings } from './Settings.jsx';
 import { SceneLoading, WorldBoundary } from './WorldBoundary.jsx';
@@ -205,7 +206,11 @@ function GLTFModel({
     });
   }, [model, castShadow, receiveShadow]);
 
-  return <primitive object={model} position={position} rotation={rotation} scale={scale} />;
+  const origin = useMemo(() => {
+    const bounds = new THREE.Box3().setFromObject(model);
+    return [-(bounds.min.x+bounds.max.x)/2, -bounds.min.y, -(bounds.min.z+bounds.max.z)/2];
+  }, [model]);
+  return <group position={position} rotation={rotation} scale={scale}><primitive object={model} position={origin} /></group>;
 }
 
 function Prop({ model, position, rotation = [0, 0, 0], tint, scale }) {
@@ -482,8 +487,8 @@ function ScriptedFigure({ hotspot, position, labelOffsetY = 0, onClick }) {
   );
 }
 
-function CharacterHotspot({ hotspot, position, hot, rotation, labelOffsetY = 0 }) {
-  return <Character character={hotspot.character} label={hotspot.label} position={[position[0], 0, position[2]]}
+function CharacterHotspot({ hotspot, position, hot, rotation, pose='idle', labelOffsetY = 0 }) {
+  return <Character character={hotspot.character} clip={pose} label={hotspot.label} position={pose==='sit'?position:[position[0], 0, position[2]]}
     rotation={rotation ?? [0, -0.5, 0]} focused={hot.focusId === hotspot.character}
     showLabel={hot.focusId !== hotspot.character} labelOffsetY={labelOffsetY}
     onMeasure={(height) => hot.onMeasure(hotspot.character, height)}
@@ -491,11 +496,16 @@ function CharacterHotspot({ hotspot, position, hot, rotation, labelOffsetY = 0 }
 }
 
 function HotspotMarkers({ room, hot }) {
+  if(room.id==='parth_room') {
+    const groups=new Map();
+    for(const h of room.hotspots??[]){const position=PARTH_ANCHORS[h.id]??hotspotPosition(h,0);const key=position[0]+':'+position[2];if(!groups.has(key))groups.set(key,{position,hotspots:[]});groups.get(key).hotspots.push(h);}
+    return [...groups.entries()].map(([key,group])=><AnchoredHotspot key={key} {...group} hot={hot}/>);
+  }
   return (
     <>
       {(room.hotspots ?? []).map((h, i) => {
-        const position = hotspotPosition(h, i);
-        const labelOffsetY = staggerFor(i);
+        const position = room.id==='parth_room' ? PARTH_ANCHORS[h.id]??hotspotPosition(h,i) : room.id==='police_station'&&h.character==='officer' ? [POLICE.officer[0],DESK_SEAT-.4915,POLICE.officer[1]] : hotspotPosition(h, i);
+        const labelOffsetY = staggerFor(i) - (room.id==='police_station'&&h.character==='officer' ? .6 : 0);
         if (h.type === 'character') {
           return (
             <CharacterHotspot
@@ -503,6 +513,8 @@ function HotspotMarkers({ room, hot }) {
               hotspot={h}
               position={position}
               hot={hot}
+              pose={room.id==='police_station'&&h.character==='officer'?'sit':'idle'}
+              rotation={room.id==='police_station'&&h.character==='officer'?[0,0,0]:undefined}
               labelOffsetY={labelOffsetY}
             />
           );
@@ -545,9 +557,14 @@ function HotspotMarkers({ room, hot }) {
   );
 }
 
+function AnchoredHotspot({hotspots,position,hot}) {
+  const open=h=>h.type==='puzzle'?hot.onPuzzle?.(h):h.type==='travel'?hot.onTravel?.(h):hot.onClue?.(h);
+  return <group position={position}><Html position={[0,.28,0]} center zIndexRange={[30,0]}><div className="object-actions">{hotspots.map(h=>{const solved=(hot.solvedPuzzles??[]).includes(h.puzzle),found=(hot.state.discovered??[]).includes(h.clue);return <button key={h.id} className="object-anchor" disabled={solved} onClick={()=>open(h)}>{h.label}{found||solved?' ✓':''}</button>;})}</div></Html><mesh onClick={e=>{e.stopPropagation();open(hotspots[0]);}}><sphereGeometry args={[.045,12,8]}/><meshStandardMaterial color="#d4b67c" emissive="#b39256" emissiveIntensity={.4}/></mesh></group>;
+}
+
 // ---------- room shell ----------
 
-function Shell({ width, depth, height, tint }) {
+function Shell({ width, depth, height, tint, painted=false }) {
   const plaster = useTexture(`${ASSETS}/env/plaster_diff_1k.jpg`);
   plaster.wrapS = plaster.wrapT = THREE.RepeatWrapping;
   plaster.repeat.set(5, 2);
@@ -556,15 +573,15 @@ function Shell({ width, depth, height, tint }) {
     <group>
       <mesh position={[0, height / 2, -depth / 2]} receiveShadow>
         <planeGeometry args={[width, height]} />
-        <meshStandardMaterial map={plaster} color={tint} roughness={0.95} />
+        <meshStandardMaterial map={painted?null:plaster} color={tint} roughness={0.95} />
       </mesh>
       <mesh position={[-width / 2, height / 2, 0]} rotation-y={Math.PI / 2} receiveShadow>
         <planeGeometry args={[depth, height]} />
-        <meshStandardMaterial map={plaster} color={tint} roughness={0.95} />
+        <meshStandardMaterial map={painted?null:plaster} color={tint} roughness={0.95} />
       </mesh>
       <mesh position={[width / 2, height / 2, 0]} rotation-y={-Math.PI / 2} receiveShadow>
         <planeGeometry args={[depth, height]} />
-        <meshStandardMaterial map={plaster} color={tint} roughness={0.95} />
+        <meshStandardMaterial map={painted?null:plaster} color={tint} roughness={0.95} />
       </mesh>
       {[-depth / 2 + 0.04, depth / 2 - 0.04].map((zz) => (
         <mesh key={zz} position={[0, 0.14, zz]}>
@@ -580,12 +597,13 @@ function Shell({ width, depth, height, tint }) {
   );
 }
 
-function Floor({ width, depth, repeat = [7, 5], color = '#b09070' }) {
-  const [diffuse, rough] = useTexture([
-    `${ASSETS}/env/parquet_diff_1k.jpg`,
-    `${ASSETS}/env/parquet_rough_1k.jpg`,
+function Floor({ width, depth, repeat = [7, 5], color = '#b09070', tiled=false }) {
+  const [diffuse, rough, normal] = useTexture([
+    tiled?`${ASSETS}/env/tiles_Diffuse.jpg`:`${ASSETS}/env/parquet_diff_1k.jpg`,
+    tiled?`${ASSETS}/env/tiles_Rough.jpg`:`${ASSETS}/env/parquet_rough_1k.jpg`,
+    tiled?`${ASSETS}/env/tiles_nor_gl.jpg`:`${ASSETS}/env/parquet_rough_1k.jpg`,
   ]);
-  for (const tex of [diffuse, rough]) {
+  for (const tex of [diffuse, rough, normal]) {
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
     tex.repeat.set(repeat[0], repeat[1]);
     tex.anisotropy = 8;
@@ -594,7 +612,7 @@ function Floor({ width, depth, repeat = [7, 5], color = '#b09070' }) {
   return (
     <mesh rotation-x={-Math.PI / 2} receiveShadow>
       <planeGeometry args={[width, depth]} />
-      <meshStandardMaterial map={diffuse} color={color} roughness={0.92} />
+      <meshStandardMaterial map={diffuse} normalMap={tiled?normal:null} normalScale={tiled?[.3,.3]:[1,1]} color={color} roughness={0.92} />
     </mesh>
   );
 }
@@ -815,7 +833,7 @@ function FileStack({ position }) {
   return (
     <group position={position}>
       {[0, 0.055, 0.11, 0.165].map((y, i) => (
-        <mesh key={y} position={[(i % 2 ? -1 : 1) * 0.015, y, (i % 2 ? 1 : -1) * 0.01]} rotation-y={i * 0.12}>
+        <mesh key={y} position={[(i % 2 ? -1 : 1) * 0.015, y+.025, (i % 2 ? 1 : -1) * 0.01]} rotation-y={i * 0.12}>
           <boxGeometry args={[0.4, 0.05, 0.3]} />
           <meshStandardMaterial color={i % 2 ? '#cfc6ae' : '#bdb49c'} roughness={0.9} />
         </mesh>
@@ -863,7 +881,7 @@ function Bed({ position, rotation = [0, 0, 0], made = true }) {
 function Laptop({ position, rotation = [0, 0, 0], open = true }) {
   return (
     <group position={position} rotation={rotation}>
-      <mesh position={[0, 0.03, 0]} castShadow>
+      <mesh position={[0, 0.01, 0]} castShadow>
         <boxGeometry args={[0.6, 0.02, 0.34]} />
         <meshStandardMaterial color="#1b1c22" roughness={0.5} />
       </mesh>
@@ -1596,14 +1614,16 @@ function GazeboRoom({room,hot}) {
     <CinemaProp asset="painted_wooden_bench" position={[0,.2,1.1]} height={.615} width={1.9}/>
     <CinemaProp asset="painted_wooden_bench" position={[-3.4,0,2.6]} height={.615} width={1.9} rotation={[0,.5,0]}/>
     <CinemaProp asset="painted_wooden_bench" position={[3.6,0,2.2]} height={.615} width={1.9} rotation={[0,-.7,0]}/>
-    <CinemaProp asset="street_lamp_02" position={[-4.2,0,-2]} height={3.6}/>
-    <CinemaProp asset="street_lamp_02" position={[4.2,0,-2]} height={3.6}/>
+    {/* These are wall lanterns: the brackets attach to the gazebo's side columns. */}
+    <CinemaProp asset="street_lamp_02" position={[-2.06,1.65,0]} height={.65} rotation={[0,-Math.PI/2,0]}/>
+    <CinemaProp asset="street_lamp_02" position={[2.06,1.65,0]} height={.65} rotation={[0,Math.PI/2,0]}/>
     <pointLight position={[0,2.6,0]} color="#ffca8b" intensity={8} distance={7}/>
-    <pointLight position={[-4.2,2.8,-2]} color="#ffca8b" intensity={7} distance={10}/>
-    <pointLight position={[4.2,2.8,-2]} color="#ffca8b" intensity={7} distance={10}/>
-    <CinemaProp asset="tree_small_02" position={[-4.5,0,-4.5]} height={5.2}/>
-    <CinemaProp asset="tree_small_02" position={[4.5,0,-4]} height={5.5} rotation={[0,1.4,0]}/>
-    <CinemaProp asset="tree_small_02" position={[-1.6,0,-7.3]} height={6}/>
+    <pointLight position={[-2.25,2.1,.1]} color="#ffca8b" intensity={3} distance={5}/>
+    <pointLight position={[2.25,2.1,.1]} color="#ffca8b" intensity={3} distance={5}/>
+    <WindTree position={[-4.5,0,-4.5]} height={5.2}/>
+    <WindTree position={[4.5,0,-4]} height={5.5} rotation={[0,1.4,0]}/>
+    <WindTree position={[-1.6,0,-7.3]} height={6}/>
+    {[-22,-14,-6,3,12,21].map((x,i)=><CinemaProp key={x} asset="tree_background" position={[x,0,-20-(i%2)*3]} height={10+(i%3)} rotation={[0,i*.9,0]}/>)}
     <HotspotMarkers room={room} hot={hot}/>
   </group>;
 }
@@ -1619,7 +1639,7 @@ function HomeRoom({ room, hot }) {
       <Prop model="loungeChair.glb" position={[-2.2, 0, 0.4]} rotation={[0, 0.5, 0]} />
       <Prop model="sideTable.glb" position={[-3.4, 0, 1.5]} />
       <Prop model="lampRoundFloor.glb" position={[-4.9, 0, 3.2]} />
-      <Prop model="lampRoundTable.glb" position={[-3.4, 0.52, 1.5]} />
+      <Prop model="lampRoundTable.glb" position={[-3.4, 0.73038, 1.5]} />
       <pointLight position={[-3.4, 1.4, 1.5]} color="#ffca82" intensity={1.2} distance={7} decay={0} />
       <Prop model="tableGlass.glb" position={[2.2, 0, 2.2]} />
       <Prop model="chair.glb" position={[1.2, 0, 2.4]} rotation={[0, 1.0, 0]} />
@@ -1635,77 +1655,66 @@ function HomeRoom({ room, hot }) {
 }
 
 function PoliceStationRoom({ room, hot }) {
-  return (
-    <group>
-      <Shell width={14} depth={10} height={3.4} tint="#4a4e58" />
-      <Floor width={14} depth={10} repeat={[6, 5]} color="#8f8578" />
-      <Prop model="kitchenBar.glb" position={[-5.6, 0, -3.2]} rotation={[0, Math.PI / 2, 0]} />
-      <Prop model="kitchenBar.glb" position={[-5.6, 0, -1.5]} rotation={[0, Math.PI / 2, 0]} />
-      <Prop model="desk.glb" position={[-1.6, 0, -1.2]} rotation={[0, 0.15, 0]} />
-      <Prop model="chairDesk.glb" position={[-1.6, 0, 0.1]} rotation={[0, Math.PI, 0]} />
-      <Prop model="desk.glb" position={[1.9, 0, -1.6]} rotation={[0, -0.12, 0]} />
-      {/* Kenney's chair origin is its corner; align the seat centre with the seated rig. */}
-      <Prop model="chairDesk.glb" position={[2.252, 0, -0.630]} rotation={[0, Math.PI, 0]} />
-      <FileStack position={[-1.2, 0.8, -1.5]} />
-      <FileStack position={[1.5, 0.8, -1.9]} />
-      <FileStack position={[-5.0, 1.05, -2.3]} />
-      <Prop model="bookcaseClosed.glb" position={[6.2, 0, -3.0]} rotation={[0, -Math.PI / 2, 0]} />
-      <Prop model="bookcaseOpen.glb" position={[6.2, 0, -0.9]} rotation={[0, -Math.PI / 2, 0]} />
-      <Prop model="stoolBar.glb" position={[-3.9, 0, 1.6]} rotation={[0, 0.4, 0]} />
-      <Prop model="chair.glb" position={[4.4, 0, 1.8]} rotation={[0, -0.6, 0]} />
-      <Prop model="chair.glb" position={[5.2, 0, 2.4]} rotation={[0, -1.4, 0]} />
-      <Fluorescent position={[0, 3.15, -1.2]} />
-      <Fluorescent position={[0, 3.15, 1.9]} delay={2.5} />
-      <pointLight position={[0, 2.4, 0.5]} color="#eef0dd" intensity={0.7} distance={13} decay={0} />
-      <HotspotMarkers room={room} hot={hot} />
-    </group>
-  );
+  return <group>
+    <Shell width={12} depth={10} height={3.4} tint="#8fa9b5" painted/>
+    <Floor width={12} depth={10} repeat={[6,5]} color="#c6ced0" tiled/>
+    <Picture src="/assets/signs/police.svg" position={[0,2.45,-4.94]} width={3.7} height={.82}/>
+    <Picture src="/assets/signs/noticeboard.svg" position={[-3.8,1.85,-4.92]} width={1.65} height={1.2}/>
+    <Picture src="/assets/signs/duty.svg" position={[3.8,2.5,-4.92]} width={1.65} height={.9}/>
+    <Prop model="desk.glb" position={POLICE.desk} tint="#75858d" />
+    <Prop model="chairDesk.glb" position={POLICE.chair} tint="#344c5a" />
+    <FileStack position={[-.43,DESK_TOP,-1.05]} />
+    <Prop model="lampRoundTable.glb" position={[.43,DESK_TOP,-1.18]} tint="#8caba6" scale={1.35}/>
+    <Prop model="desk.glb" position={[-3.5,0,-2.4]} tint="#75858d"/>
+    <Prop model="chairDesk.glb" position={[-3.5,0,-3.35]} tint="#344c5a"/>
+    <FileStack position={[-3.8,DESK_TOP,-2.4]}/>
+    <Prop model="bookcaseClosed.glb" position={[4.7,0,-3.6]} tint="#647980"/>
+    <Prop model="bookcaseOpen.glb" position={[3.6,0,-3.6]} tint="#647980"/>
+    {[-.85,0,.85].map(x=><Prop key={x} model="chair.glb" position={[-4.1+x,0,1.7]} tint="#627885"/>)}
+    <Prop model="pottedPlant.glb" position={[4.7,0,2.5]}/>
+    <Window position={[-5.94,1.85,-.5]} rotation={[0,Math.PI/2,0]}/>
+    <Fluorescent position={[0,3.1,-1]}/><Fluorescent position={[-3.4,3.1,1.5]}/>
+    <pointLight position={[0,2.7,-.7]} color="#e4f5ff" intensity={12} distance={10}/>
+    <HotspotMarkers room={room} hot={hot}/>
+  </group>;
 }
 
 function SameerRoomScene({ room, hot }) {
-  return (
-    <group>
-      <Shell width={10} depth={8} height={3.2} tint="#3a2e26" />
-      <Floor width={10} depth={8} repeat={[5, 4]} />
-      <Bed position={[-3.0, 0, -1.0]} rotation={[0, 0.12, 0]} />
-      <Prop model="desk.glb" position={[2.3, 0, -0.6]} rotation={[0, -Math.PI / 2, 0]} />
-      <Prop model="chairDesk.glb" position={[1.630, 0, -0.248]} rotation={[0, Math.PI / 2, 0]} />
-      <Laptop position={[2.6, 0.76, -0.4]} rotation={[0, -1.1, 0]} />
-      <CeilingFan position={[0, 3.05, 0]} />
-      <Window position={[4.95, 1.75, -1.6]} rotation={[0, -Math.PI / 2, 0]} />
-      <Poster position={[-4.3, 1.8, -1.2]} rotation={[0, Math.PI / 2, 0]} color="#22304a" />
-      <Poster position={[-4.3, 1.6, 0.6]} rotation={[0, Math.PI / 2, 0]} color="#4a2230" />
-      <Prop model="lampRoundTable.glb" position={[2.3, 0.76, -1.4]} />
-      <pointLight position={[2.4, 1.3, -0.6]} color="#ffd28a" intensity={0.9} distance={6} decay={0} />
-      <HotspotMarkers room={room} hot={hot} />
-    </group>
-  );
+  return <group>
+    <Shell width={10} depth={8} height={3.2} tint="#786957" painted/>
+    <Floor width={10} depth={8} repeat={[5,4]}/>
+    <Bed position={[-2.8,0,-1.35]}/>
+    <Prop model="desk.glb" position={BEDROOM.desk} rotation={[0,-Math.PI/2,0]}/>
+    <Prop model="chairDesk.glb" position={BEDROOM.chair} rotation={[0,Math.PI/2,0]}/>
+    <Laptop position={BEDROOM.laptop} rotation={[0,-Math.PI/2,0]}/>
+    <Prop model="lampRoundTable.glb" position={BEDROOM.lamp} scale={1.45}/>
+    <Prop model="bookcaseOpen.glb" position={[-3.8,0,-3.25]}/>
+    <CeilingFan position={[0,3.05,0]}/>
+    <Window position={[4.95,1.75,-1.6]} rotation={[0,-Math.PI/2,0]}/>
+    <Poster position={[-4.94,1.8,-1.2]} rotation={[0,Math.PI/2,0]} color="#22304a"/>
+    <Poster position={[-4.94,1.6,.6]} rotation={[0,Math.PI/2,0]} color="#4a2230"/>
+    <pointLight position={[2.8,1.12,-2.08]} color="#ffd28a" intensity={5} distance={5}/>
+    <HotspotMarkers room={room} hot={hot}/>
+  </group>;
 }
 
 function ParthRoomScene({ room, hot }) {
-  return (
-    <group>
-      <Shell width={10} depth={8} height={3.2} tint="#443428" />
-      <Floor width={10} depth={8} repeat={[5, 4]} />
-      <Bed position={[-2.9, 0, -1.0]} rotation={[0, 0.18, 0]} made={false} />
-      <Prop model="desk.glb" position={[2.4, 0, -0.7]} rotation={[0, -Math.PI / 2, 0]} />
-      <Prop model="chairDesk.glb" position={[1.4, 0, -0.6]} rotation={[0, Math.PI / 2, 0]} />
-      <Laptop position={[2.75, 0.76, -0.5]} rotation={[0, -1.2, 0]} />
-      <Prop model="bookcaseOpen.glb" position={[-4.6, 0, -3.3]} />
-      <Prop model="bookcaseClosed.glb" position={[4.7, 0, -3.3]} rotation={[0, -Math.PI / 2, 0]} />
-      <Window position={[4.95, 1.8, -1.2]} rotation={[0, -Math.PI / 2, 0]} />
-      <Picture
-        src={`${ASSETS}/pictures/evidence_gone_poster.jpg`}
-        position={[-4.3, 1.85, 0.9]}
-        rotation={[0, Math.PI / 2, 0]}
-        width={0.9}
-        height={1.3}
-      />
-      <Prop model="lampRoundTable.glb" position={[2.3, 0.76, -1.5]} />
-      <pointLight position={[2.5, 1.3, -0.7]} color="#ffd28a" intensity={0.9} distance={6} decay={0} />
-      <HotspotMarkers room={room} hot={hot} />
-    </group>
-  );
+  return <group>
+    <Shell width={10} depth={8} height={3.2} tint="#8a7867" painted/>
+    <Floor width={10} depth={8} repeat={[5,4]}/>
+    <Bed position={[-2.15,0,-.3]} made={false}/>
+    <Prop model="desk.glb" position={BEDROOM.desk} rotation={[0,-Math.PI/2,0]}/>
+    <Prop model="chairDesk.glb" position={BEDROOM.chair} rotation={[0,Math.PI/2,0]}/>
+    <Laptop position={BEDROOM.laptop} rotation={[0,-Math.PI/2,0]}/>
+    <Prop model="lampRoundTable.glb" position={BEDROOM.lamp} scale={1.45}/>
+    <Prop model="bookcaseOpen.glb" position={BEDROOM.shelf}/>
+    <Prop model="sideTable.glb" position={[-.8,0,-1.5]}/>
+    <Prop model="pottedPlant.glb" position={[4.1,0,-3.3]} scale={2}/>
+    <Window position={[4.95,1.8,-1.2]} rotation={[0,-Math.PI/2,0]}/>
+    <Picture src={`${ASSETS}/pictures/evidence_gone_poster.jpg`} position={[-4.94,1.85,.9]} rotation={[0,Math.PI/2,0]} width={.9} height={1.3}/>
+    <pointLight position={[2.8,1.12,-2.08]} color="#ffd28a" intensity={5} distance={5}/>
+    <HotspotMarkers room={room} hot={hot}/>
+  </group>;
 }
 
 function AbandonedFieldRoom({ room, hot }) {
@@ -2026,9 +2035,9 @@ export function RoomEnvironment({ roomId, room = null, hot = null }) {
 export function RoomLighting({ roomId, quality = 'high' }) {
   const outdoor = OUTDOOR_ROOMS.has(roomId);
   return <>
-    <Environment files={outdoor ? "/assets/cinema/park_bench_1k.hdr" : "/assets/env/ballroom_2k.hdr"} background={outdoor} backgroundBlurriness={.18} environmentIntensity={outdoor ? 0.5 : 0.62} />
+    <Environment files={roomId==='gazebo'?"/assets/cinema/park_sunrise_1k.hdr":outdoor ? "/assets/cinema/park_bench_1k.hdr" : "/assets/env/ballroom_2k.hdr"} ground={roomId==='gazebo'?{height:2,radius:70,scale:120}:undefined} background={outdoor} backgroundBlurriness={.02} backgroundIntensity={.8} environmentIntensity={outdoor ? .85 : .62} />
     <ambientLight intensity={outdoor ? 0.65 : 0.8} color="#bdcce8" />
-    <directionalLight position={[-4, 8, 6]} intensity={1.7} color="#c5d9ff" castShadow={quality !== 'low'}
+    <directionalLight position={[-4, 8, 6]} intensity={outdoor?2:1.7} color={outdoor?'#ffe2a9':'#d7e5ee'} castShadow={quality !== 'low'}
       shadow-mapSize={quality === 'high' ? [2048, 2048] : [1024, 1024]}
       shadow-camera-left={-14} shadow-camera-right={14} shadow-camera-top={14} shadow-camera-bottom={-14}
       shadow-camera-far={38} shadow-bias={-0.0005} />
@@ -2110,12 +2119,13 @@ export default function Scene({
 
   const focusPosition = useMemo(() => {
     if (!focus) return null;
+    if(room.id==='police_station'&&focus.character==='officer')return [POLICE.officer[0],DESK_SEAT-.4915,POLICE.officer[1]];
     const [x, , z] = hotspotPosition(focus, 0); return [x, 0, z];
-  }, [focus]);
+  }, [focus,room.id]);
 
   const focusInfo = useMemo(() => {
     if (!focus || !focusPosition) return null;
-    const height = heights[focus.character] || 1.9;
+    const height = room.id==='police_station'&&focus.character==='officer'?1.5:heights[focus.character] || 1.9;
     return {
       look: [focusPosition[0], focusPosition[1] + height * 0.82, focusPosition[2]],
       camera: [
@@ -2124,7 +2134,7 @@ export default function Scene({
         focusPosition[2] + height * 1.05,
       ],
     };
-  }, [focus, focusPosition, heights]);
+  }, [focus, focusPosition, heights,room.id]);
 
   const dofTarget = useMemo(
     () => new THREE.Vector3(...(focusInfo?.look ?? [0, 1.4, 0])),

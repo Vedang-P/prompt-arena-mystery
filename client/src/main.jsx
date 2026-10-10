@@ -13,3 +13,4 @@ import './release.css';
 createRoot(document.getElementById('root')).render(<SettingsProvider><App /></SettingsProvider>);
 
 import './event.css';
+import './scene-fixes.css';
