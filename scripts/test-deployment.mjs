@@ -70,5 +70,8 @@ const assetPaths = [
 for (const path of assetPaths) {
   const res = await fetch(base + path, { headers: { cookie: [...cookies].map(([k,v]) => `${k}=${v}`).join('; ') } });
   assert.equal(res.status, 200, path); assert(!(res.headers.get('content-type') ?? '').includes('text/html'), path);
+  const bytes = new Uint8Array(await res.arrayBuffer()); assert(bytes.length > 100, path);
+  if (path.endsWith('.glb')) assert.equal(new TextDecoder().decode(bytes.slice(0, 4)), 'glTF', path);
 }
 console.log('PASS deployed bundled character models, textures, furniture and environment');
+process.exit(0);
