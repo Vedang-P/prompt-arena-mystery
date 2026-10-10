@@ -1,0 +1,102 @@
+/* Cinema/ActDirector additions (owned by the cinematic workstream). */
+
+/* ---------- story mode (text-only intro/outro overlays) ---------- */
+
+.story-mode {
+  background: radial-gradient(ellipse at 50% 30%, #0a1020 0%, #04060c 72%);
+}
+
+.story-stage {
+  cursor: pointer;
+}
+
+.story-backdrop {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center 58%;
+  filter: brightness(0.72) saturate(0.85);
+}
+
+.story-backdrop-fallback {
+  background:
+    radial-gradient(ellipse at 50% 24%, rgba(102, 124, 196, 0.3), transparent 58%),
+    radial-gradient(ellipse at 50% 86%, rgba(26, 38, 74, 0.55), transparent 70%),
+    linear-gradient(180deg, #070b16 0%, #0b1226 52%, #04060c 100%);
+}
+
+.story-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 55%, rgba(4, 6, 14, 0.1) 30%, rgba(3, 4, 10, 0.78) 100%),
+    linear-gradient(
+      180deg,
+      rgba(3, 5, 12, 0.55) 0%,
+      rgba(3, 5, 12, 0) 30%,
+      rgba(3, 5, 12, 0) 62%,
+      rgba(2, 3, 8, 0.82) 100%
+    );
+}
+
+.story-lines {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12vh min(6vw, 64px);
+  z-index: 6;
+  pointer-events: none;
+}
+
+.story-line {
+  max-width: min(880px, 88vw);
+  font-size: 25px;
+  line-height: 1.6;
+  text-align: center;
+  animation: story-line-in 0.5s ease both;
+}
+
+@keyframes story-line-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.story-controls {
+  z-index: 7;
+}
+
+/* ---------- phone voice note, alt accent (non-Parth notes) ---------- */
+
+.phone-note.alt {
+  border-color: rgba(216, 176, 110, 0.38);
+  background: linear-gradient(180deg, rgba(35, 27, 15, 0.94), rgba(15, 11, 7, 0.94));
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6), 0 0 42px rgba(196, 138, 62, 0.12);
+}
+.phone-note.alt .phone-note-from {
+  color: #f2e6cb;
+}
+.phone-note.alt .phone-note-kind {
+  color: rgba(226, 188, 128, 0.72);
+}
+.phone-note.alt .phone-note-wave i {
+  background: linear-gradient(180deg, #e6c489, #a97b3d);
+}
+.phone-note.alt .phone-note-line {
+  color: #f4e8ce;
+  text-shadow: 0 0 20px rgba(226, 176, 104, 0.5);
+}
+
+/* ---------- end card extras ---------- */
+
+.cinema-endcard .cinema-act-hint {
+  max-width: min(660px, 84vw);
+  text-align: center;
+}

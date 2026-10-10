@@ -26,7 +26,7 @@ export async function hashCode(code, pepper) {
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-const SESSION_HOURS = 12;
+const SESSION_HOURS = 30 * 24;
 
 export async function createSession(teamId, secret = 'dev-secret') {
   const payload = b64url(

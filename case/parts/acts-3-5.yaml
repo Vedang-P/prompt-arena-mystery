@@ -1,0 +1,381 @@
+# W2 — acts 3–5 ("The Concert", "Shashdhar", "The Big Bad").
+# Source: docs/FINAL_SCRIPT.md pages 12–24. Registry: docs/BUILD_SPEC.md.
+# Owns: acts 3/4/5, rooms concert/workshop/ngo_hq/ngo_archive, hospital act4
+# hotspots, tanush_office, enakshi_house, sameer_room act4/act5 hotspots.
+
+acts:
+  - id: act3
+    type: interactive
+    kicker: "Act III"
+    title: "The Concert"
+    entry_room: concert
+    rooms: [concert, workshop, ngo_hq, ngo_archive, sameer_room]
+    objective: "Follow Veer and the Perigee NGO. Find out what Parth was doing there."
+    intro:
+      - { speaker: narrator, text: "Sameer is in the concert. There is not much crowd, but the vibes are good — he wishes there was a water station around, or maybe food stalls. It's really just a temporary stage propped up; the lights are cool though." }
+      - { speaker: narrator, text: "The band is a mix of industrial rock and electronic dance. They all have voice modifiers and rely on heavy synthesizers. He honestly enjoys the music — he should search it up later." }
+      - { speaker: narrator, text: "As the band closes, the host takes the mic: \"This concert is funded by the Perigee NGO.\" This makes Sameer's ears prick up. He needs to talk to Veer — or Vihaan, whoever this guy is. This may be the only lead he has to his friend." }
+      - { speaker: narrator, text: "He looks around as the concert ends and spots a line for people with backstage passes. Now he just needs to go in." }
+    outro:
+      - { speaker: narrator, text: "He hides near the trash cans and peeks through. The captured man is struggling, frantically calling for help. Two people — maybe nurses — tie him up and load him into an ambulance." }
+      - { speaker: narrator, text: "The ambulance leaves, talking about taking him to some hospital. Sameer is going to put his life in danger if he delves deeper, but he has to — children are being captured too. He needs to expose them, or bring light to this, or something." }
+      - { speaker: narrator, text: "The next morning, Sameer wakes up with a plan." }
+    complete: { puzzles: [p_delve] }
+
+  - id: act4
+    type: interactive
+    kicker: "Act IV"
+    title: "Shashdhar"
+    entry_room: sameer_room
+    rooms: [sameer_room, hospital]
+    objective: "Find the hospital the man from the ambulance was taken to."
+    intro:
+      - { speaker: narrator, text: "He thinks about the hospital the man may be at. If there is torture taking place, it won't be a normal hospital — it would be some sort of abandoned or isolated one. He tries to search for extremely old or isolated hospitals." }
+      - { speaker: narrator, text: "He drives to Shashdhar Hospital, out on the outskirts of the city. He walks in through the janitor backdoor with the world-owning confidence that saved him before, and grabs a uniform and a mop to pose as a janitor." }
+    outro:
+      - { speaker: narrator, text: "Parth was alive." }
+      - { speaker: narrator, text: "Sameer wanted to dance, he wanted to scream; he honestly felt a wave of numbness go over him. He was panicking so much — and all for naught. Parth was alive; maybe starving, but still healthy. He wasn't covered with bruises and burns. That was more than enough." }
+    complete: { puzzles: [p_parth_alive] }
+
+  - id: act5
+    type: interactive
+    kicker: "Act V"
+    title: "The Big Bad"
+    entry_room: tanush_office
+    rooms: [tanush_office, enakshi_house, sameer_room]
+    objective: "Expose the cult. Gather proof from the Big Bad's office and from Enakshi's house."
+    intro:
+      - { speaker: narrator, text: "He can't act like a fool right now. He has no idea who Parth is against and who he is allied with; one wrong move and it could be his skin being burned." }
+      - { speaker: narrator, text: "He hears the security guard coming and picks up the mop. The guard looks at him in disgust: \"How many times have I told you to not come so close to the systems!\" Sameer looks to the ground: \"There were crumbs near the screens.\" The guard looks him over — \"You're Shyam's replacement?\" — \"Huh, yeah, I was hired yesterday. He loved my mopping technique. You know, just swish and flick.\"" }
+      - { speaker: narrator, text: "A swish and a flick, and he was outside the door. He wants to go home and sleep, maybe yell at Parth for getting him into this goose chase — then he finds a beautifully decorated room, with plush carpets and mahogany furniture, a stark difference from the sterile corridors of the hospital. This has to be the office of some higher up." }
+    outro:
+      - { speaker: narrator, text: "He's been staring at his phone for about 3 hours now; that's not so bad if you consider his doomscrolling times. It was hard work for his brain, especially when he can't properly connect and visualise the data." }
+      - { speaker: narrator, text: "Just as he is about to go to sleep, he gets a notification. Another voice note — a different modified voice this time, mocking: \"You tried so hard, child; you got so little. Cats usually like to play with rats before swallowing them.\"" }
+      - { speaker: narrator, text: "The email he sent to himself gave him away. A deranged cult is following him now, and he is awake the entire night in terror." }
+    complete: { puzzles: [p_exposed] }
+
+rooms:
+  - id: concert
+    name: "The Concert"
+    scene: concert
+    hotspots:
+      - { id: cc_perigee, type: clue, clue: c_perigee, label: "The stage and the host", position: [0, 0.5, -3.2] }
+      - { id: cc_backstage, type: clue, clue: c_backstage, label: "Backstage fence", position: [-3, 0, -2.2], requires: { clues: [c_perigee] } }
+      - { id: cc_veer, type: character, character: veer, label: "Veer", position: [2, 0, -2.6] }
+      - { id: cc_veer_qa1, type: puzzle, puzzle: p_veer_1, label: "Talk to Veer", position: [2, 0.5, -1.6] }
+      - { id: cc_veer_qa2, type: puzzle, puzzle: p_veer_2, label: "Know what they do?", position: [2, 0.9, -0.6], requires: { puzzles: [p_veer_1] } }
+      - { id: cc_band_name, type: puzzle, puzzle: p_band_name, label: "The band's name", position: [1, 0.6, 0.2], requires: { puzzles: [p_veer_2] } }
+      - { id: cc_registration, type: puzzle, puzzle: p_registration, label: "Member registration link", position: [3, 0.6, -0.8], requires: { puzzles: [p_band_name] } }
+      - { id: cc_fare, type: puzzle, puzzle: p_fare, label: "An auto to the workshop", position: [-1.2, 0, 2.6], requires: { puzzles: [p_registration] } }
+      - { id: cc_to_workshop, type: travel, to: workshop, label: "Take the auto to the workshop", position: [-3, 0, 2.4], requires: { puzzles: [p_fare] } }
+
+  - id: workshop
+    name: "Night Sky Workshop"
+    scene: workshop
+    hotspots:
+      - { id: ws_snacks, type: clue, clue: c_workshop, label: "Snacks table", position: [1, 0, -1] }
+      - { id: ws_to_hq, type: travel, to: ngo_hq, label: "Board the volunteers' bus", position: [-2, 0, 1.4], requires: { clues: [c_workshop] } }
+
+  - id: ngo_hq
+    name: "Perigee Headquarters"
+    scene: ngo_hq
+    hotspots:
+      - { id: nh_hall, type: clue, clue: c_hq, label: "The headquarters hall", position: [0, 0.5, -2] }
+      - { id: nh_door, type: travel, to: ngo_archive, label: "The door with the keys still in the keyhole", position: [2.2, 0, -1.4], requires: { clues: [c_hq] } }
+
+  - id: ngo_archive
+    name: "The Archive Room"
+    scene: ngo_archive
+    hotspots:
+      - { id: na_system, type: puzzle, puzzle: p_ascension, label: "Ancient system on the desk", position: [0, 0.7, -2.8] }
+      - { id: na_blade, type: clue, clue: c_holy_blade, label: "Image file: Holy Blade", position: [-2.4, 0.6, -1.2], requires: { clues: [c_records] } }
+      - { id: na_wall, type: clue, clue: c_veer_talk, label: "Voices through the flimsy wall", position: [-3, 0.9, 0.8], requires: { clues: [c_records] } }
+      - { id: na_hide, type: puzzle, puzzle: p_hide, label: "The door opens", position: [1.6, 0, -0.6], requires: { clues: [c_veer_talk] } }
+      - { id: na_delve, type: puzzle, puzzle: p_delve, label: "The ambulance", position: [2.6, 0.5, 1.6], requires: { clues: [c_ambulance] } }
+
+  - id: sameer_room
+    hotspots:
+      - { id: sr4_listings, act: act4, type: puzzle, puzzle: p_hospital, label: "Old hospital listings", position: [-3, 0.5, -2.4] }
+      - { id: sr4_to_hospital, act: act4, type: travel, to: hospital, label: "Drive to Shashdhar Hospital", position: [3, 0, 2.2], requires: { puzzles: [p_hospital] } }
+      - { id: sr5_connection, act: act5, type: puzzle, puzzle: p_connection, label: "The cult's files", position: [-3.2, 0.4, 1.2] }
+      - { id: sr5_voice_note, act: act5, type: clue, clue: c_voice3, label: "A voice note", position: [2.8, 0.6, -1.2], requires: { puzzles: [p_connection] } }
+      - { id: sr5_exposed, act: act5, type: puzzle, puzzle: p_exposed, label: "What exposed his investigation", position: [0, 0.5, 2.8], requires: { puzzles: [p_connection] } }
+
+  - id: hospital
+    name: "Shashdhar Hospital"
+    scene: hospital
+    hotspots:
+      - { id: h4_backdoor, act: act4, type: clue, clue: c_janitor, label: "Janitor's backdoor", position: [-3, 0, -1.8] }
+      - { id: h4_theatre, act: act4, type: clue, clue: c_ritual, label: "Third-floor operating theatre", position: [0, 0.6, -3], requires: { clues: [c_janitor] } }
+      - { id: h4_security, act: act4, type: puzzle, puzzle: p_security_pin, label: "Security control panel", position: [2.6, 0.6, -1.4] }
+      - { id: h4_crowd, act: act4, type: puzzle, puzzle: p_parth_alive, label: "A group surrounding a person", position: [-1.6, 0.4, 1.2], requires: { puzzles: [p_security_pin] } }
+      - { id: h4_to_tanush_office, act: act4, type: travel, to: tanush_office, label: "The office door", position: [3, 0, 1.8], requires: { clues: [c_parth_alive] } }
+
+  - id: tanush_office
+    name: "The Corner Office"
+    scene: tanush_office
+    hotspots:
+      - { id: to_drug_report, act: act5, type: clue, clue: c_drug_report, label: "Drug report on the desk", position: [-2, 0.6, -1] }
+      - { id: to_timetable, act: act5, type: clue, clue: c_timetable, label: "Calendar with the meeting schedule", position: [-3, 0.6, 0.6] }
+      - { id: to_drawer, act: act5, type: clue, clue: c_assessments, label: "Drawer of folders", position: [-1, 0.5, -2.4], requires: { clues: [c_drug_report] } }
+      - { id: to_tablet, act: act5, type: puzzle, puzzle: p_tablet, label: "A tablet under the folders", position: [0.5, 0.5, -2.2] }
+      - { id: to_handbook, act: act5, type: puzzle, puzzle: p_handbook, label: "A handbook kept near the reports", position: [1.5, 0.5, -0.6] }
+      - { id: to_enakshi, act: act5, type: travel, to: enakshi_house, label: "Enakshi's house", position: [3, 0, 1.6], requires: { clues: [c_handbook] } }
+
+  - id: enakshi_house
+    name: "Enakshi's House"
+    scene: enakshi_house
+    hotspots:
+      - { id: eh_door, act: act5, type: clue, clue: c_enakshi, label: "The front door", position: [-0.5, 0, -2.6], requires: { puzzles: [p_tablet] } }
+      - { id: eh_tablet, act: act5, type: puzzle, puzzle: p_knowledge, label: "The tablet", position: [0.5, 0.6, -1] }
+      - { id: eh_tablet_content, act: act5, type: puzzle, puzzle: p_tablet_content, label: "Tablet contents", position: [1.5, 0.6, 0.4], requires: { puzzles: [p_knowledge] } }
+      - { id: eh_window, act: act5, type: travel, to: sameer_room, label: "Jump out of the window", position: [2.8, 0, 2], requires: { puzzles: [p_tablet_content] } }
+
+characters:
+  - id: veer
+    name: "Veer"
+    persona: "Vihaan — the drummer who now goes by Veer. Charming, loud, thirsty for recognition, and wrapped up in the Perigee NGO's orbit. His band is Apogee. Friendly to fans, guarded about the NGO's inner workings."
+    goals: ["Keep the band funded and growing", "Stay on the NGO's good side", "Never ask too many questions himself"]
+    demeanor: cooperative
+    deflections:
+      - "Veer laughs and takes another swig of water. \"Man, that's a lot of questions for a fan.\""
+      - "Veer taps his monitor and shrugs. \"I only play music, bro. The NGO people handle the rest.\""
+    snubs:
+      - "Veer looks past you at someone waving from the stage. \"Yeah — cool, cool. Anyway...\""
+      - "Veer's smile stays stretched. \"You want a photo or something?\""
+    facts:
+      - id: veer_ngo
+        text: "He has been in touch with the Perigee NGO for at least 3 years; they usually have workshops every Saturday."
+        unlock: { requires: [c_apogee] }
+        disposition: admit
+      - id: veer_parth
+        text: "Parth came around the day before yesterday — he was super interested in this stuff, and he was great with kids."
+        unlock: { requires: [c_apogee] }
+        disposition: admit
+      - id: veer_donation
+        text: "The host made a mistake: the band donates a good portion of its revenue to Perigee, not the other way around."
+        unlock: { requires: [c_perigee] }
+        disposition: admit
+
+canonical_qa:
+  - character: veer
+    q: "are you part of the perigee ngo"
+    a: "Lol no, the host made a mistake. We donate a good portion of our revenue to them. Why — you're a part of it?"
+  - character: veer
+    q: "do you know parth"
+    a: "You're Parth's friend? Oh yeah, Parth came around the day before yesterday. He was super interested in this stuff, he was great with kids."
+  - character: veer
+    q: "what is your band name"
+    a: "Apogee — we got inspired by the NGO's name, but we still wanted to keep our theme of being at the peak, at the highest of all."
+
+clues:
+  - id: c_perigee
+    name: "The host's announcement"
+    description: "\"This concert is funded by the Perigee NGO.\" The whole night suddenly has a sponsor — and Sameer's ears prick up."
+  - id: c_backstage
+    name: "Backstage fence"
+    description: "The pass line is right there. Sameer jumps the fence with the confidence of owning the world, and nobody interrupts him."
+    requires: [c_perigee]
+  - id: c_apogee
+    name: "Apogee"
+    description: "Veer's band borrowed its name from the NGO's orbit: Apogee — the point of the Moon's path farthest from Earth."
+  - id: c_workshop_address
+    name: "Workshop address"
+    description: "Member registration confirmed. The next workshop is at Hutting, 3rd cross, DJ Halli."
+  - id: c_workshop
+    name: "The open-field workshop"
+    description: "The workshop is in an open field: kids running around, volunteers setting up instruments, snacks in the corner. One kid is practically vibrating like the crickets, rattling off constellations and star positions. It was cute."
+  - id: c_hq
+    name: "Perigee headquarters"
+    description: "The headquarters hall is huge. The NGO is only 4 years old, yet it has made impacts worldwide — he wonders where the money comes from. Veer moved to a different corridor for a phone call and never came back."
+  - id: c_records
+    name: "offeringRecords"
+    description: "A folder of .avi videos and a text file: instructions to move the records from physical to digital, with updates on how much has been moved. It stopped on 16-07-2020."
+  - id: c_holy_blade
+    name: "Holy Blade"
+    description: "A picture file named 'Holy Blade': a blade kept in a beautifully carved handmade box, dark brown with swirl-like carvings; the blade itself simpler, with a metal handle."
+    requires: [c_records]
+  - id: c_veer_talk
+    name: "Nishakara's arms"
+    description: "Through the flimsy wall: Veer — \"There were so many enthusiastic buds in the field, they were practically waiting to fall in Nishakara's arms.\" A deep, rumbling laugh: \"Children are usually excited about this, they are pure souls. It is in their nature to call their holy mother.\""
+    requires: [c_records]
+  - id: c_ambulance
+    name: "Ambulance"
+    description: "The captured man is one of the people who went missing during the full moon. Two people — maybe nurses — tie him up and load him into an ambulance that leaves, talking about taking him to some hospital."
+  - id: c_janitor
+    name: "Janitor's backdoor"
+    description: "He walks in through the janitor backdoor with the world-owning confidence that saved him before. A uniform and a mop, and he is a janitor."
+  - id: c_ritual
+    name: "Third-floor theatre"
+    description: "The room smelled of bleach. A few people surrounded an operating table — the man stuffed into the ambulance. Muffled mid-scream, an injection, then screams in pure agony. One of them chants and ceremoniously opens a carved box of thick incense sticks. Sameer flinches when one touches flesh. A tapestry with the same symbol as the abandoned sedan hangs nearby — the NGO is a cult."
+    requires: [c_janitor]
+  - id: c_cameras
+    name: "Security room"
+    description: "The control panel opens other rooms of the hospital without travelling. He saw things that cannot be described without raising the PG rating of this game."
+  - id: c_parth_alive
+    name: "Parth is alive"
+    description: "Another group surrounded a person, one of them injecting something into the man. Sameer's eyes widened with recognition. It couldn't be — but it was. Parth. Parth was alive."
+  - id: c_drug_report
+    name: "Drug report"
+    description: "A drug report on the desk of some guy named Tanush — it highlighted high amounts of 'Selenocide' in the bloodstream."
+  - id: c_timetable
+    name: "Meeting timetable"
+    description: "The calendar holds the week's meetings: openings and rituals this person was leading, mostly with higher ups. One member — Enakshi — has meetings only once a week, that too online."
+  - id: c_assessments
+    name: "Mental assessments"
+    description: "A folder of mental assessments dating back years — all of them suggesting high aggression levels and low empathy."
+    requires: [c_drug_report]
+  - id: c_tablet_data
+    name: "The cult tablet"
+    description: "The tablet the handbook says is given to all higher ups — thankfully unlocked."
+  - id: c_handbook
+    name: "Higher-up handbook"
+    description: "Guides on the chants and proper maintenance of the 'holy blade' — he stopped reading after he saw blood being used."
+  - id: c_enakshi
+    name: "Enakshi"
+    description: "A woman peeks through the door, her hair greasy and eyes sunken, the house dark behind her. She lets out an animalistic hiss and lunges with a heavy brass candlestick. Sameer shoves her away with the handle of his hammer; she slips on the entryway rug, cracks her head against a wooden table, and slumps to the floor. He binds her wrists with an extension cord, drags her into the hallway closet, and locks the door."
+  - id: c_recruits
+    name: "Recruitment numbers"
+    description: "The number of people recruited by the cult, and its different domains."
+  - id: c_finance
+    name: "Financial records"
+    description: "A spreadsheet of where the cult's funds were collected from and allocated — a lot of donations by a company named Lua Pharmaceuticals."
+  - id: c_voice3
+    name: "The mocking voice note"
+    description: "\"You tried so hard, child; you got so little. Cats usually like to play with rats before swallowing them.\" A different modified voice this time — mocking."
+
+puzzles:
+  - id: p_veer_1
+    kind: choice
+    prompt: "He waits, and then he meets his lead. \"Hey, I discovered your band a couple of days ago, I loved your second song! The electric beats and modified voice were amazing additions.\" Veer chuckles: \"Yeah, the additions were my idea. I had to fight almost the entire band to put that in. I'm so glad that y'all liked it so much!\" Then Sameer says, \"You guys are funded by The Perigee? That's a new sight for me. I thought that bands would fund NGOs!\" Veer puts down his water bottle and assesses him: \"Why — you're a part of it?\" What should Sameer say?"
+    options: ["Yes, I'm part of it", "No, but I have donated some money to them"]
+    answers: ["No, but I have donated some money to them"]
+    success: "Veer straightened up: \"Oh that's great — you know what they do, right?\""
+    fail_message: "Veer's smile thins. Sameer instantly regrets it — he fumbles and tries again."
+    penalty: 0
+  - id: p_veer_2
+    kind: choice
+    prompt: "\"Oh that's great — you know what they do, right?\""
+    options: ["Foster scientific temper, empowering the youth", "Teach astronomy to tourists"]
+    answers: ["Foster scientific temper, empowering the youth"]
+    success: "Veer looks impressed: \"That's great! I have believed the same thing. We actually got inspired by the NGO's name to change our band name — we still wanted to keep our theme of being at the peak or at the highest of all.\""
+    fail_message: "Veer tilts his head. That is not what the NGO is about, and he knows it."
+    penalty: 0
+  - id: p_band_name
+    kind: text
+    prompt: "Sameer thought — what was their band name again?"
+    answers: ["apogee"]
+    success: "Apogee — of course. \"The point of the Moon's orbit farthest from Earth,\" Veer explains. \"Perigee is where it is closest. We wanted to keep our theme of being at the peak, at the highest of all.\" Sameer's mind was racing: he may have stumbled into a gold mine of clues."
+    penalty: 0
+    grants: [c_apogee]
+  - id: p_registration
+    kind: email
+    prompt: "Veer sends him the link for member registration. It doesn't ask for much — just an email and an OTP. He joins as a volunteer."
+    answers: []
+    success: "The registration goes through. A volunteer confirms his membership and sends the address of the upcoming workshop: \"Hutting, 3rd cross, DJ Halli.\" He has a gut feeling that all that is happening to him has a reason and a rhyme — including the fact that he lost his phone charger a couple of days ago."
+    penalty: 0
+    grants: [c_workshop_address]
+  - id: p_fare
+    kind: choice
+    prompt: "He plans to go to the workshop and finds an auto. \"Where do you want to go, sir?\" — \"Hutting, 3rd cross, DJ Halli.\" — \"300.\""
+    options: ["100", "200", "230", "Walk away"]
+    answers: ["230"]
+    fail_message: "\"Ok sir, find someone else then.\""
+    success: "\"The hell — I'll give 100, no more.\" — \"Ok sir, find someone else then.\" Sameer looked around; the auto guy looked at him. Sameer sighed, \"I can't give more than 200.\" — \"230.\" Sameer sighed and got into the auto. After that daylight robbery, he saw the workshop: it was in an open field, kids were running around and volunteers were setting up the instruments for observation."
+    penalty: 0
+  - id: p_ascension
+    kind: code
+    prompt: "He glanced at the records around him, then finally tried to switch on the ancient system on the desk. Blue light reflected on his face — it asked for a password."
+    hint: "It is an older system asking for a password. The files around him whisper what these people believe in."
+    answers: ["ascension"]
+    success: "Blue light reflects on his face; the records open. A folder named \"offeringRecords\" — a bunch of .avi videos, and a text file tracking how much of the physical archive has been moved to digital. It stopped on 16-07-2020."
+    penalty: 0
+    grants: [c_records]
+  - id: p_hide
+    kind: choice
+    prompt: "He hid under the desk. The door opened, Veer looked in — Sameer huddled his feet closer to himself. He heard a mutter: \"We really need to get better security.\" Then a scream cut both men off. Veer left the door open, deciding whether to check the room or leave for the scream. Should Sameer take the risk and run?"
+    options: ["Run", "Stay hidden"]
+    answers: ["Stay hidden"]
+    fail_message: "Veer catches a glimpse of him running — he starts yelling. This was the wrong decision; he had to go quickly before the rest of those freaks were alerted. He found the exit just in time to escape."
+    success: "Too risky. Veer enters the room and goes for the desk — shoot, he left the system on, he should have run. Veer rummaged through it, but thankfully Sameer had closed all the tabs. Veer looked around and then left. Sameer ran towards the nearest exit, hid near the trash cans, and peeked through."
+    penalty: 1
+    continue_on_fail: true
+    grants: [c_ambulance]
+    fail_grants: [c_ambulance]
+  - id: p_delve
+    kind: choice
+    prompt: "The captured man is struggling, frantically calling for help; two people — maybe nurses — tie him up, and the ambulance leaves talking about taking him to some hospital. Should he delve deeper into this NGO?"
+    options: ["Yes", "No"]
+    answers: ["Yes"]
+    fail_message: "If you refuse, you are blocked from the game. Getting back in the game would cause a huge penalty."
+    success: "He is going to put his life in danger if he delves deeper, but he has to. The police are nearly incompetent and apparently children are being captured too. He needs to expose them, or bring light to this, or something. He has to."
+    penalty: 5
+  - id: p_hospital
+    kind: choice
+    prompt: "He tries to search for extremely old or isolated hospitals. Which hospital should he pick?"
+    options: ["Vyadha Hospital", "Shashdhar Hospital", "BMC Hospital"]
+    answers: ["Shashdhar Hospital"]
+    fail_message: "The wards of the wrong hospital scroll past — normal, staffed, full of visitors. Nobody would hide a torture room there. He scrolls back to the top and tries again."
+    success: "Shashdhar Hospital — old and isolated, out on the outskirts of the city. The only one that fits. He feels it in his gut."
+    penalty: 2
+  - id: p_security_pin
+    kind: text
+    prompt: "He turns left and finds what he thinks is a security room. The control panel is locked, and a note is taped to it: \"vykpmng vykpmng nkvvng ____\". The panel wants the missing word."
+    hint: "The panel reads: vykpmng vykpmng nkvvng ____ . Every letter is shifted two ahead — move them back."
+    answers: ["uvct", "star"]
+    success: "Each letter is shifted two places ahead: vykpmng becomes twinkle, nkvvng becomes little, uvct becomes star. Twinkle twinkle little star. The panel unlocks — he can check out other rooms of the hospital without travelling."
+    penalty: 0
+    grants: [c_cameras]
+  - id: p_parth_alive
+    kind: text
+    prompt: "One group caught Sameer's attention — they were also surrounding a person, one of them injecting something into the man. Sameer's eyes widened with recognition. It couldn't be, could it?"
+    answers: ["parth"]
+    fail_message: "No — focus. If not him, then... what is this entire thing about??"
+    success: "Parth. Parth was alive."
+    penalty: 1
+    grants: [c_parth_alive]
+  - id: p_tablet
+    kind: code
+    prompt: "There was a tablet under these folders. It was unfortunately password protected — a 4 digit numeric passcode. What could he put down?"
+    hint: "A 4-digit passcode. The archived records stopped on 16-07-2020; the higher ups seem to love that date."
+    answers: ["1607"]
+    success: "1607 — the day the records stopped. The tablet unlocks in his hands; this is the Big Bad's own device."
+    penalty: 0
+  - id: p_handbook
+    kind: choice
+    prompt: "He heard footsteps in the corridor. There is a handbook kept near the reports. Should he pick it up?"
+    options: ["Take it", "Leave it"]
+    answers: ["Take it"]
+    fail_message: "The footsteps grow louder. He leaves the handbook where it lies — and hates himself for it. There is still time."
+    success: "He quickly grabs the handbook and leaves the room. He leaves the hospital, hoping he goes undetected."
+    penalty: 0
+    grants: [c_handbook]
+  - id: p_knowledge
+    kind: text
+    prompt: "The tablet is thankfully unlocked. How did he know about the tablet given by the cult?"
+    answers: ["handbook", "the handbook"]
+    success: "The handbook. Somewhere in those pages, between the chants and the maintenance of the holy blade, it said a tablet is given to all higher ups. The tablet's screen glows in his hand."
+    penalty: 0
+    grants: [c_tablet_data]
+  - id: p_tablet_content
+    kind: choice
+    prompt: "What could be found in the tablet?"
+    options: ["Chants, schedules, and holy blade maintenance", "Lua Pharmaceuticals invoices", "The full member list"]
+    answers: ["Chants, schedules, and holy blade maintenance"]
+    fail_message: "Not quite. He swipes back — the handbook said the tablet holds the chants, the schedules, and the maintenance of the holy blade."
+    success: "Chants, schedules, and the proper maintenance of the holy blade — blood included. And when he digs further: the number of people recruited by the cult and its different domains, plus a spreadsheet of the financial records — where the funds were collected from and allocated. A lot of donations by a company named Lua Pharmaceuticals."
+    penalty: 0
+    grants: [c_recruits, c_finance]
+  - id: p_connection
+    kind: text
+    prompt: "Once he is back home with his wounds sufficiently bandaged and his files properly backed up, he looks through them. He notices that there are a lot of donations by a company named Lua Pharmaceuticals. Could there be any other connection to the cult?"
+    answers: ["perigee", "apogee", "perigee and apogee"]
+    success: "Perigee or Apogee — both are correct, and a bonus for both mentioned. The point of the Moon's orbit closest to Earth, and the farthest: the two faces of the same NGO. The cult and the NGO are one and the same."
+    penalty: 0
+  - id: p_exposed
+    kind: text
+    prompt: "Just as he is about to go to sleep, a notification arrives — another voice note, in a different modified voice, this time mocking. What could have exposed his investigation of the cult?"
+    answers: ["email", "the email", "sending the files to himself"]
+    success: "The email — the financial files he sent to himself. That is how they found him. Cats play with rats before swallowing them, and the cult has been playing with him all along."
+    penalty: 0
+    requires: { puzzles: [p_connection] }

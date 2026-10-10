@@ -1,0 +1,703 @@
+# W3 — Acts VI–VIII ("Poornima", "The Mask", "The Revelation").
+# Owner: case/parts/acts-6-8.yaml. Do not edit case/main.yaml (generated).
+# Prose follows docs/FINAL_SCRIPT.md pages 25–36 nearly verbatim.
+# This fragment only adds hotspots to existing rooms — it never redefines a room
+# it does not own. Act/room/puzzle/clue ids follow the frozen BUILD_SPEC registry.
+
+acts:
+  - id: act6
+    type: interactive
+    kicker: "Act VI"
+    title: "Poornima"
+    entry_room: sameer_room
+    rooms: [sameer_room, hospital, police_station]
+    objective: "Get real proof from Shashdhar Hospital — before Poornima ends."
+    intro:
+      - { speaker: narrator, text: "Sameer sees the light shining through the curtains. He was awake the entire night in terror." }
+      - { speaker: narrator, text: "He has tried everything, and yet he hasn't come close to trying to expose the cult. He has a repository of information, yet none of it can be legally traced back to the cult." }
+      - { speaker: narrator, text: "He needs to go to the hospital for some actual proof. Yet he is paralysed by the fact that a deranged cult is following him — he's not even sure if he wants to get out of bed at this point." }
+      - { speaker: narrator, text: "He opens his phone and looks at the date. There is a notification today for Poornima." }
+    outro:
+      - { speaker: narrator, text: "The police take in all of this and mark it. The officers tell him that they will comb over this all and may call him anytime this week. Sameer agrees and is let out of the station." }
+      - { speaker: narrator, text: "He goes home. On his bed, a wendigo mask is kept." }
+    complete: { clues: [], puzzles: [p_police_video] }
+
+  - id: act7
+    type: interactive
+    kicker: "Act VII"
+    title: "The Mask"
+    entry_room: sameer_room
+    rooms: [sameer_room, hospital, enakshi_house]
+    objective: "The cult left its mask on your bed. Find out how they follow people — then decide."
+    intro:
+      - { speaker: narrator, text: "The mask is decorated too, with beautiful lace tied around the horns. Why was it here, how was it here? Was it the police? Did he do the wrong thing by taking all the evidence to the police?" }
+      - { speaker: narrator, text: "Before he could fall into a spiral, he hears the door knock. Sameer peeked through — it was Veer. He looked unarmed, but Sameer kept his trusty hammer with him. He opened the door." }
+      - { speaker: veer, text: "How the hell did you know about us? You couldn't keep your nose from sniffing about." }
+      - { speaker: narrator, text: "Sameer saw for the first time how pathetic Veer looked." }
+      - { speaker: sameer, text: "What are you talking about?" }
+      - { speaker: veer, text: "I'm hearing from my dad that you apparently got folders full of information. I swear to god, if my name comes in the cult, I will —" }
+      - { speaker: narrator, text: "Someone walks in hearing distance. Sameer looks at the guy, then back at Veer. He could get something from him right now." }
+    outro:
+      - { speaker: narrator, text: "The volunteers had mentioned a huge workshop today — he needs to stop it. If not to save himself or Parth, then to save the children." }
+      - { speaker: narrator, text: "He thinks of contacting the police. The mask stares at him. He drops his phone and picks up the mask. He needs to do it himself." }
+      - { speaker: narrator, text: "He reaches the hospital. Lines of cargo are being put into trucks." }
+    complete: { clues: [], puzzles: [p_floor] }
+
+  - id: act8
+    type: interactive
+    kicker: "Act VIII"
+    title: "The Revelation"
+    entry_room: hospital
+    rooms: [hospital, tanush_office]
+    objective: "The mask is on your face now. See the revelation through to its end."
+    intro:
+      - { speaker: narrator, text: "He reaches the room where the sacrifice happened the last time. Just as he was about to shuffle into a corner to peek at the proceedings, a hand grabs the back of his neck. Sameer freezes. He doesn't dare turn." }
+      - { speaker: leader, text: "My my, I thought you would be smarter than this Sameer." }
+      - { speaker: narrator, text: "The deep voice chuckled behind him, even though there was no joke. He felt the temperature around him drop, his heartbeat steadily rising. The person didn't remove his hand, he just fixed his grip." }
+      - { speaker: leader, text: "What, don't recognise me?" }
+      - { speaker: leader, text: "What are you doing in such shabby clothes, my boy. This is worse than the time you dressed up as a janitor. You should really try to match the dresscode. I even got you a special ribbon." }
+      - { speaker: narrator, text: "The leader grabs the mask from Sameer's bag. He puts it on Sameer and pushes him into the room. Identical masks turn towards him. He takes a seat near the back, the leader closes the door and walks towards the podium." }
+      - { speaker: leader, text: "I was naive at the start, like we all are. I didn't know nor was taught about our holy mother. She was always protecting us. Forget respecting — the lower monkeys didn't even look at her." }
+      - { speaker: leader, text: "I had been at a very low point in my life, taking all sorts of things. I saw her — she cried, asking me why I was destroying myself. What did she do wrong?" }
+      - { speaker: leader, text: "Friends, I had seen divinity. The Moon Goddess had begged me to stop. Who am I but a humble mortal to follow her?" }
+    outro:
+      - { speaker: narrator, text: "He reaches the end of the corridor. He climbs on the window frame. He gazes at the burning room — the leader's face melted, muscle fibers charred." }
+      - { speaker: narrator, text: "The game has ended. Sameer can leave — before it restarts, he can go back to his life. Sameer closes his eyes, he breathes." }
+      - { speaker: narrator, text: "His phone pings. What? The story is supposed to end. It's another voice note." }
+      - { speaker: voice, text: "now disappear" }
+      - { speaker: narrator, text: "He plummets down to the ground." }
+    complete: { clues: [], puzzles: [p_why, p_where, p_wrong] }
+
+rooms:
+  - id: sameer_room
+    hotspots:
+      # Act VI
+      - id: sameer_room_a6_fullmoon
+        act: act6
+        type: puzzle
+        puzzle: p_fullmoon
+        label: "The notification: Poornima"
+        position: [-3.4, 0.9, -3.4]
+      - id: sameer_room_a6_hospital
+        act: act6
+        type: travel
+        to: hospital
+        label: "Back to Shashdhar"
+        requires: { puzzles: [p_fullmoon] }
+        position: [-3.6, 0.2, 3.6]
+      # Act VII
+      - id: sameer_room_a7_mask
+        act: act7
+        type: puzzle
+        puzzle: p_mask_owner
+        label: "The wendigo mask on his bed"
+        position: [3.5, 0.9, -3.5]
+      - id: sameer_room_a7_veer
+        act: act7
+        type: character
+        character: veer
+        label: "The doorbell — Veer"
+        position: [3.6, 0.6, 2.6]
+      - id: sameer_room_a7_follow
+        act: act7
+        type: puzzle
+        puzzle: p_veer_mask
+        label: "How would the cult follow someone?"
+        position: [2.6, 1.0, -3.6]
+      - id: sameer_room_a7_lua
+        act: act7
+        type: puzzle
+        puzzle: p_lua
+        label: "The pharmaceutical company"
+        position: [-3.5, 1.0, -2.6]
+      - id: sameer_room_a7_nigeria
+        act: act7
+        type: puzzle
+        puzzle: p_nigeria
+        label: "Where did Nigeria come up?"
+        position: [-2.6, 1.1, -3.6]
+      - id: sameer_room_a7_continue
+        act: act7
+        type: puzzle
+        puzzle: p_continue
+        label: "Continue, or give up?"
+        position: [-3.6, 1.2, -1.8]
+      - id: sameer_room_a7_hospital
+        act: act7
+        type: travel
+        to: hospital
+        label: "To Shashdhar Hospital"
+        requires: { puzzles: [p_continue] }
+        position: [3.6, 0.2, 3.6]
+
+  - id: hospital
+    hotspots:
+      # Act VI
+      - id: h6_crowd
+        act: act6
+        type: clue
+        clue: c_ritual2
+        label: "A crowd at the theatre doors"
+        requires: { clues: [c_pen_camera] }
+        position: [-3.5, 0.9, -3.5]
+      - id: h6_voice_hq
+        act: act6
+        type: puzzle
+        puzzle: p_voice_hq
+        label: "That voice again"
+        position: [-2.6, 1.1, -3.6]
+      - id: h6_tanush
+        act: act6
+        type: puzzle
+        puzzle: p_tanush
+        label: "A name surfaces"
+        position: [-3.6, 1.3, -2.6]
+      - id: h6_box
+        act: act6
+        type: puzzle
+        puzzle: p_box
+        label: "The carved box"
+        position: [3.5, 0.9, -3.5]
+      - id: h6_sacrifice
+        act: act6
+        type: clue
+        clue: c_sacrifice
+        label: "The sacrifice"
+        requires: { puzzles: [p_box] }
+        position: [2.6, 1.0, -3.6]
+      - id: h6_parth_meet
+        act: act6
+        type: clue
+        clue: c_parth_meet
+        label: "A face in the crowd"
+        requires: { clues: [c_sacrifice] }
+        position: [3.6, 1.2, -2.6]
+      - id: h6_exit_police
+        act: act6
+        type: travel
+        to: police_station
+        label: "Stunned, he floats home..."
+        position: [-3.6, 0.3, 3.6]
+      # Act VII
+      - id: h7_trucks
+        act: act7
+        type: clue
+        clue: c_trucks
+        label: "Cargo into trucks"
+        requires: { puzzles: [p_continue] }
+        position: [3.5, 0.7, 3.5]
+      - id: h7_worker
+        act: act7
+        type: clue
+        clue: c_disguise
+        label: "A lone worker"
+        requires: { clues: [c_trucks] }
+        position: [3.6, 0.9, 2.5]
+      - id: h7_floor
+        act: act7
+        type: puzzle
+        puzzle: p_floor
+        label: "The service lift"
+        position: [2.5, 1.1, 3.6]
+      # Act VIII
+      - id: h8_refer
+        act: act8
+        type: puzzle
+        puzzle: p_refer
+        label: "The special one"
+        position: [-3.6, 1.2, 2.6]
+      - id: h8_spiral
+        act: act8
+        type: puzzle
+        puzzle: p_spiral
+        label: "Spirals tattooed around his finger"
+        position: [-2.6, 1.0, 3.6]
+      - id: h8_veer_death
+        act: act8
+        type: clue
+        clue: c_veer_death
+        label: "Veer on the stage"
+        requires: { puzzles: [p_spiral] }
+        position: [3.6, 1.0, -3.5]
+      - id: h8_parth2
+        act: act8
+        type: clue
+        clue: c_parth2
+        label: "Parth outside the door"
+        requires: { clues: [c_veer_death] }
+        position: [2.6, 1.1, -3.6]
+      - id: h8_to_office
+        act: act8
+        type: travel
+        to: tanush_office
+        label: "The leader drags you both to the office"
+        requires: { clues: [c_parth2] }
+        position: [-3.5, 0.3, -3.6]
+
+  - id: police_station
+    hotspots:
+      - id: police_station_a6_officer
+        act: act6
+        type: character
+        character: officer
+        label: "Officer Rao"
+        position: [3.6, 0.7, -3.5]
+      - id: police_station_a6_arrest
+        act: act6
+        type: clue
+        clue: c_arrest
+        label: "The story: he murdered Enakshi"
+        requires: { clues: [c_parth_meet] }
+        position: [-3.5, 0.9, -3.5]
+      - id: police_station_a6_tell
+        act: act6
+        type: puzzle
+        puzzle: p_tell
+        label: "Should he tell them?"
+        position: [-2.6, 1.1, -3.6]
+      - id: police_station_a6_info
+        act: act6
+        type: puzzle
+        puzzle: p_police_info
+        label: "What did he get from her home?"
+        position: [-3.6, 1.2, -2.6]
+      - id: police_station_a6_where
+        act: act6
+        type: puzzle
+        puzzle: p_police_where
+        label: "Where did he get it?"
+        position: [3.5, 1.0, -2.6]
+      - id: police_station_a6_video
+        act: act6
+        type: puzzle
+        puzzle: p_police_video
+        label: "Anything else — a recording?"
+        position: [2.6, 1.2, -3.6]
+
+  - id: tanush_office
+    hotspots:
+      # Act VIII
+      - id: h8_office_clue
+        act: act8
+        type: clue
+        clue: c_office
+        label: "Plush carpets, mahogany"
+        position: [3.6, 0.9, 3.5]
+      - id: h8_years
+        act: act8
+        type: puzzle
+        puzzle: p_years
+        label: "How long has he been here?"
+        position: [2.6, 1.1, 3.6]
+      - id: h8_rooms
+        act: act8
+        type: puzzle
+        puzzle: p_rooms
+        label: "Where else did he run?"
+        position: [3.6, 1.0, 2.6]
+      - id: h8_why
+        act: act8
+        type: puzzle
+        puzzle: p_why
+        label: "Why did he do all of this?"
+        position: [-3.6, 1.2, 3.5]
+      - id: h8_where
+        act: act8
+        type: puzzle
+        puzzle: p_where
+        label: "Where is Parth?"
+        position: [-2.6, 1.0, 3.6]
+      - id: h8_wrong
+        act: act8
+        type: puzzle
+        puzzle: p_wrong
+        label: "What if you had answered wrong?"
+        position: [-3.6, 0.9, 2.6]
+
+characters:
+  # Officer Rao is needed for the act6 police-station hotspot. Values mirror the
+  # legacy baseline in case/main.yaml so W1's definition merges cleanly.
+  - id: officer
+    name: "Officer Rao"
+    persona: "Cynical station officer, powered by masala dosa and procedure. Warms up if you bring him something real."
+    goals:
+      - "Close the file with the least work possible"
+      - "Not miss an actual crime under his nose"
+    demeanor: cooperative
+    deflections:
+      - "Officer Rao wipes his fingers on a napkin and turns a page of the case file."
+      - "Officer Rao sighs. \"These things take time, bhai.\""
+    snubs:
+      - "Officer Rao raises his eyebrows. \"That's all you have?\""
+      - "Officer Rao goes back to his masala dosa."
+    facts:
+      - id: officer_act6_dosa
+        text: "He is having a masala dosa and flipping through cases with greasy fingers."
+        unlock: always
+        disposition: admit
+      - id: officer_act6_pattern
+        text: "The reports line up: missing people, gone posters, a full-moon calendar. The station filed the pattern away and forgot it."
+        unlock: { requires: [c_reports] }
+        disposition: admit
+      - id: officer_act6_charge
+        text: "Sameer is being held for the murder of Enakshi — the woman from the house across the lane."
+        unlock: { requires: [c_arrest] }
+        disposition: admit
+      - id: officer_act6_cases
+        text: "The dates in Sameer's files trace at least five missing cases to the same cult."
+        unlock: { requires: [c_arrest] }
+        disposition: admit
+      - id: officer_act6_mask
+        text: "No one at the station will admit to leaving a wendigo mask on Sameer's bed."
+        unlock: { requires: [c_mask] }
+        disposition: deflect
+
+  # Veer's persona/name come from W2 (act3). This fragment only contributes the
+  # act7 interview facts, merged by fact id.
+  - id: veer
+    facts:
+      - id: veer_act7_band
+        text: "He fought almost the entire band to keep the modified voices and electric beats."
+        unlock: always
+        disposition: admit
+      - id: veer_act7_ngo
+        text: "He's been in touch with the NGO for at least three years. They usually hold workshops every Saturday."
+        unlock: { requires: [c_apogee] }
+        disposition: admit
+      - id: veer_act7_frazzled
+        text: "He came to Sameer's door frazzled, scared and angry — his name is in the folders Sameer sent to the police."
+        unlock: { requires: [c_mask] }
+        disposition: deny
+      - id: veer_act7_tailed
+        text: "He has heard of members being tailed around. Usually the aftermath is messy."
+        unlock: { requires: [c_mask_owner] }
+        disposition: admit
+      - id: veer_act7_step_down
+        text: "He pleads with Sameer to step down — it's not worth it — and begs him not to send the files, or his family will be targeted too."
+        unlock: { after: [veer_act7_tailed] }
+        disposition: deflect
+
+  # The leader is the antagonist of act6-8; defined here so the act8 story lines
+  # always resolve, merged by id with W2's fragment if it also defines him.
+  - id: leader
+    name: "The Leader"
+    persona: "The cult's leader and self-styled prophet of the Moon Goddess. Theatrical, mocking and utterly certain of his divinity — he treats the hunt for Sameer as a game."
+    goals:
+      - "Offer the purest to Nishakara"
+      - "Grow the cult, especially among children"
+      - "Keep playing his game with Sameer"
+    demeanor: mocking
+    deflections:
+      - "The leader chuckles, low and unhurried. \"You are asking the wrong questions, child.\""
+      - "The leader spreads his arms as if addressing a congregation. \"Everything I do, I do for her.\""
+    snubs:
+      - "The leader looks through you. \"The monkeys always bark the same.\""
+      - "The leader hums a chant, unbothered, until you stop."
+    facts:
+      - id: leader_act8_voice
+        text: "It is his voice — the deep voice from the NGO headquarters, the one that ordered the torture of the missing man."
+        unlock: always
+        disposition: admit
+      - id: leader_act8_ritual
+        text: "He calls the killings offerings. The Moon Goddess begged him to stop, and he chose to follow her instead."
+        unlock: { requires: [c_ritual2] }
+        disposition: deny
+      - id: leader_act8_game
+        text: "All of it was a game to him. He knew Sameer went through his office, and he let the hunt continue for fun."
+        unlock: { requires: [c_caught] }
+        disposition: admit
+      - id: leader_act8_gift
+        text: "He wants to offer Parth next: 'He has potential, Nishkara would be pleased with such a gift.'"
+        unlock: { requires: [c_veer_death] }
+        disposition: deny
+      - id: leader_act8_nigeria
+        text: "The Nigeria workshop was a field test. The shipments routed through Lua Pharmaceuticals paid for it."
+        unlock: { requires: [c_article] }
+        disposition: deflect
+
+clues:
+  # Act VI
+  - id: c_pen_camera
+    name: "Parth's Pen Camera"
+    description: "A pen camera Parth gifted him. Small, discreet — and recording."
+  - id: c_ritual2
+    name: "The Shiniest Mask"
+    description: "The room was much bigger on the inside: people on the podium in dark robes that glowed green under the candlelight, all wearing wendigo masks, looking at a kneeling man. One mask's horns were adorned with small gems at the base — the Shiniest mask. His deep voice reverberated across the room."
+    requires: [c_pen_camera]
+  - id: c_sacrifice
+    name: "The Sacrifice"
+    description: "A podium member opens a carved box. The sacrifice's back is carved with a crescent moon, blood staining the silver blade. The leader pours a vial of shiny liquid into the open mouth — the man convulses, lets out an animalistic yell, then nothing. The leader takes his pulse and raises his right hand. The crowd roars."
+  - id: c_parth_meet
+    name: "Parth in the Crowd"
+    description: "Sameer spots Parth a few rows behind him and yanks his arm. \"I need to be here.\" \"Look, it's either me dying or my mum.\" \"No, I'm not coming, sorry Sameer.\" Parth's voice turned frigid, then he left."
+    requires: [c_sacrifice]
+  - id: c_arrest
+    name: "The Accusation"
+    description: "People around his home. A police officer takes him away — the story is that he has murdered Enakshi. The police drag him off as he pleads his innocence."
+    requires: [c_parth_meet]
+  - id: c_mask
+    name: "The Wendigo Mask"
+    description: "A wendigo mask on his bed. Decorated, with beautiful lace tied around the horns."
+  # Act VII
+  - id: c_mask_owner
+    name: "The Big Bad's Mask"
+    description: "There was only one person with a decorated mask on the podium — The Big Bad."
+  - id: c_lua_files
+    name: "Lua Procurement Logs"
+    description: "Industrial solvents, specialised alkaloid reagents and pharmaceutical binders, sold in separate peptide packs. The amount had reached a level high only in the last year — and it was transported to Nigeria."
+  - id: c_article
+    name: "The Journalist's Last Article"
+    description: "An article on the second page of Google: a wave of hallucinations and disorders among the kids after the Nigeria workshop, zealous nonsense pushed on them. This was the journalist's last article."
+  - id: c_trucks
+    name: "Cargo into Trucks"
+    description: "Lines of cargo being loaded into trucks at the hospital gate."
+  - id: c_disguise
+    name: "The Lone Worker"
+    description: "A man working away from the group, clueless, mostly left to his own devices. Knocked out with the hammer and pushed into the trunk — once he had changed into worker clothes, his disguise was complete."
+    requires: [c_trucks]
+  - id: c_caught
+    name: "The Hand on His Neck"
+    description: "A hand grabs the back of his neck. \"My my, I thought you would be smarter than this Sameer.\" Sameer freezes."
+  # Act VIII
+  - id: c_veer_death
+    name: "Veer's Neck Snapped"
+    description: "The leader removes Veer's mask; Veer lunges for it. The leader grabs his neck — a resounding snap is heard throughout the hall. Veer lies crumpled on the floor. The leader bellows: \"oh special one, did you enjoy this?\""
+  - id: c_parth2
+    name: "Parth's Hollow Eyes"
+    description: "Outside the room, Parth smiles dopily: \"You came! You're going to love this place...\" His eyes looked sunken and his skin like paper."
+    requires: [c_veer_death]
+  - id: c_office
+    name: "The Corner Office"
+    description: "Plush carpets and mahogany furniture — a stark difference from the sterile corridors of the hospital."
+
+puzzles:
+  # ---- Act VI ----
+  - id: p_fullmoon
+    kind: text
+    prompt: "Sameer is reminded of something to do with the full moon seen in the calendar?"
+    hint: "What happened every time the moon was full?"
+    answers:
+      - "missing people"
+      - "people going missing"
+      - "disappearances"
+    success: "People going missing. Determination replaces anxiety — he doesn't want more people screaming in pain because of this rotten cult. He finds a pen camera on his desk, Parth's gift, and leaves for the hospital."
+    grants: [c_pen_camera]
+
+  - id: p_voice_hq
+    kind: text
+    prompt: "He knew this voice — where had he heard it before? It was at the tip of his tongue."
+    answers:
+      - "ngo headquarters"
+      - "the headquarters"
+      - "the ngo"
+    success: "This was the voice he heard in the headquarters. This was the man that had ordered the torture of the missing man."
+    requires: { clues: [c_ritual2] }
+
+  - id: p_tanush
+    kind: text
+    prompt: "This was ______"
+    answers:
+      - "tanush"
+    success: "Tanush. He feels both elation and dread. He checks if the camera is recording — it is."
+    requires: { puzzles: [p_voice_hq] }
+
+  - id: p_box
+    kind: text
+    prompt: "One of the podium members opens a carved box. Sameer remembers the box — what would it contain?"
+    answers:
+      - "holy blade"
+      - "the holy blade"
+      - "blade"
+    success: "The holy blade. Sameer felt sick to his core thinking about what was going to happen."
+    requires: { puzzles: [p_tanush] }
+
+  - id: p_tell
+    kind: choice
+    prompt: "As he is put into a chair, he wonders — should he tell them about what he found?"
+    options:
+      - "Tell them everything"
+      - "Stay silent"
+    answers:
+      - "Tell them everything"
+    penalty: 1
+    fail_message: "He stays silent. The officer taps his pen against the table. (Penalty — the truth keeps burning a hole in his pocket.)"
+    success: "He tells them about it, and the police ask him about the information he got from her home."
+    requires: { clues: [c_parth_meet] }
+
+  - id: p_police_info
+    kind: choice
+    prompt: "The police ask him about the info he got from her home."
+    options:
+      - "Financial information, recruitment numbers, and domains"
+      - "The names of every member"
+      - "The hospital's location"
+    answers:
+      - "Financial information, recruitment numbers, and domains"
+    success: "The police are shocked at not only how organised the information is, but also the dates. They are able to trace at least 5 missing cases to the cult."
+    requires: { puzzles: [p_tell] }
+
+  - id: p_police_where
+    kind: text
+    prompt: "They hound him a bit more — where did he get it?"
+    answers:
+      - "ngo headquarters"
+      - "the archive rooms"
+      - "archive rooms in ngo headquarters"
+    success: "The archive rooms in the NGO headquarters. The officers write it down without looking up."
+    requires: { puzzles: [p_police_info] }
+
+  - id: p_police_video
+    kind: text
+    prompt: "They ask if he has anything else — like a video or recording."
+    answers:
+      - "pen camera"
+      - "the pen camera"
+      - "pen camera recording"
+    success: "The pen camera recording. The police take in all of this and mark it. The officers tell him they will comb over it all and may call him anytime this week. Sameer agrees and is let out of the station. He goes home — on his bed, a wendigo mask is kept."
+    grants: [c_mask]
+    requires: { puzzles: [p_police_where] }
+
+  # ---- Act VII ----
+  - id: p_mask_owner
+    kind: text
+    prompt: "There was only one person with a decorated mask on the podium."
+    answers:
+      - "the big bad"
+      - "big bad"
+      - "leader"
+    success: "The Big Bad. A decorated mask, beautiful lace tied around the horns — left on his own bed. Why was it here, how was it here? Was it the police? Did he do the wrong thing by taking all the evidence to the police?"
+    grants: [c_mask_owner]
+    requires: { clues: [c_mask] }
+
+  - id: p_veer_mask
+    kind: text
+    prompt: "Sameer asks Veer — does this cu-organisation follow people around? Veer asked, \"like what?\""
+    answers:
+      - "wendigo"
+      - "wendigo mask"
+      - "mask"
+    success: "Veer hesitated. \"I mean — I've heard some being tailed around. Usually the aftermath is messy. If there is something like that happening, I suggest that you step down. It's not worth it man.\""
+    requires: { puzzles: [p_mask_owner] }
+
+  - id: p_lua
+    kind: text
+    prompt: "There was a pharmaceutical company that he should look into. What was the company name, and what did he need to look into?"
+    answers:
+      - "lua pharmaceuticals and selenocide"
+      - "lua pharmaceuticals"
+      - "selenocide"
+    success: "Lua Pharmaceuticals and Selenocide. Sameer dives into digital procurement logs and invoices — industrial solvents, specialised alkaloid reagents, pharmaceutical binders, sold in separate peptide packs. The amount had reached a level high only in the last year. It wasn't transported to India — it was transported to Nigeria."
+    grants: [c_lua_files]
+    requires: { puzzles: [p_veer_mask] }
+
+  - id: p_nigeria
+    kind: text
+    prompt: "Wait, where did he hear about Nigeria again?"
+    answers:
+      - "pamphlet"
+      - "the pamphlet"
+      - "ngo pamphlet"
+    success: "The NGO pamphlet! Perigee had hosted a huge workshop in Nigeria just a year ago. He looked up the aftermath — an article on the second page of Google, connecting the same dots he was about to connect. This was the journalist's last article. He tries not to think about what happened to her."
+    grants: [c_article]
+    requires: { puzzles: [p_lua] }
+
+  - id: p_continue
+    kind: choice
+    prompt: "Sameer thinks over the last few days. Should he continue with this or give up?"
+    options:
+      - "Continue"
+      - "Stop"
+    answers:
+      - "Continue"
+    success: "He should continue. He can't let these days go to waste — he could make a big change by just doing a little more."
+    option_endings:
+      Stop: ending_cult
+    requires: { puzzles: [p_veer_mask] }
+
+  - id: p_floor
+    kind: text
+    prompt: "He gets into the service lift. Wait — which floor did he have to go to?"
+    answers:
+      - "third floor"
+      - "3rd floor"
+      - "third"
+      - "3"
+    success: "Third floor. He reaches the room where the sacrifice happened the last time. Just as he was about to shuffle into a corner to peek at the proceedings, a hand grabs the back of his neck. Sameer freezes."
+    grants: [c_caught]
+    requires: { clues: [c_disguise] }
+
+  # ---- Act VIII ----
+  - id: p_refer
+    kind: text
+    prompt: "The leader bellows, \"oh special one, did you enjoy this?\" Who is he referring to?"
+    answers:
+      - "you"
+      - "sameer"
+      - "me"
+    success: "You. Sameer doesn't really understand what he just saw — why was Veer just lying there, why wasn't he getting up? The leader was pointing to him."
+    requires: { clues: [c_caught] }
+
+  - id: p_spiral
+    kind: text
+    prompt: "He looked at the hand pointing — wrinkled, veins protruding, spirals tattooed around his finger. He had learned about that in maths, hadn't he? What was it called again?"
+    answers:
+      - "fibonacci"
+      - "golden spiral"
+      - "fibonacci spiral"
+    success: "Fibonacci spirals — or golden spirals."
+    requires: { puzzles: [p_refer] }
+
+  - id: p_years
+    kind: text
+    prompt: "\"In my time this place flourished. Do you know how long I have been here?\""
+    answers:
+      - "5"
+      - "five"
+      - "5 years"
+      - "five years"
+    success: "\"You've barely been here for 5 years, old man — you haven't done shit.\" The leader looked at him, then looked at Parth."
+    requires: { clues: [c_office] }
+
+  - id: p_rooms
+    kind: text
+    prompt: "He runs with the book to other rooms. Which other room did he visit, other than the leader's or sacrifice room?"
+    answers:
+      - "security room"
+      - "the security room"
+    success: "The security room. He runs over there throwing pages near the switchboards and wherever the flames would be big. The leader tries his best to catch him, but he fails. He reaches the end of the corridor and climbs on the window frame."
+    requires: { puzzles: [p_years] }
+
+  - id: p_why
+    kind: text
+    prompt: "Why did he start doing all of this?"
+    answers:
+      - "to find parth"
+      - "find parth"
+    success: "To find Parth. He gazes at the burning room — the leader's face melted, muscle fibers charred."
+    requires: { puzzles: [p_rooms] }
+
+  - id: p_where
+    kind: text
+    prompt: "Where is Parth?"
+    answers:
+      - "dead"
+      - "parth is dead"
+    success: "Dead. Parth's head was banged on the table corner, stained red. He didn't get up."
+    requires: { puzzles: [p_why] }
+
+  - id: p_wrong
+    kind: text
+    prompt: "Sameer looks at the player. What would have happened if you had given the wrong answer?"
+    answers:
+      - "lose"
+      - "i would lose"
+      - "game over"
+    success: "I would lose. The game has ended — Sameer can leave, before it restarts, he can go back to his life. Sameer closes his eyes, he breathes."
+    requires: { puzzles: [p_where] }
+
+canonical_qa:
+  - { character: officer, q: "where did he get it", a: "Archive rooms in the NGO headquarters." }
+  - { character: officer, q: "what is he accused of", a: "The murder of Enakshi. He pleads his innocence, but the story is already out there." }
+  - { character: veer, q: "does the organisation follow people around", a: "I've heard some being tailed around. Usually the aftermath is messy. If something like that is happening, I suggest that you step down — it's not worth it." }
+  - { character: veer, q: "why did you come to my door", a: "I'm hearing from my dad that you apparently got folders full of information. If my name comes in the cult, I swear to god —" }
+  - { character: leader, q: "why did you start all of this", a: "I was naive at the start, like we all are. I didn't know nor was taught about our holy mother. She was always protecting us." }

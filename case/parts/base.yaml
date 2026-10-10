@@ -1,0 +1,21 @@
+# The Moon's Dark Side — frozen base. Story fragments live in case/parts/*.yaml.
+# See docs/BUILD_SPEC.md for the schema and the frozen id registry.
+
+title: "The Moon's Dark Side"
+subtitle: "A Prompt Arena Mystery"
+
+solution:
+  culprit: leader
+  method: "He led the Perigee cult and sacrificed devotees under the full moon in ritual killings at Shashdhar Hospital."
+  motive: "To feed his delusion that the Moon Goddess Nishakara demanded offerings, and to grow the cult."
+  required_clues: [c_pen_camera]
+
+act0_title: "The Vanishing"
+
+endings:
+  - id: ending_cult
+    title: "The Virus"
+    body: "You stepped back. The cult steadily grows — it brings everything around it, including the police and local politicians, under its complete control. It spreads like an unstoppable virus. Somewhere out there, Parth is still waiting for a way out that never comes."
+  - id: ending_main
+    title: "Now Disappear"
+    body: "The hospital burns behind him, the leader's face melted under the flames. Sameer breathes. Parth is gone. It is over — until his phone pings one last time. \"now disappear\". He plummets down to the ground."

@@ -1,0 +1,723 @@
+# The Moon's Dark Side — W1 fragment: Acts 0, 1, 2.
+# Owned by workstream W1. Merged by scripts/merge-case.mjs into case/main.yaml.
+# Registry and schema: docs/BUILD_SPEC.md. Story: docs/FINAL_SCRIPT.md.
+
+acts:
+  - id: act0
+    type: cinematic
+    kicker: "Act 0"
+    title: "The Vanishing"
+    subtitle: "No clue. A dead end — and then a beep."
+    scenes: [gazebo, parth_home, police_station, sameer_room]
+    beats:
+      - id: gazebo_dusk
+        room: gazebo
+        shot: wide
+        seconds: 9
+        cast:
+          - { character: sameer, at: [-0.7, 0.1], rot: 0.55, pose: sit }
+          - { character: parth, at: [0.75, 0.05], rot: -0.55, pose: sit }
+        lines:
+          - { speaker: narrator, text: "An eventful day for Sameer and Parth — the beach, the streets, and now the park, as evening settles around the gazebo." }
+          - { speaker: parth, text: "Nothing, man. Just trying to get an internship." }
+          - { speaker: sameer, text: "Same. Honestly, today was the first time I didn't think about Jade Street all day." }
+      - id: gazebo_talk
+        room: gazebo
+        shot: two
+        seconds: 11
+        cast:
+          - { character: sameer, at: [-0.7, 0.1], rot: 0.55, pose: sit }
+          - { character: parth, at: [0.75, 0.05], rot: -0.55, pose: sit }
+        lines:
+          - { speaker: parth, text: "You know how it goes — recruiters ghost you after making you run around." }
+          - { speaker: narrator, text: "Sameer pleaded," }
+          - { speaker: sameer, text: "Dude, I think Jade Street just ghosted me. Let me have some hope — maybe they're still deciding." }
+          - { speaker: parth, text: "Right. The AI reviewing your resume would take three days?" }
+      - id: gazebo_call
+        room: gazebo
+        shot: close_parth
+        seconds: 11
+        cast:
+          - { character: sameer, at: [-0.7, 0.1], rot: 0.55, pose: sit }
+          - { character: parth, at: [0.75, 0.05], rot: -0.55, pose: sit }
+        lines:
+          - { speaker: narrator, text: "Parth's phone rings. He picks it up and listens — not a word, only a slow glance at Sameer." }
+          - { speaker: parth, text: "Alright, I gotta go. Mum's calling. Tomorrow — same time?" }
+          - { speaker: narrator, text: "And then he ran off. Weird." }
+          - { speaker: sameer, text: "Yeah, yeah, dude." }
+          - { speaker: narrator, text: "Parth leaves earlier than usual. Sameer walks home alone." }
+      - id: gazebo_nextday
+        room: gazebo
+        shot: wide
+        seconds: 10
+        cast:
+          - { character: sameer, at: [-0.4, 0.3], rot: 0.2 }
+        lines:
+          - { speaker: narrator, text: "The next day, Sameer is back at the park. Fifteen minutes pass. Then the calls — one, two… the fifth in ten minutes. No answer." }
+          - { speaker: sameer, text: "Pick up, man. This isn't funny." }
+      - id: hall_mother
+        room: parth_home
+        shot: two
+        seconds: 11
+        cast:
+          - { character: sameer, at: [-0.6, 0.6], rot: 0.3 }
+          - { character: mother, at: [0.7, -0.2], rot: -0.35 }
+        lines:
+          - { speaker: mother, text: "Oh hello beta. You and Parth got bored already?" }
+          - { speaker: sameer, text: "No, aunty — Parth didn't come at all. I came to take him with me." }
+          - { speaker: mother, text: "But he left home about an hour ago..?" }
+          - { speaker: sameer, text: "What?!" }
+      - id: hall_search
+        room: parth_home
+        shot: wide
+        seconds: 9
+        cast:
+          - { character: sameer, at: [-0.6, 0.6], rot: 0.3 }
+          - { character: mother, at: [0.7, -0.2], rot: -0.35 }
+        lines:
+          - { speaker: narrator, text: "His favourite cafe. The football stands. The library. The park again. Two, three hours of calling. Parth is nowhere to be found." }
+      - id: station_open
+        room: police_station
+        shot: wide
+        seconds: 9
+        cast:
+          - { character: sameer, at: [-0.9, 0.6], rot: 0.25 }
+          - { character: mother, at: [-0.3, 0.78], rot: 0.1 }
+          - { character: officer, at: [0.5, -0.08], rot: -0.2, pose: sit }
+        lines:
+          - { speaker: narrator, text: "The police station is crowded and migraine-inducing, as all government offices are. The officer is having a masala dosa, flipping through cases with greasy fingers." }
+      - id: station_q1
+        room: police_station
+        shot: two
+        seconds: 12
+        cast:
+          - { character: sameer, at: [-0.9, 0.6], rot: 0.25 }
+          - { character: mother, at: [-0.3, 0.78], rot: 0.1 }
+          - { character: officer, at: [0.5, -0.08], rot: -0.2, pose: sit }
+        lines:
+          - { speaker: mother, text: "My son is missing! We can't contact him. His name is Parth." }
+          - { speaker: officer, text: "How long has it been since you last saw him, ma'am?" }
+          - { speaker: sameer, text: "Somewhere between two and three hours." }
+          - { speaker: officer, text: "Missing cases can only be filed after 48 hours. Have you checked his friends' homes?" }
+          - { speaker: mother, text: "Yes. Everywhere we can think of." }
+      - id: station_q2
+        room: police_station
+        shot: close_officer
+        seconds: 12
+        cast:
+          - { character: sameer, at: [-0.9, 0.6], rot: 0.25 }
+          - { character: mother, at: [-0.3, 0.78], rot: 0.1 }
+          - { character: officer, at: [0.5, -0.08], rot: -0.2, pose: sit }
+        lines:
+          - { speaker: officer, text: "When and where did you last see him?" }
+          - { speaker: sameer, text: "In the park. Yesterday evening." }
+          - { speaker: officer, text: "Was there anything odd about him, when you last saw him?" }
+          - { speaker: sameer, text: "He left early — after getting a call from his mother." }
+      - id: station_lie
+        room: police_station
+        shot: close_mother
+        seconds: 9
+        cast:
+          - { character: mother, at: [-0.3, 0.78], rot: 0.1 }
+        lines:
+          - { speaker: mother, text: "I didn't call him. He told me you had left early." }
+          - { speaker: narrator, text: "Sameer and Parth's mother look at each other in confusion. Parth had lied to both of them. But why?" }
+      - id: station_end
+        room: police_station
+        shot: wide
+        seconds: 8
+        cast:
+          - { character: sameer, at: [-0.9, 0.6], rot: 0.25 }
+          - { character: mother, at: [-0.3, 0.78], rot: 0.1 }
+          - { character: officer, at: [0.5, -0.08], rot: -0.2, pose: sit }
+        lines:
+          - { speaker: officer, text: "We'll file the missing person case — but I can't give you any guarantee." }
+          - { speaker: narrator, text: "No clue. A dead end. They leave the station with nothing." }
+      - id: room_beep
+        room: sameer_room
+        shot: close_desk
+        seconds: 9
+        cast:
+          - { character: sameer, at: [0.2, 0.6], rot: 0.15, pose: sit }
+        lines:
+          - { speaker: narrator, text: "Sameer goes home stressed. Cold leftovers, no energy to cook. Just as he's about to sleep — a beep." }
+          - { speaker: narrator, text: "A notification from Parth. A voice note." }
+      - id: room_call
+        room: sameer_room
+        shot: two
+        seconds: 7
+        cast:
+          - { character: sameer, at: [0.2, 0.6], rot: 0.15, pose: sit }
+        lines:
+          - { speaker: sameer, text: "Come on, pick up. Please." }
+          - { speaker: narrator, text: "The call doesn't connect. There is nothing left to do but listen." }
+      - id: room_voicenote
+        room: sameer_room
+        shot: close_desk
+        seconds: 18
+        overlay: phone_voicenote
+        cast:
+          - { character: sameer, at: [0.2, 0.6], rot: 0.15, pose: sit }
+        lines:
+          - { speaker: voice, text: "The moon has a dark side you never see," }
+          - { speaker: voice, text: "Some secrets even light can't reach," }
+          - { speaker: voice, text: "Look where his thoughts rest," }
+          - { speaker: voice, text: "Where he hides what he knows best." }
+          - { speaker: voice, text: "The room may hold what he never said," }
+          - { speaker: voice, text: "A truth better left unread." }
+          - { speaker: voice, text: "So tread carefully, and look behind…" }
+          - { speaker: voice, text: "You may not like what you're about to find." }
+      - id: room_end
+        room: sameer_room
+        shot: wide
+        seconds: 9
+        cast:
+          - { character: sameer, at: [0.2, 0.6], rot: 0.15, pose: sit }
+        lines:
+          - { speaker: narrator, text: "Shivers run down his spine. The voice is deep, mocking, warped — it doesn't belong to Parth." }
+          - { speaker: sameer, text: "Jade Street ghosted me… but you didn't. Who are you?" }
+
+  - id: act1
+    type: interactive
+    kicker: "Act I"
+    title: "The Room"
+    entry_room: parth_room
+    rooms: [parth_room]
+    objective: "Search Parth's room. Find what he was hiding."
+    intro:
+      - { speaker: narrator, text: "Sameer goes to Parth's home. He meets Parth's mother — she looks as if she hasn't slept at all since the day her son went missing. She still smiles at him, with a lot of effort." }
+      - { speaker: sameer, text: "I would like to go to Parth's room, aunty." }
+      - { speaker: narrator, text: "His mum looks up the stairs with unshed tears, looks at Sameer, then allows him." }
+      - { speaker: mother, text: "Please don't disturb anything in his room. Parth may have a hard time finding stuff once he comes back." }
+      - { speaker: narrator, text: "Sameer runs up the stairs." }
+    outro:
+      - { speaker: narrator, text: "He puts the coordinates into Boogle Maps. It leads to an abandoned field — not that far from Parth's home." }
+      - { speaker: sameer, text: "Looks a lot like a ground one would get kidnapped at." }
+      - { speaker: narrator, text: "Thankfully, our lovely protagonist had never attended stranger danger sessions. So he went there." }
+    complete:
+      puzzles: [p_laptop]
+
+  - id: act2
+    type: interactive
+    kicker: "Act II"
+    title: "Full Moon"
+    entry_room: sameer_room
+    rooms: [sameer_room, gazebo, abandoned_field, cyber_cafe, parth_home]
+    objective: "Chase the leads — the abandoned car, the mixtape, the videos — and find out who Vihaan is."
+    intro:
+      - { speaker: narrator, text: "Parth had a whole life Sameer is only now finding out, one abandoned car's mixtape at a time. To ignore the sickening feeling, he goes to the store to find something to eat." }
+      - { speaker: narrator, text: "He reaches Ramu's Dosa Corner — Parth loved the place for some reason. Nostalgic, he orders Parth's usual." }
+      - { speaker: narrator, text: "He stumbles back home, the dosa weighing his stomach and the bag weighing his back, and crashes on his bed." }
+      - { speaker: narrator, text: "When he wakes, the phone reads 11:30 am. There is a new voice note from Parth." }
+    outro:
+      - { speaker: narrator, text: "Normal ticket. He really doesn't want to do this — he doesn't want to involve more people into this than required." }
+      - { speaker: sameer, text: "This is either the lead of my life or the most expensive dead end ever." }
+      - { speaker: narrator, text: "His head throbs — the usual marker to stop using his head for the day. He falls asleep." }
+    complete:
+      puzzles: [p_ticket]
+
+rooms:
+  - id: gazebo
+    name: "The Park Gazebo"
+    scene: gazebo
+    hotspots:
+      - id: gz_under
+        type: clue
+        clue: c_cd
+        label: "Transparent case under the bench"
+        position: [0.6, 0.25, -0.9]
+        requires: { puzzles: [p_voicenote2] }
+
+  - id: parth_home
+    name: "Parth's House"
+    scene: parth_home
+    hotspots:
+      - id: ph_mother
+        type: character
+        character: mother
+        label: "Parth's Mother"
+        position: [0.4, 0.0, 0.9]
+      - id: ph_albums
+        type: clue
+        clue: c_videos
+        label: "Album of old home videos"
+        position: [-1.6, 0.9, -1.2]
+      - id: ph_drums
+        type: puzzle
+        puzzle: p_drums
+        label: "That drum sound…"
+        position: [1.8, 0.7, -0.6]
+
+  - id: police_station
+    name: "Police Station"
+    scene: police_station
+    hotspots: []
+
+  - id: sameer_room
+    name: "Sameer's Room"
+    scene: sameer_room
+    hotspots:
+      - id: sr_voicenote
+        act: act2
+        type: puzzle
+        puzzle: p_voicenote2
+        label: "New voice note"
+        position: [-1.8, 0.75, -1.9]
+      - id: sr_cd_choice
+        act: act2
+        type: puzzle
+        puzzle: p_cd_mode
+        label: "The copper spiral CD"
+        position: [0.0, 0.7, -2.0]
+      - id: sr_instalitre
+        act: act2
+        type: clue
+        clue: c_veer_profile
+        label: "Instalitre"
+        position: [1.8, 1.0, -2.0]
+      - id: sr_ticket
+        act: act2
+        type: puzzle
+        puzzle: p_ticket
+        label: "Veer's show — tickets"
+        position: [0.0, 0.8, -0.8]
+
+  - id: parth_room
+    name: "Parth's Room"
+    scene: parth_room
+    hotspots:
+      - id: pr_laptop
+        type: clue
+        clue: c_laptop_locked
+        label: "Parth's laptop"
+        position: [0.0, 0.75, -2.6]
+      - id: pr_password
+        type: puzzle
+        puzzle: p_laptop
+        label: "Enter password"
+        position: [1.0, 0.75, -2.3]
+      - id: pr_reports
+        type: clue
+        clue: c_reports
+        label: "Folder: missing people"
+        position: [2.4, 0.75, -2.0]
+      - id: pr_email
+        type: clue
+        clue: c_email
+        label: "Sent mail"
+        position: [-1.2, 0.75, -2.4]
+      - id: pr_coords
+        type: clue
+        clue: c_coords
+        label: "Screenshot: coordinates"
+        position: [2.9, 0.55, -0.9]
+      - id: pr_bookcase
+        type: clue
+        clue: c_diary
+        label: "Book shelf"
+        position: [-3.2, 1.0, -0.5]
+      - id: pr_morse
+        type: puzzle
+        puzzle: p_morse
+        label: "Decode the dots and dashes"
+        position: [-3.2, 0.6, 0.9]
+      - id: pr_travel_field
+        type: travel
+        to: abandoned_field
+        label: "Follow the coordinates"
+        position: [3.2, 0.4, 2.8]
+        requires: { clues: [c_coords] }
+
+  - id: abandoned_field
+    name: "The Abandoned Field"
+    scene: abandoned_field
+    hotspots:
+      - id: af_sedan
+        type: clue
+        clue: c_sedan
+        label: "Dusty silver sedan (KA01OC1808)"
+        position: [-1.6, 0.5, -0.8]
+      - id: af_backpack
+        type: clue
+        clue: c_backpack
+        label: "Black backpack on the seat"
+        position: [1.4, 0.6, -1.2]
+
+  - id: cyber_cafe
+    name: "Ramu's Cyber Cafe"
+    scene: cyber_cafe
+    hotspots:
+      - id: cc_dosa
+        type: puzzle
+        puzzle: p_dosa
+        label: "Ramu's Dosa Corner — Parth's usual"
+        position: [-1.8, 0.6, 0.9]
+      - id: cc_cassette
+        type: puzzle
+        puzzle: p_cassette
+        label: "Cassette player"
+        position: [0.6, 0.7, -1.0]
+
+characters:
+  - id: sameer
+    name: "Sameer"
+    persona: "The player character: anxious, sarcastic, painfully loyal to Parth. Talks to himself when he's scared, and he's scared a lot now."
+    goals: ["Find Parth", "Make sense of the voice note", "Follow every lead before it goes cold"]
+    demeanor: anxious
+    deflections:
+      - "Sameer drums his fingers on his thigh and changes the subject."
+      - "Sameer laughs too loudly. \"Yeah. Anyway —\""
+    snubs:
+      - "Sameer stares. \"Are we doing this or not?\""
+      - "Sameer shakes his head. \"That's not even a question.\""
+    facts:
+      - id: sameer_quest
+        text: "Parth has been missing for days. The voice note told him to look where Parth's thoughts rest."
+        unlock: always
+        disposition: admit
+      - id: sameer_jade
+        text: "Jade Street ghosted him the day Parth vanished. He'd rather think about that than about the voice note."
+        unlock: always
+        disposition: admit
+
+  - id: parth
+    name: "Parth"
+    persona: "The missing friend: charming, evasive, keeps secrets behind jokes. Anything he says is a clue."
+    goals: ["Keep his secrets", "Protect Sameer from what he knows"]
+    demeanor: charming
+    deflections:
+      - "Parth laughs it off like it was a joke."
+      - "Parth shrugs. \"It's nothing. You know me.\""
+    snubs:
+      - "Parth's smile doesn't reach his eyes. \"Drop it, man.\""
+      - "Parth suddenly finds his phone very interesting."
+    facts:
+      - id: parth_lie
+        text: "He said his mother called and he had to leave the gazebo early — but she never called. He told her Sameer had left early."
+        unlock: always
+        disposition: deny
+      - id: parth_vihaan
+        text: "Vihaan was his childhood friend. The old home videos show the two of them together — Vihaan playing the drums."
+        unlock: { requires: [c_videos] }
+        disposition: deflect
+
+  - id: mother
+    name: "Parth's Mother"
+    persona: "Grieving, hopeful, guilty about the last conversation. Measure every word — she is hiding something too."
+    goals: ["Get her son back", "Not be blamed"]
+    demeanor: guarded
+    deflections:
+      - "Parth's mother looks up the stairs with unshed tears."
+      - "She wipes her hands on her saree and says nothing for a moment."
+    snubs:
+      - "Her voice cracks. \"Parth will explain everything when he comes back.\""
+      - "She turns to the photo on the wall. \"He's coming back.\""
+    facts:
+      - id: mother_alibi
+        text: "Parth left home about an hour before Sameer rang the doorbell. He told her he was going to meet Sameer at the park."
+        unlock: always
+        disposition: admit
+      - id: mother_room
+        text: "She let Sameer search Parth's room and begged him not to disturb anything — Parth would have a hard time finding his things once he comes back."
+        unlock: { requires: [c_diary] }
+        disposition: admit
+      - id: mother_vihaan
+        text: "Vihaan was Parth's childhood friend. There are old home videos of the two of them — Vihaan on the drums."
+        unlock: { requires: [c_videos] }
+        disposition: admit
+
+  - id: officer
+    name: "Officer Rao"
+    persona: "Cynical station officer, powered by masala dosa and procedure. Warms up if you bring him something real."
+    goals: ["Close the file with the least work possible", "Not miss an actual crime under his nose"]
+    demeanor: cooperative
+    deflections:
+      - "The officer flips a greasy page and pretends not to hear."
+      - "The officer takes a slow bite of his masala dosa instead of answering."
+    snubs:
+      - "The officer points his pen at the queue behind you. \"Next.\""
+      - "The officer sighs. \"Write it down and leave it on the desk.\""
+    facts:
+      - id: officer_rule
+        text: "Missing cases can only be filed 48 hours after the person was last seen. Procedure, ma'am."
+        unlock: always
+        disposition: admit
+      - id: officer_fullmoon
+        text: "Every missing-person report in Parth's folder vanished under a full moon. The station stopped chasing that pattern years ago."
+        unlock: { requires: [c_reports] }
+        disposition: deny
+      - id: officer_plate
+        text: "The plate KA01OC1808 belongs to a Vihaan — the sedan was his. It's the only name attached to any of this."
+        unlock: { requires: [c_sedan] }
+        disposition: admit
+
+  - id: veer
+    name: "Veer"
+    persona: "The band's frontman: friendly, wired, quick to laugh — and careful never to say too much about the NGO. He wears his fame like armour."
+    goals: ["Keep the band clean of the NGO", "Not think too hard about what Parth was doing"]
+    demeanor: cocky
+    deflections:
+      - "Veer takes a long sip of water and looks at the stage."
+      - "Veer chuckles and steers the talk back to the band."
+    snubs:
+      - "Veer's grin fades. \"I don't know what you mean, man.\""
+      - "Veer waves over a security guard with two fingers."
+    facts:
+      - id: veer_band
+        text: "He fronts the band: industrial rock and electronic dance, voice modifiers, heavy synthesizers. The voice additions were his idea."
+        unlock: always
+        disposition: admit
+      - id: veer_parth
+        text: "Parth came around a couple of days ago — super interested in this stuff, and great with the kids."
+        unlock: { requires: [c_ticket] }
+        disposition: admit
+      - id: veer_ngo
+        text: "He's been in touch with the NGO behind Apogee for at least three years; they usually run workshops every Saturday."
+        unlock: { requires: [c_apogee] }
+        disposition: deflect
+
+  - id: enakshi
+    name: "Enakshi"
+    persona: "A member of the organisation whose days blur together: greasy hair, sunken eyes, a house kept dark. She guards her hallway closet like a temple."
+    goals: ["Protect what the organisation gave her", "Serve the holy mother"]
+    demeanor: hostile
+    deflections:
+      - "Enakshi hisses, low in her throat."
+      - "Enakshi glances at the closet door behind her."
+    snubs:
+      - "Enakshi bares her teeth. \"The goddess will judge you.\""
+      - "Enakshi starts to hum something tuneless and will not stop."
+    facts:
+      - id: enakshi_online
+        text: "She is a member of the organisation whose meetings happen only once a week, online. Her colleagues have never met her in person."
+        unlock: always
+        disposition: deny
+      - id: enakshi_lunge
+        text: "She lunges at strangers with a brass candlestick. Her house is dark, and it isn't just the curtains."
+        unlock: { requires: [c_timetable] }
+        disposition: admit
+
+  - id: tanush
+    name: "Tanush"
+    persona: "The name on the corner office: polite, meticulous, terrifying. Rituals, meetings and openings all run through his desk. He calls the missing 'offerings' without blinking."
+    goals: ["Keep the organisation's records perfect", "Stay indispensable to the leader"]
+    demeanor: precise
+    deflections:
+      - "Tanush straightens a paper that is already straight."
+      - "Tanush smiles at a point just past you."
+    snubs:
+      - "Tanush checks his watch. \"Is there a point to this?\""
+      - "Tanush keeps writing. He does not look up."
+    facts:
+      - id: tanush_office
+        text: "His office is mahogany and plush carpet — a world apart from the sterile hospital corridors. The meetings, openings and rituals all run through him."
+        unlock: always
+        disposition: deny
+      - id: tanush_selenocide
+        text: "A drug report on his desk shows high amounts of Selenocide in a patient's bloodstream."
+        unlock: { requires: [c_drug_report] }
+        disposition: deflect
+
+  - id: leader
+    name: "The Leader"
+    persona: "The deep, mocking voice on every voice note, the Shiniest mask on the podium. Theatrical, patient, devout — he believes every word he says about the Moon Goddess Nishakara."
+    goals: ["Return the chosen to Nishakara's arms", "Grow the family"]
+    demeanor: mocking
+    deflections:
+      - "The leader laughs, low and rumbling, even though nothing was funny."
+      - "The leader raises a hand, as if blessing you."
+    snubs:
+      - "The leader turns his back and opens a door. \"The goddess is waiting.\""
+      - "The leader tilts his masked face. \"You bore me, child.\""
+    facts:
+      - id: leader_voice
+        text: "The voice notes are his: warped through a modulator, deep and mocking, making fun of Sameer's distress."
+        unlock: always
+        disposition: admit
+      - id: leader_nishakara
+        text: "He calls the Moon Goddess Nishakara the cult's holy mother. The chosen are 'returned to her arms' — he means it as an honour."
+        unlock: always
+        disposition: admit
+      - id: leader_mask
+        text: "On the podium he wears the Shiniest wendigo mask — gold trim on the robes, gems at the base of the horns."
+        unlock: { requires: [c_ritual2] }
+        disposition: deflect
+
+clues:
+  - id: c_diary
+    name: "Leather diary"
+    description: "A leather diary with a gold engraving of the moon and stars. On the first page, a quote; deeper in, a page of dots and dashes — and the next page, a decoder."
+    grants: [mother_room]
+  - id: c_laptop_locked
+    name: "Locked laptop"
+    description: "Parth's laptop sits open in sleep mode, password protected. A hint flickers on the screen: \"Look where my loudest secrets are kept, away from prying eyes, leather bound and stained with ink.\""
+    grants: []
+  - id: c_morse
+    name: "Decoded diary message"
+    description: "The dots and dashes decode to \"OC1808 in laptop.\" A very strange combination to encode — and stranger still that Parth bothered."
+    grants: []
+  - id: c_laptop
+    name: "Parth's laptop"
+    description: "The laptop blinks awake. Folders, downloads, a mess of Parth's things — and files he never mentioned."
+    grants: []
+  - id: c_reports
+    name: "Reports: missing under the full moon"
+    description: "Reports and posters of missing people — all of them disappeared under the full moon. One man has a huge hooked nose and a horribly thick nose ring."
+    page: "/assets/pictures/evidence_missing_reports.jpg"
+    requires: [c_laptop]
+    grants: [officer_fullmoon]
+  - id: c_email
+    name: "Email to himself"
+    description: "He mails the contents of the folder to his own inbox, attachments and all. If anyone ever reads his sent items, he's finished."
+    requires: [c_reports]
+    grants: []
+  - id: c_coords
+    name: "Map coordinates"
+    description: "A screenshot of a map area with coordinates. Fed into Boogle Maps, it leads to an abandoned field — a lot like a ground one would get kidnapped at."
+    requires: [c_reports]
+    grants: []
+  - id: c_sedan
+    name: "Silver sedan"
+    description: "A dusty but luxurious silver sedan, parked at the edge of the field. The number plate reads KA01OC1808."
+    grants: [officer_plate]
+  - id: c_backpack
+    name: "Black backpack"
+    description: "A black backpack on the seat of the car. Inside: a few cassettes, and nothing else."
+    requires: [c_sedan]
+    grants: []
+  - id: c_mixtape
+    name: "The mixtape"
+    description: "Faint crackling, then ritualistic chanting, weird drum sounds, and bizarre words in no language Sameer can decipher. A scream — and then nothing."
+    grants: []
+  - id: c_videos
+    name: "Home videos: Parth & Vihaan"
+    description: "Grainy home videos: a younger Parth and Vihaan. Vihaan is playing the drums. That drum sound — he just heard it."
+    requires: [c_mixtape]
+    grants: [mother_vihaan]
+  - id: c_cd
+    name: "Copper spiral CD"
+    description: "A transparent case holding a CD, laser-etched with a spiral of copper wiring. It was waiting beneath the gazebo."
+    grants: []
+  - id: c_laptop_fried
+    name: "Fried laptop"
+    description: "The motherboard is fried. The service man holds the laptop a bit, tilts it, and asks for an absurd amount of money. Sameer could have done that himself."
+    grants: []
+  - id: c_footage
+    name: "The video"
+    description: "Dark footage, soundless, lit by candles: people playing drums, someone's mouth opened wide, and in the middle of the blur — putrid, disfigured flesh with blood oozing from the wounds. He prays it wasn't human."
+    grants: []
+  - id: c_veer_profile
+    name: "Instalitre: Veer"
+    description: "No Vihaan — but a handle called Veer, with Vihaan as the username. Public profile: concerts and drum clips, and a show tomorrow. The type of person Sameer really doesn't want to interact with."
+    requires: [c_footage]
+    grants: []
+  - id: c_ticket
+    name: "Normal ticket"
+    description: "One ticket to Veer's show. Normal tier — no backstage, no frills, one very reluctant protagonist."
+    grants: []
+
+puzzles:
+  - id: p_morse
+    kind: text
+    prompt: "The diary's last filled page is covered in dots and dashes. The next page holds a decoder — each pattern, one letter. Oh god, he now has to sit and decode it. Why couldn't Parth write it normally?"
+    hint: "Dots and dashes, letter by letter. The first two are round and open."
+    evidence: "/assets/pictures/evidence_diary_morse.jpg"
+    answers: [oc1808, "oc 1808"]
+    success: "Dots and dashes fall into place: O, C, 1, 8, 0, 8. The full line reads \"OC1808 in laptop.\" A very strange thing to encode — but Sameer shelves it for later."
+    grants: [c_morse]
+    requires: { clues: [c_diary] }
+    penalty: 0
+    fail_message: "Sameer squints at the decoder again. That's not it."
+
+  - id: p_laptop
+    kind: code
+    prompt: "The laptop wakes from sleep mode, cursor blinking in the password field. Looks like he needs to guess the password."
+    hint: "Six characters. The message in the diary began with them."
+    answers: [oc1808, "oc 1808"]
+    success: "He types OC1808 and hits enter. \"Heh, I'm in,\" he mimics, in the worst hacker voice in existence. (Oh god, why is Sameer like this? He wasn't even hacking.)"
+    grants: [c_laptop]
+    requires: { clues: [c_morse] }
+    penalty: 0
+    fail_message: "The password field shakes. Wrong. Again."
+
+  - id: p_cassette
+    kind: choice
+    prompt: "The cassette player whirs to life, waiting. One of Parth's cassettes is already in his hand."
+    options: ["Play it", "Put it back"]
+    answers: ["Play it"]
+    success: "The mixtape starts with a faint crackling, then ritualistic chanting, weird drum sounds, bizarre words he can't place in any language. There is a scream — and then nothing. He grabs the bag and runs, the shopkeeper screaming at him to pay for the device."
+    grants: [c_mixtape]
+    requires: { clues: [c_backpack] }
+    penalty: 0
+    fail_message: "Put it back? After the car, after everything? No. He has to hear it."
+
+  - id: p_drums
+    kind: text
+    prompt: "The drum sound. It may be a lead — now, where has he heard drums before?"
+    answers: [cassette, the cassette, mixtape]
+    success: "In one of the cassettes. The same drum sound, from the abandoned car's bag. Remember, Sameer, remember."
+    requires: { clues: [c_videos] }
+    penalty: 0
+    fail_message: "That's not it. The sound is right there, at the edge of his memory."
+
+  - id: p_dosa
+    kind: choice
+    prompt: "Ramu's Dosa Corner. Parth's usual is steaming in front of him. Should he eat the dosa?"
+    options: ["Eat it", "Skip it"]
+    answers: ["Eat it"]
+    success: "He eats it. It tastes like every other evening they ever spent here. The dosa weighs his stomach; the bag weighs his back."
+    penalty: 0
+    fail_message: "But he bought it ?"
+
+  - id: p_voicenote2
+    kind: text
+    prompt: |
+      Another voice note from Parth's number. Static, then a voice:
+      "Where we would go for a walk,
+      Where you will sit in shock,
+      Find this place before it gets dark,
+      The end comes closer in the …"
+      The voice note ends like a puzzle waiting to be completed. Where is he sending him?
+    answers: [park, the park]
+    success: "The park. The gazebo where he last saw Parth. He pockets the phone and leaves before it gets dark."
+    penalty: 0
+    fail_message: "That's not it. The voice note is still waiting to be completed."
+
+  - id: p_cd_mode
+    kind: choice
+    prompt: "The copper spiral CD sits in its transparent case. His own laptop, or the cyber cafe down the road?"
+    options: ["Use my laptop", "Use the cyber cafe"]
+    answers: ["Use the cyber cafe"]
+    success: "He goes to the cyber cafe in a rudimentary disguise, sends a quick prayer, and inserts the CD. The desktop survives. Most of the videos are dark — drums, candles, someone's mouth opened wide — but one frame will not leave him: putrid, disfigured flesh. He prays it wasn't human."
+    fail_message: "The laptop instantly short-circuits. He swears and yanks the CD out. The service man says the motherboard is fried — and charges him an absurd amount for holding and tilting it. Sameer could have done that himself."
+    fail_grants: [c_laptop_fried]
+    grants: [c_footage]
+    requires: { clues: [c_cd] }
+    penalty: 1
+    continue_on_fail: true
+
+  - id: p_ticket
+    kind: choice
+    prompt: "Veer's show, tomorrow. Two kinds of tickets — normal, and backstage at fifty percent more. Is it worth it?"
+    options: ["Normal ticket", "Backstage ticket"]
+    answers: ["Normal ticket"]
+    success: "Sameer buys the normal ticket. He really doesn't want to do this — he doesn't want to involve more people into this than required."
+    fail_message: "Holy hell, the backstage ticket is daylight robbery. He clicks back and gets the normal one. His head is starting to hurt."
+    grants: [c_ticket]
+    requires: { clues: [c_veer_profile] }
+    penalty: 1
+    continue_on_fail: true
+
+canonical_qa:
+  - character: mother
+    q: "did you call parth that evening"
+    a: "I didn't call him. He told me you had left early. Why would he say that?"
+  - character: mother
+    q: "who is vihaan"
+    a: "Vihaan? He was Parth's childhood friend. I have old home videos — the two of them, Vihaan playing the drums."
+  - character: officer
+    q: "can we file a missing report now"
+    a: "Missing cases can only be filed after 48 hours, ma'am. Have you checked his friends' homes?"
+  - character: officer
+    q: "missing cases full moon"
+    a: "Every full moon someone goes missing. We file the reports, and then... nothing. Don't quote me on that."

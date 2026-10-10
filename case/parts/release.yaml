@@ -1,0 +1,65 @@
+# Playability fixes. The authored nine-act story and ending remain intact.
+acts:
+  - id: act1
+    objective: "Decode the diary, unlock the laptop, then collect the reports, email and coordinates."
+    complete:
+      clues: [c_reports, c_email, c_coords]
+      puzzles: [p_morse, p_laptop]
+  - id: act2
+    complete:
+      clues: [c_sedan, c_backpack, c_mixtape, c_videos, c_cd, c_footage, c_veer_profile]
+      puzzles: [p_cassette, p_drums, p_voicenote2, p_cd_mode, p_ticket]
+  - id: act4
+    complete:
+      clues: [c_janitor, c_ritual]
+      puzzles: [p_hospital, p_security_pin, p_parth_alive]
+  - id: act5
+    complete:
+      clues: [c_drug_report, c_timetable, c_assessments, c_handbook, c_recruits, c_finance, c_voice3]
+      puzzles: [p_tablet, p_handbook, p_knowledge, p_tablet_content, p_connection, p_exposed]
+  - id: act7
+    complete:
+      puzzles: [p_mask_owner, p_veer_mask, p_lua, p_nigeria, p_continue, p_floor]
+  - id: act8
+    complete:
+      clues: [c_office]
+      puzzles: [p_refer, p_spiral, p_years, p_rooms, p_why, p_where, p_wrong]
+
+clues:
+  - id: c_hq
+    description: "Perigee headquarters is enormous for a four-year-old NGO. Veer walks away to take a call. Near the archive door is a nine-letter motto: A _ C _ N _ I _ N — ‘the soul’s ascent’. A note warns: use the motto to open the archived offering records."
+  - id: c_diary
+    description: "A leather diary engraved with a moon and stars. Its final page reads: --- / -.-. / .---- / ---.. / ----- / ---.. . On the facing page: O = ---; C = -.-.; 1 = .----; 8 = ---..; 0 = -----. A scribbled arrow points from the code to the laptop."
+
+puzzles:
+  - id: p_morse
+    hint: "Separate the groups at the slashes. Decode each group with the facing-page key in your notebook. Letters first, then four digits."
+    answers: ["OC1808 in laptop", "OC1808 in the laptop"]
+  - id: p_band_name
+    hint: "The opposite of Perigee: the point in an orbit farthest from Earth."
+  - id: p_ascension
+    prompt: "The archive terminal asks for the nine-letter motto from the headquarters: A _ C _ N _ I _ N. Beneath it: ‘the soul’s ascent’. What is the password?"
+    hint: "A word for rising upward, or the ascent of a soul. Fill the four missing letters."
+  - id: p_drums
+    hint: "Compare the childhood video with the recording you played at the cyber cafe."
+    answers: ["cassettes", "in one of the cassettes", "the mixtape"]
+  - id: p_knowledge
+    requires: { clues: [c_handbook], puzzles: [p_tablet] }
+    hint: "Which document told you what higher-ups receive? It was lying beside the reports."
+  - id: p_connection
+    requires: { clues: [c_finance] }
+    hint: "Think of the NGO that funds Veer’s band."
+  - id: p_mask_owner
+    hint: "The podium’s most senior member wore the only decorated mask."
+  - id: p_lua
+    hint: "Review the pharmaceutical donor in the financial records and the drug report from Tanush’s office."
+  - id: p_nigeria
+    hint: "The first piece of printed advertising Sameer received mentioned an astronomy workshop there."
+  - id: p_years
+    hint: "Read the office records. The hospital appointment predates the four-year-old NGO by one year."
+  - id: p_rooms
+    hint: "Which room had the locked control panel and the ‘twinkle’ cipher?"
+  - id: p_where
+    hint: "The revelation is painful. The book records a death, rather than a rescue."
+  - id: p_wrong
+    hint: "Think of the consequence of failing a game."

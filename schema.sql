@@ -13,8 +13,10 @@ CREATE TABLE IF NOT EXISTS progress (
   score INTEGER NOT NULL DEFAULT 0,
   penalties INTEGER NOT NULL DEFAULT 0,
   discovered TEXT NOT NULL DEFAULT '[]',    -- JSON array of clue ids (server-authoritative)
+  solved_puzzles TEXT NOT NULL DEFAULT '[]', -- JSON array of solved puzzle ids (server-authoritative)
   hints_used INTEGER NOT NULL DEFAULT 0,
   accusation TEXT,                          -- JSON of the latest accusation
+  ending TEXT,                              -- ending id once the run finishes (e.g. ending_main)
   solved INTEGER NOT NULL DEFAULT 0,
   solved_at TEXT,
   started_at TEXT,
@@ -58,3 +60,11 @@ CREATE TABLE IF NOT EXISTS config (
 );
 INSERT OR IGNORE INTO config(key, value) VALUES ('paused', '0');
 INSERT OR IGNORE INTO config(key, value) VALUES ('event_started', '1');
+
+-- Migrations for databases created before puzzle progress and endings existed.
+-- CREATE TABLE IF NOT EXISTS never alters an existing table, so an already-created
+-- local or remote D1 needs these once (penalties already existed in the original schema):
+-- ALTER TABLE progress ADD COLUMN solved_puzzles TEXT NOT NULL DEFAULT '[]';
+-- ALTER TABLE progress ADD COLUMN ending TEXT;
+-- A fresh database (new .wrangler state, new D1 instance) gets the columns from the
+-- CREATE above and must NOT run the ALTERs.

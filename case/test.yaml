@@ -1,5 +1,6 @@
 # Engine test fixture — NOT game content. A miniature case that exercises
-# clue gating, fact unlocking, dispositions and the canonical fallback.
+# clue gating, fact unlocking, dispositions, the canonical fallback, and the
+# schema-v2 puzzles / interactive acts / endings plumbing.
 
 title: "Engine Fixture"
 
@@ -9,6 +10,11 @@ solution:
   motive: "To hide the debts."
   required_clues: [ledger]
 
+endings:
+  - id: ending_cult
+    title: "The Cult"
+    body: "The butler slips away to join the cult, and the debts stay buried."
+
 rooms:
   - id: study
     name: "The Study"
@@ -16,7 +22,17 @@ rooms:
     hotspots:
       - { id: butler_spot, type: character, character: butler, label: "The Butler", position: [0, 0, 0] }
       - { id: drawer_spot, type: clue, clue: key, label: "Drawer", position: [1.4, 0, -0.4] }
-      - { id: desk_spot, type: clue, clue: ledger, label: "Ledger", position: [-1.2, 0, 0.6] }
+      - { id: desk_spot, type: clue, clue: ledger, label: "Ledger", position: [-1.2, 0, 0.6], requires: { clues: [key] }, act: act1 }
+      - { id: hearth_spot, type: puzzle, puzzle: p_ash, label: "Fireplace", position: [1.8, 0, 0.2], requires: { clues: [key] } }
+      - { id: tape_spot, type: puzzle, puzzle: p_play, label: "Cassette player", position: [-0.6, 0, 1.2] }
+      - { id: cellar_door, type: travel, to: cellar, label: "Cellar door", position: [2.4, 0, 0] }
+  - id: cellar
+    name: "The Cellar"
+    scene: cellar
+    hotspots:
+      - { id: study_door, type: travel, to: study, label: "Stairs up", position: [0, 0, 0] }
+      - { id: ending_spot, type: puzzle, puzzle: p_ending, label: "A final choice", position: [0.8, 0, -0.8] }
+      - { id: contact_spot, type: puzzle, puzzle: p_contact, label: "A dusty terminal", position: [-0.8, 0, -0.8] }
 
 characters:
   - id: butler
@@ -57,6 +73,10 @@ characters:
         text: "She was polishing the silver until midnight."
         unlock: always
         disposition: admit
+      - id: maid_ash
+        text: "She says the fireplace was still warm at dawn."
+        unlock: { requires: [ash] }
+        disposition: admit
 
 clues:
   - id: key
@@ -68,6 +88,81 @@ clues:
     description: "What is left of it. The corners are missing."
     requires: [key]
     grants: [butler_secret]
+  - id: ash
+    name: "Cold ashes"
+    description: "Something bound in leather was burned here."
+    grants: [maid_ash]
+  - id: mixtape
+    name: "Hissing tape"
+    description: "A cassette the butler kept well hidden."
+
+puzzles:
+  - id: p_ash
+    kind: text
+    prompt: "What did the butler burn?"
+    hint: "The missing object had a spine."
+    answers: [ledger, the ledger]
+    success: "The ashes give up the ledger's hiding place."
+    grants: [ash]
+    penalty: 2
+  - id: p_play
+    kind: choice
+    prompt: "The cassette player still turns over. What do you do?"
+    options: ["Play it", "Put it back"]
+    answers: ["Play it"]
+    success: "The tape hisses to life."
+    grants: [mixtape]
+  - id: p_risky
+    kind: choice
+    prompt: "Footsteps creak overhead."
+    options: ["Run", "Stay hidden"]
+    answers: ["Stay hidden"]
+    success: "You stay put, and the footsteps pass."
+    fail_message: "You bolt, and a hand catches your sleeve."
+    penalty: 1
+    continue_on_fail: true
+    fail_grants: [ash]
+    requires: { clues: [mixtape] }
+  - id: p_ending
+    kind: choice
+    prompt: "One last choice."
+    options: ["Continue", "Stop"]
+    answers: ["Continue"]
+    success: "You go on."
+    option_endings: { "Stop": ending_cult }
+  - id: p_contact
+    kind: email
+    prompt: "Leave an email for the archive."
+    success: "The archive accepts your details."
+
+acts:
+  - id: act0
+    type: cinematic
+    kicker: "Act 0"
+    title: "The Vanish"
+    subtitle: "He was gone."
+    scenes: [study]
+    beats:
+      - id: b1
+        room: study
+        shot: wide
+        seconds: 3
+        lines:
+          - { speaker: narrator, text: "The study was empty." }
+  - id: act1
+    type: interactive
+    kicker: "Act I"
+    title: "The Study"
+    entry_room: study
+    rooms: [study, cellar]
+    objective: "Learn what the butler burned."
+    intro:
+      - { speaker: narrator, text: "The fire is still warm." }
+    outro:
+      - { speaker: butler, text: "You should not have looked." }
+    complete:
+      clues: [mixtape]
+      puzzles: [p_risky]
 
 canonical_qa:
   - character: butler

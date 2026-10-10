@@ -9,6 +9,8 @@ export const solution = data.solution;
 const characters = new Map();
 const facts = new Map();
 const clues = new Map();
+const puzzles = new Map();
+const endings = new Map();
 const cluePlacements = new Map();
 
 for (const ch of data.characters ?? []) {
@@ -16,6 +18,8 @@ for (const ch of data.characters ?? []) {
   for (const f of ch.facts ?? []) facts.set(f.id, { ...f, character: ch.id });
 }
 for (const clue of data.clues ?? []) clues.set(clue.id, clue);
+for (const puzzle of data.puzzles ?? []) puzzles.set(puzzle.id, puzzle);
+for (const ending of data.endings ?? []) endings.set(ending.id, ending);
 for (const room of data.rooms ?? []) {
   for (const h of room.hotspots ?? []) {
     if (h.type === 'clue') cluePlacements.set(h.clue, { room: room.id, hotspot: h.id });
@@ -24,8 +28,24 @@ for (const room of data.rooms ?? []) {
 
 export const getCharacter = (id) => characters.get(id) ?? null;
 export const getClue = (id) => clues.get(id) ?? null;
+export const getPuzzle = (id) => puzzles.get(id) ?? null;
+export const getEnding = (id) => endings.get(id) ?? null;
 export const getCluePlacement = (id) => cluePlacements.get(id) ?? null;
 export const allFacts = () => [...facts.values()];
+export const allPuzzles = () => [...puzzles.values()];
 
-export const toDiscoveredSet = (value) =>
-  value instanceof Set ? value : new Set(value ?? []);
+const toIdSet = (value) => {
+  if (value instanceof Set) return value;
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return new Set(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      return new Set();
+    }
+  }
+  return new Set(value ?? []);
+};
+
+export const toDiscoveredSet = toIdSet;
+export const toSolvedSet = toIdSet;

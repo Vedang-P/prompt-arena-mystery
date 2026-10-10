@@ -1,16 +1,64 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Scene from './Scene.jsx';
+import TitleScreen, { ChapterSelect, EvidenceCard } from './TitleScreen.jsx';
+import CinematicStory from './CinematicStory.jsx';
+import { SettingsPanel, useSettings } from './Settings.jsx';
+import Soundtrack from './Soundtrack.jsx';
 import ActDirector from './ActDirector.jsx';
-import { AccuseModal, DialogueOverlay, Login, Notebook, Notice } from './Panels.jsx';
-import { accuse, completeAct, discoverClue, getHistory, getState, interrogate, login } from './api.js';
+import {
+  AccuseModal,
+  DialogueOverlay,
+  EndingCard,
+  Login,
+  Notebook,
+  Notice,
+  PuzzleModal,
+  StoryOverlay,
+} from './Panels.jsx';
+import {
+  accuse,
+  completeAct,
+  devLogin,
+  discoverClue,
+  getAuthConfig,
+  getHistory,
+  getState,
+  interrogate,
+  solvePuzzle,
+  startGuest,
+  startPractice,
+} from './api.js';
+
+const AUTH_ERROR_TEXT = {
+  google_not_configured: 'Google sign-in is not configured on this deployment yet.',
+  google_denied: 'Google sign-in was cancelled.',
+  state: 'The sign-in attempt expired — try again.',
+  token: 'Google sign-in failed while exchanging the code.',
+  profile: 'Google sign-in failed while reading your profile.',
+  network: 'Google sign-in failed — network trouble.',
+};
 
 function mergeUnlocked(existing, added) {
   const seen = new Set(existing.map((f) => f.fact));
   return [...existing, ...added.filter((f) => !seen.has(f.fact))];
 }
 
+function mergeIds(existing, added) {
+  const seen = new Set(existing);
+  return [...existing, ...added.filter((id) => !seen.has(id))];
+}
+
 export default function App() {
   const [phase, setPhase] = useState('loading');
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [chaptersOpen, setChaptersOpen] = useState(false);
+  const [exploreOpen, setExploreOpen] = useState(false);
+  const [evidence, setEvidence] = useState(null);
+  const { sound, update } = useSettings();
+  useEffect(() => {
+    const key = (e) => { if (e.key === 'Escape') { setSettingsOpen(false); setChaptersOpen(false); setEvidence(null); setNotebookOpen(false); setPuzzleSpot(null); setActiveChar(null); setExploreOpen(false); } };
+    window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key);
+  }, []);
   const [state, setState] = useState(null);
   const [roomId, setRoomId] = useState(null);
   const [activeChar, setActiveChar] = useState(null);
@@ -21,46 +69,174 @@ export default function App() {
   const [accuseOpen, setAccuseOpen] = useState(false);
   const [accuseResult, setAccuseResult] = useState(null);
   const [accuseBusy, setAccuseBusy] = useState(false);
-  const [loginError, setLoginError] = useState(null);
+  const [loginError, setLoginError] = useState(() => {
+    const code = new URLSearchParams(window.location.search).get('auth_error');
+    return code ? AUTH_ERROR_TEXT[code] ?? 'Sign-in failed.' : null;
+  });
   const [loginBusy, setLoginBusy] = useState(false);
+  const [authConfig, setAuthConfig] = useState(null);
   const [won, setWon] = useState(null);
   const [notebookOpen, setNotebookOpen] = useState(false);
   const [actBusy, setActBusy] = useState(false);
+  const [puzzleSpot, setPuzzleSpot] = useState(null);
+  const [puzzleResult, setPuzzleResult] = useState(null);
+  const [puzzleBusy, setPuzzleBusy] = useState(false);
+  const [story, setStory] = useState(null);
+
+  // Dev/testing shortcuts: ?beat=<id> replays the cinematic from that beat, even
+  // after the act is complete; ?puzzle=<id> opens that puzzle's modal once on
+  // load; ?room=<id> preselects a room when it belongs to the current act.
+  const devParams = useMemo(() => new URLSearchParams(window.location.search), []);
+  const devBeat = useMemo(() => devParams.get('beat'), [devParams]);
+  const devPuzzle = useMemo(() => devParams.get('puzzle'), [devParams]);
+  const devRoom = useMemo(() => devParams.get('room'), [devParams]);
+  const devPuzzleOpened = useRef(false);
 
   const currentAct = useMemo(
     () => state?.acts?.find((a) => a.id === state.act) ?? state?.acts?.[0] ?? null,
     [state]
   );
 
+  const actRooms = useMemo(() => {
+    if (!state) return [];
+    const ids = currentAct?.rooms?.length
+      ? currentAct.rooms
+      : state.rooms.map((r) => r.id);
+    return ids.map((id) => state.rooms.find((r) => r.id === id)).filter(Boolean);
+  }, [state, currentAct]);
+
+  const characterNames = useMemo(
+    () => Object.fromEntries((state?.characters ?? []).map((c) => [c.id, c.name])),
+    [state]
+  );
+
+  const clueLabels = useMemo(() => {
+    const labels = {};
+    for (const clue of state?.clues ?? []) {
+      if (clue?.id) labels[clue.id] = clue.name ?? clue.id;
+    }
+    for (const room of state?.rooms ?? []) {
+      for (const h of room.hotspots ?? []) {
+        if (h.type === 'clue' && h.clue && !labels[h.clue]) labels[h.clue] = h.label;
+      }
+    }
+    return labels;
+  }, [state]);
+
+  // Hotspots whose requires are unmet stay hidden so later-act content can't be
+  // teased early. Rooms themselves remain in the tab list; only hotspots filter.
+  const displayRooms = useMemo(() => {
+    if (!state) return [];
+    const discovered = new Set(state.discovered ?? []);
+    const solved = new Set(state.solvedPuzzles ?? []);
+    const actIndex = new Map((state.acts ?? []).map((a, i) => [a.id, i]));
+    const currentIndex = actIndex.get(state.act) ?? 0;
+    const available = (h) => {
+      if (h.act && h.act !== state.act) return false;
+      const ownReq = h.type === 'puzzle' ? state.puzzles?.find((p) => p.id === h.puzzle)?.requires : null;
+      if ((ownReq?.clues ?? []).some((id) => !discovered.has(id)) || (ownReq?.puzzles ?? []).some((id) => !solved.has(id))) return false;
+      const clueReq = h.type === 'clue' ? state.clues?.find((c) => c.id === h.clue)?.requires : null;
+      if ((clueReq ?? []).some((id) => !discovered.has(id))) return false;
+      const req = h.requires;
+      if (!req) return true;
+      if ((req.clues ?? []).some((c) => !discovered.has(c))) return false;
+      if ((req.puzzles ?? []).some((p) => !solved.has(p))) return false;
+      return true;
+    };
+    return state.rooms.map((room) => ({
+      ...room,
+      hotspots: (room.hotspots ?? []).filter(available),
+    }));
+  }, [state]);
+
+  const displayState = useMemo(() => ({ ...state, rooms: displayRooms }), [state, displayRooms]);
+
+  useEffect(() => {
+    if (currentAct?.entry_room) setRoomId(currentAct.entry_room);
+  }, [currentAct?.id]);
+
+  const activePuzzle = useMemo(() => {
+    if (!puzzleSpot || !state) return null;
+    return (
+      state.puzzles?.find((p) => p.id === puzzleSpot.puzzle) ?? {
+        id: puzzleSpot.puzzle,
+        kind: 'text',
+        prompt: puzzleSpot.label,
+      }
+    );
+  }, [state, puzzleSpot]);
+
+  const ending = state?.ending
+    ? typeof state.ending === 'string'
+      ? { id: state.ending }
+      : state.ending
+    : null;
+
+  const score =
+    state?.score ??
+    (state
+      ? state.discovered.length + (state.solvedPuzzles?.length ?? 0) - (state.penalties ?? 0)
+      : 0);
+
   const finishAct = async (actId) => {
+    if (actBusy) return;
     setActBusy(true);
     try {
       const res = await completeAct(actId);
-      setState((s) => ({ ...s, act: res.act }));
-    } catch {
-      // Network hiccup: let them in anyway so a dropped packet can't stall the event.
-      setState((s) => ({ ...s, act: 'act1' }));
-    } finally {
-      setActBusy(false);
-    }
+      const fresh = await getState();
+      setState(fresh);
+      setActiveChar(null); setPuzzleSpot(null); setEvidence(null); setExploreOpen(false);
+      if (res.ending) setPhase('solved');
+      const url = new URL(window.location.href); url.searchParams.delete('beat'); window.history.replaceState(null, '', url);
+    } catch (e) {
+      setNotice({ kicker: 'Case saved', title: e.status === 409 ? 'Keep investigating' : 'Connection interrupted', body: e.status === 409 ? 'Collect the remaining evidence before advancing.' : 'Your case has not advanced. Please try again.' });
+    } finally { setActBusy(false); }
   };
 
-  const loadGame = async () => {
+  const clearNextIntro = (actId) => {
+    const acts = state?.acts ?? [];
+    const idx = acts.findIndex((a) => a.id === actId);
+    const next = acts.slice(idx + 1).find((a) => a.type === 'interactive');
+    if (next) sessionStorage.removeItem(`pa-intro-${next.id}`);
+  };
+
+  const loadGame = async (destination = 'menu') => {
     try {
       const data = await getState();
       setState(data);
-      setRoomId((prev) => prev ?? data.rooms[0].id);
-      setPhase(data.solved ? 'solved' : 'game');
+      const act = data.acts?.find((a) => a.id === data.act);
+      const actRoomIds = act?.rooms?.length ? act.rooms : data.rooms.map((r) => r.id);
+      const entry =
+        (devRoom && actRoomIds.includes(devRoom) ? devRoom : null) ??
+        act?.entry_room ??
+        act?.rooms?.[0] ??
+        data.rooms[0]?.id;
+      setRoomId((prev) => prev ?? entry);
+      setPhase(destination === 'menu' ? 'menu' : data.solved ? 'solved' : 'game');
       return true;
     } catch (e) {
       if (e.status === 401) setPhase('login');
-      else setLoginError('Server unreachable.');
+      else { setLoginError('The case server is unavailable. Try again in a moment.'); setPhase('login'); }
       return false;
+    }
+  };
+
+  // Silent refresh after progress mutations so derived server fields (notably
+  // canAdvance) stay in sync without a full reload or loading UI.
+  const refreshState = async () => {
+    try {
+      const fresh = await getState();
+      setState((s) => ({ ...s, ...fresh }));
+    } catch {
+      // Keep the optimistic view; the next explicit load will reconcile.
     }
   };
 
   useEffect(() => {
     loadGame();
+    getAuthConfig()
+      .then(setAuthConfig)
+      .catch(() => setAuthConfig({ google: false, devLogin: false }));
   }, []);
 
   useEffect(() => {
@@ -69,14 +245,143 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [notice]);
 
-  const handleLogin = async (code) => {
+  // Keep the active room inside the current act's tab list.
+  useEffect(() => {
+    if (!state || !actRooms.length) return;
+    if (actRooms.some((r) => r.id === roomId)) return;
+    const entry = currentAct?.entry_room;
+    setRoomId(entry && actRooms.some((r) => r.id === entry) ? entry : actRooms[0].id);
+  }, [state, actRooms, roomId, currentAct]);
+
+  // Play each interactive act's intro once per session, before its first room view.
+  useEffect(() => {
+    if (!state || !currentAct || phase !== 'game' || story || state.ending || devBeat || devPuzzle)
+      return;
+    if (currentAct.type !== 'interactive' || !currentAct.intro?.length) return;
+    const key = `pa-intro-${currentAct.id}`;
+    if (sessionStorage.getItem(key)) return;
+    setStory({
+      key,
+      after: 'intro',
+      actId: currentAct.id,
+      lines: currentAct.intro,
+      kicker: currentAct.kicker,
+      title: currentAct.title,
+      backdrop: currentAct.backdrop,
+      doneLabel: 'Begin',
+    });
+  }, [state, currentAct, phase, story, devBeat, devPuzzle]);
+
+  // Dev/testing: ?puzzle=<id> opens the puzzle modal once, straight from the URL.
+  // Closing it leaves the game view; later state updates never reopen it.
+  useEffect(() => {
+    if (!devPuzzle || devPuzzleOpened.current || devBeat) return;
+    if (!state || phase !== 'game' || state.ending) return;
+    if (!state.puzzles?.some((p) => p.id === devPuzzle)) return;
+    devPuzzleOpened.current = true;
+    setNotebookOpen(false);
+    setPuzzleSpot({ puzzle: devPuzzle, label: devPuzzle });
+    setPuzzleResult(null);
+  }, [devPuzzle, devBeat, state, phase]);
+
+  const completeStory = () => {
+    if (!story) return;
+    const current = story;
+    setStory(null);
+    if (current.after === 'intro') {
+      sessionStorage.setItem(current.key, '1');
+      return;
+    }
+    clearNextIntro(current.actId);
+    finishAct(current.actId);
+  };
+
+  const advanceAct = () => {
+    if (!currentAct || !state?.canAdvance?.ok || actBusy || story) return;
+    if (currentAct.outro?.length) {
+      setStory({
+        key: `pa-outro-${currentAct.id}`,
+        after: 'outro',
+        actId: currentAct.id,
+        lines: currentAct.outro,
+        kicker: currentAct.kicker,
+        title: currentAct.title,
+        backdrop: currentAct.backdrop,
+        doneLabel: 'Continue',
+      });
+    } else {
+      clearNextIntro(currentAct.id);
+      finishAct(currentAct.id);
+    }
+  };
+
+  const openPuzzle = (target) => {
+    const id = typeof target === 'string' ? target : target?.puzzle;
+    if (!id) return;
+    setNotebookOpen(false);
+    setPuzzleSpot(typeof target === 'string' ? { puzzle: id, label: id } : target);
+    setPuzzleResult(null);
+  };
+
+  const closePuzzle = () => {
+    setPuzzleSpot(null);
+    setPuzzleResult(null);
+  };
+
+  const handleSolve = async (answer) => {
+    if (!activePuzzle) return;
+    setPuzzleBusy(true);
+    setPuzzleResult(null);
+    try {
+      const res = await solvePuzzle(activePuzzle.id, answer);
+      setPuzzleResult(res);
+      setState((s) => {
+        const next = {
+          ...s,
+          discovered: res.discovered ?? mergeIds(s.discovered, res.grants ?? []),
+          solvedPuzzles: res.solvedPuzzles ?? s.solvedPuzzles ?? [],
+          penalties: res.totalPenalties ?? (s.penalties ?? 0) + (res.penalty ?? 0),
+          unlocked: mergeUnlocked(s.unlocked, res.newlyUnlocked ?? []),
+        };
+        if (res.ending) {
+          next.ending = typeof res.ending === 'string' ? { id: res.ending } : res.ending;
+        }
+        return next;
+      });
+      const granted = (res.grants ?? []).map((id) => clueLabels[id] ?? id);
+      if (res.correct || res.alreadySolved || granted.length) {
+        setNotice({
+          kicker: res.correct ? 'Puzzle solved' : res.alreadySolved ? 'No new ground' : 'Exhibit logged',
+          title: res.correct ? 'A thread pulled loose' : res.alreadySolved ? 'Already cracked' : 'Evidence logged',
+          body: res.message,
+          facts: res.newlyUnlocked,
+          clues: granted,
+        });
+      }
+      // Reconcile derived server state (canAdvance) without a page reload.
+      refreshState();
+    } catch (e) {
+      if (e.status === 403) {
+        setNotice({ kicker: 'Sealed', title: 'Locked', body: 'Something else has to come first.' });
+      } else if (e.status === 404) {
+        setNotice({ kicker: 'Missing', title: 'Dead end', body: 'That line of inquiry is not available.' });
+        closePuzzle();
+      } else {
+        setPuzzleResult({ correct: false, message: 'The line went dead. Try again.', penalty: 0 });
+      }
+    } finally {
+      setPuzzleBusy(false);
+    }
+  };
+
+  const handleDevLogin = async (code) => {
     setLoginBusy(true);
     setLoginError(null);
     try {
-      await login(code);
-      await loadGame();
+      await devLogin(code);
+      await loadGame('game');
     } catch (e) {
-      setLoginError(e.status === 401 ? 'Wrong code. Check the label on your table.' : 'Login failed.');
+      setLoginError(e.status === 401 ? 'Wrong code. Check the label on your table.' : 'Sign-in failed.');
     } finally {
       setLoginBusy(false);
     }
@@ -155,12 +460,16 @@ export default function App() {
         discovered: res.discovered,
         unlocked: mergeUnlocked(s.unlocked, res.newlyUnlocked ?? []),
       }));
+      setEvidence(res.clue);
       setNotice({
         kicker: 'Evidence logged',
         title: res.clue.name,
         body: res.clue.description,
+        page: res.clue.page,
         facts: res.newlyUnlocked,
       });
+      // Reconcile derived server state (canAdvance) without a page reload.
+      refreshState();
     } catch (e) {
       if (e.status === 409) {
         setNotice({ kicker: 'Sealed', title: 'Locked', body: 'Something else has to come first.' });
@@ -181,6 +490,8 @@ export default function App() {
           setPhase('solved');
         }, 1800);
       }
+    } catch {
+      setAccuseResult({ stage: 'conclusion', correct: false, checks: null, message: 'Connection interrupted. Try again.' });
     } finally {
       setAccuseBusy(false);
     }
@@ -192,16 +503,58 @@ export default function App() {
   );
 
   const focusHotspot = useMemo(() => {
-    if (!state || !activeChar) return null;
-    for (const room of state.rooms) {
-      for (const h of room.hotspots) {
+    if (!displayRooms.length || !activeChar) return null;
+    for (const r of displayRooms) {
+      for (const h of r.hotspots) {
         if (h.type === 'character' && h.character === activeChar) return h;
       }
     }
     return null;
-  }, [state, activeChar]);
+  }, [displayRooms, activeChar]);
 
-  const room = state?.rooms.find((r) => r.id === roomId) ?? state?.rooms?.[0];
+  const room = state?.rooms.find((r) => r.id === roomId) ?? actRooms[0] ?? state?.rooms?.[0];
+
+  const nextActFor = (act) => {
+    if (!act) return null;
+    const acts = state?.acts ?? [];
+    const idx = acts.findIndex((a) => a.id === act.id);
+    return idx === -1 ? null : acts[idx + 1] ?? null;
+  };
+
+  const clearIntros = () => { for (let i = 0; i < 9; i++) sessionStorage.removeItem('pa-intro-act' + i); };
+  const beginGuest = async () => {
+    setLoginBusy(true); setLoginError(null);
+    try {
+      localStorage.setItem('moon-mode', 'campaign'); await startGuest();
+      clearIntros(); setStory(null); setRoomId(null); setChats({}); setNotice(null); setActiveChar(null); setEvidence(null); setPuzzleSpot(null);
+      await loadGame('game');
+    } catch { setLoginError('Could not open the case. Please try again.'); }
+    finally { setLoginBusy(false); }
+  };
+  const beginPractice = async (actId) => {
+    setLoginBusy(true);
+    try {
+      await startPractice(actId); localStorage.setItem('moon-mode', 'practice'); clearIntros();
+      setChaptersOpen(false); setStory(null); setRoomId(null); setChats({}); setEvidence(null); setActiveChar(null); setPuzzleSpot(null);
+      await loadGame('game');
+    } catch { setNotice({ title: 'Chapter unavailable', body: 'Please try again.' }); }
+    finally { setLoginBusy(false); }
+  };
+  const returnCampaign = async () => {
+    localStorage.setItem('moon-mode', 'campaign'); setChaptersOpen(false); setStory(null); setRoomId(null); setChats({});
+    await loadGame('game');
+  };
+  const travel = (target) => {
+    const to = typeof target === 'string' ? target : target?.to;
+    if (actRooms.some((r) => r.id === to)) { setRoomId(to); setEvidence(null); setPuzzleSpot(null); setActiveChar(null); }
+    else if (state.canAdvance?.ok) advanceAct();
+    else setNotice({ title: 'Finish this chapter first', body: currentAct.objective });
+  };
+  const overlays = <>
+    {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
+    {chaptersOpen && <ChapterSelect acts={state?.acts ?? []} onSelect={beginPractice} onClose={() => setChaptersOpen(false)} busy={loginBusy} practice={state?.practice} onCampaign={returnCampaign} />}
+  </>;
+  const audio = <Soundtrack roomId={roomId ?? 'gazebo'} />;
 
   if (phase === 'loading') {
     return (
@@ -211,8 +564,42 @@ export default function App() {
     );
   }
 
-  if (phase === 'login') {
-    return <Login onLogin={handleLogin} error={loginError} busy={loginBusy} />;
+  if (phase === 'login' || phase === 'menu') {
+    return <>{audio}<TitleScreen config={authConfig} state={state} busy={loginBusy} error={loginError}
+      onGuest={beginGuest} onResume={() => setPhase(state.solved ? 'solved' : 'game')}
+      onDevLogin={handleDevLogin} onSettings={() => setSettingsOpen(true)} onChapters={() => setChaptersOpen(true)} />{overlays}</>;
+  }
+
+  if (devBeat && state?.acts?.length) {
+    const cinematic = state.acts.find((a) => a.type === 'cinematic') ?? state.acts[0];
+    if (cinematic?.type === 'cinematic') {
+      const next = nextActFor(cinematic);
+      return (
+        <ActDirector
+          key={cinematic.id}
+          act={cinematic}
+          characters={state.characters}
+          busy={actBusy}
+          onComplete={() => finishAct(cinematic.id)}
+          nextActKicker={next?.kicker}
+          nextActTitle={next?.title}
+          endLabel={next ? (next.type === 'cinematic' ? 'Continue' : 'Enter') : undefined}
+        />
+      );
+    }
+  }
+
+  if (ending) {
+    return (
+      <div>{audio}<EndingCard
+        ending={ending}
+        score={score}
+        penalties={state.penalties ?? 0}
+        team={state.team}
+        title={state.title}
+        onReplay={() => setPhase('menu')}
+      />{overlays}</div>
+    );
   }
 
   if (phase === 'solved') {
@@ -238,88 +625,60 @@ export default function App() {
     );
   }
 
-  // Dev/testing: ?beat=<id> always replays the cinematic from that beat, even
-  // after the act is complete (the screenshot harness and live feedback use this).
-  const devBeat = new URLSearchParams(window.location.search).get('beat');
-  if (devBeat && state?.acts?.length) {
-    const cinematic = state.acts.find((a) => a.type === 'cinematic') ?? state.acts[0];
-    if (cinematic?.type === 'cinematic') {
-      return (
-        <ActDirector
-          act={cinematic}
-          characters={state.characters}
-          busy={actBusy}
-          onComplete={() => finishAct(cinematic.id)}
-        />
-      );
-    }
-  }
-
   if (currentAct?.type === 'cinematic') {
+    const next = nextActFor(currentAct);
     return (
-      <ActDirector
+      <>{audio}<ActDirector
+        key={currentAct.id}
         act={currentAct}
         characters={state.characters}
         busy={actBusy}
         onComplete={() => finishAct(currentAct.id)}
-      />
-    );
-  }
-
-  if (currentAct?.type === 'interactive') {
-    return (
-      <div className="center-screen">
-        <div className="login-card act-teaser">
-          <p className="login-kicker">Act I</p>
-          <h1 className="login-title">{currentAct.title}</h1>
-          <p className="login-sub">{state.subtitle}</p>
-          <p className="act-objective">{currentAct.objective}</p>
-          <p className="login-hint">
-            Team {state.team} — Act 0 complete. The room, the laptop and the diary arrive in the next
-            build.
-          </p>
-          <button className="btn ghost" onClick={() => setState((s) => ({ ...s, act: 'act0' }))}>
-            Replay the vanishing
-          </button>
-        </div>
-      </div>
+        nextActKicker={next?.kicker}
+        nextActTitle={next?.title}
+        endLabel={next ? (next.type === 'cinematic' ? 'Continue' : 'Enter') : undefined}
+      /></>
     );
   }
 
   return (
-    <div className="app">
+    <div className={`app ${activeChar ? 'talking' : ''}`}>
+      {audio}{overlays}
       <div className="scene-layer">
-        <Scene
-          state={state}
+        {!story && <Scene
+          state={displayState}
           roomId={roomId}
           focus={focusHotspot}
           onCharacter={openCharacter}
           onClue={findClue}
-        />
+          onPuzzle={openPuzzle}
+          onTravel={travel}
+          solvedPuzzles={state.solvedPuzzles ?? []}
+        />}
         <div className="vignette" />
       </div>
 
-      <header className="hud-top">
-        <div className="location">
-          <h1 className="location-name">{room.name}</h1>
-          <p className="location-kicker">{state.title}</p>
-        </div>
-        <div className="case-bar">
-          <span className="case-stat">
-            Exhibits <b>{state.discovered.length}</b>
-          </span>
-          <span className="case-divider" />
-          <button
-            className="btn wine"
-            onClick={() => {
-              setAccuseResult(null);
-              setAccuseOpen(true);
-            }}
-          >
-            Accuse
-          </button>
+      <header className="hud-top release-hud">
+        <div className="location"><p className="location-kicker">{currentAct?.kicker} · {currentAct?.title}{state.practice ? ' · Practice' : ''}</p><h1 className="location-name">{room.name}</h1><p className="hud-objective">{currentAct?.objective}</p></div>
+        <div className="release-tools"><span className="save-status">{actBusy || puzzleBusy ? 'Saving…' : '● Case saved'}</span>
+          <button className="quiet-button" onClick={() => update({ sound: !sound })} aria-label={sound ? 'Mute sound' : 'Enable sound'}>{sound ? 'Sound on' : 'Sound off'}</button>
+          <button className="quiet-button" onClick={() => setSettingsOpen(true)}>Settings</button>
+          <button className="quiet-button" onClick={() => setChaptersOpen(true)}>Chapters</button>
+          <button className="quiet-button" onClick={() => { setStory(null); setPhase('menu'); }}>Menu</button>
         </div>
       </header>
+      <div className="chapter-progress" aria-label="Campaign progress">{state.acts.map((a, i) => <span key={a.id} className={a.id === state.act ? 'current' : i < state.acts.findIndex((x) => x.id === state.act) ? 'done' : ''} title={a.title}>{i}</span>)}</div>
+      {state.canAdvance?.ok && <button className="next-chapter" onClick={advanceAct} disabled={actBusy || !!story}>{actBusy ? 'Saving…' : currentAct.id === 'act8' ? 'Finish the case →' : 'Continue to next act →'}</button>}
+      <div className="investigation-count"><b>{state.discovered.length}</b> exhibits <span>·</span> <b>{state.solvedPuzzles.length}</b> puzzles <span>·</span> {state.penalties} penalties</div>
+      {!activeChar && <><button className="explore-toggle" onClick={() => setExploreOpen((o) => !o)}>{exploreOpen ? 'Close explore ×' : 'Explore this room ↗'}</button>
+      {exploreOpen && <aside className="explore-panel" aria-label="Room interactions"><p className="eyebrow">In this room</p><h2>{room.name}</h2><p>Inspect an object or follow a lead.</p>
+        {(displayRooms.find((r) => r.id === roomId)?.hotspots ?? []).map((h) => {
+          const done = h.type === 'clue' ? state.discovered.includes(h.clue) : state.solvedPuzzles.includes(h.puzzle);
+          return <button key={h.id} onClick={() => { if(h.type === 'clue') findClue(h); else if(h.type === 'puzzle') openPuzzle(h); else if(h.type === 'character') openCharacter(h); else travel(h); }}><span className={'interaction-icon ' + h.type}>{done ? '✓' : h.type === 'clue' ? '◇' : h.type === 'character' ? '◉' : h.type === 'travel' ? '↗' : '⌘'}</span><span>{h.label}<small>{done ? 'Logged · inspect again' : h.type === 'clue' ? 'Evidence' : h.type === 'puzzle' ? 'Investigate' : h.type === 'character' ? 'Talk' : 'Travel'}</small></span></button>;
+        })}
+        <p className="explore-hint">New leads appear as you collect evidence. Your notebook keeps every exhibit.</p>
+      </aside>}</>}
+      <div className="camera-hint">Drag to look · Scroll to zoom · WASD to move</div>
 
       <button
         className={`notebook-toggle ${notebookOpen ? 'open' : ''}`}
@@ -331,17 +690,17 @@ export default function App() {
 
       {notebookOpen && (
         <div className="notebook-panel">
-          <Notebook state={state} onClose={() => setNotebookOpen(false)} />
+          <Notebook state={state} onClose={() => setNotebookOpen(false)} onInspect={(id) => setEvidence(state.clues.find((c) => c.id === id))} />
         </div>
       )}
 
       {!activeChar && (
         <footer className="room-tabs">
-          {state.rooms.map((r) => (
+          {actRooms.map((r) => (
             <button
               key={r.id}
               className={`tab ${r.id === roomId ? 'active' : ''}`}
-              onClick={() => setRoomId(r.id)}
+              onClick={() => travel(r.id)}
             >
               {r.name}
             </button>
@@ -362,7 +721,8 @@ export default function App() {
         />
       )}
 
-      {notice && <Notice notice={notice} onClose={() => setNotice(null)} />}
+      {evidence && <EvidenceCard clue={evidence} onClose={() => setEvidence(null)} />}
+      {notice && !evidence && <Notice notice={notice} onClose={() => setNotice(null)} />}
       {accuseOpen && (
         <AccuseModal
           state={state}
@@ -371,6 +731,21 @@ export default function App() {
           result={accuseResult}
           busy={accuseBusy}
         />
+      )}
+      {activePuzzle && (
+        <PuzzleModal
+          puzzle={{ ...activePuzzle, title: puzzleSpot?.label }}
+          solved={(state.solvedPuzzles ?? []).includes(activePuzzle.id)}
+          penalties={state.penalties ?? 0}
+          onSolve={handleSolve}
+          onClose={closePuzzle}
+          busy={puzzleBusy}
+          result={puzzleResult}
+          clueLabels={clueLabels}
+        />
+      )}
+      {story && (
+        <CinematicStory key={story.key} story={story} act={currentAct} characters={state.characters} onDone={completeStory} busy={actBusy} />
       )}
     </div>
   );

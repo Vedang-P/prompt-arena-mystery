@@ -1,3 +1,5 @@
+const request = (url, options = {}) => fetch(url, { ...options, headers: { ...(options.headers ?? {}), ...(localStorage.getItem('moon-mode') === 'practice' ? { 'x-game-mode': 'practice' } : {}) }, signal: AbortSignal.timeout(65000) });
+
 async function json(res) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -9,36 +11,49 @@ async function json(res) {
   return data;
 }
 
-export const login = (code) =>
-  fetch('/api/login', {
+export const getAuthConfig = () => request('/api/auth/config').then(json);
+
+// Team-code sign-in: local development only (bridged for the login form when
+// the deployment enables ALLOW_CODE_LOGIN).
+export const devLogin = (code) =>
+  request('/api/login', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ code }),
   }).then(json);
 
-export const getState = () => fetch('/api/state').then(json);
+export const getState = () => request('/api/state', { cache: 'no-store' }).then(json);
+
+export const startGuest = () => request('/api/guest', { method: 'POST' }).then(json);
 
 export const completeAct = (act) =>
-  fetch('/api/act/complete', {
+  request('/api/act/complete', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ act }),
   }).then(json);
 
 export const discoverClue = (id) =>
-  fetch(`/api/clues/${id}/discover`, { method: 'POST' }).then(json);
+  request(`/api/clues/${id}/discover`, { method: 'POST' }).then(json);
 
-export const getHistory = (id) => fetch(`/api/characters/${id}/history`).then(json);
+export const solvePuzzle = (id, answer) =>
+  request(`/api/puzzles/${id}/solve`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ answer }),
+  }).then(json);
+
+export const getHistory = (id) => request(`/api/characters/${id}/history`).then(json);
 
 export const accuse = (payload) =>
-  fetch('/api/accuse', {
+  request('/api/accuse', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(payload),
   }).then(json);
 
 export async function interrogate(character, text, { onDelta, onReset, onDone } = {}) {
-  const res = await fetch('/api/interrogate', {
+  const res = await request('/api/interrogate', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ character, text }),
@@ -71,3 +86,5 @@ export async function interrogate(character, text, { onDelta, onReset, onDone } 
     }
   }
 }
+
+export const startPractice = (act) => request('/api/practice', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ act }) }).then(json);

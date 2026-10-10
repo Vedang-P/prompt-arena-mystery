@@ -44,6 +44,8 @@ if (!isStr(c.title)) err('title is required');
 if (!Array.isArray(c.rooms) || !c.rooms.length) err('rooms must be a non-empty list');
 if (!Array.isArray(c.characters) || !c.characters.length) err('characters must be a non-empty list');
 if (!Array.isArray(c.clues)) err('clues must be a list (may be empty)');
+if (c.puzzles !== undefined && !Array.isArray(c.puzzles)) err('puzzles must be a list');
+if (c.endings !== undefined && !Array.isArray(c.endings)) err('endings must be a list');
 
 function collectIds(items, label) {
   const ids = new Set();
@@ -60,6 +62,31 @@ function collectIds(items, label) {
 const roomIds = collectIds(c.rooms, 'rooms');
 const charIds = collectIds(c.characters, 'characters');
 const clueIds = collectIds(c.clues, 'clues');
+const puzzleIds = collectIds(c.puzzles, 'puzzles');
+const endingIds = collectIds(c.endings, 'endings');
+
+// Shared shape check for `requires: { clues: [], puzzles: [] }`.
+const checkRequires = (where, req) => {
+  if (req === undefined) return;
+  if (!isObj(req)) {
+    err(`${where}: requires must be { clues: [], puzzles: [] }`);
+    return;
+  }
+  for (const [key, list] of Object.entries(req)) {
+    if (key !== 'clues' && key !== 'puzzles') {
+      err(`${where}: requires has unknown key "${key}"`);
+      continue;
+    }
+    if (!Array.isArray(list) || !list.every(isStr)) {
+      err(`${where}: requires.${key} must be a list of ids`);
+      continue;
+    }
+    for (const id of list) {
+      const known = key === 'clues' ? clueIds.has(id) : puzzleIds.has(id);
+      if (!known) err(`${where}: requires unknown ${key === 'clues' ? 'clue' : 'puzzle'} "${id}"`);
+    }
+  }
+};
 
 // ---------- facts ----------
 const factIndex = new Map(); // factId -> { character, unlock }
@@ -100,23 +127,106 @@ const clueIndex = new Map();
 for (const clue of c.clues ?? []) {
   if (!isStr(clue.id)) continue;
   if (!isStr(clue.name)) warn(`clue "${clue.id}" has no name`);
+  if (clue.page !== undefined && !isStr(clue.page)) err(`clue "${clue.id}": page must be an asset path`);
+  if (clue.grants !== undefined && !Array.isArray(clue.grants)) {
+    err(`clue "${clue.id}": grants must be a list of fact ids`);
+  }
   for (const g of clue.grants ?? []) {
     if (!factIndex.has(g)) err(`clue "${clue.id}": grants unknown fact "${g}"`);
   }
+  if (clue.requires !== undefined && !Array.isArray(clue.requires)) {
+    err(`clue "${clue.id}": requires must be a list of clue ids`);
+  }
   for (const r of clue.requires ?? []) {
-    if (!clueIds.has(r)) err(`clue "${clue.id}": requires unknown clue "${r}"`);
+    if (!clueIds.has(r)) {
+      if (puzzleIds.has(r)) {
+        err(`clue "${clue.id}": requires puzzle "${r}" — gate the hotspot with requires.puzzles instead`);
+      } else {
+        err(`clue "${clue.id}": requires unknown clue "${r}"`);
+      }
+    }
     if (r === clue.id) err(`clue "${clue.id}": cannot require itself`);
   }
   clueIndex.set(clue.id, clue);
 }
 for (const [factId, meta] of factIndex) {
   if (!isObj(meta.unlock)) continue;
-  for (const r of meta.unlock.requires ?? []) {
+  for (const r of Array.isArray(meta.unlock.requires) ? meta.unlock.requires : []) {
     if (!clueIds.has(r)) err(`fact "${factId}": requires unknown clue "${r}"`);
   }
-  for (const a of meta.unlock.after ?? []) {
+  for (const a of Array.isArray(meta.unlock.after) ? meta.unlock.after : []) {
     if (!factIndex.has(a)) err(`fact "${factId}": after unknown fact "${a}"`);
   }
+}
+
+// ---------- puzzles ----------
+const puzzleIndex = new Map();
+for (const pz of c.puzzles ?? []) {
+  if (!isStr(pz.id)) continue;
+  const where = `puzzle "${pz.id}"`;
+  if (!['text', 'choice', 'code', 'email'].includes(pz.kind)) {
+    err(`${where}: kind must be text | choice | code | email`);
+  }
+  if (!isStr(pz.prompt)) err(`${where}: prompt is required`);
+  for (const key of ['hint', 'evidence', 'success', 'fail_message']) {
+    if (pz[key] !== undefined && !isStr(pz[key])) err(`${where}: ${key} must be a non-empty string`);
+  }
+  if (pz.penalty !== undefined && !(Number.isFinite(pz.penalty) && pz.penalty >= 0)) {
+    err(`${where}: penalty must be a non-negative number`);
+  }
+  if (pz.kind === 'choice') {
+    const optionsOk =
+      Array.isArray(pz.options) &&
+      pz.options.length > 0 &&
+      pz.options.every((o) => isStr(o) || Number.isFinite(o));
+    if (!optionsOk) err(`${where}: choice puzzles need a non-empty options list`);
+  }
+  if (pz.kind !== 'email') {
+    const answersOk =
+      Array.isArray(pz.answers) &&
+      pz.answers.length > 0 &&
+      pz.answers.every((a) => isStr(a) || Number.isFinite(a));
+    if (!answersOk) err(`${where}: answers are required for ${pz.kind} puzzles`);
+  }
+  if (pz.grants !== undefined && !Array.isArray(pz.grants)) {
+    err(`${where}: grants must be a list of clue ids`);
+  }
+  for (const g of pz.grants ?? []) {
+    if (!clueIds.has(g)) err(`${where}: grants unknown clue "${g}"`);
+  }
+  checkRequires(where, pz.requires);
+  if (pz.continue_on_fail !== undefined && typeof pz.continue_on_fail !== 'boolean') {
+    err(`${where}: continue_on_fail must be a boolean`);
+  }
+  if (pz.fail_grants !== undefined && !Array.isArray(pz.fail_grants)) {
+    err(`${where}: fail_grants must be a list of clue ids`);
+  } else {
+    for (const g of pz.fail_grants ?? []) {
+      if (!clueIds.has(g)) err(`${where}: fail_grants unknown clue "${g}"`);
+    }
+    if ((pz.fail_grants ?? []).length && pz.continue_on_fail !== true) {
+      warn(`${where}: fail_grants has no effect without continue_on_fail`);
+    }
+  }
+  if (pz.option_endings !== undefined) {
+    if (!isObj(pz.option_endings) || !Object.keys(pz.option_endings).length) {
+      err(`${where}: option_endings must map an option to an ending id`);
+    } else {
+      const options = (pz.options ?? []).map(String);
+      for (const [option, endingId] of Object.entries(pz.option_endings)) {
+        if (!options.includes(option)) err(`${where}: option_endings key "${option}" is not one of the options`);
+        if (!endingIds.has(endingId)) err(`${where}: option_endings "${option}" points to unknown ending "${endingId}"`);
+      }
+    }
+  }
+  puzzleIndex.set(pz.id, pz);
+}
+
+// ---------- endings ----------
+for (const ending of c.endings ?? []) {
+  if (!isStr(ending.id)) continue;
+  if (!isStr(ending.title)) err(`ending "${ending.id}": title is required`);
+  if (!isStr(ending.body)) err(`ending "${ending.id}": body is required`);
 }
 
 // ---------- rooms / hotspots ----------
@@ -141,17 +251,35 @@ for (const room of c.rooms ?? []) {
       } else {
         cluePlacement.set(h.clue, { room: room.id, hotspot: h.id });
       }
+    } else if (h.type === 'puzzle') {
+      if (!puzzleIds.has(h.puzzle)) err(`hotspot "${room.id}/${h.id}": unknown puzzle "${h.puzzle}"`);
+    } else if (h.type === 'travel') {
+      if (!roomIds.has(h.to)) err(`hotspot "${room.id}/${h.id}": travel to unknown room "${h.to}"`);
     } else {
-      err(`hotspot "${room.id}/${h.id}": type must be "character" or "clue"`);
+      err(`hotspot "${room.id}/${h.id}": type must be "character", "clue", "puzzle" or "travel"`);
     }
+    checkRequires(`hotspot "${room.id}/${h.id}"`, h.requires);
     if (h.position !== undefined) {
       const ok = Array.isArray(h.position) && h.position.length === 3 && h.position.every(Number.isFinite);
       if (!ok) err(`hotspot "${room.id}/${h.id}": position must be [x, y, z] numbers`);
     }
   }
 }
+
+// Clues granted by a puzzle (success or fail path) still count as placed.
+const clueGrantedBy = new Map(); // clueId -> [puzzleId]
+for (const pz of puzzleIndex.values()) {
+  for (const g of [...(pz.grants ?? []), ...(pz.fail_grants ?? [])]) {
+    if (!clueIds.has(g)) continue;
+    if (!clueGrantedBy.has(g)) clueGrantedBy.set(g, []);
+    clueGrantedBy.get(g).push(pz.id);
+  }
+}
 for (const clueId of clueIndex.keys()) {
-  if (!cluePlacement.has(clueId)) err(`clue "${clueId}" is not placed in any hotspot`);
+  const placed = cluePlacement.has(clueId);
+  const granted = clueGrantedBy.has(clueId);
+  if (!placed && !granted) err(`clue "${clueId}" is not placed in any hotspot and not granted by any puzzle`);
+  if (placed && granted) warn(`clue "${clueId}" is both placed in a hotspot and granted by a puzzle`);
 }
 
 // ---------- solution ----------
@@ -175,6 +303,20 @@ if (c.acts !== undefined) {
   if (!Array.isArray(c.acts) || !c.acts.length) err('acts must be a non-empty list');
   const actIds = new Set();
   const speakers = new Set(['narrator', 'voice', ...charIds]);
+  const checkLines = (where, lines, { requireNonEmpty = false } = {}) => {
+    if (!Array.isArray(lines)) {
+      err(`${where}: lines must be a list of { speaker, text }`);
+      return;
+    }
+    if (requireNonEmpty && !lines.length) {
+      err(`${where}: lines are required`);
+      return;
+    }
+    for (const ln of lines) {
+      if (!speakers.has(ln?.speaker)) err(`${where}: unknown speaker "${ln?.speaker}"`);
+      if (!isStr(ln?.text)) err(`${where}: every line needs text`);
+    }
+  };
   for (const act of c.acts ?? []) {
     if (!isStr(act.id)) {
       err('act missing id');
@@ -187,7 +329,31 @@ if (c.acts !== undefined) {
       continue;
     }
     if (!isStr(act.title)) warn(`act "${act.id}" has no title`);
+    if (act.kicker !== undefined && !isStr(act.kicker)) {
+      err(`act "${act.id}": kicker must be a non-empty string`);
+    }
+    if (act.intro !== undefined) checkLines(`act "${act.id}"/intro`, act.intro);
+    if (act.outro !== undefined) checkLines(`act "${act.id}"/outro`, act.outro);
+    if (act.complete !== undefined) {
+      if (!isObj(act.complete)) {
+        err(`act "${act.id}": complete must be { clues: [], puzzles: [] }`);
+      } else {
+        for (const key of ['clues', 'puzzles']) {
+          const list = act.complete[key];
+          if (list === undefined) continue;
+          if (!Array.isArray(list) || !list.every(isStr)) {
+            err(`act "${act.id}": complete.${key} must be a list of ids`);
+            continue;
+          }
+          for (const id of list) {
+            const known = key === 'clues' ? clueIds.has(id) : puzzleIds.has(id);
+            if (!known) err(`act "${act.id}": complete references unknown ${key === 'clues' ? 'clue' : 'puzzle'} "${id}"`);
+          }
+        }
+      }
+    }
     if (act.type === 'cinematic') {
+      if (act.rooms !== undefined) err(`act "${act.id}": rooms are only allowed on interactive acts`);
       if (!Array.isArray(act.beats) || !act.beats.length) {
         err(`act "${act.id}": cinematic act needs beats`);
         continue;
@@ -204,11 +370,7 @@ if (c.acts !== undefined) {
         if (!roomIds.has(b.room)) err(`${where}: unknown room "${b.room}"`);
         if (!isStr(b.shot)) err(`${where}: shot is required`);
         if (!Number.isFinite(b.seconds) || b.seconds <= 0) err(`${where}: seconds must be a positive number`);
-        if (!Array.isArray(b.lines) || !b.lines.length) err(`${where}: lines are required`);
-        for (const ln of b.lines ?? []) {
-          if (!speakers.has(ln?.speaker)) err(`${where}: unknown speaker "${ln?.speaker}"`);
-          if (!isStr(ln?.text)) err(`${where}: every line needs text`);
-        }
+        checkLines(where, b.lines, { requireNonEmpty: true });
         for (const cst of b.cast ?? []) {
           if (!charIds.has(cst?.character)) err(`${where}: unknown cast character "${cst?.character}"`);
           if (!Array.isArray(cst?.at) || cst.at.length !== 2 || !cst.at.every(Number.isFinite)) {
@@ -216,8 +378,30 @@ if (c.acts !== undefined) {
           }
         }
       }
-    } else if (!roomIds.has(act.entry_room)) {
-      err(`act "${act.id}": unknown entry_room "${act.entry_room}"`);
+    } else {
+      if (!roomIds.has(act.entry_room)) err(`act "${act.id}": unknown entry_room "${act.entry_room}"`);
+      if (act.rooms !== undefined) {
+        if (!Array.isArray(act.rooms) || !act.rooms.every((id) => roomIds.has(id))) {
+          err(`act "${act.id}": rooms must be a list of known room ids`);
+        } else if (isStr(act.entry_room) && !act.rooms.includes(act.entry_room)) {
+          err(`act "${act.id}": entry_room "${act.entry_room}" is not in rooms`);
+        }
+      }
+      if (act.objective !== undefined && !isStr(act.objective)) {
+        err(`act "${act.id}": objective must be a non-empty string`);
+      }
+    }
+  }
+}
+
+// ---------- hotspot act tags ----------
+if (c.acts !== undefined) {
+  const actIdSet = new Set((c.acts ?? []).map((a) => a?.id).filter(isStr));
+  for (const room of c.rooms ?? []) {
+    for (const h of room.hotspots ?? []) {
+      if (h.act !== undefined && !actIdSet.has(h.act)) {
+        err(`hotspot "${room.id}/${h.id}": unknown act "${h.act}"`);
+      }
     }
   }
 }
@@ -229,21 +413,39 @@ for (const qa of c.canonical_qa ?? []) {
 }
 
 // ---------- reachability ----------
-const reachable = new Set();
+// Puzzles and clues gate each other, so both grow to a fixed point together.
+const reachableClues = new Set();
+const reachablePuzzles = new Set();
 let grew = true;
 while (grew) {
   grew = false;
   for (const [id, clue] of clueIndex) {
-    if (reachable.has(id)) continue;
-    if ((clue.requires ?? []).every((r) => reachable.has(r))) {
-      reachable.add(id);
+    if (reachableClues.has(id)) continue;
+    const cluesOk = (clue.requires ?? []).every((r) => reachableClues.has(r));
+    const placed = cluePlacement.has(id);
+    const viaPuzzle = (clueGrantedBy.get(id) ?? []).some((pid) => reachablePuzzles.has(pid));
+    if (cluesOk && (placed || viaPuzzle)) {
+      reachableClues.add(id);
+      grew = true;
+    }
+  }
+  for (const [id, pz] of puzzleIndex) {
+    if (reachablePuzzles.has(id)) continue;
+    const cluesOk = (pz.requires?.clues ?? []).every((r) => reachableClues.has(r));
+    const puzzlesOk = (pz.requires?.puzzles ?? []).every((r) => reachablePuzzles.has(r));
+    if (cluesOk && puzzlesOk) {
+      reachablePuzzles.add(id);
       grew = true;
     }
   }
 }
 for (const id of clueIndex.keys()) {
-  if (!reachable.has(id)) err(`clue "${id}" is unreachable (circular or unsatisfiable "requires")`);
+  if (!reachableClues.has(id)) err(`clue "${id}" is unreachable (circular or unsatisfiable "requires")`);
 }
+for (const id of puzzleIndex.keys()) {
+  if (!reachablePuzzles.has(id)) err(`puzzle "${id}" is unreachable (circular or unsatisfiable "requires")`);
+}
+
 const reachableFacts = new Set();
 let factsGrew = true;
 while (factsGrew) {
@@ -255,7 +457,7 @@ while (factsGrew) {
       factsGrew = true;
       continue;
     }
-    const cluesOk = (meta.unlock?.requires ?? []).every((r) => reachable.has(r));
+    const cluesOk = (meta.unlock?.requires ?? []).every((r) => reachableClues.has(r));
     const factsOk = (meta.unlock?.after ?? []).every((a) => reachableFacts.has(a));
     if (cluesOk && factsOk) {
       reachableFacts.add(factId);
@@ -275,6 +477,18 @@ for (const meta of factIndex.values()) {
   for (const r of meta.unlock.requires ?? []) requiredClues.add(r);
   for (const a of meta.unlock.after ?? []) requiredClues.add(a);
 }
+for (const pz of puzzleIndex.values()) {
+  for (const r of pz.requires?.clues ?? []) requiredClues.add(r);
+}
+for (const room of c.rooms ?? []) {
+  for (const h of room.hotspots ?? []) {
+    for (const r of h.requires?.clues ?? []) requiredClues.add(r);
+  }
+}
+for (const act of c.acts ?? []) {
+  for (const r of act.complete?.clues ?? []) requiredClues.add(r);
+}
+for (const r of c.solution?.required_clues ?? []) requiredClues.add(r);
 for (const [id, clue] of clueIndex) {
   if (!(clue.grants ?? []).length && !requiredClues.has(id)) {
     warn(`clue "${id}" grants nothing and gates nothing`);
@@ -283,7 +497,9 @@ for (const [id, clue] of clueIndex) {
 
 // ---------- report ----------
 console.log(`case: ${CASE_PATH}`);
-console.log(`  ${c.rooms?.length ?? 0} rooms, ${c.characters?.length ?? 0} characters, ${factIndex.size} facts, ${clueIndex.size} clues`);
+console.log(
+  `  ${c.rooms?.length ?? 0} rooms, ${c.characters?.length ?? 0} characters, ${factIndex.size} facts, ${clueIndex.size} clues, ${puzzleIndex.size} puzzles, ${endingIds.size} endings`
+);
 for (const w of warnings) console.log(`  warn   ${w}`);
 for (const e of errors) console.error(`  ERROR  ${e}`);
 

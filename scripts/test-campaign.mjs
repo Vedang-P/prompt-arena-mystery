@@ -1,0 +1,111 @@
+import assert from 'node:assert/strict';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+process.env.SQLITE_PATH = join(tmpdir(), `moon-test-${crypto.randomUUID()}.db`);
+const { default: app } = await import('../src/worker.js');
+const { getEnv } = await import('../lib/vercel-env.js');
+const { caseData } = await import('../src/case.js');
+const { chapterCheckpoint, canAdvanceAct, puzzleGate, clueGate } = await import('../src/engine.js');
+const env = await getEnv();
+const cookies = new Map();
+let mode = 'campaign';
+async function call(path, payload, expected = 200) {
+  const headers = { cookie: [...cookies].map(([k,v]) => `${k}=${v}`).join('; '), 'x-game-mode': mode };
+  if (payload !== undefined) headers['content-type'] = 'application/json';
+  const res = await app.fetch(new Request(`http://localhost${path}`, { method: payload === undefined ? 'GET' : 'POST', headers, body: payload === undefined ? undefined : JSON.stringify(payload) }), env);
+  for (const cookie of res.headers.getSetCookie()) { const [name, value] = cookie.split(';')[0].split('='); cookies.set(name, value); }
+  const json = await res.json();
+  assert.equal(res.status, expected, `${path}: ${JSON.stringify(json)}`);
+  return json;
+}
+await call('/api/guest', {});
+let state = await call('/api/state');
+assert.equal(state.act, 'act0');
+assert.equal(state.acts.length, 9);
+assert.equal(state.rooms.length, 14);
+assert.equal(state.puzzles.length, 46);
+assert(state.puzzles.every((p) => !('answers' in p) && !('grants' in p)));
+assert(state.endings.every((e) => !('body' in e)));
+await call('/api/puzzles/p_floor/solve', { answer: '3' }, 403);
+await call('/api/act/complete', { act: 'act4' }, 409);
+await call('/api/act/complete', { act: 'act0' });
+await call('/api/act/complete', { act: 'act1' }, 409);
+await call('/api/puzzles/p_laptop/solve', { answer: 'oc1808' }, 403);
+for (const act of caseData.acts.slice(1)) {
+  state = await call('/api/state');
+  assert.equal(state.act, act.id);
+  let changed = true;
+  let actions = 0;
+  while (changed) {
+    changed = false;
+    for (const room of caseData.rooms.filter((r) => act.rooms.includes(r.id))) {
+      for (const h of room.hotspots) {
+        if (h.act && h.act !== act.id) continue;
+        if (h.type === 'clue' && !state.discovered.includes(h.clue) && clueGate(act.id, state.solvedPuzzles, state.discovered, h.clue).ok) {
+          const clue = caseData.clues.find((c) => c.id === h.clue);
+          if ((clue.requires ?? []).some((id) => !state.discovered.includes(id))) continue;
+          await call(`/api/clues/${h.clue}/discover`, {});
+          state = await call('/api/state'); changed = true; actions++;
+        }
+        if (h.type === 'puzzle' && !state.solvedPuzzles.includes(h.puzzle) && puzzleGate(act.id, state.solvedPuzzles, state.discovered, h.puzzle).ok) {
+          const p = caseData.puzzles.find((p) => p.id === h.puzzle);
+          const result = await call(`/api/puzzles/${p.id}/solve`, { answer: p.kind === 'email' ? 'detective@example.invalid' : p.answers[0] });
+          assert(result.correct, p.id);
+          state = await call('/api/state'); changed = true; actions++;
+        }
+      }
+    }
+  }
+  assert(state.canAdvance.ok, `${act.id} blocked: ${JSON.stringify(state.canAdvance)}`);
+  const repeated = await call(`/api/puzzles/${act.complete.puzzles[0]}/solve`, { answer: 'already answered' });
+  assert(repeated.alreadySolved);
+  await call('/api/act/complete', { act: act.id });
+  console.log(`PASS ${act.id}: ${actions} interactions, all completion gates reachable`);
+}
+state = await call('/api/state');
+assert.equal(state.ending.id, 'ending_main');
+assert.match(state.ending.body, /now disappear/i);
+assert.equal(state.solvedPuzzles.length, 46);
+assert.equal(state.penalties, 0);
+assert.equal(state.score, state.discovered.length + 46);
+const campaignSave = JSON.stringify(state);
+for (const act of caseData.acts) {
+  mode = 'campaign';
+  await call('/api/practice', { act: act.id });
+  mode = 'practice';
+  const rehearsal = await call('/api/state');
+  assert.equal(rehearsal.act, act.id);
+  assert(rehearsal.practice);
+  const checkpoint = chapterCheckpoint(act.id);
+  assert.deepEqual(rehearsal.discovered, checkpoint.discovered);
+  for (const prior of caseData.acts.slice(1, caseData.acts.indexOf(act))) {
+    assert(canAdvanceAct(checkpoint.solvedPuzzles, checkpoint.discovered, prior.id).ok, `Practice ${act.id} loses ${prior.id} evidence`);
+  }
+  console.log(`PASS practice ${act.id}: independent save with prerequisite evidence`);
+}
+mode = 'campaign';
+await call('/api/practice', { act: 'act7' });
+mode = 'practice';
+await call('/api/puzzles/p_mask_owner/solve', { answer: 'leader' });
+await call('/api/puzzles/p_veer_mask/solve', { answer: 'mask' });
+const stop = await call('/api/puzzles/p_continue/solve', { answer: 'Stop' });
+assert.equal(stop.ending, 'ending_cult');
+assert.equal((await call('/api/state')).ending.id, 'ending_cult');
+const leaderboard = await call('/api/leaderboard');
+assert(!leaderboard.teams.some((t) => t.name.startsWith('Practice-')));
+mode = 'campaign';
+const preserved = await call('/api/state');
+assert.equal(preserved.team, JSON.parse(campaignSave).team);
+assert.equal(preserved.ending.id, 'ending_main');
+assert.equal(preserved.solvedPuzzles.length, 46);
+console.log('PASS both endings, practice isolation, durable reload, score, and leaderboard');
+// Wrong choices that deliberately continue must still leave a completable path.
+await call('/api/guest', {});
+await call('/api/practice', { act: 'act2' }); mode = 'practice';
+await call('/api/puzzles/p_voicenote2/solve', { answer: 'park' });
+await call('/api/clues/c_cd/discover', {});
+const wrong = await call('/api/puzzles/p_cd_mode/solve', { answer: 'Use my laptop' });
+assert(!wrong.correct); assert(wrong.penalty > 0); assert(wrong.solvedPuzzles.includes('p_cd_mode')); assert(wrong.discovered.includes('c_footage'));
+console.log('PASS penalized choice preserves progress and grants the next lead');
+console.log('Campaign integration checks passed.');
+process.exit(0);

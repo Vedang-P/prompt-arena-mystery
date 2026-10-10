@@ -1,0 +1,35 @@
+/* Room/Scene additions (owned by the scene workstream). */
+
+.hotspot.puzzle {
+  border-color: rgba(201, 162, 74, 0.85);
+  color: #f0d9a0;
+}
+
+.hotspot.puzzle:hover {
+  background: linear-gradient(180deg, #e6c877, #c9a24a);
+  color: #241708;
+  border-color: transparent;
+}
+
+.hotspot.puzzle.solved {
+  cursor: default;
+  color: #8f8168;
+  background: rgba(10, 8, 6, 0.45);
+  border-color: rgba(201, 162, 74, 0.18);
+}
+
+.hotspot.puzzle.solved:hover {
+  background: rgba(10, 8, 6, 0.45);
+  color: #8f8168;
+}
+
+.hotspot.travel {
+  border-color: rgba(127, 180, 255, 0.85);
+  color: #d6e4ff;
+}
+
+.hotspot.travel:hover {
+  background: linear-gradient(180deg, #9cc2ff, #5b8fdd);
+  color: #08101f;
+  border-color: transparent;
+}
