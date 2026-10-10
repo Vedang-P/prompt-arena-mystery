@@ -6,3 +6,7 @@
 .case-reference{border:1px solid #3e5358;border-radius:5px;padding:11px 14px;background:#0f1e25;margin:12px 0}.case-reference summary{color:#b8cbbf;font-size:11px;cursor:pointer}.case-reference p{font-size:13px;line-height:1.8;color:#ccd7c9;margin:12px 0 0}
 .case-footer-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;min-width:0}.case-panel-foot{flex-wrap:wrap}.case-footer-actions .case-button{flex:none}@media(max-width:480px){.puzzle-workbench .case-panel-foot{gap:8px}.puzzle-workbench .case-panel-foot p{flex:0 0 100%}.puzzle-workbench .case-footer-actions{width:100%;gap:8px}.puzzle-workbench .case-footer-actions .case-button{flex:1}}
 .puzzle-workbench:not(.has-art){width:min(640px,100%)}
+.arena-account-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px}
+.cinematic-story .story-scene-title{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.cinematic-story .story-scene-title>.quiet-button{flex:none}
+@media(max-width:480px){.arena-title .title-header,.prologue .prologue-header{align-items:flex-start}.arena-account-actions{max-width:58%;gap:4px}.arena-account-actions .quiet-button{padding:6px 8px;font-size:10px}}

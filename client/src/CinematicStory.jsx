@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Cinema from './Cinema.jsx';
 import { useSettings } from './Settings.jsx';
+import LogoutButton from './LogoutButton.jsx';
 
 function locationFor(act, kind, index) {
   const scenes = {
@@ -40,13 +41,13 @@ export default function CinematicStory({ story, act, characters, onDone, busy })
   }, [line, narration, paused]);
   const advance = () => { if (busy) return; if (!last) setIndex((i) => i + 1); else onDone(); };
   useEffect(() => {
-    const key = (e) => { if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); advance(); } };
+    const key = (e) => { if (!['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA', 'A'].includes(e.target.tagName) && (e.code === 'Space' || e.code === 'Enter')) { e.preventDefault(); advance(); } };
     window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key);
   });
   return <div className="story-overlay cinematic-story" role="dialog" aria-modal="true" aria-label={`${act.title} cinematic`}>
     <div className="story-world"><Cinema sceneId={sceneId} cast={cast} shot={index % 3 === 0 ? 'wide' : line?.speaker === 'narrator' ? 'two' : 'portrait'} speaker={line?.speaker} paused={paused} ending={act.id === 'act8' && story.after === 'outro'} /></div>
     <div className="cinema-bar top" /><div className="cinema-bar bottom" />
-    <header className="story-scene-title"><span className="eyebrow">{act.kicker} · {story.after === 'intro' ? 'Opening' : 'Closing'}</span><h2>{act.title}</h2></header>
+    <header className="story-scene-title"><div><span className="eyebrow">{act.kicker} · {story.after === 'intro' ? 'Opening' : 'Closing'}</span><h2>{act.title}</h2></div><LogoutButton disabled={busy}/></header>
     <div className="cinema-footer"><div className="cinematic-caption" key={index}><span className="eyebrow">{names[line?.speaker] ?? (line?.speaker === 'voice' ? 'Unknown voice' : 'Sameer’s story')}</span><p>{line?.text}</p></div>
     <div className="cinematic-tools"><span>{String(index + 1).padStart(2, '0')} / {String(story.lines.length).padStart(2, '0')}</span><button className="btn ghost" onClick={() => setPaused((p) => !p)}>{paused ? 'Play' : 'Pause'}</button><button className="btn ghost" onClick={onDone} disabled={busy}>Skip cinematic</button><button className="btn brass" onClick={advance} disabled={busy}>{busy ? 'Saving…' : last ? story.doneLabel : 'Continue'}</button></div></div>
   </div>;

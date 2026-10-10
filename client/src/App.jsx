@@ -6,6 +6,7 @@ import { SettingsPanel, useSettings } from './Settings.jsx';
 import Soundtrack from './Soundtrack.jsx';
 import Leaderboard from './Leaderboard.jsx';
 import ActDirector from './ActDirector.jsx';
+import LogoutButton from './LogoutButton.jsx';
 import {
   AccuseModal,
   DialogueOverlay,
@@ -665,6 +666,7 @@ export default function App() {
           {!authConfig?.eventMode && <button className="quiet-button" onClick={() => setChaptersOpen(true)}>Chapters</button>}
           <button className="quiet-button" onClick={()=>setLeaderboardOpen(true)}>Live leaderboard</button>
           <button className="quiet-button" onClick={() => { setStory(null); setPhase('menu'); }}>Menu</button>
+          <LogoutButton disabled={actBusy || puzzleBusy || typing || accuseBusy}/>
         </div>
       </header>
       <div className="chapter-progress" aria-label="Campaign progress">{state.acts.map((a, i) => <span key={a.id} className={a.id === state.act ? 'current' : i < state.acts.findIndex((x) => x.id === state.act) ? 'done' : ''} title={a.title}>{i}</span>)}</div>

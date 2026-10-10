@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import CaseJournal from './CaseJournal.jsx';
 import PuzzleWorkbench from './PuzzleWorkbench.jsx';
+import LogoutButton from './LogoutButton.jsx';
 import { useSettings } from './Settings.jsx';
 import { speakCharacter } from './CharacterSpeech.js';
 
@@ -444,6 +445,7 @@ export function EndingCard({ ending, score, penalties, team, title, onReplay }) 
             Replay the case
           </button>
         )}
+        <LogoutButton className="btn ghost"/>
       </div>
     </div>
   );
