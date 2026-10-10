@@ -1,6 +1,7 @@
 import './styles-scene.css';
 import { CinemaProp, ParkGround, WindTree, CeilingFan } from './CinemaAssets.jsx';
-import { BEDROOM, POLICE, DESK_TOP, DESK_SEAT, PARTH_ANCHORS, PARK } from './SceneLayout.js';
+import {DetailProp,TerrainSurface,WallSign,Cable,ComputerStation,ShelfContents,FencePanel} from './EnvironmentDetails.jsx';
+import { BEDROOM, POLICE, DESK_TOP, DESK_SEAT, PARTH_ANCHORS, PARK, DETAIL_ANCHORS,FIELD,ROOM_VIEWS } from './SceneLayout.js';
 import {seatContact} from './SceneStaging.js';
 import Actor, { actorURL } from './Actor.jsx';
 import { useSettings } from './Settings.jsx';
@@ -85,8 +86,6 @@ const TINT = {
   'rugRound.glb': '#7a3a36',
   'rugSquare.glb': '#4a4038',
 };
-
-for (const name of Object.keys(SCALE)) useGLTF.preload(F(name));
 
 const DEMO_ROOMS = new Set(['ballroom', 'vestibule']);
 const OUTDOOR_ROOMS = new Set(['gazebo', 'abandoned_field', 'concert', 'workshop']);
@@ -215,6 +214,19 @@ function GLTFModel({
 }
 
 function Prop({ model, position, rotation = [0, 0, 0], tint, scale }) {
+  // The campaign uses the same licensed furniture and measured support surfaces.
+  // Legacy pieces remain only for background architecture without an equivalent.
+  if(model==='desk.glb')return <DetailProp asset="metal_office_desk" height={DESK_TOP} position={position} rotation={rotation}/>;
+  if(model==='chairDesk.glb')return <DetailProp asset="office_chair" height={1.168*DESK_SEAT/.618} position={position} rotation={rotation}/>;
+  if(['chair.glb','chairCushion.glb'].includes(model))return <DetailProp asset="plastic_monobloc_chair_01" position={position} rotation={rotation}/>;
+  if(model==='loungeSofa.glb')return <DetailProp asset="sofa_03" position={position} rotation={rotation}/>;
+  if(model==='loungeChair.glb')return <DetailProp asset="modern_arm_chair_01" position={position} rotation={rotation}/>;
+  if(['bookcaseOpen.glb','bookcaseClosed.glb'].includes(model))return <ShelfContents position={position} rotation={rotation}/>;
+  if(model==='sideTable.glb')return <DetailProp asset="side_table_01" height={.73038} position={position} rotation={rotation}/>;
+  if(model==='lampRoundTable.glb')return <DetailProp asset="desk_lamp_arm_01" height={.89261*(scale??1.45)/3.1} position={position} rotation={rotation}/>;
+  if(['lampRoundFloor.glb','lampSquareFloor.glb'].includes(model))return <DetailProp asset="floor_lamp" height={1.75} position={position} rotation={rotation}/>;
+  if(['table.glb','tableCloth.glb','tableGlass.glb'].includes(model))return <DetailProp asset="dining_table" height={.77} position={position} rotation={rotation}/>;
+  if(['pottedPlant.glb','plantSmall1.glb','plantSmall2.glb'].includes(model))return <DetailProp asset="potted_plant_02" height={model==='pottedPlant.glb'?1.1:.5} position={position} rotation={rotation}/>;
   return (
     <GLTFModel
       url={F(model)}
@@ -497,65 +509,13 @@ function CharacterHotspot({ hotspot, position, hot, rotation, pose='idle', label
 }
 
 function HotspotMarkers({ room, hot }) {
-  if(room.id==='parth_room') {
+  {
     const groups=new Map();
-    for(const h of room.hotspots??[]){const position=PARTH_ANCHORS[h.id]??hotspotPosition(h,0);const key=position[0]+':'+position[2];if(!groups.has(key))groups.set(key,{position,hotspots:[]});groups.get(key).hotspots.push(h);}
-    return [...groups.entries()].map(([key,group])=><AnchoredHotspot key={key} {...group} hot={hot}/>);
+    const anchors=room.id==='parth_room'?PARTH_ANCHORS:DETAIL_ANCHORS[room.id]??{};
+    const characters=(room.hotspots??[]).filter(h=>h.type==='character');
+    for(const h of room.hotspots??[]){if(h.type==='character')continue;const position=anchors[h.id]??hotspotPosition(h,0);const key=position[0]+':'+position[2];if(!groups.has(key))groups.set(key,{position,hotspots:[]});groups.get(key).hotspots.push(h);}
+    return <>{characters.map(h=>{const officer=room.id==='police_station'&&h.character==='officer';return <CharacterHotspot key={h.id} hotspot={h} position={officer?[POLICE.officer[0],DESK_SEAT-.4915,POLICE.officer[1]]:hotspotPosition(h)} hot={hot} pose={officer?'sit':'idle'} rotation={[0,0,0]}/>;})}{[...groups.entries()].map(([key,group])=><AnchoredHotspot key={key} {...group} hot={hot}/>)}</>;
   }
-  return (
-    <>
-      {(room.hotspots ?? []).map((h, i) => {
-        const position = room.id==='parth_room' ? PARTH_ANCHORS[h.id]??hotspotPosition(h,i) : room.id==='police_station'&&h.character==='officer' ? [POLICE.officer[0],DESK_SEAT-.4915,POLICE.officer[1]] : hotspotPosition(h, i);
-        const labelOffsetY = staggerFor(i) - (room.id==='police_station'&&h.character==='officer' ? .6 : 0);
-        if (h.type === 'character') {
-          return (
-            <CharacterHotspot
-              key={h.id ?? i}
-              hotspot={h}
-              position={position}
-              hot={hot}
-              pose={room.id==='police_station'&&h.character==='officer'?'sit':'idle'}
-              rotation={room.id==='police_station'&&h.character==='officer'?[0,0,0]:undefined}
-              labelOffsetY={labelOffsetY}
-            />
-          );
-        }
-        if (h.type === 'puzzle') {
-          return (
-            <PuzzleMarker
-              key={h.id ?? i}
-              hotspot={h}
-              position={position}
-              solved={(hot.solvedPuzzles ?? []).includes(h.puzzle)}
-              labelOffsetY={labelOffsetY}
-              onClick={() => hot.onPuzzle?.(h)}
-            />
-          );
-        }
-        if (h.type === 'travel') {
-          return (
-            <TravelMarker
-              key={h.id ?? i}
-              hotspot={h}
-              position={position}
-              labelOffsetY={labelOffsetY}
-              onClick={() => hot.onTravel?.(h)}
-            />
-          );
-        }
-        return (
-          <ClueMarker
-            key={h.id ?? i}
-            hotspot={h}
-            position={position}
-            found={(hot.state.discovered ?? []).includes(h.clue)}
-            labelOffsetY={labelOffsetY}
-            onClick={() => hot.onClue?.(h)}
-          />
-        );
-      })}
-    </>
-  );
 }
 
 function AnchoredHotspot({hotspots,position,hot}) {
@@ -564,6 +524,24 @@ function AnchoredHotspot({hotspots,position,hot}) {
 }
 
 // ---------- room shell ----------
+
+function RoomCeiling({width,depth,height}) {
+ const ceiling=useRef();
+ // Exploration is a cutaway view from outside the front wall. A ceiling must
+ // not cover half that view; it reappears for cameras genuinely inside a room.
+ useFrame(({camera})=>{if(ceiling.current)ceiling.current.visible=Math.abs(camera.position.z)<depth/2&&Math.abs(camera.position.x)<width/2&&camera.position.y<height-.25;});
+ return <mesh ref={ceiling} position={[0,height,0]} rotation-x={Math.PI/2}><planeGeometry args={[width,depth]}/><meshStandardMaterial color="#c5bfae" roughness={1}/></mesh>;
+}
+
+function RoomFront({width,depth,height,tint}) {
+ const front=useRef();
+ useFrame(({camera})=>{if(front.current)front.current.visible=camera.position.z<depth/2-.3;});
+ return <group ref={front} position={[0,0,depth/2]}>
+  {[-1,1].map(side=><mesh key={side} position={[side*(width/4+.325),height/2,0]} rotation-y={Math.PI} receiveShadow><planeGeometry args={[width/2-.65,height]}/><meshStandardMaterial color={tint} roughness={.95}/></mesh>)}
+  <mesh position={[0,2.3+(height-2.3)/2,0]} rotation-y={Math.PI}><planeGeometry args={[1.3,height-2.3]}/><meshStandardMaterial color={tint}/></mesh>
+  <mesh position={[0,1.1,.02]} rotation-y={Math.PI}><planeGeometry args={[1.24,2.2]}/><meshStandardMaterial color="#423a32" roughness={.8}/></mesh>
+ </group>;
+}
 
 function Shell({ width, depth, height, tint, painted=false }) {
   const plaster = useTexture(`${ASSETS}/env/plaster_diff_1k.jpg`);
@@ -590,10 +568,8 @@ function Shell({ width, depth, height, tint, painted=false }) {
           <meshStandardMaterial color="#171310" roughness={0.7} />
         </mesh>
       ))}
-      <mesh position={[0, height, 0]} rotation-x={Math.PI / 2}>
-        <planeGeometry args={[width, depth]} />
-        <meshStandardMaterial color="#14100d" roughness={1} />
-      </mesh>
+      <RoomCeiling width={width} depth={depth} height={height}/>
+      <RoomFront width={width} depth={depth} height={height} tint={tint}/>
     </group>
   );
 }
@@ -741,14 +717,8 @@ function SceneProp({ model, hotspot, position, found, onClick, offset = [0, 0, 0
 // ---------- kit primitives ----------
 
 function Ground({ width = 30, depth = 30, color = '#131c14' }) {
-  return (
-    <mesh rotation-x={-Math.PI / 2} receiveShadow>
-      <planeGeometry args={[width, depth]} />
-      <meshStandardMaterial color={color} roughness={1} />
-    </mesh>
-  );
+  return <TerrainSurface width={width} depth={depth} color="#a6b19d" repeat={[8,8]}/>;
 }
-
 function Moon({ position = [-6, 7.5, -14], size = 1.6 }) {
   return (
     <group position={position}>
@@ -762,20 +732,8 @@ function Moon({ position = [-6, 7.5, -14], size = 1.6 }) {
 }
 
 function Tree({ position, scale = 1 }) {
-  return (
-    <group position={position} scale={scale}>
-      <mesh position={[0, 0.7, 0]} castShadow>
-        <cylinderGeometry args={[0.09, 0.13, 1.4, 7]} />
-        <meshStandardMaterial color="#241a12" roughness={0.95} />
-      </mesh>
-      <mesh position={[0, 1.75, 0]} castShadow>
-        <coneGeometry args={[0.85, 1.7, 8]} />
-        <meshStandardMaterial color="#16281d" roughness={0.95} />
-      </mesh>
-    </group>
-  );
+  return <WindTree position={position} height={4.8*scale}/>;
 }
-
 function Bench({ position, rotation = [0, 0, 0] }) {
   return (
     <group position={position} rotation={rotation}>
@@ -813,23 +771,6 @@ function LampPost({ position }) {
   );
 }
 
-function Stairs({ position, rotation = [0, 0, 0], steps = 6 }) {
-  return (
-    <group position={position} rotation={rotation}>
-      {[...Array(steps)].map((_, i) => (
-        <mesh key={i} position={[0, 0.15 + i * 0.3, -i * 0.34]} castShadow receiveShadow>
-          <boxGeometry args={[1.6, 0.3, 0.36]} />
-          <meshStandardMaterial color="#4a3524" roughness={0.9} />
-        </mesh>
-      ))}
-      <mesh position={[0, 0.15 + steps * 0.3, -steps * 0.34 - 1.1]} castShadow receiveShadow>
-        <boxGeometry args={[1.6, 0.3, 2.2]} />
-        <meshStandardMaterial color="#43301f" roughness={0.9} />
-      </mesh>
-    </group>
-  );
-}
-
 function FileStack({ position }) {
   return (
     <group position={position}>
@@ -844,83 +785,14 @@ function FileStack({ position }) {
 }
 
 function Bed({ position, rotation = [0, 0, 0], made = true }) {
-  return (
-    <group position={position} rotation={rotation}>
-      <mesh position={[0, 0.28, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.7, 0.34, 2.1]} />
-        <meshStandardMaterial color="#3a3028" roughness={0.9} />
-      </mesh>
-      <mesh position={[0, 0.52, 0]} castShadow>
-        <boxGeometry args={[1.62, 0.18, 2.0]} />
-        <meshStandardMaterial color="#6a5a4a" roughness={0.95} />
-      </mesh>
-      {made ? (
-        <mesh position={[0, 0.66, 0.25]} castShadow>
-          <boxGeometry args={[1.64, 0.12, 1.6]} />
-          <meshStandardMaterial color="#5a3f3a" roughness={0.95} />
-        </mesh>
-      ) : (
-        <mesh position={[0.18, 0.66, 0.3]} rotation={[0, 0.14, 0]} castShadow>
-          <boxGeometry args={[1.5, 0.14, 1.5]} />
-          <meshStandardMaterial color="#52443a" roughness={0.95} />
-        </mesh>
-      )}
-      <mesh position={[0, 0.68, -0.72]} castShadow>
-        <boxGeometry args={[0.62, 0.14, 0.4]} />
-        <meshStandardMaterial color="#8a8072" roughness={0.95} />
-      </mesh>
-      {!made && (
-        <mesh position={[0.5, 0.68, -0.4]} rotation={[0, -0.3, 0.08]} castShadow>
-          <boxGeometry args={[0.5, 0.12, 0.35]} />
-          <meshStandardMaterial color="#8a8072" roughness={0.95} />
-        </mesh>
-      )}
-    </group>
-  );
+  return <DetailProp asset="bed" position={position} rotation={rotation}/>;
 }
-
 function Laptop({ position, rotation = [0, 0, 0], open = true }) {
-  return (
-    <group position={position} rotation={rotation}>
-      <mesh position={[0, 0.01, 0]} castShadow>
-        <boxGeometry args={[0.6, 0.02, 0.34]} />
-        <meshStandardMaterial color="#1b1c22" roughness={0.5} />
-      </mesh>
-      {open && (
-        <group position={[0, 0.05, -0.16]} rotation-x={-0.35}>
-          <mesh position={[0, 0.28, 0]} castShadow>
-            <boxGeometry args={[0.62, 0.42, 0.05]} />
-            <meshStandardMaterial color="#15161c" roughness={0.4} />
-          </mesh>
-          <mesh position={[0, 0.28, 0.032]}>
-            <planeGeometry args={[0.56, 0.36]} />
-            <meshStandardMaterial color="#9fd2ff" emissive="#6aa9e8" emissiveIntensity={1.6} />
-          </mesh>
-        </group>
-      )}
-    </group>
-  );
+  return <DetailProp asset="classic_laptop" position={position} rotation={rotation} scale={.9}/>;
 }
-
 function CRT({ position, rotation = [0, 0, 0], color = '#9fd2ff', glow = '#6aa9e8' }) {
-  return (
-    <group position={position} rotation={rotation}>
-      <mesh position={[0, 0.05, 0]}>
-        <boxGeometry args={[0.42, 0.1, 0.36]} />
-        <meshStandardMaterial color="#b8b0a0" roughness={0.7} />
-      </mesh>
-      <mesh position={[0, 0.32, 0]} castShadow>
-        <boxGeometry args={[0.5, 0.44, 0.42]} />
-        <meshStandardMaterial color="#c9c2b2" roughness={0.75} />
-      </mesh>
-      <mesh position={[0, 0.33, 0.215]}>
-        <planeGeometry args={[0.4, 0.32]} />
-        <meshStandardMaterial color={color} emissive={glow} emissiveIntensity={1.5} />
-      </mesh>
-    </group>
-  );
+  return <group position={position} rotation={rotation}><DetailProp asset="monitor"/><DetailProp asset="keyboard" position={[0,0,.34]}/><DetailProp asset="mouse" position={[.35,0,.35]}/></group>;
 }
-
 function Candle({ position, height = 0.22 }) {
   return (
     <group position={position}>
@@ -978,70 +850,11 @@ function HangingBulb({ position, color = '#ffd9a0' }) {
 }
 
 function Wheelchair({ position, rotation = [0, 0, 0] }) {
-  return (
-    <group position={position} rotation={rotation}>
-      <mesh position={[0, 0.55, 0]} castShadow>
-        <boxGeometry args={[0.5, 0.06, 0.5]} />
-        <meshStandardMaterial color="#2c3038" roughness={0.8} />
-      </mesh>
-      <mesh position={[0, 0.95, -0.24]} castShadow>
-        <boxGeometry args={[0.5, 0.6, 0.06]} />
-        <meshStandardMaterial color="#2c3038" roughness={0.8} />
-      </mesh>
-      {[-0.3, 0.3].map((x) => (
-        <mesh key={x} position={[x, 0.35, 0]} rotation-y={Math.PI / 2}>
-          <torusGeometry args={[0.32, 0.035, 10, 24]} />
-          <meshStandardMaterial color="#7a7e88" metalness={0.6} roughness={0.4} />
-        </mesh>
-      ))}
-      {[[-0.18, 0.16], [0.18, 0.16], [-0.18, -0.18], [0.18, -0.18]].map(([x, z], i) => (
-        <mesh key={i} position={[x, 0.12, z]}>
-          <cylinderGeometry args={[0.05, 0.05, 0.24, 8]} />
-          <meshStandardMaterial color="#1c1e24" />
-        </mesh>
-      ))}
-    </group>
-  );
+  return <DetailProp asset="wheelchair_01" position={position} rotation={rotation}/>;
 }
-
 function Gurney({ position, rotation = [0, 0, 0] }) {
-  return (
-    <group position={position} rotation={rotation}>
-      <mesh position={[0, 0.72, 0]} castShadow>
-        <boxGeometry args={[0.8, 0.1, 1.9]} />
-        <meshStandardMaterial color="#9aa0a8" metalness={0.45} roughness={0.5} />
-      </mesh>
-      <mesh position={[0, 0.86, 0]} castShadow>
-        <boxGeometry args={[0.72, 0.14, 1.6]} />
-        <meshStandardMaterial color="#d8d2c4" roughness={0.9} />
-      </mesh>
-      {[[-0.32, -0.7], [0.32, -0.7], [-0.32, 0.7], [0.32, 0.7]].map(([x, z], i) => (
-        <mesh key={i} position={[x, 0.36, z]}>
-          <cylinderGeometry args={[0.03, 0.03, 0.72, 8]} />
-          <meshStandardMaterial color="#6a7078" metalness={0.5} roughness={0.5} />
-        </mesh>
-      ))}
-    </group>
-  );
+  return <DetailProp asset="hospital_bed" position={position} rotation={rotation}/>;
 }
-
-function SpeakerStack({ position, scale = 1 }) {
-  return (
-    <group position={position} scale={scale}>
-      <mesh position={[0, 0.8, 0]} castShadow>
-        <boxGeometry args={[0.9, 1.6, 0.7]} />
-        <meshStandardMaterial color="#15151a" roughness={0.85} />
-      </mesh>
-      {[0.5, 0.95, 1.35].map((y) => (
-        <mesh key={y} position={[0, y, 0.36]}>
-          <circleGeometry args={[0.22, 20]} />
-          <meshStandardMaterial color="#26262e" roughness={0.6} />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
 function TrussLight({ position, color = '#ffd2a0' }) {
   return (
     <group position={position}>
@@ -1133,61 +946,6 @@ function Emblem({ position, radius = 1.4 }) {
   );
 }
 
-function WendigoMask({ position, rotation = [0, 0, 0] }) {
-  return (
-    <group position={position} rotation={rotation}>
-      <mesh castShadow>
-        <boxGeometry args={[0.42, 0.6, 0.2]} />
-        <meshStandardMaterial color="#181410" roughness={0.9} />
-      </mesh>
-      <mesh position={[0, -0.42, 0.02]} rotation={[0, 0, Math.PI]}>
-        <coneGeometry args={[0.3, 0.34, 10]} />
-        <meshStandardMaterial color="#181410" roughness={0.9} />
-      </mesh>
-      {[-0.1, 0.1].map((x) =>
-        [-1, 1].map((s) => (
-          <mesh key={`${x}${s}`} position={[x + s * 0.12, 0.4, -0.02]} rotation-z={s * 0.5}>
-            <coneGeometry args={[0.045, 0.7, 8]} />
-            <meshStandardMaterial color="#2a231a" roughness={0.9} />
-          </mesh>
-        ))
-      )}
-      {[-0.1, 0.1].map((x) => (
-        <mesh key={x} position={[x, 0.02, 0.11]}>
-          <sphereGeometry args={[0.035, 8, 8]} />
-          <meshStandardMaterial color="#ff5a3a" emissive="#ff3a1a" emissiveIntensity={2.4} />
-        </mesh>
-      ))}
-      <pointLight position={[0, 0.1, 0.7]} color="#ff8a5a" intensity={0.5} distance={4} decay={0} />
-    </group>
-  );
-}
-
-function Trophy({ position, scale = 1 }) {
-  return (
-    <group position={position} scale={scale}>
-      <mesh position={[0, 0.06, 0]}>
-        <boxGeometry args={[0.16, 0.12, 0.16]} />
-        <meshStandardMaterial color="#2a241c" roughness={0.7} />
-      </mesh>
-      <mesh position={[0, 0.2, 0]}>
-        <cylinderGeometry args={[0.02, 0.02, 0.16, 8]} />
-        <meshStandardMaterial color="#c9a24a" metalness={0.85} roughness={0.3} />
-      </mesh>
-      <mesh position={[0, 0.34, 0]}>
-        <sphereGeometry args={[0.07, 12, 12]} />
-        <meshStandardMaterial
-          color="#d9b55d"
-          metalness={0.9}
-          roughness={0.25}
-          emissive="#8a6b2f"
-          emissiveIntensity={0.2}
-        />
-      </mesh>
-    </group>
-  );
-}
-
 function Picture({ src, position, rotation = [0, 0, 0], width = 1.2, height = 1.6 }) {
   const tex = useTexture(src);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -1229,82 +987,6 @@ function StringLights({ from = [-4, 3, 0], to = [4, 2.8, 0], count = 9 }) {
         distance={8}
         decay={0}
       />
-    </group>
-  );
-}
-
-function Telescope({ position, rotation = [0, 0, 0] }) {
-  return (
-    <group position={position} rotation={rotation}>
-      {[0, 1, 2].map((i) => {
-        const a = (i / 3) * Math.PI * 2;
-        return (
-          <mesh
-            key={i}
-            position={[Math.cos(a) * 0.32, 0.45, Math.sin(a) * 0.32]}
-            rotation={[0.28 * Math.sin(a), 0, -0.28 * Math.cos(a)]}
-          >
-            <cylinderGeometry args={[0.025, 0.03, 0.95, 8]} />
-            <meshStandardMaterial color="#2a2a30" roughness={0.7} />
-          </mesh>
-        );
-      })}
-      <mesh position={[0, 0.95, 0]} rotation-x={-0.6} castShadow>
-        <cylinderGeometry args={[0.09, 0.12, 1.1, 12]} />
-        <meshStandardMaterial color="#c9c2b2" metalness={0.4} roughness={0.5} />
-      </mesh>
-    </group>
-  );
-}
-
-function Sedan({ position, rotation = [0, 0, 0] }) {
-  const silver = { color: '#b8bcc4', metalness: 0.75, roughness: 0.35 };
-  return (
-    <group position={position} rotation={rotation}>
-      <mesh position={[0, 0.52, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.9, 0.5, 4.2]} />
-        <meshStandardMaterial {...silver} />
-      </mesh>
-      <mesh position={[0, 0.95, -0.2]} castShadow>
-        <boxGeometry args={[1.7, 0.44, 2.1]} />
-        <meshStandardMaterial {...silver} />
-      </mesh>
-      <mesh position={[0, 0.97, -0.2]}>
-        <boxGeometry args={[1.72, 0.36, 1.9]} />
-        <meshStandardMaterial color="#0e1218" roughness={0.25} metalness={0.4} />
-      </mesh>
-      {[[-0.85, -1.35], [0.85, -1.35], [-0.85, 1.45], [0.85, 1.45]].map(([x, z], i) => (
-        <mesh key={i} position={[x, 0.34, z]} rotation-z={Math.PI / 2} castShadow>
-          <cylinderGeometry args={[0.34, 0.34, 0.24, 16]} />
-          <meshStandardMaterial color="#101014" roughness={0.85} />
-        </mesh>
-      ))}
-      {[-0.55, 0.55].map((x) => (
-        <mesh key={x} position={[x, 0.6, 2.12]} rotation-x={Math.PI / 2}>
-          <cylinderGeometry args={[0.09, 0.09, 0.06, 12]} />
-          <meshStandardMaterial color="#f0e6c8" emissive="#ffdf9a" emissiveIntensity={0.5} />
-        </mesh>
-      ))}
-      <mesh position={[0, 0.42, 2.13]}>
-        <boxGeometry args={[0.5, 0.12, 0.02]} />
-        <meshStandardMaterial color="#d8d4c8" roughness={0.6} />
-      </mesh>
-    </group>
-  );
-}
-
-function GrassPatch({ position, scale = 1 }) {
-  return (
-    <group position={position} scale={scale}>
-      {[...Array(6)].map((_, i) => {
-        const a = (i / 6) * Math.PI * 2;
-        return (
-          <mesh key={i} position={[Math.cos(a) * 0.18, 0.12, Math.sin(a) * 0.18]} rotation-z={Math.cos(a) * 0.2}>
-            <coneGeometry args={[0.06, 0.28, 5]} />
-            <meshStandardMaterial color="#1d2a18" roughness={1} />
-          </mesh>
-        );
-      })}
     </group>
   );
 }
@@ -1363,23 +1045,6 @@ function Window({ position, rotation = [0, 0, 0], width = 1.6, height = 1.4, moo
     </group>
   );
 }
-
-function Poster({ position, rotation = [0, 0, 0], color = '#2a3550', width = 0.9, height = 1.2 }) {
-  return (
-    <group position={position} rotation={rotation}>
-      <mesh>
-        <boxGeometry args={[width, height, 0.03]} />
-        <meshStandardMaterial color="#1c1712" roughness={0.9} />
-      </mesh>
-      <mesh position={[0, 0, 0.02]}>
-        <planeGeometry args={[width - 0.08, height - 0.08]} />
-        <meshStandardMaterial color={color} roughness={0.9} />
-      </mesh>
-    </group>
-  );
-}
-
-// ---------- demo rooms ----------
 
 function Ballroom({ room, hot }) {
   const { state, focusId, onMeasure, onCharacter, onClue, onPuzzle, onTravel, solvedPuzzles } = hot;
@@ -1599,30 +1264,43 @@ function GazeboRoom({room,hot}) {
   </group>;
 }
 
-function HomeRoom({ room, hot }) {
-  return (
-    <group>
-      <Shell width={13} depth={10} height={3.6} tint="#5a4038" />
-      <Floor width={13} depth={10} repeat={[6, 5]} />
-      <Stairs position={[5.2, 0, 3.2]} />
-      <Prop model="loungeSofa.glb" position={[-4.4, 0, 1.6]} rotation={[0, Math.PI / 2, 0]} />
-      <Prop model="rugRectangle.glb" position={[-2.6, 0.02, 1.5]} />
-      <Prop model="loungeChair.glb" position={[-2.2, 0, 0.4]} rotation={[0, 0.5, 0]} />
-      <Prop model="sideTable.glb" position={[-3.4, 0, 1.5]} />
-      <Prop model="lampRoundFloor.glb" position={[-4.9, 0, 3.2]} />
-      <Prop model="lampRoundTable.glb" position={[-3.4, 0.73038, 1.5]} />
-      <pointLight position={[-3.4, 1.4, 1.5]} color="#ffca82" intensity={1.2} distance={7} decay={0} />
-      <Prop model="tableGlass.glb" position={[2.2, 0, 2.2]} />
-      <Prop model="chair.glb" position={[1.2, 0, 2.4]} rotation={[0, 1.0, 0]} />
-      <Prop model="chair.glb" position={[3.2, 0, 2.0]} rotation={[0, -2.0, 0]} />
-      <Prop model="bookcaseOpen.glb" position={[5.9, 0, 1.4]} rotation={[0, -Math.PI / 2, 0]} />
-      <Prop model="bookcaseClosed.glb" position={[5.9, 0, -0.4]} rotation={[0, -Math.PI / 2, 0]} />
-      <Prop model="pottedPlant.glb" position={[-5.6, 0, -4.0]} />
-      <Prop model="lampWall.glb" position={[0, 2.4, -4.85]} />
-      <pointLight position={[0, 2.3, -3.6]} color="#ffb070" intensity={0.8} distance={8} decay={0} />
-      <HotspotMarkers room={room} hot={hot} />
-    </group>
-  );
+function HomeRoom({room,hot}) {
+ return <group>
+  <Shell width={13} depth={11} height={5.3} tint="#bcaa91" painted/>
+  <Floor width={13} depth={11} repeat={[6,5]} color="#dcc9ae"/>
+  <DetailProp asset="sofa_03" position={[-4.55,0,.3]} rotation={[0,Math.PI/2,0]}/>
+  <DetailProp asset="modern_arm_chair_01" position={[-2.5,0,-1.3]} rotation={[0,.28,0]}/>
+  <Prop model="rugRectangle.glb" position={[-3.3,.003,.6]} scale={3.1} tint="#647171"/>
+  <DetailProp asset="modern_coffee_table_01" position={[-2.8,.015,.9]} rotation={[0,Math.PI/2,0]}/>
+  <DetailProp asset="binder_notebook" position={[-2.8,.405,.9]} scale={.65}/>
+  <DetailProp asset="cup" position={[-2.25,.405,.88]}/>
+  <DetailProp asset="side_table_01" position={[-4.5,0,-1.55]}/>
+  <DetailProp asset="desk_lamp_arm_01" position={[-4.5,.55066,-1.55]} scale={.65}/>
+  <pointLight position={[-4.3,1.05,-1.45]} color="#ffce94" intensity={5} distance={6}/>
+  <ShelfContents position={[-3.8,0,-4.9]}/>
+  <DetailProp asset="potted_plant_02" position={[-5.5,0,3.5]} height={1.15}/>
+  <DetailProp asset="metal_office_desk" position={[2.55,0,-2.6]}/>
+  <DetailProp asset="portable_cassette_player" position={[2.7,.7875,-2.6]} scale={1.2}/>
+  <DetailProp asset="book_encyclopedia_set_01" position={[2,.7875,-2.65]} scale={.7}/>
+  <Picture src={`${ASSETS}/pictures/evidence_gone_poster.jpg`} position={[-1.35,1.75,-5.42]} width={.72} height={1.05}/>
+  <WallSign position={[-4.45,2.85,-5.42]} title="OUR FAMILY" lines={['A home full of memories']} width={1.8} height={.5}/>
+  <DetailProp asset="wall_clock" position={[.6,2.35,-5.42]}/>
+  <Window position={[-6.44,1.9,1.1]} rotation={[0,Math.PI/2,0]} width={2.2} height={1.8} moon={false}/>
+  <DetailProp asset="curtains" position={[-6.35,.45,1.1]} rotation={[0,Math.PI/2,0]} height={2.55}/>
+  {/* The imported stair's 2.8 m rise terminates on this continuous landing. */}
+  <DetailProp asset="stairs" position={[4.7,0,.65]} rotation={[0,Math.PI/2,0]}/>
+  <mesh position={[4.7,2.73,-2.27]} receiveShadow castShadow><boxGeometry args={[2.4,.14,1.65]}/><meshStandardMaterial color="#ac8e68" roughness={.8}/></mesh>
+  {/* Upper corridor: the doorway is an actual opening, with a room beyond. */}
+  <mesh position={[3.5,3.85,-3.06]}><boxGeometry args={[.15,2.1,.18]}/><meshStandardMaterial color="#c8b699"/></mesh>
+  <mesh position={[5.6,3.85,-3.06]}><boxGeometry args={[.6,2.1,.18]}/><meshStandardMaterial color="#c8b699"/></mesh>
+  <mesh position={[4.55,5.03,-3.06]}><boxGeometry args={[2.7,.26,.18]}/><meshStandardMaterial color="#c8b699"/></mesh>
+  <mesh position={[4.55,2.73,-4.2]} receiveShadow><boxGeometry args={[2.65,.14,2.6]}/><meshStandardMaterial color="#ac8e68"/></mesh>
+  <mesh position={[4.55,4,-5.4]}><planeGeometry args={[2.65,2.4]}/><meshStandardMaterial color="#857960"/></mesh>
+  <WallSign position={[4.4,4.8,-3.17]} title="PARTH" width={.72} height={.23}/>
+  <pointLight position={[4.55,4.7,-3.7]} color="#ffd8a9" intensity={8} distance={5}/>
+  <pointLight position={[0,3.1,1.8]} color="#f5dbb7" intensity={12} distance={12}/>
+  <HotspotMarkers room={room} hot={hot}/>
+ </group>;
 }
 
 function PoliceStationRoom({ room, hot }) {
@@ -1639,8 +1317,15 @@ function PoliceStationRoom({ room, hot }) {
     <Prop model="desk.glb" position={[-3.5,0,-2.4]} tint="#75858d"/>
     <Prop model="chairDesk.glb" position={[-3.5,0,-3.35]} tint="#344c5a"/>
     <FileStack position={[-3.8,DESK_TOP,-2.4]}/>
-    <Prop model="bookcaseClosed.glb" position={[4.7,0,-3.6]} tint="#647980"/>
-    <Prop model="bookcaseOpen.glb" position={[3.6,0,-3.6]} tint="#647980"/>
+    <DetailProp asset="filing_cabinet" position={[4.7,0,-3.6]}/>
+    <DetailProp asset="filing_cabinet" position={[3.35,0,-3.6]}/>
+    <DetailProp asset="monitor" position={[-3.4,DESK_TOP,-2.5]}/>
+    <DetailProp asset="keyboard" position={[-3.4,DESK_TOP,-2.1]}/>
+    <DetailProp asset="clipboard" position={[-.1,DESK_TOP,-.91]} scale={.65}/>
+    <DetailProp asset="pencil_cup" position={[.66,DESK_TOP,-1.05]}/>
+    <DetailProp asset="office_phone" position={[-.61,DESK_TOP,-1.05]} scale={.8}/>
+    <WallSign position={[0,1.6,-4.93]} width={1.3} height={.3} title="DUTY OFFICER"/>
+    <WallSign position={[-5.93,2.2,1.4]} rotation={[0,Math.PI/2,0]} width={1.8} height={.55} title="PUBLIC ASSISTANCE" lines={['WAIT HERE FOR THE DUTY OFFICER']}/>
     {[-.85,0,.85].map(x=><Prop key={x} model="chair.glb" position={[-4.1+x,0,1.7]} tint="#627885"/>)}
     <Prop model="pottedPlant.glb" position={[4.7,0,2.5]}/>
     <Window position={[-5.94,1.85,-.5]} rotation={[0,Math.PI/2,0]}/>
@@ -1658,6 +1343,9 @@ function BedroomWorkstation({paused}) {
     <Prop model="lampRoundTable.glb" position={BEDROOM.lamp} scale={1.45}/>
     <CeilingFan position={[0,3.2,0]} paused={paused}/>
     <pointLight position={[2.8,1.12,-2.08]} color="#ffd28a" intensity={5} distance={5}/>
+    <DetailProp asset="pencil_cup" position={[2.85,DESK_TOP,-.93]}/>
+    <DetailProp asset="binder_notebook" position={[2.75,DESK_TOP,-1.99]} scale={.5}/>
+    <Cable points={[[2.85,DESK_TOP,-1.7],[3.14,.68,-1.7],[3.17,.09,-1.7],[4.92,.07,-1.7]]}/>
   </group>;
 }
 function SameerRoomScene({ room, hot, paused=false }) {
@@ -1668,8 +1356,14 @@ function SameerRoomScene({ room, hot, paused=false }) {
     <BedroomWorkstation paused={paused}/>
     <Prop model="bookcaseOpen.glb" position={[-3.8,0,-3.25]}/>
     <Window position={[4.95,1.75,-1.6]} rotation={[0,-Math.PI/2,0]}/>
-    <Poster position={[-4.94,1.8,-1.2]} rotation={[0,Math.PI/2,0]} color="#22304a"/>
-    <Poster position={[-4.94,1.6,.6]} rotation={[0,Math.PI/2,0]} color="#4a2230"/>
+    <DetailProp asset="curtains" position={[4.84,.45,-1.6]} rotation={[0,-Math.PI/2,0]} height={2.25}/>
+    <DetailProp asset="bedside_cabinet" height={.67} position={[-1.55,0,-2]}/>
+    <DetailProp asset="cup" position={[-1.55,.67,-2]}/>
+    <DetailProp asset="floor_lamp" position={[-4.2,0,1.8]} height={1.75}/>
+    <WallSign position={[-4.94,1.85,-1.2]} rotation={[0,Math.PI/2,0]} width={1.05} height={1.45} title="STAY CURIOUS" lines={['LOOK CLOSER','QUESTION EVERYTHING']} background="#23404c"/>
+    <WallSign position={[-4.94,1.6,.6]} rotation={[0,Math.PI/2,0]} width={.75} height={1} title="APOGEE" lines={['LIVE IN CONCERT']} background="#3b2830"/>
+    <DetailProp asset="cardboard_box_01" position={[-4.3,0,2.4]} scale={.8}/>
+    <pointLight position={[-3,2.4,1.3]} color="#f7d7aa" intensity={9} distance={7}/>
     <HotspotMarkers room={room} hot={hot}/>
   </group>;
 }
@@ -1684,299 +1378,304 @@ function ParthRoomScene({ room, hot, paused=false }) {
     <Prop model="sideTable.glb" position={[-.8,0,-1.5]}/>
     <Prop model="pottedPlant.glb" position={[4.1,0,-3.3]} scale={2}/>
     <Window position={[4.95,1.8,-1.2]} rotation={[0,-Math.PI/2,0]}/>
+    <DetailProp asset="curtains" position={[4.84,.45,-1.2]} rotation={[0,-Math.PI/2,0]} height={2.25}/>
+    <DetailProp asset="binder_notebook" position={[-3.42,1.285,-2.65]} scale={.6}/>
+    <DetailProp asset="portable_cassette_player" position={[-.8,.73038,-1.5]} scale={.9}/>
+    <DetailProp asset="cardboard_box_01" position={[-4.25,0,2.6]}/>
+    <WallSign position={[-.5,2.3,-3.93]} width={1.6} height={.6} title="THE MOON'S DARK SIDE" lines={['NOT EVERYTHING IS AS IT SEEMS']} background="#263c43"/>
+    <pointLight position={[-2,2.7,1]} color="#ecd4b8" intensity={9} distance={8}/>
     <Picture src={`${ASSETS}/pictures/evidence_gone_poster.jpg`} position={[-4.94,1.85,.9]} rotation={[0,Math.PI/2,0]} width={.9} height={1.3}/>
     <HotspotMarkers room={room} hot={hot}/>
   </group>;
 }
 
 function AbandonedFieldRoom({ room, hot }) {
-  return (
-    <group>
-      <Ground width={34} depth={34} color="#1b1712" />
-      <Sedan position={[-1.4, 0, -1.6]} rotation={[0, 0.5, 0]} />
-      <GrassPatch position={[-3.4, 0, 0.6]} scale={1.2} />
-      <GrassPatch position={[1.4, 0, 1.2]} scale={0.9} />
-      <GrassPatch position={[3.4, 0, -0.4]} scale={1.05} />
-      <GrassPatch position={[-4.2, 0, -3.0]} scale={0.8} />
-      <GrassPatch position={[0.4, 0, -4.2]} scale={1.15} />
-      <Tree position={[-8.0, 0, -6.0]} scale={1.2} />
-      <Tree position={[9.0, 0, -7.0]} scale={0.95} />
-      <LampPost position={[7.5, 0, 3.0]} />
-      <Skyline position={[0, 0, -16]} count={9} />
-      <Moon />
-      <HotspotMarkers room={room} hot={hot} />
-    </group>
-  );
+  return <group>
+   <TerrainSurface width={70} depth={70}/>
+   <TerrainSurface material="brown_mud_leaves_01" width={7.5} depth={40} position={[-.6,.003,5]} repeat={[2,12]} color="#b8b3a6" trail/>
+   <group position={FIELD.car} rotation={[0,FIELD.yaw,0]}>
+    <DetailProp asset="sedan_detailed"/>
+    <DetailProp asset="backpack" position={FIELD.seat} height={.38} rotation={[0,-Math.PI/2,0]}/>
+    <WallSign position={[2.307,.697,0]} rotation={[0,Math.PI/2,0]} width={.39} height={.084} title="KA01OC1808" background="#dddac8" ink="#1b2325"/>
+   </group>
+   {Array.from({length:48},(_,i)=>{const side=i%2?-1:1,x=side*(3.3+(i*17%27)/5),z=-10+(i*11%65)/5;return <DetailProp key={i} asset="grass_medium_01" part={`grass_medium_01_${i%3?'large_a':'tall_a'}_LOD0`} position={[x,.008,z]} rotation={[0,i*2.4,0]} scale={1.6+(i%3)*.35}/>;})}
+   {Array.from({length:14},(_,i)=><DetailProp key={i} asset="rock_09" position={[(i%2?-1:1)*(3.5+i%5),.006,-5+i*.65]} scale={2.5+(i%3)} rotation={[0,i*.7,0]}/>)}
+   {[-8.4,-7.2,-6,-4.8,-3.6,-2.4,-1.2,0,1.2,2.4,3.6,4.8,6,7.2,8.4].map(x=><FencePanel key={x} position={[x,0,-9]}/>)}
+   {[-9,-5,4,9].map((x,i)=><CinemaProp key={x} asset="tree_background" position={[x,0,-12-(i%2)*3]} height={7+i} rotation={[0,i,0]}/>)}
+   <WindTree position={[-7.2,0,-4.3]} height={5.5}/><WindTree position={[8,0,-5]} height={6}/>
+   <DetailProp asset="old_tyre" position={[4.3,.005,-4]} rotation={[0,.6,0]}/>
+   <DetailProp asset="can_rusted" position={[-3.5,.006,.2]} rotation={[0,1,0]}/>
+   <DetailProp asset="cardboard_box_01" position={[4.1,.006,-3.1]} rotation={[0,.4,0]}/>
+   <DetailProp asset="street_lamp_01" position={[6.5,0,1]} height={3.8}/>
+   <pointLight position={[6.5,3.4,1]} color="#ffcf84" intensity={20} distance={13}/>
+   <pointLight position={[.8,2.3,3.7]} color="#c7d7ed" intensity={10} distance={9}/>
+   <WallSign position={[4.5,1.05,-8.7]} width={1.4} height={.65} title="PRIVATE LAND" lines={['NO ENTRY AFTER DARK']} background="#68583e" ink="#d9c9a2"/>
+   <HotspotMarkers room={room} hot={hot}/>
+  </group>;
 }
 
-function CyberCafeRoom({ room, hot }) {
-  return (
-    <group>
-      <Shell width={12} depth={9} height={3.4} tint="#2e2b3a" />
-      <Floor width={12} depth={9} repeat={[5, 4]} color="#7d7263" />
-      {[
-        [-2.9, -2.2, 0.1],
-        [0.3, -2.5, -0.05],
-        [3.3, -2.1, 0.12],
-        [-2.6, 0.8, -0.1],
-        [0.6, 0.5, 0.06],
-        [3.5, 0.9, -0.08],
-      ].map(([x, z, rot], i) => (
-        <group key={i}>
-          <Prop model="desk.glb" position={[x, 0, z]} rotation={[0, rot, 0]} />
-          <CRT
-            position={[x - Math.sin(rot) * 0.25, 0.78, z - Math.cos(rot) * 0.25]}
-            rotation={[0, rot, 0]}
-            color={i % 2 ? '#9fd2ff' : '#a8ffd0'}
-            glow={i % 2 ? '#6aa9e8' : '#4ad99a'}
-          />
-          <Prop model="chair.glb" position={[x, 0, z + 0.9]} rotation={[0, Math.PI + rot, 0]} />
-        </group>
-      ))}
-      <Prop model="kitchenBar.glb" position={[4.7, 0, -3.7]} rotation={[0, -Math.PI / 2, 0]} />
-      <group position={[4.3, 1.12, -3.05]} rotation={[0, 0.25, 0]}>
-        <mesh castShadow>
-          <boxGeometry args={[0.5, 0.14, 0.3]} />
-          <meshStandardMaterial color="#1c1c22" roughness={0.6} />
-        </mesh>
-        {[-0.12, 0.12].map((x) => (
-          <mesh key={x} position={[x, 0.08, 0]} rotation-x={-Math.PI / 2}>
-            <cylinderGeometry args={[0.07, 0.07, 0.02, 12]} />
-            <meshStandardMaterial color="#4a4a52" metalness={0.5} roughness={0.4} />
-          </mesh>
-        ))}
-      </group>
-      <NeonStrip position={[-4.4, 2.6, -4.4]} color="#c95aff" length={3} />
-      <NeonStrip position={[0, 2.7, -4.4]} color="#5ad0ff" length={4} />
-      <NeonStrip position={[4.2, 2.5, -4.4]} color="#ff5a9a" length={2.2} />
-      <Prop model="pottedPlant.glb" position={[-5.4, 0, 3.4]} />
-      <pointLight position={[0, 2.2, -2]} color="#8a6ae8" intensity={0.6} distance={10} decay={0} />
-      <HotspotMarkers room={room} hot={hot} />
-    </group>
-  );
+function CyberCafeRoom({room,hot,paused=false}) {
+ return <group>
+  <Shell width={13} depth={11} height={3.4} tint="#92958b" painted/>
+  <Floor width={13} depth={11} repeat={[6,5]} color="#aab5ac" tiled/>
+  {[[-2.4,-3.5],[.2,-3.5],[2.8,-3.5],[-2.4,-.65],[.2,-.65],[2.8,-.65]].map(([x,z],i)=><ComputerStation key={i} position={[x,0,z]} number={i+1}/>)}
+  <DetailProp asset="counter" position={[-3.9,0,2]} rotation={[0,Math.PI/2,0]}/>
+  <DetailProp asset="CashRegister_01" position={[-3.8,1.1275,1.05]} scale={.6} rotation={[0,Math.PI/2,0]}/>
+  <DetailProp asset="vintage_electric_kettle" position={[-3.9,1.1275,2.7]} scale={.85}/>
+  <DetailProp asset="wooden_bowl_01" position={[-3.9,1.1275,2]} scale={.8}/>
+  <DetailProp asset="cup" position={[-3.9,1.1275,3.05]} scale={1.1}/>
+  <DetailProp asset="metal_office_desk" position={[4.7,0,-2.3]} rotation={[0,Math.PI/2,0]}/>
+  <DetailProp asset="printer" position={[4.7,.7875,-2.6]}/>
+  <DetailProp asset="router" position={[4.7,.7875,-1.6]}/>
+  <DetailProp asset="portable_cassette_player" position={[4.7,.7875,-3.1]} scale={1.4}/>
+  <DetailProp asset="binder_notebook" position={[4.7,.7875,-2.1]} scale={.65}/>
+  <ShelfContents position={[5.65,0,1.3]} rotation={[0,-Math.PI/2,0]}/>
+  <DetailProp asset="cardboard_box_01" position={[5.5,0,3.2]}/>
+  <DetailProp asset="cardboard_box_01" position={[5.5,.342,3.2]} scale={.8}/>
+  <WallSign position={[0,2.55,-5.42]} width={4.4} height={.85} title="RAMU'S CYBER CAFÉ" lines={['INTERNET • PRINTING • SCANNING']}/>
+  <WallSign position={[-6.42,2,2]} rotation={[0,Math.PI/2,0]} width={2} height={1.05} title="DOSA CORNER" lines={['PLAIN DOSA   ₹40','MASALA DOSA   ₹60']}/>
+  <WallSign position={[5,2.4,-5.42]} width={1.3} height={.65} title="HOUSE RULES" lines={['SAVE YOUR WORK','ASK RAMU FOR HELP']}/>
+  <DetailProp asset="wall_clock" position={[-4.8,2.55,-5.4]} height={.4}/>
+  <CeilingFan position={[-1.9,3.4,-2]} paused={paused}/><CeilingFan position={[2.7,3.4,1.4]} paused={paused}/>
+  <Fluorescent position={[0,3.2,-3.8]}/><Fluorescent position={[0,3.2,1.7]}/>
+  <Window position={[-6.44,1.8,-1.2]} rotation={[0,Math.PI/2,0]} width={2.2} height={1.6} moon={false}/>
+  <DetailProp asset="potted_plant_02" position={[-5.5,0,4.3]} height={1.1}/>
+  <Cable points={[[5.9,.1,-4.8],[5.9,.1,-1.6],[4.7,.68,-1.6],[4.7,.85,-1.6]]}/>
+  <pointLight position={[0,2.25,-1.7]} color="#e1efe6" intensity={5} distance={12}/>
+  <pointLight position={[-4,2.1,2]} color="#ffd6a0" intensity={5} distance={6}/>
+  <HotspotMarkers room={room} hot={hot}/>
+ </group>;
 }
 
-function ConcertRoom({ room, hot }) {
-  const trussColors = ['#ffd2a0', '#c95aff', '#5ad0ff', '#ffd2a0', '#ff8a5a'];
-  return (
-    <group>
-      <Ground width={30} depth={26} color="#14110f" />
-      <group position={[0, 0, -5.5]}>
-        <mesh position={[0, 0.4, 0]} receiveShadow castShadow>
-          <boxGeometry args={[13, 0.8, 4.5]} />
-          <meshStandardMaterial color="#2a1a12" roughness={0.75} />
-        </mesh>
-        <mesh position={[0, 3.1, -2.0]}>
-          <planeGeometry args={[13, 4.6]} />
-          <meshStandardMaterial color="#3a0f14" roughness={0.9} />
-        </mesh>
-        {[-6, -3, 0, 3, 6].map((x) => (
-          <mesh key={x} position={[x, 2.2, -1.8]} castShadow>
-            <boxGeometry args={[0.24, 4.4, 0.24]} />
-            <meshStandardMaterial color="#22242a" metalness={0.5} roughness={0.5} />
-          </mesh>
-        ))}
-        <mesh position={[0, 4.3, -1.6]}>
-          <boxGeometry args={[13, 0.28, 0.28]} />
-          <meshStandardMaterial color="#22242a" metalness={0.5} roughness={0.5} />
-        </mesh>
-        {[-5.2, -2.6, 0, 2.6, 5.2].map((x, i) => (
-          <TrussLight key={x} position={[x, 4.0, -1.5]} color={trussColors[i]} />
-        ))}
-      </group>
-      <SpeakerStack position={[-7.5, 0, -4.2]} scale={1.4} />
-      <SpeakerStack position={[7.5, 0, -4.2]} scale={1.4} />
-      {[...Array(18)].map((_, i) => {
-        const row = Math.floor(i / 6);
-        const col = i % 6;
-        return (
-          <CrowdBlob
-            key={i}
-            position={[(col - 2.5) * 1.6 + (row % 2 ? 0.7 : 0), 0, 1.4 + row * 1.5]}
-            scale={0.92 + ((i * 13) % 5) * 0.06}
-          />
-        );
-      })}
-      <LampPost position={[-9.5, 0, 2.5]} />
-      <LampPost position={[9.5, 0, 2.5]} />
-      <Tree position={[-10, 0, -6]} scale={1.1} />
-      <Tree position={[10.5, 0, -5]} scale={1.0} />
-      <Moon position={[7, 8, -16]} size={1.4} />
-      <HotspotMarkers room={room} hot={hot} />
-    </group>
-  );
+function ConcertRoom({room,hot}) {
+ return <group>
+  <TerrainSurface width={40} depth={36}/>
+  <group position={[0,0,-5.5]}>
+   <mesh position={[0,.4,0]} castShadow receiveShadow><boxGeometry args={[13,.8,4.5]}/><meshStandardMaterial color="#352d25" roughness={.85}/></mesh>
+   <mesh position={[0,3.1,-2.12]}><planeGeometry args={[13,4.6]}/><meshStandardMaterial color="#25333b" roughness={.9}/></mesh>
+   <WallSign position={[0,3.55,-2.08]} width={5} height={1.2} title="APOGEE" lines={['LIVE / A PERIGEE EVENT']} background="#21343d"/>
+   {[-5.8,5.8].map(x=><mesh key={x} position={[x,2.2,-1.8]}><boxGeometry args={[.16,4.4,.16]}/><meshStandardMaterial color="#787e83" metalness={.7}/></mesh>)}
+   <mesh position={[0,4.35,-1.8]}><boxGeometry args={[11.8,.16,.16]}/><meshStandardMaterial color="#787e83" metalness={.7}/></mesh>
+   {[-5.2,-2.6,0,2.6,5.2].map((x,i)=><TrussLight key={x} position={[x,4.1,-1.75]} color={['#ffdab0','#b5a0f8','#88c9e8','#efb786','#bb98e8'][i]}/>)}
+   <DetailProp asset="amplifier" position={[-3.5,.8,-.7]} scale={1.7}/>
+   <DetailProp asset="amplifier" position={[3.5,.8,-.7]} scale={1.7}/>
+   <DetailProp asset="mic_stand" position={[0,.8,.8]} height={1.65}/>
+   <DetailProp asset="microphone" position={[0,2.43,.8]} scale={1.1} rotation={[Math.PI/2,0,0]}/>
+   <DetailProp asset="metal_office_desk" position={[2.8,.8,-.15]}/>
+   <DetailProp asset="synthesizer" position={[2.8,1.5875,-.15]} scale={1.8}/>
+   <DetailProp asset="drum_pad" position={[-2.6,1.5875,-.15]} scale={1.4}/>
+   <DetailProp asset="metal_office_desk" position={[-2.6,.8,-.15]}/>
+   {[-2.4,2.4].map(x=><DetailProp key={x} asset="stage_monitor" position={[x,.8,1.65]} height={.5}/>)}
+   <Cable points={[[0,.81,.8],[1.2,.81,.9],[3.2,.81,.8],[4.5,.81,-.9]]}/>
+  </group>
+  {[-6.8,6.8].map(x=><DetailProp key={x} asset="amplifier" position={[x,0,-3.5]} height={1.6}/>)}
+  {[-1,1].flatMap(side=>[0,1,2,3].map(i=><CrowdBlob key={`${side}-${i}`} position={[side*(4+i%2),0,-.6+Math.floor(i/2)*1.7]} scale={.97}/>))}
+  <FencePanel position={[-4.5,0,-2.6]} rotation={[0,.2,0]}/>
+  <WallSign position={[-4.5,1.1,-2.42]} width={1.2} height={.45} title="BACKSTAGE" lines={['PASS HOLDERS ONLY']}/>
+  <WallSign position={[5,1.4,-1]} width={1.15} height={.5} title="PERIGEE" lines={['MEMBER REGISTRATION']}/>
+  {[-8.5,8.5].map(x=><group key={x}><DetailProp asset="street_lamp_01" position={[x,0,2.5]} height={3.8}/><pointLight position={[x,3.1,2.5]} color="#f6cc91" intensity={12} distance={10}/></group>)}
+  <WindTree position={[-10,0,-7]} height={6}/><WindTree position={[10,0,-7]} height={6}/>
+  <pointLight position={[0,4.3,-3.8]} color="#c2cef4" intensity={30} distance={14}/>
+  <HotspotMarkers room={room} hot={hot}/>
+ </group>;
 }
 
-function WorkshopRoom({ room, hot }) {
-  return (
-    <group>
-      <Ground width={32} depth={30} color="#171b12" />
-      <Prop model="table.glb" position={[-3.2, 0, -2.0]} />
-      <Prop model="tableCloth.glb" position={[-0.4, 0, -2.4]} />
-      <Prop model="table.glb" position={[2.6, 0, -1.8]} />
-      <Prop model="chair.glb" position={[-3.9, 0, -1.0]} rotation={[0, 0.6, 0]} />
-      <Prop model="chair.glb" position={[-2.4, 0, -0.9]} rotation={[0, -0.6, 0]} />
-      <Prop model="chair.glb" position={[1.8, 0, -0.8]} rotation={[0, 0.9, 0]} />
-      <Prop model="chair.glb" position={[3.4, 0, -0.9]} rotation={[0, -0.9, 0]} />
-      <Telescope position={[4.6, 0, -2.6]} rotation={[0, -0.5, 0]} />
-      <group position={[-0.2, 0.78, -2.4]}>
-        {[[-0.3, 0.05], [0, -0.08], [0.3, 0.02]].map(([x, z], i) => (
-          <mesh key={i} position={[x, 0.06, z]} rotation-y={i * 0.5} castShadow>
-            <boxGeometry args={[0.24, 0.12, 0.18]} />
-            <meshStandardMaterial color={i % 2 ? '#c9a24a' : '#b45a3a'} roughness={0.8} />
-          </mesh>
-        ))}
-      </group>
-      {[-4.5, 4.5].map((x) => (
-        <mesh key={x} position={[x, 1.6, -3.4]} castShadow>
-          <cylinderGeometry args={[0.05, 0.07, 3.2, 8]} />
-          <meshStandardMaterial color="#2a241c" roughness={0.8} />
-        </mesh>
-      ))}
-      <StringLights from={[-4.5, 3.1, -3.4]} to={[4.5, 3.05, -3.4]} count={11} />
-      <Moon position={[-6, 7, -15]} size={1.5} />
-      <Tree position={[-8.5, 0, -4]} scale={1.2} />
-      <Tree position={[8.8, 0, -5]} scale={1.0} />
-      <Tree position={[-7.5, 0, 4]} scale={0.9} />
-      <HotspotMarkers room={room} hot={hot} />
-    </group>
-  );
+function WorkshopRoom({room,hot}) {
+ return <group>
+  <TerrainSurface width={40} depth={40}/>
+  <TerrainSurface material="brown_mud_leaves_01" width={5} depth={25} position={[-1,.003,5]} repeat={[1,8]} trail/>
+  {[-3,.1,3.2].map(x=><DetailProp key={x} asset="dining_table" position={[x,0,-2.2]}/>)}
+  <DetailProp asset="wooden_bowl_01" position={[.1,.877,-2.2]} scale={.9}/>
+  <DetailProp asset="vintage_electric_kettle" position={[-.6,.877,-2.2]}/>
+  <DetailProp asset="cup" position={[.65,.877,-2.2]} scale={1.1}/>
+  <DetailProp asset="star_chart" position={[-3,.877,-2.2]}/>
+  <DetailProp asset="eyepiece_case" position={[3.2,.877,-2.2]}/>
+  {[-3.8,-2.2,2.4,4].map(x=><DetailProp key={x} asset="plastic_monobloc_chair_01" position={[x,0,-.9]} rotation={[0,Math.PI,0]}/>)}
+  <DetailProp asset="telescope" position={[5,0,-3.5]} height={1.95} rotation={[0,-.4,0]}/>
+  <DetailProp asset="telescope" position={[-5.6,0,-3.9]} height={1.7} rotation={[0,.7,0]}/>
+  <DetailProp asset="cardboard_box_01" position={[4.7,0,-1.4]}/>
+  <DetailProp asset="binder_notebook" position={[-3.75,.877,-2.2]} scale={.65}/>
+  {[-6,6].map(x=><mesh key={x} position={[x,1.8,-5]}><cylinderGeometry args={[.05,.065,3.6,12]}/><meshStandardMaterial color="#6b604e"/></mesh>)}
+  <StringLights from={[-6,3.5,-5]} to={[6,3.5,-5]} count={15}/>
+  <WallSign position={[0,2.4,-5.15]} width={3.4} height={.75} title="PERIGEE / NIGHT SKY" lines={['LOOK UP. THERE IS MORE TO SEE.']}/>
+  {[-9,-5,5,9].map((x,i)=><WindTree key={x} position={[x,0,-8-(i%2)*2]} height={5+i*.3}/>)}
+  <pointLight position={[0,2.8,-2]} color="#e9c589" intensity={22} distance={10}/>
+  <HotspotMarkers room={room} hot={hot}/>
+ </group>;
 }
 
-function NgoHqRoom({ room, hot }) {
-  return (
-    <group>
-      <Shell width={18} depth={14} height={5} tint="#4a4248" />
-      <Floor width={18} depth={14} repeat={[8, 6]} color="#a08a72" />
-      {[-6.3, -2.1, 2.1, 6.3].map((x) => (
-        <Column key={`b${x}`} position={[x, 0, -5.4]} height={5} />
-      ))}
-      {[-6.3, 6.3].map((x) => (
-        <Column key={`f${x}`} position={[x, 0, 1.6]} height={5} />
-      ))}
-      <Emblem position={[0, 2.7, -6.9]} radius={1.4} />
-      <Banner position={[-5.6, 0, -6.6]} />
-      <Banner position={[5.6, 0, -6.6]} />
-      <Prop model="rugRectangle.glb" position={[0, 0.02, -0.6]} />
-      <Prop model="kitchenBar.glb" position={[4.6, 0, -1.2]} rotation={[0, -Math.PI / 2, 0]} />
-      <Prop model="kitchenBar.glb" position={[6.1, 0, -1.2]} rotation={[0, -Math.PI / 2, 0]} />
-      <mesh position={[5.35, 1.4, -1.2]} castShadow>
-        <boxGeometry args={[2.8, 0.08, 1.0]} />
-        <meshStandardMaterial color="#5a4630" roughness={0.8} />
-      </mesh>
-      <Prop model="pottedPlant.glb" position={[-7.6, 0, -4.6]} />
-      <Prop model="pottedPlant.glb" position={[7.6, 0, -4.6]} />
-      <pointLight position={[0, 3.6, -3]} color="#ffd2a0" intensity={1.4} distance={16} decay={0} />
-      <pointLight position={[5.3, 2.2, -1.2]} color="#ffca82" intensity={0.9} distance={8} decay={0} />
-      <spotLight
-        position={[0, 4.8, -2]}
-        angle={0.7}
-        penumbra={0.9}
-        intensity={1.1}
-        distance={16}
-        decay={0}
-        color="#ffd2a0"
-      />
-      <HotspotMarkers room={room} hot={hot} />
-    </group>
-  );
+function NgoHqRoom({room,hot}) {
+ return <group>
+  <Shell width={18} depth={14} height={5} tint="#a39580" painted/>
+  <Floor width={18} depth={14} repeat={[8,6]} color="#c3b294" tiled/>
+  {[-6.3,6.3].map(x=><Column key={x} position={[x,0,-5.4]} height={5}/>)}
+  <Emblem position={[0,3.05,-6.92]} radius={1.25}/>
+  <WallSign position={[0,1.65,-6.9]} width={3.1} height={.6} title="PERIGEE FOUNDATION" lines={['REACH BEYOND THE ORDINARY']}/>
+  <DetailProp asset="counter" position={[4.8,0,-2.5]}/>
+  <DetailProp asset="monitor" position={[4.7,1.1275,-2.55]}/>
+  <DetailProp asset="binder_notebook" position={[3.9,1.1275,-2.5]} scale={.75}/>
+  <DetailProp asset="pencil_cup" position={[5.8,1.1275,-2.5]}/>
+  <DetailProp asset="sofa_03" position={[-5.8,0,0]} rotation={[0,Math.PI/2,0]}/>
+  <DetailProp asset="modern_coffee_table_01" position={[-4,0,0]}/>
+  <DetailProp asset="binder_notebook" position={[-4,.39,0]} scale={.7}/>
+  <ShelfContents position={[-7.8,0,-3.3]} rotation={[0,Math.PI/2,0]}/>
+  <DetailProp asset="potted_plant_02" position={[-7.4,0,4]} height={1.4}/>
+  <DetailProp asset="potted_plant_02" position={[7.4,0,4]} height={1.4}/>
+  <WallSign position={[-4.4,2.3,-6.91]} width={2.1} height={1.1} title="PROGRAMMES" lines={['NIGHT SKY WORKSHOPS','COMMUNITY OUTREACH']}/>
+  <WallSign position={[4.4,2.3,-6.91]} width={2.1} height={1.1} title="MEMBERSHIP" lines={['REGISTER AT RECEPTION','STAFF ACCESS BEYOND THIS POINT']}/>
+  <DoorOpening position={[2.2,0,-4.6]} label="ARCHIVE / STAFF ONLY"/>
+  <pointLight position={[0,3.6,-1]} color="#efd5aa" intensity={28} distance={16}/>
+  <HotspotMarkers room={room} hot={hot}/>
+ </group>;
 }
 
-function NgoArchiveRoom({ room, hot }) {
-  return (
-    <group>
-      <Shell width={12} depth={9} height={3.2} tint="#3a3226" />
-      <Floor width={12} depth={9} repeat={[5, 4]} color="#8a7a64" />
-      {[-3.6, -1.2, 1.2, 3.6].map((x) => (
-        <Prop key={x} model="bookcaseClosed.glb" position={[x, 0, -3.5]} />
-      ))}
-      <Prop model="bookcaseOpen.glb" position={[-5.6, 0, -2.2]} rotation={[0, Math.PI / 2, 0]} />
-      <Prop model="bookcaseOpen.glb" position={[5.6, 0, -2.2]} rotation={[0, -Math.PI / 2, 0]} />
-      <FileStack position={[-4.6, 0, -0.4]} />
-      <FileStack position={[-3.9, 0, -0.7]} />
-      <FileStack position={[3.2, 0, -0.9]} />
-      <FileStack position={[3.9, 0, -0.6]} />
-      <Prop model="desk.glb" position={[2.9, 0, -1.6]} rotation={[0, -Math.PI / 2, 0]} />
-      <CRT position={[2.9, 0.78, -1.9]} rotation={[0, -Math.PI / 2, 0]} color="#a8ffd0" glow="#4ad99a" />
-      <Prop model="chairDesk.glb" position={[1.7, 0, -1.7]} rotation={[0, Math.PI / 2, 0]} />
-      <HangingBulb position={[-0.6, 2.35, -0.8]} />
-      <pointLight position={[3, 1.4, -2]} color="#9fd2ff" intensity={0.35} distance={5} decay={0} />
-      <HotspotMarkers room={room} hot={hot} />
-    </group>
-  );
+function NgoArchiveRoom({room,hot}) {
+ return <group>
+  <Shell width={12} depth={9} height={3.2} tint="#a29882" painted/>
+  <Floor width={12} depth={9} repeat={[5,4]} color="#b8ab8f" tiled/>
+  {[-4.7,-2.35,0,2.35,4.7].map((x,i)=><group key={x}><ShelfContents position={[x,0,-3.7]}/><WallSign position={[x,2.35,-4.42]} width={1.1} height={.3} title={`RECORDS / 0${i+1}`}/></group>)}
+  <ShelfContents position={[-5.4,0,-1.2]} rotation={[0,Math.PI/2,0]}/>
+  <DetailProp asset="filing_cabinet" position={[-4.8,0,1.2]}/>
+  <DetailProp asset="filing_cabinet" position={[-3.75,0,1.2]}/>
+  <DetailProp asset="cardboard_box_01" position={[-3.75,.7225,1.2]} scale={.8}/>
+  <DetailProp asset="cardboard_box_01" position={[-5.05,0,3]}/>
+  <Prop model="desk.glb" position={[2.9,0,-1.6]} rotation={[0,-Math.PI/2,0]}/>
+  <CRT position={[2.9,DESK_TOP,-1.85]} rotation={[0,-Math.PI/2,0]}/>
+  <Prop model="chairDesk.glb" position={[1.7,0,-1.7]} rotation={[0,Math.PI/2,0]}/>
+  <DetailProp asset="binder_notebook" position={[2.9,DESK_TOP,-.97]} scale={.65}/>
+  <Prop model="lampRoundTable.glb" position={[2.9,DESK_TOP,-2.21]}/>
+  <WallSign position={[-5.91,1.8,.8]} rotation={[0,Math.PI/2,0]} width={1.8} height={.6} title="ARCHIVE POLICY" lines={['NO RECORDS LEAVE THIS ROOM']}/>
+  <Fluorescent position={[0,3.05,-1.8]}/>
+  <pointLight position={[2.6,2.1,-1.6]} color="#f1d6a5" intensity={8} distance={6}/>
+  <HotspotMarkers room={room} hot={hot}/>
+ </group>;
 }
 
-function HospitalRoom({ room, hot }) {
-  return (
-    <group>
-      <Shell width={16} depth={10} height={3.4} tint="#5a636e" />
-      <Floor width={16} depth={10} repeat={[8, 5]} color="#9aa0a8" />
-      <Prop model="doorway.glb" position={[-5.2, 0, -4.8]} />
-      <Prop model="doorway.glb" position={[0, 0, -4.8]} />
-      <Prop model="doorway.glb" position={[7.4, 0, -2.4]} rotation={[0, -Math.PI / 2, 0]} />
-      <Fluorescent position={[-2.5, 3.15, -1.5]} />
-      <Fluorescent position={[2.5, 3.15, 1.5]} delay={3.2} />
-      <Fluorescent position={[0, 3.15, -3.8]} delay={1.4} />
-      <Gurney position={[-4.6, 0, -1.2]} rotation={[0, 0.25, 0]} />
-      <Wheelchair position={[4.2, 0, 0.6]} rotation={[0, -0.8, 0]} />
-      <Prop model="chair.glb" position={[6.4, 0, 2.6]} rotation={[0, -1.2, 0]} />
-      <Prop model="chair.glb" position={[5.4, 0, 2.9]} rotation={[0, -1.5, 0]} />
-      <Prop model="chair.glb" position={[4.4, 0, 3.0]} rotation={[0, -1.7, 0]} />
-      <Prop model="bookcaseClosed.glb" position={[-7.6, 0, -1.4]} rotation={[0, Math.PI / 2, 0]} />
-      <pointLight position={[0, 2.5, 0]} color="#dfe6f2" intensity={0.6} distance={14} decay={0} />
-      <HotspotMarkers room={room} hot={hot} />
-    </group>
-  );
+function HospitalRoom({room,hot,actId}) {
+ const ritual=['act6','act8'].includes(actId),cargo=actId==='act7';
+ if(cargo)return <HospitalDispatch room={room} hot={hot}/>;
+ return <group>
+  <Shell width={16} depth={10} height={3.4} tint="#b9c6c5" painted/>
+  <Floor width={16} depth={10} repeat={[8,5]} color="#c8d3ce" tiled/>
+  <WallSign position={[0,2.6,-4.93]} width={3.4} height={.7} title="SHASHDHAR HOSPITAL" lines={['WARD 03 / RESTRICTED ACCESS']} background="#325052" ink="#e4eee9"/>
+  <DoorOpening position={[-5.8,0,-4.4]} label="SERVICE ACCESS"/>
+  <DoorOpening position={[5.8,0,-4.4]} label="OPERATING THEATRE"/>
+  {!cargo&&<DetailProp asset="hospital_bed" position={[-4.5,0,-1.1]} rotation={[0,.08,0]}/>}
+  <DetailProp asset="bedside_cabinet" position={[-6,0,-1.1]}/>
+  <DetailProp asset="privacy_curtain" position={[-3,1.045,-2]} rotation={[0,Math.PI/2,0]}/>
+  <DetailProp asset="medical_cart" position={[-5.8,0,1.3]}/>
+  <DetailProp asset="nurse_station" position={[4.7,0,-2.2]}/>
+  <DetailProp asset="monitor" position={[4.7,1.1175,-2.2]}/>
+  <DetailProp asset="clipboard" position={[3.7,1.1175,-2.2]} scale={.6}/>
+  <DetailProp asset="pencil_cup" position={[5.7,1.1175,-2.2]}/>
+  <DetailProp asset="wheelchair_01" position={[6.1,0,.6]} rotation={[0,-.6,0]}/>
+  {[4,5.15,6.3].map(x=><DetailProp key={x} asset="plastic_monobloc_chair_01" position={[x,0,3.2]} rotation={[0,Math.PI,0]}/>)}
+  <DetailProp asset="filing_cabinet" position={[-7.4,0,-2.4]}/>
+  {ritual&&<group>
+   <DetailProp asset="dining_table" position={[0,0,-2.1]}/>
+   <DetailProp asset="chest" position={[.6,.877,-2.1]} scale={.4}/>
+   {[-.85,-.55,.9].map((x,i)=><Candle key={x} position={[x,.877,-2.1]} height={.24+i*.05}/>)}
+   <WallSign position={[0,1.65,-4.91]} width={2.2} height={.65} title="PERIGEE" lines={['THE ASCENSION']} background="#493138"/>
+   <pointLight position={[0,1.7,-2.1]} color="#dc916e" intensity={5} distance={7}/>
+  </group>}
+  <WallSign position={[-7.93,2,1]} rotation={[0,Math.PI/2,0]} width={1.8} height={.55} title="WARD 03" lines={['KEEP THE CORRIDOR CLEAR']}/>
+  <WallSign position={[7.93,2,1]} rotation={[0,-Math.PI/2,0]} width={1.8} height={.55} title="SECURITY" lines={['AUTHORISED STAFF ONLY']}/>
+  <Fluorescent position={[-3,3.3,-1]}/><Fluorescent position={[3,3.3,-1]} delay={3.2}/><Fluorescent position={[0,3.3,2.2]} delay={1.4}/>
+  <pointLight position={[0,2.25,.3]} color="#e1eeef" intensity={7} distance={14}/>
+  <HotspotMarkers room={room} hot={hot}/>
+ </group>;
 }
 
-function TanushOfficeRoom({ room, hot }) {
-  return (
-    <group>
-      <Shell width={13} depth={10} height={3.8} tint="#4a3a34" />
-      <Floor width={13} depth={10} repeat={[6, 5]} color="#a3856a" />
-      <Prop model="rugRectangle.glb" position={[0.2, 0.02, 0.5]} />
-      <Prop model="rugSquare.glb" position={[0.2, 0.04, -1.4]} />
-      <Prop model="desk.glb" tint="#3f2418" position={[0.4, 0, -1.5]} />
-      <Prop model="chairDesk.glb" tint="#3f2418" position={[0.4, 0, -0.2]} rotation={[0, Math.PI, 0]} />
-      <Prop model="lampRoundTable.glb" position={[1.5, 0.76, -1.8]} />
-      <FileStack position={[-0.5, 0.8, -1.6]} />
-      <Prop model="bookcaseClosed.glb" tint="#3a2a20" position={[-5.7, 0, -2.2]} rotation={[0, Math.PI / 2, 0]} />
-      <Trophy position={[-5.5, 1.78, -3.0]} />
-      <Trophy position={[-5.5, 1.78, -2.2]} scale={1.15} />
-      <Trophy position={[-5.5, 1.78, -1.4]} scale={0.9} />
-      <Prop model="kitchenBar.glb" position={[5.4, 0, 1.8]} rotation={[0, -Math.PI / 2, 0]} />
-      <WendigoMask position={[0.2, 2.15, -4.8]} />
-      <pointLight position={[1.3, 1.6, -1.6]} color="#ffca82" intensity={1.1} distance={7} decay={0} />
-      <pointLight position={[0.2, 2.0, -3.8]} color="#ff8a5a" intensity={0.45} distance={5} decay={0} />
-      <HotspotMarkers room={room} hot={hot} />
-    </group>
-  );
+function HospitalDispatch({room,hot}) {
+ return <group>
+  <Shell width={12} depth={14} height={4.2} tint="#8e9997" painted/>
+  <Floor width={12} depth={14} repeat={[4,4]} color="#8e9895" tiled/>
+  <mesh position={[-2,1.65,-6.93]}><planeGeometry args={[4.3,3.3]}/><meshStandardMaterial color="#465654" metalness={.35} roughness={.65}/></mesh>
+  {Array.from({length:14},(_,i)=><mesh key={i} position={[-2,.15+i*.23,-6.89]}><boxGeometry args={[4.3,.018,.018]}/><meshStandardMaterial color="#73817c" metalness={.4}/></mesh>)}
+  <WallSign position={[-2,3.6,-6.9]} width={3.5} height={.5} title="SHASHDHAR / LOADING BAY"/>
+  <DoorOpening position={[4.2,0,-6.75]} label="SERVICE LIFT / STAFF"/>
+  <DetailProp asset="cargo_van" position={[-3,0,-2.2]} height={2.2} rotation={[0,Math.PI/2,0]}/>
+  <DetailProp asset="hand_truck" position={[-.3,0,-1]}/>
+  {[-4.9,-3.8,-2.7].map(x=><DetailProp key={x} asset="cardboard_box_01" position={[x,0,1.4]}/>)}
+  <DetailProp asset="metal_office_desk" position={[3.8,0,-2.8]}/>
+  <DetailProp asset="clipboard" position={[3.8,.7875,-2.8]} scale={.7}/>
+  <DetailProp asset="office_chair" position={[3.8,0,-1.65]} height={1.168*DESK_SEAT/.618} rotation={[0,Math.PI,0]}/>
+  <DetailProp asset="office_phone" position={[4.4,.7875,-2.8]} scale={.8}/>
+  <DetailProp asset="filing_cabinet" position={[5.2,0,-5.6]}/>
+  <WallSign position={[3,2.6,-6.91]} width={2.6} height={.7} title="LUA PHARMACEUTICALS" lines={['SEALED SHIPMENTS / LOG EVERY TRANSFER']}/>
+  <Fluorescent position={[-2,4.1,-2]}/><Fluorescent position={[2,4.1,2]}/>
+  <pointLight position={[0,2.5,-1]} color="#d5e4dc" intensity={10} distance={14}/>
+  <HotspotMarkers room={room} hot={hot}/>
+ </group>;
 }
 
-function EnakshiHouseRoom({ room, hot }) {
-  return (
-    <group>
-      <Shell width={11} depth={9} height={3.4} tint="#3c3230" />
-      <Floor width={11} depth={9} repeat={[5, 4]} color="#907a60" />
-      <Prop model="loungeSofa.glb" position={[-2.8, 0, -0.6]} rotation={[0, 0.15, 0]} />
-      <Prop model="rugSquare.glb" position={[0.2, 0.02, 0.5]} />
-      <Prop model="loungeChair.glb" position={[2.0, 0, 1.0]} rotation={[0, -0.8, 0]} />
-      <Prop model="sideTable.glb" position={[0.2, 0, -0.4]} />
-      <Candle position={[0.05, 0.52, -0.4]} height={0.24} />
-      <Candle position={[0.4, 0.52, -0.3]} height={0.16} />
-      <Prop model="doorway.glb" position={[4.3, 0, -4.2]} rotation={[0, 0.5, 0]} />
-      <mesh position={[4.3, 1.15, -4.65]} rotation={[0, 0.5, 0]}>
-        <planeGeometry args={[1.0, 2.3]} />
-        <meshStandardMaterial color="#0a0806" roughness={1} />
-      </mesh>
-      <Window position={[-5.35, 1.85, -1.4]} rotation={[0, Math.PI / 2, 0]} />
-      <Prop model="bookcaseClosed.glb" position={[5.4, 0, 0.8]} rotation={[0, -Math.PI / 2, 0]} />
-      <Prop model="lampRoundFloor.glb" position={[-4.3, 0, 2.8]} />
-      <pointLight position={[-4.3, 1.5, 2.8]} color="#ffca82" intensity={0.9} distance={7} decay={0} />
-      <HotspotMarkers room={room} hot={hot} />
-    </group>
-  );
+function TanushOfficeRoom({room,hot}) {
+ return <group>
+  <Shell width={13} depth={10} height={3.8} tint="#8c7663" painted/>
+  <Floor width={13} depth={10} repeat={[6,5]} color="#b79a77"/>
+  <Prop model="rugRectangle.glb" position={[.2,.002,.5]} scale={3.1} tint="#4c555a"/>
+  <Prop model="desk.glb" position={[.4,0,-1.5]}/>
+  <Prop model="chairDesk.glb" position={[.4,0,-2.65]}/>
+  <Prop model="lampRoundTable.glb" position={[1.03,DESK_TOP,-1.62]}/>
+  <DetailProp asset="clipboard" position={[-.05,DESK_TOP,-1.35]} scale={.65}/>
+  <DetailProp asset="classic_laptop" position={[.55,DESK_TOP,-1.6]} scale={.8}/>
+  <DetailProp asset="pencil_cup" position={[1.06,DESK_TOP,-1.1]}/>
+  <ShelfContents position={[-5.7,0,-2.2]} rotation={[0,Math.PI/2,0]}/>
+  <DetailProp asset="filing_cabinet" position={[-4.9,0,-4.3]}/>
+  <DetailProp asset="filing_cabinet" position={[-3.8,0,-4.3]}/>
+  <DetailProp asset="binder_notebook" position={[-4.9,.7225,-4.3]} scale={.75}/>
+  <DetailProp asset="sofa_03" position={[4.5,0,.1]} rotation={[0,-Math.PI/2,0]}/>
+  <DetailProp asset="modern_coffee_table_01" position={[3,0,.1]} rotation={[0,Math.PI/2,0]}/>
+  <DetailProp asset="cup" position={[3,.39,.1]}/>
+  <DetailProp asset="floor_lamp" position={[5.5,0,-1.5]} height={1.75}/>
+  <DetailProp asset="potted_plant_02" position={[5.5,0,3.2]} height={1.3}/>
+  <Window position={[6.44,1.9,-2.3]} rotation={[0,-Math.PI/2,0]} width={2.4} height={1.9}/>
+  <DetailProp asset="curtains" position={[6.3,.4,-2.3]} rotation={[0,-Math.PI/2,0]} height={2.6}/>
+  <WallSign position={[0,2.6,-4.94]} width={3.1} height={.7} title="PERIGEE / DIRECTOR" lines={['TANUSH']} background="#4a3830"/>
+  <WallSign position={[-1.9,1.7,-4.94]} width={1.1} height={1.15} title="THIS WEEK" lines={['THURSDAY / HOSPITAL','SATURDAY / WORKSHOP']}/>
+  <DoorOpening position={[4.2,0,-4.4]} label="PRIVATE OFFICE"/>
+  <pointLight position={[1.03,1.2,-1.62]} color="#ffcb82" intensity={5} distance={5}/>
+  <pointLight position={[0,3.1,1.5]} color="#efd7af" intensity={18} distance={12}/>
+  <HotspotMarkers room={room} hot={hot}/>
+ </group>;
 }
+
+function EnakshiHouseRoom({room,hot}) {
+ return <group>
+  <Shell width={11} depth={9} height={3.4} tint="#927c72" painted/>
+  <Floor width={11} depth={9} repeat={[5,4]} color="#b79878"/>
+  <DetailProp asset="sofa_03" position={[-2.8,0,-.6]} rotation={[0,.15,0]}/>
+  <Prop model="rugSquare.glb" position={[.2,.002,.5]} scale={2.9} tint="#626963"/>
+  <DetailProp asset="modern_arm_chair_01" position={[2.2,0,1]} rotation={[0,-.8,0]}/>
+  <DetailProp asset="side_table_01" position={[.2,0,-.4]}/>
+  <DetailProp asset="tablet" position={[.2,.55066,-.4]} scale={.65}/>
+  <Candle position={[-.03,.55066,-.4]} height={.24}/>
+  <Candle position={[.42,.55066,-.3]} height={.16}/>
+  <ShelfContents position={[4.8,0,-1.2]} rotation={[0,-Math.PI/2,0]}/>
+  <DetailProp asset="filing_cabinet" position={[3.5,0,-3.8]}/>
+  <DetailProp asset="clipboard" position={[3.5,.7225,-3.8]} scale={.65}/>
+  <Window position={[-5.44,1.85,-1.4]} rotation={[0,Math.PI/2,0]} width={2} height={1.7}/>
+  <DetailProp asset="curtains" position={[-5.3,.4,-1.4]} rotation={[0,Math.PI/2,0]} height={2.5}/>
+  <DetailProp asset="floor_lamp" position={[-4.3,0,2.8]} height={1.75}/>
+  <DetailProp asset="potted_plant_02" position={[4.5,0,3.1]} height={1.2}/>
+  <WallSign position={[-1.7,2,-4.42]} width={1.4} height={.55} title="PERIGEE FOUNDATION" lines={['A HIGHER PURPOSE']} background="#513d3a"/>
+  <DoorOpening position={[.8,0,-4.2]} label="PRIVATE"/>
+  <pointLight position={[-4.3,1.4,2.8]} color="#ffca82" intensity={7} distance={7}/>
+  <pointLight position={[0,2.7,0]} color="#dfc3a6" intensity={12} distance={9}/>
+  <HotspotMarkers room={room} hot={hot}/>
+ </group>;
+}
+
+function DoorOpening({position,label}) {
+ return <group position={position}>
+  <mesh position={[-.68,1.12,0]}><boxGeometry args={[.12,2.24,.28]}/><meshStandardMaterial color="#4b514e"/></mesh>
+  <mesh position={[.68,1.12,0]}><boxGeometry args={[.12,2.24,.28]}/><meshStandardMaterial color="#4b514e"/></mesh>
+  <mesh position={[0,2.28,0]}><boxGeometry args={[1.48,.12,.28]}/><meshStandardMaterial color="#4b514e"/></mesh>
+  <mesh position={[0,1.1,-.15]}><planeGeometry args={[1.24,2.2]}/><meshStandardMaterial color="#39403d" roughness={.8}/></mesh>
+  <WallSign position={[0,2.58,.04]} width={1.45} height={.36} title={label}/>
+ </group>;
+}
+
 
 const ROOM_KITS = {
   ballroom: Ballroom,
@@ -1999,21 +1698,22 @@ const ROOM_KITS = {
 
 // The campaign and every cinematic share the same fully modelled environments.
 export const ROOM_IDS = Object.keys(ROOM_KITS);
-export function RoomEnvironment({ roomId, room = null, hot = null, paused=false }) {
+export function RoomEnvironment({ roomId, room = null, hot = null, paused=false,storyAct }) {
   const Kit = ROOM_KITS[roomId] ?? SameerRoomScene;
   const empty = { id: roomId, hotspots: [] };
-  return <Kit room={room ?? empty} hot={hot ?? { state: { discovered: [] }, solvedPuzzles: [] }} paused={paused} />;
+  return <Kit room={room ?? empty} hot={hot ?? { state: { discovered: [] }, solvedPuzzles: [] }} paused={paused} actId={storyAct??hot?.state?.act}/>;
 }
 export function RoomLighting({ roomId, quality = 'high' }) {
   const outdoor = OUTDOOR_ROOMS.has(roomId);
+  const night=outdoor&&roomId!=='gazebo';
   return <>
-    <Environment files={roomId==='gazebo'?"/assets/cinema/park_sunrise_1k.hdr":outdoor ? "/assets/cinema/park_bench_1k.hdr" : "/assets/env/ballroom_2k.hdr"} ground={roomId==='gazebo'?{height:2,radius:70,scale:120}:undefined} background={outdoor} backgroundBlurriness={.02} backgroundIntensity={.8} environmentIntensity={outdoor ? .85 : .62} />
-    <ambientLight intensity={outdoor ? 0.65 : 0.8} color="#bdcce8" />
-    <directionalLight position={[-4, 8, 6]} intensity={outdoor?2:1.7} color={outdoor?'#ffe2a9':'#d7e5ee'} castShadow={quality !== 'low'}
+    <Environment files={roomId==='gazebo'?"/assets/cinema/park_sunrise_1k.hdr":outdoor ? "/assets/cinema/park_bench_1k.hdr" : "/assets/env/ballroom_2k.hdr"} ground={roomId==='gazebo'?{height:2,radius:70,scale:120}:undefined} background={outdoor} backgroundBlurriness={.02} backgroundIntensity={night?.045:.8} environmentIntensity={night?.3:outdoor ? .85 : .62} />
+    <ambientLight intensity={night?.5:outdoor ? 0.65 : 0.8} color="#bdcce8" />
+    <directionalLight position={[-4, 8, 6]} intensity={night?.85:outdoor?2:1.7} color={night?'#a5bcdc':outdoor?'#ffe2a9':'#d7e5ee'} castShadow={quality !== 'low'}
       shadow-mapSize={quality === 'high' ? [2048, 2048] : [1024, 1024]}
       shadow-camera-left={-14} shadow-camera-right={14} shadow-camera-top={14} shadow-camera-bottom={-14}
       shadow-camera-far={38} shadow-bias={-0.0005} />
-    <directionalLight position={[4, 4, -3]} intensity={0.6} color="#e0ab7b" />
+    <directionalLight position={[4, 4, -3]} intensity={night?.22:0.6} color={night?'#7b9fce':'#e0ab7b'} />
   </>;
 }
 
@@ -2027,7 +1727,7 @@ function EnvironmentIntensity({ value }) {
   return null;
 }
 
-function CameraRig({ focusInfo }) {
+function CameraRig({ focusInfo,view }) {
   const { camera, controls } = useThree();
   const desiredPosition = useRef(new THREE.Vector3(0, 2.3, 7.8));
   const desiredLook = useRef(new THREE.Vector3(0, 1.5, -0.3));
@@ -2038,12 +1738,12 @@ function CameraRig({ focusInfo }) {
       desiredPosition.current.set(...focusInfo.camera);
       desiredLook.current.set(...focusInfo.look);
     } else {
-      desiredPosition.current.set(0, 3.4, 8.8);
-      desiredLook.current.set(0, 1.1, -0.4);
+      desiredPosition.current.set(...view.at);
+      desiredLook.current.set(...view.look);
     }
     transitioning.current = true;
     if (controls) controls.enabled = !focusInfo;
-  }, [focusInfo, controls]);
+  }, [focusInfo, controls,view]);
 
   useFrame((_, delta) => {
     if (!transitioning.current) return;
@@ -2077,10 +1777,12 @@ export default function Scene({
   onTravel,
   solvedPuzzles = [],
   onReady,
+  onMetrics,
 }) {
   const room = state.rooms.find((r) => r.id === roomId) ?? state.rooms[0];
   const isDemo = DEMO_ROOMS.has(room.id);
   const isOutdoor = OUTDOOR_ROOMS.has(room.id);
+  const view=ROOM_VIEWS[room.id]??{at:[0,2.65,8.8],look:[0,1.1,-.4],fov:52};
   const [heights, setHeights] = useState({});
 
   // Skinned meshes can report bogus bounds, so clamp to a believable range:
@@ -2150,20 +1852,20 @@ export default function Scene({
   const { quality } = useSettings();
   return (
     <WorldBoundary key={room.id}>
-      <Canvas shadows={quality !== 'low'} dpr={[1, quality === 'high' ? 1.65 : 1]} camera={{ position: [0, 3.4, 8.8], fov: 52 }}>
+      <Canvas shadows={quality !== 'low'} dpr={[1, quality === 'high' ? 1.65 : 1]} camera={{ position: view.at, fov: view.fov }}>
         <color attach="background" args={[bg]} />
         <fog attach="fog" args={isOutdoor ? [bg, 25, 65] : [bg, 22, 42]} />
         <Suspense fallback={<SceneLoading />}>
           <RoomLighting roomId={room.id} quality={quality} />
           <RoomEnvironment roomId={room.id} room={room} hot={hot} />
           <OrbitControls makeDefault enablePan enableDamping dampingFactor={0.08}
-            target={[0, 1.1, -0.4]} minDistance={2.6} maxDistance={16}
+            target={view.look} minDistance={2.6} maxDistance={16}
             minPolarAngle={0.35} maxPolarAngle={Math.PI / 2.02} />
-          <CameraRig key={room.id} focusInfo={focusInfo} />
+          <CameraRig key={room.id} focusInfo={focusInfo} view={view} />
           <ExploreKeys disabled={!!focus} />
-          <SceneReady onReady={onReady}/>
+          <SceneReady onReady={onReady} onMetrics={onMetrics}/>
         </Suspense>
-        {quality !== 'low' && <EffectComposer multisampling={quality === 'high' ? 2 : 0}>
+        {quality === 'high' && <EffectComposer multisampling={2}>
           <Bloom intensity={0.18} luminanceThreshold={0.85} mipmapBlur />
           <Vignette offset={0.3} darkness={0.35} />
         </EffectComposer>}

@@ -31,20 +31,20 @@ function ShotCamera({roomId,shot,cast,speaker,paused}) {
     camera.position.lerp(animated,1-Math.exp(-3*dt));camera.lookAt(target);
   });return null;
 }
-export default function Cinema({sceneId='gazebo',shot='wide',cast=[],speaker,ending=false,paused=false,onReady}) {
+export default function Cinema({sceneId='gazebo',shot='wide',cast=[],speaker,ending=false,paused=false,onReady,actId}) {
   const {quality}=useSettings();
   const people=useMemo(()=>placeCast(sceneId,cast),[cast,sceneId]);
   return <WorldBoundary key={sceneId}><Canvas shadows={quality!=='low'} dpr={[1,quality==='high'?1.5:1]} camera={{position:[0,2.15,6.2],fov:39}}>
     <color attach="background" args={['#10171c']}/><fog attach="fog" args={[sceneId==='gazebo'?'#9bafa5':'#10171c',28,85]}/>
     <Suspense fallback={<SceneLoading/>}>
-      <RoomLighting roomId={sceneId} quality={quality}/><RoomEnvironment roomId={sceneId} paused={paused}/>
+      <RoomLighting roomId={sceneId} quality={quality}/><RoomEnvironment roomId={sceneId} paused={paused} storyAct={actId}/>
       <spotLight position={[0,4,5]} angle={.7} penumbra={1} color="#ffdfbe" intensity={24} distance={13}/>
       {people.map(c=><group key={c.character} position={[c.at[0],c.y,c.at[1]]} rotation={[0,c.rot??0,0]}><Actor character={c.character} pose={c.pose} footLift={c.footLift} paused={paused} speaking={c.character===speaker}/></group>)}
       {ending&&<pointLight position={[0,1.2,0]} intensity={6} color="#ff5828" distance={15}/>}
       <SceneReady key={sceneId} onReady={onReady}/>
     </Suspense>
     <ShotCamera roomId={sceneId} shot={shot} cast={people} speaker={speaker} paused={paused}/>
-    {quality!=='low'&&<EffectComposer multisampling={0}><Bloom intensity={.12} luminanceThreshold={1} mipmapBlur/><Vignette offset={.22} darkness={.35}/></EffectComposer>}
+    {quality==='high'&&<EffectComposer multisampling={0}><Bloom intensity={.12} luminanceThreshold={1} mipmapBlur/><Vignette offset={.22} darkness={.35}/></EffectComposer>}
   </Canvas></WorldBoundary>;
 }
 

@@ -1,0 +1,226 @@
+[
+  {
+    "id": "cargo_van",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/high-roof-cargo-panel-van-c4d5145f",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 5483476
+  },
+  {
+    "id": "hand_truck",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/carry-upright-hand-truck-721a2f19",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 192212
+  },
+  {
+    "id": "chest",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/keepsake-110-blanket-chest-3eecc62d",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 2188040
+  },
+  {
+    "id": "office_phone",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/desk-call-office-phone-dbbf9f01",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 225928
+  },
+  {
+    "id": "tablet",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/draw-slate-graphics-tablet-904896fb",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 157092
+  },
+  {
+    "id": "sedan_detailed",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/graphite-four-door-sedan-eed96d12",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 5060296
+  },
+  {
+    "id": "backpack_person",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/theo-3d-person-teenager-standing-with-backpack-a62b7955",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 21082928
+  },
+  {
+    "id": "floor_lamp",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/reader-reading-floor-lamp-3d915761",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 190984
+  },
+  {
+    "id": "filing_cabinet",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/two-drawer-lateral-filing-cabinet-157adbfa",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 295708
+  },
+  {
+    "id": "medical_cart",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/three-shelf-medical-supply-cart-45cc326c",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 520972
+  },
+  {
+    "id": "bedside_cabinet",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/patient-bedside-cabinet-19c0b99c",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 714200
+  },
+  {
+    "id": "mic_stand",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/stage-boom-microphone-stand-295113fc",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 231016
+  },
+  {
+    "id": "microphone",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/stage-mic-dynamic-microphone-15858c66",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 200104
+  },
+  {
+    "id": "synthesizer",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/patch-voice-synthesizer-0b3e851c",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 1193352
+  },
+  {
+    "id": "drum_pad",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/practice-pad-electronic-drum-pad-42fae9ea",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 183804
+  },
+  {
+    "id": "monitor",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/screen-one-all-in-one-computer-6bc2e4e0",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 481152
+  },
+  {
+    "id": "keyboard",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/key-grid-mechanical-keyboard-8503e99e",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 616432
+  },
+  {
+    "id": "mouse",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/palm-mouse-wireless-mouse-a9f5ed66",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 115560
+  },
+  {
+    "id": "router",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/router-twin-wi-fi-router-5bf2a400",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 221296
+  },
+  {
+    "id": "printer",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/page-one-laser-printer-242caf15",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 216184
+  },
+  {
+    "id": "office_chair",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/vector-ergonomic-office-chair-ae299d68",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 5766012
+  },
+  {
+    "id": "stairs",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/straight-stair-with-rails-773dfc59",
+    "license": "CC0",
+    "format": "step",
+    "bytes": 1375024
+  },
+  {
+    "id": "bed",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/queen-bed-with-bedding-original-interior-furnishing-ea3bae95",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 765272
+  },
+  {
+    "id": "curtains",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/curtain-pair-open-original-interior-furnishing-8c8dbd3d",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 297732
+  },
+  {
+    "id": "counter",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/bar-counter-3-m-with-footrail-original-restaurant-furnishing-d94cb2c7",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 379044
+  },
+  {
+    "id": "cup",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/teacup-and-saucer-original-drink-vessel-1885975f",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 133016
+  },
+  {
+    "id": "hospital_bed",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/hospital-bed-flat-mattress-44fc9faf",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 623932
+  },
+  {
+    "id": "nurse_station",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/nurse-station-with-low-accessible-counter-ef78cf3d",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 700584
+  },
+  {
+    "id": "privacy_curtain",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/privacy-curtain-and-ceiling-track-0353bfbc",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 330268
+  },
+  {
+    "id": "amplifier",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/practice-combo-guitar-amplifier-4f32b685",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 441732
+  },
+  {
+    "id": "stage_monitor",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/stage-wedge-stage-monitor-2e117382",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 190368
+  },
+  {
+    "id": "pencil_cup",
+    "page": "https://www.innerscene.com/tools/library/3d-parts/hex-pencil-cup-desk-accessory-ea9dcd87",
+    "license": "CC0",
+    "format": "glb",
+    "bytes": 541272
+  }
+]

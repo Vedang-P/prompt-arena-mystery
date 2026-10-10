@@ -1,0 +1,587 @@
+{
+  "binder_notebook": {
+    "size": [
+      0.58403,
+      0.02529,
+      0.19996
+    ],
+    "vertices": 13032,
+    "bytes": 1896728
+  },
+  "book_encyclopedia_set_01": {
+    "size": [
+      0.5516,
+      0.23742,
+      0.16358
+    ],
+    "vertices": 21746,
+    "bytes": 895004
+  },
+  "can_rusted": {
+    "size": [
+      0.12453,
+      0.15138,
+      0.12468
+    ],
+    "vertices": 1908,
+    "bytes": 2112836
+  },
+  "cardboard_box_01": {
+    "size": [
+      0.38702,
+      0.3418,
+      0.51587
+    ],
+    "vertices": 8757,
+    "bytes": 2167512
+  },
+  "CashRegister_01": {
+    "size": [
+      0.60049,
+      0.62136,
+      0.62421
+    ],
+    "vertices": 9276,
+    "bytes": 1402512
+  },
+  "classic_laptop": {
+    "size": [
+      0.65193,
+      0.54281,
+      0.48594
+    ],
+    "vertices": 13182,
+    "bytes": 2194484
+  },
+  "clipboard": {
+    "size": [
+      0.2286,
+      0.04199,
+      0.33655
+    ],
+    "vertices": 4608,
+    "bytes": 1797324
+  },
+  "desk_lamp_arm_01": {
+    "size": [
+      0.20173,
+      0.89261,
+      0.61387
+    ],
+    "vertices": 18506,
+    "bytes": 2918564
+  },
+  "grass_medium_01": {
+    "size": [
+      5.60498,
+      0.34258,
+      0.32656
+    ],
+    "vertices": 26820,
+    "bytes": 3510012
+  },
+  "metal_office_desk": {
+    "size": [
+      2.0,
+      0.7875,
+      0.94721
+    ],
+    "vertices": 6070,
+    "bytes": 1609232
+  },
+  "modern_arm_chair_01": {
+    "size": [
+      0.82034,
+      1.02285,
+      0.98656
+    ],
+    "vertices": 5851,
+    "bytes": 2701336
+  },
+  "modern_coffee_table_01": {
+    "size": [
+      0.6,
+      0.39,
+      1.20183
+    ],
+    "vertices": 3995,
+    "bytes": 1330468
+  },
+  "modular_chainlink_fence": {
+    "size": [
+      8.12114,
+      2.52421,
+      2.1591
+    ],
+    "vertices": 27851,
+    "bytes": 5683600
+  },
+  "old_tyre": {
+    "size": [
+      0.6,
+      0.6,
+      0.165
+    ],
+    "vertices": 2090,
+    "bytes": 2236320
+  },
+  "plastic_monobloc_chair_01": {
+    "size": [
+      0.64186,
+      0.87984,
+      0.62759
+    ],
+    "vertices": 3271,
+    "bytes": 1953476
+  },
+  "portable_cassette_player": {
+    "size": [
+      0.17226,
+      0.13031,
+      0.03967
+    ],
+    "vertices": 13474,
+    "bytes": 3954464
+  },
+  "potted_plant_02": {
+    "size": [
+      0.69771,
+      0.84216,
+      0.65782
+    ],
+    "vertices": 6873,
+    "bytes": 2164508
+  },
+  "rock_09": {
+    "size": [
+      0.07401,
+      0.03287,
+      0.14462
+    ],
+    "vertices": 6628,
+    "bytes": 1963560
+  },
+  "side_table_01": {
+    "size": [
+      0.55,
+      0.55066,
+      0.45
+    ],
+    "vertices": 3164,
+    "bytes": 507484
+  },
+  "sofa_03": {
+    "size": [
+      2.73118,
+      1.11826,
+      0.92508
+    ],
+    "vertices": 5655,
+    "bytes": 1848132
+  },
+  "vintage_electric_kettle": {
+    "size": [
+      0.32089,
+      0.30474,
+      0.24855
+    ],
+    "vertices": 10237,
+    "bytes": 3673840
+  },
+  "wall_clock": {
+    "size": [
+      0.32049,
+      0.32049,
+      0.04722
+    ],
+    "vertices": 3452,
+    "bytes": 1568380
+  },
+  "weed_plant_02": {
+    "size": [
+      2.12525,
+      0.07507,
+      0.29092
+    ],
+    "vertices": 7956,
+    "bytes": 2688592
+  },
+  "wheelchair_01": {
+    "size": [
+      0.82409,
+      1.1035,
+      1.09087
+    ],
+    "vertices": 29445,
+    "bytes": 1766948
+  },
+  "wooden_bookshelf_worn": {
+    "size": [
+      1.37395,
+      2.06344,
+      0.5813
+    ],
+    "vertices": 6479,
+    "bytes": 2776196
+  },
+  "wooden_bowl_01": {
+    "size": [
+      0.31308,
+      0.09369,
+      0.30914
+    ],
+    "vertices": 7385,
+    "bytes": 1822364
+  },
+  "amplifier": {
+    "size": [
+      0.4,
+      0.46707,
+      0.2455
+    ],
+    "vertices": 4948,
+    "bytes": 441592
+  },
+  "bed": {
+    "size": [
+      1.7,
+      1.27,
+      2.19
+    ],
+    "vertices": 10558,
+    "bytes": 792008
+  },
+  "counter": {
+    "size": [
+      3.04,
+      1.1275,
+      0.836
+    ],
+    "vertices": 5464,
+    "bytes": 394900
+  },
+  "cup": {
+    "size": [
+      0.15,
+      0.0694,
+      0.15
+    ],
+    "vertices": 2800,
+    "bytes": 115896
+  },
+  "curtains": {
+    "size": [
+      2.12,
+      2.1935,
+      0.078
+    ],
+    "vertices": 6136,
+    "bytes": 297712
+  },
+  "hospital_bed": {
+    "size": [
+      2.2,
+      1.18055,
+      1.0
+    ],
+    "vertices": 17332,
+    "bytes": 640168
+  },
+  "keyboard": {
+    "size": [
+      0.3,
+      0.033,
+      0.12
+    ],
+    "vertices": 15336,
+    "bytes": 616252
+  },
+  "monitor": {
+    "size": [
+      0.5,
+      0.486,
+      0.18
+    ],
+    "vertices": 11448,
+    "bytes": 483208
+  },
+  "mouse": {
+    "size": [
+      0.066,
+      0.053,
+      0.115
+    ],
+    "vertices": 1106,
+    "bytes": 115424
+  },
+  "nurse_station": {
+    "size": [
+      3.6,
+      1.1175,
+      0.845
+    ],
+    "vertices": 14356,
+    "bytes": 727620
+  },
+  "office_chair": {
+    "size": [
+      0.731,
+      1.168,
+      0.70267
+    ],
+    "vertices": 33406,
+    "bytes": 5765964
+  },
+  "printer": {
+    "size": [
+      0.362,
+      0.2775,
+      0.339
+    ],
+    "vertices": 3948,
+    "bytes": 216048
+  },
+  "privacy_curtain": {
+    "size": [
+      2.33,
+      2.343,
+      0.13168
+    ],
+    "vertices": 9012,
+    "bytes": 331412
+  },
+  "router": {
+    "size": [
+      0.233,
+      0.24253,
+      0.146
+    ],
+    "vertices": 4104,
+    "bytes": 221160
+  },
+  "sedan": {
+    "size": [
+      2.32,
+      1.48,
+      4.696
+    ],
+    "vertices": 18068,
+    "bytes": 660044
+  },
+  "stage_monitor": {
+    "size": [
+      0.472,
+      0.35612,
+      0.41
+    ],
+    "vertices": 2928,
+    "bytes": 193316
+  },
+  "stairs": {
+    "size": [
+      4.48,
+      3.71781,
+      1.0
+    ],
+    "vertices": 12414,
+    "bytes": 1893836
+  },
+  "pencil_cup": {
+    "size": [
+      0.104,
+      0.111,
+      0.09007
+    ],
+    "vertices": 488,
+    "bytes": 541104
+  },
+  "street_lamp_01": {
+    "size": [
+      0.70434,
+      3.87056,
+      0.38649
+    ],
+    "vertices": 17664,
+    "bytes": 2967712
+  },
+  "sedan_detailed": {
+    "size": [
+      4.8403,
+      1.54514,
+      2.1809
+    ],
+    "vertices": 134151,
+    "bytes": 5104236
+  },
+  "dining_table": {
+    "size": [
+      2.2559,
+      0.87699,
+      1.39024
+    ],
+    "vertices": 772,
+    "bytes": 2282472
+  },
+  "modern_ceiling_lamp_01": {
+    "size": [
+      0.43165,
+      0.95155,
+      0.43166
+    ],
+    "vertices": 3538,
+    "bytes": 433904
+  },
+  "backpack": {
+    "size": [
+      0.45854,
+      0.41222,
+      0.42935
+    ],
+    "vertices": 1356,
+    "bytes": 57836
+  },
+  "bedside_cabinet": {
+    "size": [
+      0.61277,
+      0.8325,
+      0.55254
+    ],
+    "vertices": 14880,
+    "bytes": 730580
+  },
+  "drum_pad": {
+    "size": [
+      0.40321,
+      0.62484,
+      0.43644
+    ],
+    "vertices": 2949,
+    "bytes": 194676
+  },
+  "eyepiece_case": {
+    "size": [
+      0.468,
+      0.13798,
+      0.38837
+    ],
+    "vertices": 2742,
+    "bytes": 96692
+  },
+  "filing_cabinet": {
+    "size": [
+      0.9,
+      0.7225,
+      0.50905
+    ],
+    "vertices": 8436,
+    "bytes": 320768
+  },
+  "floor_lamp": {
+    "size": [
+      0.532,
+      1.328,
+      0.277
+    ],
+    "vertices": 3003,
+    "bytes": 190884
+  },
+  "medical_cart": {
+    "size": [
+      0.85529,
+      0.95309,
+      0.56587
+    ],
+    "vertices": 14648,
+    "bytes": 528244
+  },
+  "microphone": {
+    "size": [
+      0.06117,
+      0.2505,
+      0.06117
+    ],
+    "vertices": 3539,
+    "bytes": 200572
+  },
+  "mic_stand": {
+    "size": [
+      0.88912,
+      1.522,
+      0.58226
+    ],
+    "vertices": 4165,
+    "bytes": 230864
+  },
+  "star_chart": {
+    "size": [
+      0.748,
+      0.172,
+      0.64839
+    ],
+    "vertices": 1595,
+    "bytes": 56280
+  },
+  "synthesizer": {
+    "size": [
+      0.448,
+      0.103,
+      0.235
+    ],
+    "vertices": 13448,
+    "bytes": 1193176
+  },
+  "telescope": {
+    "size": [
+      0.9759774208068848,
+      2.4309893250465393,
+      1.840000033378601
+    ],
+    "vertices": 7667,
+    "bytes": 242648
+  },
+  "cargo_van": {
+    "size": [
+      5.703,
+      2.65062,
+      2.62346
+    ],
+    "vertices": 119301,
+    "bytes": 4519380
+  },
+  "chest": {
+    "size": [
+      1.202,
+      0.55117,
+      0.527
+    ],
+    "vertices": 5992,
+    "bytes": 2188000
+  },
+  "hand_truck": {
+    "size": [
+      0.461,
+      1.145,
+      0.415
+    ],
+    "vertices": 3236,
+    "bytes": 200148
+  },
+  "office_phone": {
+    "size": [
+      0.21017,
+      0.14211,
+      0.207
+    ],
+    "vertices": 4161,
+    "bytes": 225808
+  },
+  "tablet": {
+    "size": [
+      0.27,
+      0.0285,
+      0.19
+    ],
+    "vertices": 2252,
+    "bytes": 159100
+  }
+}

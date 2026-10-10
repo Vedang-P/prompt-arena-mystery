@@ -73,7 +73,7 @@ export default function ActDirector({act,characters=[],onComplete,busy,nextActTi
   if(!act)return null;
   const phone=beat?.overlay?.includes('voicenote');
   return <main className={`cinema prologue ${phase==='card'?'cinema-card-phase':''}`} data-scene-ready={readyRoom===beat.room}>
-    <div className="cinema-stage"><Cinema sceneId={beat.room} shot={beat.shot} cast={beat.cast??[]} speaker={phase==='play'?line?.speaker:null} paused={paused} onReady={()=>setReadyRoom(beat.room)}/><div className="cinema-bar top"/><div className="cinema-bar bottom"/></div>
+    <div className="cinema-stage"><Cinema actId={act.id} sceneId={beat.room} shot={beat.shot} cast={beat.cast??[]} speaker={phase==='play'?line?.speaker:null} paused={paused} onReady={()=>setReadyRoom(beat.room)}/><div className="cinema-bar top"/><div className="cinema-bar bottom"/></div>
     <header className="prologue-header"><span>Prompt Arena <i>/</i> Prologue</span><div className="arena-account-actions"><button className="quiet-button" onClick={()=>{setPaused(true);onLeaderboard?.();}}>Live leaderboard ↗</button><LogoutButton disabled={busy}/></div></header>
     {phase==='card'&&<div className="cinema-titlecard"><p className="cinema-act-kicker">Act 0 · Prologue</p><h1 className="cinema-act-title">The Vanishing</h1><p className="cinema-act-sub">Yesterday, he was right beside you.</p><small>{!manifest||readyRoom!==beat.room?'Preparing the opening scene…':'The story is about to begin'}</small></div>}
     {phase==='play'&&line&&<>

@@ -1,12 +1,16 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {createHash} from 'node:crypto';
+import {spokenText} from '../client/src/SpeechCatalog.js';
+assert.equal(spokenText('A voice — then silence. A clue - a lead.'),'A voice, then silence. A clue, a lead.');
+assert.equal(spokenText('A six-character code…'),'A six-character code.');
 const tasks=JSON.parse(await fs.readFile('.asset-cache/speech-tasks.json','utf8'));
 const manifest=JSON.parse(await fs.readFile('client/public/assets/audio/voices/manifest.json','utf8'));
 const prologue=JSON.parse(await fs.readFile('client/public/assets/audio/prologue/manifest.json','utf8'));
 let bytes=0,seconds=0;
 for(const task of tasks.tasks){
   const track=manifest[task.key];assert(track,`Unrecorded ${task.speaker} line`);
+  assert.equal(track.speechHash,createHash('sha256').update(spokenText(task.text)).digest('hex'),`Stale pronunciation: ${task.key}`);
   assert.equal(track.speaker,task.speaker);assert(track.duration>.2);
   assert(Math.abs(track.envelope.length-track.duration*20)<2,'Lip envelope must follow encoded audio');
   assert(track.envelope.every(n=>n>=0&&n<=1));assert(track.envelope.some(n=>n>.1),'Recording is silent');

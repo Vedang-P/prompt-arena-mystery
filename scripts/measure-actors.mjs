@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import {AnimationMixer,Box3} from 'three';
 import {loadGeometry} from './gltf-geometry.mjs';
-const cast={sameer:'cast/sameer',parth:'cast/parth',mother:'cast/mother',officer:'cast/officer',veer:'characters/character-j',enakshi:'characters/character-p',tanush:'characters/character-h',leader:'characters/character-m'};
+const cast=Object.fromEntries(['sameer','parth','mother','officer','veer','enakshi','tanush','leader'].map(id=>[id,'cast/'+id]));
 const measurements={};
 for(const [character,path] of Object.entries(cast)){
   const {scene,animations}=await loadGeometry('client/public/assets/'+path+'.glb');

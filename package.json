@@ -14,6 +14,7 @@
     "test:engine": "node scripts/run-engine-tests.mjs",
     "test:scenes": "node scripts/measure-actors.mjs && node scripts/test-scene-staging.mjs",
     "test:voices": "node scripts/prepare-speech.mjs && node scripts/test-voice-catalog.mjs",
+    "test:assets": "node scripts/test-environment-assets.mjs",
     "gen:team": "node scripts/make-team.mjs",
     "import:mixamo": "blender --background --python scripts/blender/import_mixamo.py",
     "dev": "npm run build:case && wrangler dev",
@@ -43,6 +44,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260831.1",
+    "@gltf-transform/cli": "4.5.0",
     "@vitejs/plugin-react": "^4.3.4",
     "puppeteer-core": "^25.11.0",
     "react": "19.2",

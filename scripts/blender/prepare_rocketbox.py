@@ -13,10 +13,11 @@ SOURCE = BASE / '.asset-cache/rocketbox/Assets'
 OUT = BASE / 'client/public/assets/cast'
 OUT.mkdir(parents=True, exist_ok=True)
 CAST = {'sameer': 'Male_Adult_04', 'parth': 'Male_Adult_12',
-        'mother': 'Female_Adult_07', 'officer': 'Police_Male_01'}
+        'mother': 'Female_Adult_07', 'officer': 'Police_Male_01',
+        'veer':'Male_Adult_17','tanush':'Male_Adult_08','leader':'Male_Adult_13','enakshi':'Female_Adult_09'}
 metadata = json.loads((OUT / 'measurements.json').read_text()) if (OUT / 'measurements.json').exists() else {}
 for character, asset in CAST.items():
-    if os.environ.get('CAST_FILTER') and character != os.environ['CAST_FILTER']: continue
+    if os.environ.get('CAST_FILTER') and character not in os.environ['CAST_FILTER'].split(','): continue
     bpy.ops.wm.read_factory_settings(use_empty=True)
     folder = SOURCE / ('Avatars/Professions' if character=='officer' else 'Avatars/Adults') / asset
     bpy.ops.import_scene.fbx(filepath=str(folder / 'Export' / (asset + '_facial.fbx')))
@@ -54,7 +55,7 @@ for character, asset in CAST.items():
     # Bake world-space bone transforms onto the target's original rig.
     originals = set(bpy.context.scene.objects)
     clips = []
-    for clip, filename in [('idle', 'f_idle_breathe_01' if character == 'mother' else 'm_idle_breathe_01'),
+    for clip, filename in [('idle', 'f_idle_breathe_01' if asset.startswith('Female') else 'm_idle_breathe_01'),
                            ('sit', 'm_sit_chair_breathe_01')]:
         bpy.ops.import_scene.fbx(filepath=str(SOURCE / 'Animations/all_animations_max_motextr_static' / (filename + '.max.fbx')))
         imported = set(bpy.context.scene.objects) - originals

@@ -54,5 +54,61 @@
       1.2455
     ],
     "seatHeight": 0.4915
+  },
+  "veer": {
+    "source": "Male_Adult_17",
+    "standingHead": [
+      0.0021,
+      0.037,
+      1.5596
+    ],
+    "seatedHead": [
+      -0.0065,
+      0.0555,
+      1.2416
+    ],
+    "seatHeight": 0.4878
+  },
+  "tanush": {
+    "source": "Male_Adult_08",
+    "standingHead": [
+      0.0026,
+      0.0482,
+      1.5479
+    ],
+    "seatedHead": [
+      -0.006,
+      0.0665,
+      1.2325
+    ],
+    "seatHeight": 0.4841
+  },
+  "leader": {
+    "source": "Male_Adult_13",
+    "standingHead": [
+      0.0012,
+      0.0441,
+      1.5652
+    ],
+    "seatedHead": [
+      -0.0075,
+      0.0626,
+      1.2463
+    ],
+    "seatHeight": 0.4906
+  },
+  "enakshi": {
+    "source": "Female_Adult_09",
+    "standingHead": [
+      0.0093,
+      0.0216,
+      1.5612
+    ],
+    "seatedHead": [
+      -0.0043,
+      0.0067,
+      1.2975
+    ],
+    "seatHeight": 0.5163
   }
 }

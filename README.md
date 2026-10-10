@@ -6,11 +6,11 @@ Play the release at https://prompt-arena-mystery.vercel.app/.
 
 ## Play
 
-Choose **Begin investigation** for a solo save, or sign in with Google. Discover evidence, decode puzzles, and question the characters. The notebook keeps every exhibit. Each chapter unlocks once its required evidence and puzzles are complete.
+Choose **Enter**, then use your assigned team code. Discover evidence, decode puzzles, and question the characters. The notebook keeps every exhibit. Each chapter unlocks once its required evidence and puzzles are complete. Classroom event mode disables guest and Google entry and chapter shortcuts.
 
-Drag to orbit, scroll/pinch to zoom, and use WASD/arrows to move the camera. Click world markers or use **Explore this room**. Escape closes panels. Cinematics support subtitles, pause, continue, skip, and optional device-voice narration. Ambient audio is opt-in. Graphics settings support mobile and slower devices.
+Drag to orbit, scroll/pinch to zoom, and use WASD/arrows to move the camera. Click world markers or use **Explore this room**. Escape closes panels. Cinematics support recorded character/narrator voices, subtitles, pause, continue, skip and mute. Graphics settings support mobile and slower devices. The header provides **Log out** and **Live leaderboard**.
 
-**Chapter select** creates an independent practice save with earlier prerequisites prepared. It does not overwrite the campaign. Select **Return to campaign** to resume the original save. Guest saves last 30 days in the same browser; Google saves belong to that profile.
+Outside event mode, **Chapter select** creates an independent practice save with earlier prerequisites prepared. It does not overwrite the campaign. Select **Return to campaign** to resume the original save. Event teams resume their server-side campaign with the assigned code.
 
 ## Develop
 
@@ -27,6 +27,10 @@ The local single-origin server uses the same Node/Hono API as Vercel, with isola
 ```sh
 npm run test:engine
 npm run test:campaign
+npm run test:assets
+npm run test:scenes
+npm run test:voices
+npm run test:event
 npm run build
 ```
 
@@ -36,9 +40,11 @@ The engine tests cover rule enforcement. Campaign integration tests walk every a
 
 Edit `case/parts/*.yaml`; the build merges and validates the story into generated server/client case files. Hidden answers remain in the server case. The release fragment repairs progression gates and adds readable evidence for image-dependent ciphers.
 
-Act 0 uses licensed Microsoft Rocketbox textured human rigs, retargeted breathing/seated animations, Poly Haven park assets, and an Innerscene gazebo. Blender's Python API prepares existing source models; no new character geometry is generated. Later environments retain CC0 Kenney furniture and some stylized cast. All acts and authored character replies use locally recorded Kokoro-82M voices; Kevin MacLeod music ships as static MP3s. Source URLs, licenses and modifications are in `client/public/assets/ASSETS.md`, with player-facing credits at `/credits.html`.
+All eight principal characters use licensed Microsoft Rocketbox textured human rigs with retargeted breathing/seated animations. Detailed environments use finished CC0 Poly Haven and Innerscene models, with a published CC0 astronomy kit and some retained Kenney secondary furnishings. Blender's Python API prepares existing source models; no new character geometry is generated. All acts and authored character replies use locally recorded Kokoro-82M voices; Kevin MacLeod music ships as static MP3s. Source URLs, licenses, provenance and modifications are in `client/public/assets/ASSETS.md`, with player-facing credits at `/credits.html`.
 
-The detailed location rebuild plan is `docs/SCENE_QUALITY_PLAN.html`. Those art rebuilds remain pending. Inspect every environment and cinematic without progress writes at `http://127.0.0.1:5173/?review=scenes` with `npm run dev:game`. The review UI and local-only review API are omitted from production.
+The detailed location rebuild plan is `docs/SCENE_QUALITY_PLAN.html`. The current local rebuilds remain in review: location identity, sparse dressing, narrative actions, reused cameras and classroom-device performance need acceptance checks. Inspect all 14 environments and 62 distinct cinematic arrangements without progress writes at `http://127.0.0.1:5173/?review=scenes` with `npm run dev:game`. The review UI and local-only review API are omitted from production.
+
+Asset regeneration downloads original sources into ignored `.asset-cache/` folders with `scripts/download-scene-assets.mjs`, `download-interior-assets.mjs`, `download-campaign-cast.mjs` and `download-astronomy-assets.mjs`. Run Blender preparation and geometry measurements before `scripts/optimize-scene-assets.mjs`; then rerun asset and staging checks. Ordinary builds use the prepared assets already in `client/public/assets/`.
 
 Run `npm run test:scenes` for actual animated-geometry contacts and camera projection checks; `npm run test:voices` verifies coverage, encoded-duration mouth envelopes and audio hashes. Optional voice regeneration needs Python, ffmpeg and the pinned local ONNX tools:
 

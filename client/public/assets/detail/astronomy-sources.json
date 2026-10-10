@@ -1,0 +1,38 @@
+[
+  {
+    "id": "31869",
+    "page": "https://3dassets.dev/assets/planetarium-and-optical-observatory-publ-be00f747-starter-scene",
+    "url": "https://cdn.3dassets.dev/assets/31869/v1/model.glb",
+    "license": {
+      "slug": "cc0-1.0",
+      "name": "CC0 1.0 Universal",
+      "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "attributionRequired": false
+    },
+    "aiGenerated": true
+  },
+  {
+    "id": "31852",
+    "page": "https://3dassets.dev/assets/planetarium-and-optical-observatory-eyepiece-case-f604b677",
+    "url": "https://cdn.3dassets.dev/assets/31852/v1/model.glb",
+    "license": {
+      "slug": "cc0-1.0",
+      "name": "CC0 1.0 Universal",
+      "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "attributionRequired": false
+    },
+    "aiGenerated": true
+  },
+  {
+    "id": "31862",
+    "page": "https://3dassets.dev/assets/planetarium-and-optical-observatory-star-chart-drawer-96104116",
+    "url": "https://cdn.3dassets.dev/assets/31862/v1/model.glb",
+    "license": {
+      "slug": "cc0-1.0",
+      "name": "CC0 1.0 Universal",
+      "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "attributionRequired": false
+    },
+    "aiGenerated": true
+  }
+]

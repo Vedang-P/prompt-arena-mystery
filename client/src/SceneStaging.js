@@ -1,7 +1,7 @@
 import { BEDROOM, POLICE, DESK_SEAT, PARK } from './SceneLayout.js';
 
-export const SEAT = {sameer:.4707,parth:.4903,mother:.5212,officer:.4915};
-export const SITTING_SOLE={sameer:-.00452,parth:-.00475,mother:-.00019,officer:-.00468};
+export const SEAT = {sameer:.4707,parth:.4903,mother:.5212,officer:.4915,veer:.4878,tanush:.4841,leader:.4906,enakshi:.5163};
+export const SITTING_SOLE={sameer:-.00452,parth:-.00475,mother:-.00019,officer:-.00468,veer:-.00477,tanush:-.00471,leader:-.00477,enakshi:0};
 export function seatContact(character,seatY,floorY){
   const y=seatY-(SEAT[character]??.48);
   return {y,footLift:Math.max(0,floorY-y-(SITTING_SOLE[character]??0)+.003)};

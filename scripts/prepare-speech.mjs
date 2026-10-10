@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises';
 import {caseData} from '../src/case.js';
-import {speechKey,normalizeSpeech} from '../client/src/SpeechCatalog.js';
+import {speechKey,normalizeSpeech,spokenText} from '../client/src/SpeechCatalog.js';
 const tasks=new Map();
-function add(speaker,text){if(!text?.trim())return;const key=speechKey(speaker,text);const prior=tasks.get(key);if(prior&&prior.text!==normalizeSpeech(text))throw Error('Speech hash collision');tasks.set(key,{key,speaker,text:normalizeSpeech(text)});return key;}
+function add(speaker,text){if(!text?.trim())return;const key=speechKey(speaker,text);const prior=tasks.get(key);if(prior&&prior.text!==normalizeSpeech(text))throw Error('Speech hash collision');tasks.set(key,{key,speaker,text:normalizeSpeech(text),spokenText:spokenText(text)});return key;}
 const prologue={};
 for(const act of caseData.acts){
   for(const beat of act.beats??[])for(const [i,line] of beat.lines.entries())prologue[`${beat.id}-${i}`]=add(line.speaker,line.text);

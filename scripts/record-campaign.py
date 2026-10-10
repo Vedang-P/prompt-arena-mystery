@@ -24,9 +24,16 @@ limit = int(os.environ.get('SPEECH_LIMIT', '0'))
 for index, task in enumerate(tasks['tasks']):
     if limit and index >= limit: break
     key, speaker = task['key'], task['speaker']
-    if key in manifest and (ROOT / 'client/public' / manifest[key]['url'].lstrip('/')).exists(): continue
+    spoken = task.get('spokenText', task['text'])
+    # Invalidate recordings when pronunciation preprocessing changes, not just the subtitle.
+    speech_digest = hashlib.sha256(spoken.encode()).hexdigest()
+    if key in manifest and (ROOT / 'client/public' / manifest[key]['url'].lstrip('/')).exists():
+        prior = manifest[key].get('speechHash')
+        if prior == speech_digest or (prior is None and spoken == task['text']):
+            manifest[key]['speechHash'] = speech_digest
+            continue
     voice = VOICES.get(speaker, 'am_michael')
-    audio, rate = kokoro.create(task['text'], voice=voice, speed=.98 if speaker == 'narrator' else 1, lang='en-gb' if voice.startswith('b') else 'en-us')
+    audio, rate = kokoro.create(spoken, voice=voice, speed=.98 if speaker == 'narrator' else 1, lang='en-gb' if voice.startswith('b') else 'en-us')
     wav = ROOT / '.asset-cache/speech.wav'
     with wave.open(str(wav), 'wb') as f:
         f.setnchannels(1); f.setsampwidth(2); f.setframerate(rate)
@@ -39,12 +46,23 @@ for index, task in enumerate(tasks['tasks']):
     pcm = np.frombuffer(decoded, dtype='<f4')
     peaks = [float(np.sqrt(np.mean(pcm[i:i+1200] ** 2))) for i in range(0, len(pcm), 1200)]
     scale = max(np.percentile(peaks, 90), .01)
-    manifest[key] = {'url':f'/assets/audio/voices/{final.name}', 'duration':round(len(pcm)/24000,3), 'speaker':speaker,
+    manifest[key] = {'url':f'/assets/audio/voices/{final.name}', 'duration':round(len(pcm)/24000,3), 'speaker':speaker, 'speechHash':speech_digest,
                      'envelope':[round(min(1,p/scale),3) for p in peaks]}
     cache.write_text(json.dumps(manifest))
     print(f'{index+1}/{len(tasks["tasks"])} {speaker}: {manifest[key]["duration"]}s', flush=True)
 if not limit:
+    current_keys = {task['key'] for task in tasks['tasks']}
+    manifest = {key: value for key, value in manifest.items() if key in current_keys}
     (out / 'manifest.json').write_text(json.dumps(manifest,separators=(',',':')))
     prologue = {cue:{**manifest[key], 'text':next(t['text'] for t in tasks['tasks'] if t['key']==key)} for cue,key in tasks['prologue'].items()}
     (ROOT / 'client/public/assets/audio/prologue/manifest.json').write_text(json.dumps(prologue,separators=(',',':')))
+    # Remove obsolete generated takes only from the resolved voice output directory.
+    retained = {Path(value['url']).name for value in manifest.values()}
+    expected = (ROOT / 'client/public/assets/audio/voices').resolve()
+    assert out.resolve() == expected
+    for recording in out.glob('*.mp3'):
+        if recording.name not in retained:
+            assert recording.resolve().parent == expected
+            recording.unlink()
+    cache.write_text(json.dumps(manifest))
     print(f'Published {len(manifest)} recordings and {len(prologue)} opening cues.',flush=True)
