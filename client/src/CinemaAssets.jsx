@@ -33,3 +33,15 @@ export function WindTree({position,height,rotation=[0,0,0]}){
   useFrame(({clock})=>{if(sway.current)sway.current.rotation.z=Math.sin(clock.elapsedTime*.42+position[0])*.009;});
   return <group position={position} rotation={rotation}><group ref={sway}><CinemaProp asset="tree_small_02" height={height}/></group></group>;
 }
+
+export function CeilingFan({position=[0,3.2,0],paused=false}) {
+  const {scene}=useGLTF('/assets/cinema/ceiling_fan.glb');
+  const model=useMemo(()=>{
+    const copy=scene.clone(true);
+    copy.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+    return {copy,rotor:copy.getObjectByName('ceiling_fan_blades')};
+  },[scene]);
+  // Rotate only the imported blade assembly about its Blender-measured hub.
+  useFrame((_,delta)=>{if(model.rotor&&!paused)model.rotor.rotation.y+=Math.min(delta,.05)*1.2;});
+  return <primitive object={model.copy} position={position}/>;
+}

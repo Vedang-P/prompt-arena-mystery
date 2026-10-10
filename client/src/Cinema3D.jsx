@@ -6,7 +6,7 @@ import Actor from './Actor.jsx';
 import { RoomEnvironment, RoomLighting } from './Scene.jsx';
 import { useSettings } from './Settings.jsx';
 import { SceneLoading, WorldBoundary } from './WorldBoundary.jsx';
-import { BEDROOM, POLICE, DESK_SEAT } from './SceneLayout.js';
+import { BEDROOM, POLICE, DESK_SEAT, PARK } from './SceneLayout.js';
 export const BACKDROPS = {};
 const CLOSE={close_parth:'parth',close_mother:'mother',close_officer:'officer'};
 const SEAT={sameer:.4707,parth:.4903,mother:.5212,officer:.4915};
@@ -37,7 +37,9 @@ export default function Cinema({sceneId='gazebo',shot='wide',cast=[],speaker,end
       for(const character of ['sameer','officer'])if(!people.some(c=>c.character===character))people.push({character});
     }
     return people.map(c=>{
-    if(sceneId==='gazebo'&&c.pose==='sit')return {...c,at:[c.character==='sameer'?-.54:.54,.99],rot:0,y:.66-(SEAT[c.character]??.48)};
+    if(sceneId==='gazebo')return c.pose==='sit'
+      ? {...c,at:[c.character==='sameer'?-.54:.54,.99],rot:0,y:PARK.seatY-(SEAT[c.character]??.48)}
+      : {...c,at:people.length===1?PARK.waiting:c.at,y:PARK.deckY};
     if(sceneId==='sameer_room'&&c.character==='sameer'&&c.pose==='sit')return {...c,at:[BEDROOM.chair[0],BEDROOM.chair[2]],rot:Math.PI/2,y:DESK_SEAT-SEAT.sameer};
     if(sceneId==='police_station'&&c.character==='officer')return {...c,at:POLICE.officer,pose:'sit',rot:0,y:DESK_SEAT-SEAT.officer};
     if(sceneId==='police_station'&&POLICE[c.character])return {...c,at:POLICE[c.character],rot:Math.PI,y:0};
@@ -46,7 +48,7 @@ export default function Cinema({sceneId='gazebo',shot='wide',cast=[],speaker,end
   return <WorldBoundary key={sceneId}><Canvas shadows={quality!=='low'} dpr={[1,quality==='high'?1.5:1]} camera={{position:[0,2.15,6.2],fov:39}}>
     <color attach="background" args={['#10171c']}/><fog attach="fog" args={[sceneId==='gazebo'?'#9bafa5':'#10171c',28,85]}/>
     <Suspense fallback={<SceneLoading/>}>
-      <RoomLighting roomId={sceneId} quality={quality}/><RoomEnvironment roomId={sceneId}/>
+      <RoomLighting roomId={sceneId} quality={quality}/><RoomEnvironment roomId={sceneId} paused={paused}/>
       <spotLight position={[0,4,5]} angle={.7} penumbra={1} color="#ffdfbe" intensity={24} distance={13}/>
       {people.map(c=><group key={c.character} position={[c.at[0],c.y,c.at[1]]} rotation={[0,c.rot??0,0]}><Actor character={c.character} pose={c.pose} paused={paused} speaking={c.character===speaker}/></group>)}
       {ending&&<pointLight position={[0,1.2,0]} intensity={6} color="#ff5828" distance={15}/>}

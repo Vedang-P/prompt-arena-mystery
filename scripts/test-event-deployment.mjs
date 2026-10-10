@@ -13,7 +13,7 @@ async function call(route, body, expected=200, {redirect='follow', headers={}}={
   assert.equal(response.status,expected,route);
   return response;
 }
-assert.equal((await(await call('/api/health')).json()).version,'1.1.3');
+assert.equal((await(await call('/api/health')).json()).version,'1.1.4');
 const config=await(await call('/api/auth/config')).json();assert.equal(config.eventMode,true);assert.equal(config.guest,false);
 await call('/api/login',{code:(await fs.readFile(codeFile,'utf8')).trim()});
 const state=await(await call('/api/state')).json();assert.equal(state.team,'Instructor preview');assert.equal(state.acts.length,9);assert.equal(state.puzzles.length,46);

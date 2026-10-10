@@ -44,6 +44,12 @@ Existing interior furniture and remaining stylized cast: Kenney, CC0.
 https://kenney.nl/assets/furniture-kit
 https://kenney.nl/assets/blocky-characters
 
+Ceiling Fan: Ulan Cabanilla, Poly Haven, CC0.
+https://polyhaven.com/a/ceiling_fan
+Official 1k glTF and textures packed into a GLB with Blender's Python API.
+Original geometry retained. Sized to 1.5 metres across; ceiling mount and rotor
+pivot normalized in Blender. Only the blade assembly rotates at runtime.
+
 ## Music
 
 "Long Road Ahead B", "Darkest Child", and "Long Note Two"

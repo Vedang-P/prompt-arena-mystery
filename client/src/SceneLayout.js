@@ -2,6 +2,8 @@
 // Surface and seat heights measured using scripts/blender/measure_furniture.py.
 export const DESK_TOP = .76882;
 export const DESK_SEAT = .49035;
+// Gazebo deck and bench seat measured from the CC0 models in inspect_park.py.
+export const PARK = { deckY:.2198, bench:[0,.2198,1.1], seatY:.6703, waiting:[-1.3,.15] };
 export const BEDROOM = { desk:[2.8,0,-1.5], chair:[1.78,0,-1.5], laptop:[2.8,DESK_TOP,-1.5], lamp:[2.8,DESK_TOP,-2.08], shelf:[-3.8,0,-2.85] };
 export const POLICE = { desk:[0,0,-1.05], chair:[0,0,-2.05], officer:[0,-2.05], sameer:[-.72,.55], mother:[.7,.6] };
 export const PARTH_ANCHORS = {

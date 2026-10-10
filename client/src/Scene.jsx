@@ -1,6 +1,6 @@
 import './styles-scene.css';
-import { CinemaProp, ParkGround, WindTree } from './CinemaAssets.jsx';
-import { BEDROOM, POLICE, DESK_TOP, DESK_SEAT, PARTH_ANCHORS } from './SceneLayout.js';
+import { CinemaProp, ParkGround, WindTree, CeilingFan } from './CinemaAssets.jsx';
+import { BEDROOM, POLICE, DESK_TOP, DESK_SEAT, PARTH_ANCHORS, PARK } from './SceneLayout.js';
 import Actor, { actorURL } from './Actor.jsx';
 import { useSettings } from './Settings.jsx';
 import { SceneLoading, WorldBoundary } from './WorldBoundary.jsx';
@@ -936,36 +936,6 @@ function Candle({ position, height = 0.22 }) {
   );
 }
 
-function CeilingFan({ position = [0, 3.05, 0] }) {
-  const blades = useRef();
-  useFrame((_, delta) => {
-    if (blades.current) blades.current.rotation.y += delta * 3;
-  });
-  return (
-    <group position={position}>
-      <mesh>
-        <cylinderGeometry args={[0.04, 0.04, 0.5, 6]} />
-        <meshStandardMaterial color="#20202a" />
-      </mesh>
-      <group ref={blades} position={[0, -0.3, 0]}>
-        {[0, 1, 2].map((i) => {
-          const a = (i / 3) * Math.PI * 2;
-          return (
-            <mesh
-              key={i}
-              position={[0.52 * Math.cos(a), 0, -0.52 * Math.sin(a)]}
-              rotation-y={a + Math.PI / 2}
-            >
-              <boxGeometry args={[1.0, 0.02, 0.16]} />
-              <meshStandardMaterial color="#26262e" />
-            </mesh>
-          );
-        })}
-      </group>
-    </group>
-  );
-}
-
 function Fluorescent({ position, delay = 0 }) {
   const bar = useRef();
   const light = useRef();
@@ -1611,7 +1581,7 @@ function GazeboRoom({room,hot}) {
   return <group>
     <ParkGround />
     <CinemaProp asset="gazebo" position={[0,0,0]} height={3.32}/>
-    <CinemaProp asset="painted_wooden_bench" position={[0,.2,1.1]} height={.615} width={1.9}/>
+    <CinemaProp asset="painted_wooden_bench" position={PARK.bench} height={.615} width={1.9}/>
     <CinemaProp asset="painted_wooden_bench" position={[-3.4,0,2.6]} height={.615} width={1.9} rotation={[0,.5,0]}/>
     <CinemaProp asset="painted_wooden_bench" position={[3.6,0,2.2]} height={.615} width={1.9} rotation={[0,-.7,0]}/>
     {/* These are wall lanterns: the brackets attach to the gazebo's side columns. */}
@@ -1679,7 +1649,7 @@ function PoliceStationRoom({ room, hot }) {
   </group>;
 }
 
-function SameerRoomScene({ room, hot }) {
+function SameerRoomScene({ room, hot, paused=false }) {
   return <group>
     <Shell width={10} depth={8} height={3.2} tint="#786957" painted/>
     <Floor width={10} depth={8} repeat={[5,4]}/>
@@ -1689,7 +1659,7 @@ function SameerRoomScene({ room, hot }) {
     <Laptop position={BEDROOM.laptop} rotation={[0,-Math.PI/2,0]}/>
     <Prop model="lampRoundTable.glb" position={BEDROOM.lamp} scale={1.45}/>
     <Prop model="bookcaseOpen.glb" position={[-3.8,0,-3.25]}/>
-    <CeilingFan position={[0,3.05,0]}/>
+    <CeilingFan position={[0,3.2,0]} paused={paused}/>
     <Window position={[4.95,1.75,-1.6]} rotation={[0,-Math.PI/2,0]}/>
     <Poster position={[-4.94,1.8,-1.2]} rotation={[0,Math.PI/2,0]} color="#22304a"/>
     <Poster position={[-4.94,1.6,.6]} rotation={[0,Math.PI/2,0]} color="#4a2230"/>
@@ -2027,10 +1997,10 @@ const ROOM_KITS = {
 
 // The campaign and every cinematic share the same fully modelled environments.
 export const ROOM_IDS = Object.keys(ROOM_KITS);
-export function RoomEnvironment({ roomId, room = null, hot = null }) {
+export function RoomEnvironment({ roomId, room = null, hot = null, paused=false }) {
   const Kit = ROOM_KITS[roomId] ?? SameerRoomScene;
   const empty = { id: roomId, hotspots: [] };
-  return <Kit room={room ?? empty} hot={hot ?? { state: { discovered: [] }, solvedPuzzles: [] }} />;
+  return <Kit room={room ?? empty} hot={hot ?? { state: { discovered: [] }, solvedPuzzles: [] }} paused={paused} />;
 }
 export function RoomLighting({ roomId, quality = 'high' }) {
   const outdoor = OUTDOOR_ROOMS.has(roomId);

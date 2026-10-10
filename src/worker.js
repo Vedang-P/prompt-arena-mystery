@@ -34,7 +34,7 @@ const RATE_MIN_MS = 1500;
 const RATE_WINDOW_MS = 60_000;
 const RATE_WINDOW_MAX = 12;
 
-app.get('/api/health', (c) => c.json({ ok: true, service: 'prompt-arena-mystery', version: '1.1.3' }));
+app.get('/api/health', (c) => c.json({ ok: true, service: 'prompt-arena-mystery', version: '1.1.4' }));
 
 // ---------- helpers ----------
 
