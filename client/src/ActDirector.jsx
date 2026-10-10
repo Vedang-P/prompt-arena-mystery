@@ -36,11 +36,11 @@ export default function ActDirector({act,characters=[],onComplete,busy,nextActTi
   },[beatIndex,beat?.room,paused]);
   useEffect(()=>{
     if(phase!=='play'||!line||!manifest||readyRoom!==beat.room)return;
-    let elapsed=0,last=performance.now();
+    let elapsed=0,last=performance.now(),disposed=false;
     const duration=Math.max(2.2,(track?.duration??line.text.length*.045)+.65);
     const audio=track&&narration?new Audio(track.url):null;
     player.current={audio,paused};setBlocked(false);
-    const play=()=>audio?.play().then(()=>setBlocked(false)).catch(()=>setBlocked(true));
+    const play=()=>audio?.play().then(()=>{if(!disposed)setBlocked(false);}).catch(error=>{if(!disposed&&!player.current?.paused&&error.name==='NotAllowedError')setBlocked(true);});
     if(audio){audio.volume=.95;audio.preload='auto';audio.onerror=()=>{publishSpeech(null,null);};publishSpeech(line.speaker,audio,track.envelope);if(!paused)play();}
     const timer=setInterval(()=>{
       const now=performance.now(),delta=Math.min((now-last)/1000,.3);last=now;
@@ -53,11 +53,12 @@ export default function ActDirector({act,characters=[],onComplete,busy,nextActTi
     },80);
     const retry=()=>{if(!player.current?.paused&&audio?.paused&&!audio.ended)play();};
     window.addEventListener('pointerdown',retry);
-    return()=>{clearInterval(timer);window.removeEventListener('pointerdown',retry);audio?.pause();publishSpeech(null,null);player.current=null;};
+    return()=>{disposed=true;clearInterval(timer);window.removeEventListener('pointerdown',retry);audio?.pause();publishSpeech(null,null);player.current=null;};
   },[phase,line,track,narration,manifest,readyRoom,beat?.room]);
   useEffect(()=>{
     if(!player.current)return;player.current.paused=paused;
-    if(paused)player.current.audio?.pause();else player.current.audio?.play().catch(()=>setBlocked(true));
+    const current=player.current;
+    if(paused){current.audio?.pause();setBlocked(false);}else current.audio?.play().then(()=>{if(player.current===current)setBlocked(false);}).catch(error=>{if(player.current===current&&!current.paused&&error.name==='NotAllowedError')setBlocked(true);});
   },[paused]);
   useEffect(()=>{
     if(phase!=='end'||busy||finishing.current)return;
@@ -77,7 +78,7 @@ export default function ActDirector({act,characters=[],onComplete,busy,nextActTi
     {phase==='play'&&line&&<>
       <aside className="scene-caption"><span>{beat.room==='gazebo'?(beatIndex<3?'Yesterday · 6:42 PM':'Today · 6:30 PM'):beat.room==='parth_home'?'Parth’s home · 7:15 PM':beat.room==='police_station'?'Police station · 9:08 PM':'Sameer’s room · 11:47 PM'}</span><small>{String(beatIndex+1).padStart(2,'0')} / {String(beats.length).padStart(2,'0')}</small></aside>
       <div className={`cinema-subtitles ${phone?'voicenote-subtitles':''}`}><div className="subtitle-card" key={`${beat.id}-${lineIndex}`}><span className="cinema-speaker">{phone?'Voice message · Unknown sender':SPEAKERS[line.speaker]??names[line.speaker]??line.speaker}</span>{phone&&<div className={`message-wave ${paused?'paused':''}`} aria-hidden="true">{Array.from({length:25},(_,i)=><i key={i} style={{height:12+Math.abs(Math.sin(i*2.7))*23,animationDelay:`${i*35}ms`}}/>)}</div>}<p>{line.text}</p></div></div>
-      {blocked&&<button className="audio-unlock" onClick={()=>player.current?.audio?.play().then(()=>setBlocked(false))}>Click to play cinematic audio</button>}
+      {blocked&&!paused&&<button className="audio-unlock" onClick={()=>player.current?.audio?.play().then(()=>setBlocked(false)).catch(()=>setBlocked(true))}>Click to play cinematic audio</button>}
       <footer className="cinema-controls"><div className="cinema-progress" aria-label="Opening progress">{beats.map((b,i)=><span key={b.id} className={`seg ${i<beatIndex?'done':''} ${i===beatIndex?'active':''}`}/>)}</div><div className="cinema-buttons"><button className="btn ghost" onClick={()=>setPaused(p=>!p)}>{paused?'Resume':'Pause'}</button><button className="btn ghost" onClick={()=>update({narration:!narration,sound:!narration})}>{narration?'Mute audio':'Enable audio'}</button><button className="btn ghost" onClick={()=>setPhase('end')}>Skip prologue →</button></div></footer>
       {paused&&<div className="pause-label">Paused <small>Space to resume</small></div>}
     </>}
