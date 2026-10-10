@@ -36,7 +36,22 @@ The engine tests cover rule enforcement. Campaign integration tests walk every a
 
 Edit `case/parts/*.yaml`; the build merges and validates the story into generated server/client case files. Hidden answers remain in the server case. The release fragment repairs progression gates and adds readable evidence for image-dependent ciphers.
 
-Act 0 uses licensed Microsoft Rocketbox textured human rigs, retargeted breathing/seated animations, Poly Haven park assets, and an Innerscene gazebo. Blender's Python API prepares existing source models; no new character geometry is generated. Later environments retain CC0 Kenney furniture and some stylized cast. Recorded Piper/VCTK prologue voices and Kevin MacLeod music ship as static MP3s. Source URLs, licenses and modifications are in `client/public/assets/ASSETS.md`, with player-facing credits at `/credits.html`.
+Act 0 uses licensed Microsoft Rocketbox textured human rigs, retargeted breathing/seated animations, Poly Haven park assets, and an Innerscene gazebo. Blender's Python API prepares existing source models; no new character geometry is generated. Later environments retain CC0 Kenney furniture and some stylized cast. All acts and authored character replies use locally recorded Kokoro-82M voices; Kevin MacLeod music ships as static MP3s. Source URLs, licenses and modifications are in `client/public/assets/ASSETS.md`, with player-facing credits at `/credits.html`.
+
+The detailed location rebuild plan is `docs/SCENE_QUALITY_PLAN.html`. Those art rebuilds remain pending. Inspect every environment and cinematic without progress writes at `http://127.0.0.1:5173/?review=scenes` with `npm run dev:game`. The review UI and local-only review API are omitted from production.
+
+Run `npm run test:scenes` for actual animated-geometry contacts and camera projection checks; `npm run test:voices` verifies coverage, encoded-duration mouth envelopes and audio hashes. Optional voice regeneration needs Python, ffmpeg and the pinned local ONNX tools:
+
+```sh
+python -m pip install --target .asset-cache/kokoro-python kokoro-onnx==0.6.1
+node scripts/download-kokoro.mjs
+npm run build:case
+node scripts/prepare-speech.mjs
+python scripts/record-campaign.py
+npm run test:voices
+```
+
+The 217 recordings are already bundled; ordinary builds need neither Python nor the model. Newly authored or changed dialogue requires regeneration. The legacy `record-prologue.py` is an archived Piper workflow and should not be used to rebuild current speech.
 
 ## Deploy to Vercel
 
@@ -55,4 +70,4 @@ The legacy Cloudflare Worker/D1 adapter and scripts remain available for event h
 
 Set EVENT_MODE=true and ALLOW_CODE_LOGIN=true. TEAM_CODES accepts comma-separated `Team name=assigned-code` entries. Guest sign-in, Google sign-in, practice starts, chapter selection and the legacy accusation shortcut are disabled in event mode. Only teams that have entered appear on the leaderboard; elapsed time starts when Act 0 finishes and Act 1 opens. Instructor preview is excluded from rankings.
 
-The private roster is in `event-private/team-codes.csv` (70 teams) and the instructor preview code is in `event-private/instructor-code.txt`. These are ignored by Git and Vercel; distribute one assigned code per team. Production stores progress in Postgres. Music, voices and models are bundled static assets; no speech-generation calls are needed during the prologue. Run `npm run test:event` for 70 concurrent local sessions and event gate/timer checks. A classroom device/network rehearsal is still needed before the event.
+The private roster is in `event-private/team-codes.csv` (70 teams) and the instructor preview code is in `event-private/instructor-code.txt`. These are ignored by Git and Vercel; distribute one assigned code per team. Production stores progress in Postgres. Music, voices and models are bundled static assets; no speech-generation calls are needed during the campaign. Run `npm run test:event` for 70 concurrent local sessions and event gate/timer checks. A classroom device/network rehearsal is still needed before the event.

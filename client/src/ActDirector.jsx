@@ -5,12 +5,12 @@ import { useSettings } from './Settings.jsx';
 import { publishSpeech } from './VoicePlayback.js';
 import LogoutButton from './LogoutButton.jsx';
 const SPEAKERS={narrator:'Narrator',voice:'Unknown voice'};
-export default function ActDirector({act,characters=[],onComplete,busy,nextActTitle,nextActKicker,onLeaderboard}) {
+export default function ActDirector({act,characters=[],onComplete,busy,nextActTitle,nextActKicker,onLeaderboard,review=false}) {
   const beats=act?.beats??[],names=useMemo(()=>Object.fromEntries(characters.map(c=>[c.id,c.name])),[characters]);
   const debug=import.meta.env.DEV?new URLSearchParams(location.search).get('beat'):null;
   const start=Math.max(0,beats.findIndex(b=>b.id===debug));
-  const [phase,setPhase]=useState(debug?'play':'card'),[beatIndex,setBeatIndex]=useState(start),[lineIndex,setLineIndex]=useState(0);
-  const [paused,setPaused]=useState(false),[manifest,setManifest]=useState(null),[readyRoom,setReadyRoom]=useState(null),[blocked,setBlocked]=useState(false);
+  const [phase,setPhase]=useState(debug||review?'play':'card'),[beatIndex,setBeatIndex]=useState(start),[lineIndex,setLineIndex]=useState(0);
+  const [paused,setPaused]=useState(review),[manifest,setManifest]=useState(null),[readyRoom,setReadyRoom]=useState(null),[blocked,setBlocked]=useState(false);
   const {narration,sound,update}=useSettings();
   const player=useRef(null),advanceRef=useRef(null),completeRef=useRef(onComplete),finishing=useRef(false);
   completeRef.current=onComplete;
@@ -72,7 +72,7 @@ export default function ActDirector({act,characters=[],onComplete,busy,nextActTi
   },[]);
   if(!act)return null;
   const phone=beat?.overlay?.includes('voicenote');
-  return <main className={`cinema prologue ${phase==='card'?'cinema-card-phase':''}`}>
+  return <main className={`cinema prologue ${phase==='card'?'cinema-card-phase':''}`} data-scene-ready={readyRoom===beat.room}>
     <div className="cinema-stage"><Cinema sceneId={beat.room} shot={beat.shot} cast={beat.cast??[]} speaker={phase==='play'?line?.speaker:null} paused={paused} onReady={()=>setReadyRoom(beat.room)}/><div className="cinema-bar top"/><div className="cinema-bar bottom"/></div>
     <header className="prologue-header"><span>Prompt Arena <i>/</i> Prologue</span><div className="arena-account-actions"><button className="quiet-button" onClick={()=>{setPaused(true);onLeaderboard?.();}}>Live leaderboard ↗</button><LogoutButton disabled={busy}/></div></header>
     {phase==='card'&&<div className="cinema-titlecard"><p className="cinema-act-kicker">Act 0 · Prologue</p><h1 className="cinema-act-title">The Vanishing</h1><p className="cinema-act-sub">Yesterday, he was right beside you.</p><small>{!manifest||readyRoom!==beat.room?'Preparing the opening scene…':'The story is about to begin'}</small></div>}

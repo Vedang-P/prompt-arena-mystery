@@ -1,9 +1,10 @@
 import './styles-scene.css';
 import { CinemaProp, ParkGround, WindTree, CeilingFan } from './CinemaAssets.jsx';
 import { BEDROOM, POLICE, DESK_TOP, DESK_SEAT, PARTH_ANCHORS, PARK } from './SceneLayout.js';
+import {seatContact} from './SceneStaging.js';
 import Actor, { actorURL } from './Actor.jsx';
 import { useSettings } from './Settings.jsx';
-import { SceneLoading, WorldBoundary } from './WorldBoundary.jsx';
+import { SceneLoading, WorldBoundary,SceneReady } from './WorldBoundary.jsx';
 import { useCallback, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import {
@@ -225,10 +226,10 @@ function Prop({ model, position, rotation = [0, 0, 0], tint, scale }) {
   );
 }
 
-function Character({ url, label, clip = 'idle', position = [0, 0, 0], rotation = [0, 0, 0], onClick, focused = false, showLabel = true, labelOffsetY = 0, onMeasure, character }) {
+function Character({ url, label, clip = 'idle', position = [0, 0, 0], rotation = [0, 0, 0], footLift=0, onClick, focused = false, showLabel = true, labelOffsetY = 0, onMeasure, character }) {
   const [hover, setHover] = useState(false);
   return <group position={position} rotation={focused ? [0, 0, 0] : rotation}>
-    <Actor character={character} pose={clip} focused={focused} speaking={focused} onMeasure={onMeasure} />
+    <Actor character={character} pose={clip} footLift={footLift} focused={focused} speaking={focused} onMeasure={onMeasure} />
     <mesh position={[0, 0.9, 0]} onClick={(e) => { e.stopPropagation(); onClick?.(); }}
       onPointerOver={() => { setHover(true); document.body.style.cursor = 'pointer'; }}
       onPointerOut={() => { setHover(false); document.body.style.cursor = 'auto'; }}>
@@ -488,7 +489,7 @@ function ScriptedFigure({ hotspot, position, labelOffsetY = 0, onClick }) {
 }
 
 function CharacterHotspot({ hotspot, position, hot, rotation, pose='idle', labelOffsetY = 0 }) {
-  return <Character character={hotspot.character} clip={pose} label={hotspot.label} position={pose==='sit'?position:[position[0], 0, position[2]]}
+  return <Character character={hotspot.character} clip={pose} footLift={pose==='sit'?seatContact(hotspot.character,DESK_SEAT,0).footLift:0} label={hotspot.label} position={pose==='sit'?position:[position[0], .003, position[2]]}
     rotation={rotation ?? [0, -0.5, 0]} focused={hot.focusId === hotspot.character}
     showLabel={hot.focusId !== hotspot.character} labelOffsetY={labelOffsetY}
     onMeasure={(height) => hot.onMeasure(hotspot.character, height)}
@@ -1649,40 +1650,41 @@ function PoliceStationRoom({ room, hot }) {
   </group>;
 }
 
+function BedroomWorkstation({paused}) {
+  return <group>
+    <Prop model="desk.glb" position={BEDROOM.desk} rotation={[0,-Math.PI/2,0]}/>
+    <Prop model="chairDesk.glb" position={BEDROOM.chair} rotation={[0,Math.PI/2,0]}/>
+    <Laptop position={BEDROOM.laptop} rotation={[0,-Math.PI/2,0]}/>
+    <Prop model="lampRoundTable.glb" position={BEDROOM.lamp} scale={1.45}/>
+    <CeilingFan position={[0,3.2,0]} paused={paused}/>
+    <pointLight position={[2.8,1.12,-2.08]} color="#ffd28a" intensity={5} distance={5}/>
+  </group>;
+}
 function SameerRoomScene({ room, hot, paused=false }) {
   return <group>
     <Shell width={10} depth={8} height={3.2} tint="#786957" painted/>
     <Floor width={10} depth={8} repeat={[5,4]}/>
     <Bed position={[-2.8,0,-1.35]}/>
-    <Prop model="desk.glb" position={BEDROOM.desk} rotation={[0,-Math.PI/2,0]}/>
-    <Prop model="chairDesk.glb" position={BEDROOM.chair} rotation={[0,Math.PI/2,0]}/>
-    <Laptop position={BEDROOM.laptop} rotation={[0,-Math.PI/2,0]}/>
-    <Prop model="lampRoundTable.glb" position={BEDROOM.lamp} scale={1.45}/>
+    <BedroomWorkstation paused={paused}/>
     <Prop model="bookcaseOpen.glb" position={[-3.8,0,-3.25]}/>
-    <CeilingFan position={[0,3.2,0]} paused={paused}/>
     <Window position={[4.95,1.75,-1.6]} rotation={[0,-Math.PI/2,0]}/>
     <Poster position={[-4.94,1.8,-1.2]} rotation={[0,Math.PI/2,0]} color="#22304a"/>
     <Poster position={[-4.94,1.6,.6]} rotation={[0,Math.PI/2,0]} color="#4a2230"/>
-    <pointLight position={[2.8,1.12,-2.08]} color="#ffd28a" intensity={5} distance={5}/>
     <HotspotMarkers room={room} hot={hot}/>
   </group>;
 }
 
-function ParthRoomScene({ room, hot }) {
+function ParthRoomScene({ room, hot, paused=false }) {
   return <group>
     <Shell width={10} depth={8} height={3.2} tint="#8a7867" painted/>
     <Floor width={10} depth={8} repeat={[5,4]}/>
     <Bed position={[-2.15,0,-.3]} made={false}/>
-    <Prop model="desk.glb" position={BEDROOM.desk} rotation={[0,-Math.PI/2,0]}/>
-    <Prop model="chairDesk.glb" position={BEDROOM.chair} rotation={[0,Math.PI/2,0]}/>
-    <Laptop position={BEDROOM.laptop} rotation={[0,-Math.PI/2,0]}/>
-    <Prop model="lampRoundTable.glb" position={BEDROOM.lamp} scale={1.45}/>
+    <BedroomWorkstation paused={paused}/>
     <Prop model="bookcaseOpen.glb" position={BEDROOM.shelf}/>
     <Prop model="sideTable.glb" position={[-.8,0,-1.5]}/>
     <Prop model="pottedPlant.glb" position={[4.1,0,-3.3]} scale={2}/>
     <Window position={[4.95,1.8,-1.2]} rotation={[0,-Math.PI/2,0]}/>
     <Picture src={`${ASSETS}/pictures/evidence_gone_poster.jpg`} position={[-4.94,1.85,.9]} rotation={[0,Math.PI/2,0]} width={.9} height={1.3}/>
-    <pointLight position={[2.8,1.12,-2.08]} color="#ffd28a" intensity={5} distance={5}/>
     <HotspotMarkers room={room} hot={hot}/>
   </group>;
 }
@@ -2074,6 +2076,7 @@ export default function Scene({
   onPuzzle,
   onTravel,
   solvedPuzzles = [],
+  onReady,
 }) {
   const room = state.rooms.find((r) => r.id === roomId) ?? state.rooms[0];
   const isDemo = DEMO_ROOMS.has(room.id);
@@ -2158,6 +2161,7 @@ export default function Scene({
             minPolarAngle={0.35} maxPolarAngle={Math.PI / 2.02} />
           <CameraRig key={room.id} focusInfo={focusInfo} />
           <ExploreKeys disabled={!!focus} />
+          <SceneReady onReady={onReady}/>
         </Suspense>
         {quality !== 'low' && <EffectComposer multisampling={quality === 'high' ? 2 : 0}>
           <Bloom intensity={0.18} luminanceThreshold={0.85} mipmapBlur />

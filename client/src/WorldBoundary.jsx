@@ -1,5 +1,12 @@
-import { Component } from 'react';
+import { Component,useRef } from 'react';
 import { Html } from '@react-three/drei';
+import {useFrame} from '@react-three/fiber';
+export function SceneReady({onReady}){
+  const callback=useRef(onReady),elapsed=useRef(0),done=useRef(false);callback.current=onReady;
+  // Let WebGL draw and the initial animation blend settle before announcing it.
+  useFrame((_,dt)=>{elapsed.current+=Math.min(dt,.05);if(!done.current&&elapsed.current>=.36){done.current=true;callback.current?.();}});
+  return null;
+}
 export function SceneLoading() {
   return <Html center><div className="world-loading"><span className="loading-moon" /><p>Opening the scene</p></div></Html>;
 }

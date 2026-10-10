@@ -18,7 +18,7 @@ export const actorURL = (id) => `/assets/characters/character-${CAST[id] ?? 'c'}
 export default function Actor(props) {
   return HUMAN_CAST.has(props.character) ? <HumanActor {...props} /> : <LegacyActor {...props} />;
 }
-function LegacyActor({ character, pose = 'idle', speaking = false, focused = false, onMeasure }) {
+function LegacyActor({ character, pose = 'idle', speaking = false, focused = false, paused=false, onMeasure }) {
   const root = useRef();
   const { scene, animations } = useGLTF(actorURL(character));
   const model = useMemo(() => {
@@ -45,6 +45,7 @@ function LegacyActor({ character, pose = 'idle', speaking = false, focused = fal
     action?.reset().fadeIn(0.25).play();
     return () => { action?.fadeOut(0.25); };
   }, [actions, clip]);
+  useEffect(()=>{for(const action of Object.values(actions))action?.setEffectiveTimeScale(paused?0:1);},[actions,paused,clip]);
   useEffect(() => { onMeasure?.(1.78); }, [onMeasure]);
   useFrame((state, dt) => {
     if (!root.current || !focused) return;

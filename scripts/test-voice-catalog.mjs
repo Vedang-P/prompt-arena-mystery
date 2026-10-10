@@ -1,0 +1,19 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+const tasks=JSON.parse(await fs.readFile('.asset-cache/speech-tasks.json','utf8'));
+const manifest=JSON.parse(await fs.readFile('client/public/assets/audio/voices/manifest.json','utf8'));
+const prologue=JSON.parse(await fs.readFile('client/public/assets/audio/prologue/manifest.json','utf8'));
+let bytes=0,seconds=0;
+for(const task of tasks.tasks){
+  const track=manifest[task.key];assert(track,`Unrecorded ${task.speaker} line`);
+  assert.equal(track.speaker,task.speaker);assert(track.duration>.2);
+  assert(Math.abs(track.envelope.length-track.duration*20)<2,'Lip envelope must follow encoded audio');
+  assert(track.envelope.every(n=>n>=0&&n<=1));assert(track.envelope.some(n=>n>.1),'Recording is silent');
+  const audio=await fs.readFile('client/public'+track.url);const hash=createHash('sha256').update(audio).digest('hex').slice(0,10);
+  assert(track.url.endsWith(`-${hash}.mp3`),'Audio cache key differs from content');
+  bytes+=audio.length;seconds+=track.duration;
+}
+for(const [cue,key] of Object.entries(tasks.prologue))assert.equal(prologue[cue]?.url,manifest[key].url,`Opening cue ${cue}`);
+for(const path of ['client/src/CinematicStory.jsx','client/src/CharacterSpeech.js'])assert(!(await fs.readFile(path,'utf8')).includes('speechSynthesis'),'OS TTS remains');
+console.log(`PASS ${tasks.tasks.length} recordings, ${Object.keys(prologue).length} opening cues, all acts and authored replies; ${(bytes/1024/1024).toFixed(1)} MiB for ${(seconds/60).toFixed(1)} minutes, 20 Hz mouth envelopes and content hashes.`);

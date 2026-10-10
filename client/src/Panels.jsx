@@ -3,7 +3,7 @@ import CaseJournal from './CaseJournal.jsx';
 import PuzzleWorkbench from './PuzzleWorkbench.jsx';
 import LogoutButton from './LogoutButton.jsx';
 import { useSettings } from './Settings.jsx';
-import { speakCharacter } from './CharacterSpeech.js';
+import { speakCharacter,stopCharacterSpeech } from './CharacterSpeech.js';
 
 
 export function Login({ config, onDevLogin, error, busy }) {
@@ -87,18 +87,19 @@ export function DialogueOverlay({
   const [speechError,setSpeechError] = useState(null);
   const Recognition=window.SpeechRecognition??window.webkitSpeechRecognition;
   useEffect(()=>{
-    if(typing){heardTurn.current=true;return;}
+    if(typing){heardTurn.current=true;stopCharacterSpeech();return;}
     if(!heardTurn.current||!narration||messages.length<=initialCount.current)return;
     const last=messages.at(-1);const key=`${messages.length}:${last?.content}`;
     if(last?.role!=='npc'||!last.content||spoken.current===key)return;
     spoken.current=key;
-    return speakCharacter(character.id,last.content);
+    setSpeechError(null);
+    return speakCharacter(character.id,last.content,setSpeechError);
   },[messages,typing,narration,character.id]);
-  useEffect(()=>()=>{recognition.current?.abort();window.speechSynthesis?.cancel();},[]);
+  useEffect(()=>()=>{recognition.current?.abort();stopCharacterSpeech();},[]);
   const dictate=()=>{
     if(listening){recognition.current?.stop();return;}
     if(!Recognition)return;
-    window.speechSynthesis?.cancel();
+    stopCharacterSpeech();
     const r=new Recognition();recognition.current=r;r.lang='en-IN';r.interimResults=false;r.continuous=false;
     r.onstart=()=>{setListening(true);setSpeechError(null);};r.onend=()=>setListening(false);
     r.onresult=e=>setText(e.results[0][0].transcript);
@@ -175,6 +176,7 @@ export function DialogueOverlay({
       <div className="suggested-questions">{(character.questions ?? []).map((q) => <button key={q} disabled={typing} onClick={() => setText(q)}>{q}</button>)}</div>
       {error && <p className="dialogue-error">{error}</p>}
       {speechError && <p className="dialogue-error">{speechError}</p>}
+      {!typing&&messages.at(-1)?.role==='npc'&&messages.at(-1)?.content&&<button type="button" className="quiet-button replay-reply" onClick={()=>{setSpeechError(null);speakCharacter(character.id,messages.at(-1).content,setSpeechError);}}>Replay reply</button>}
 
       <form className="ask-bar" onSubmit={send}>
         {Recognition && <button type="button" className="dictate-button" disabled={typing||disabled} onClick={dictate}>{listening?'Stop mic':'Speak'}</button>}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSettings } from './Settings.jsx';
-const musicFor = (room) => ['sameer_room','ngo_archive','hospital'].includes(room) ? 'unknown' : ['police_station','parth_home','abandoned_field'].includes(room) ? 'search' : 'dusk';
+import {musicFor} from './MusicCues.js';
 export default function Soundtrack({ roomId='gazebo' }) {
   const { sound } = useSettings();
   const [cue,setCue] = useState(musicFor(roomId));

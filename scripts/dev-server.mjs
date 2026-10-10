@@ -4,9 +4,14 @@ import { createServer } from 'vite';
 process.env.SQLITE_PATH ??= resolve('.game-dev.local');
 process.env.ALLOW_CODE_LOGIN ??= 'true';
 const { default: handler } = await import('../api/index.js');
+const {caseData}=await import('../src/case.js');
 // Single-origin local development uses the exact Vercel API entry point.
 const vite = await createServer({ server: { middlewareMode: true, proxy: {} } });
 const server = http.createServer((req, res) => {
+  if(req.url==='/api/dev/scene-review'){
+    res.setHeader('Content-Type','application/json');
+    res.end(JSON.stringify({rooms:caseData.rooms,acts:caseData.acts.map(({id,title,kicker,entry_room,beats,intro,outro})=>({id,title,kicker,entry_room,beats,intro,outro})),characters:caseData.characters.map(({id,name})=>({id,name}))}));return;
+  }
   if (req.url.startsWith('/api/')) return handler(req, res);
   vite.middlewares(req, res);
 });

@@ -61,19 +61,23 @@ https://incompetech.com/music/royalty-free/
 Files transcoded to browser MP3s. Cue names: dusk, search, unknown.
 Playback crossfades and ducks beneath speech; no music was generated.
 
-## Prologue speech
+## Campaign speech
 
-Recorded locally with Piper and the en_GB-vctk-medium multi-speaker model.
-https://github.com/OHF-Voice/piper1-gpl
-https://huggingface.co/rhasspy/piper-voices/tree/main/en/en_GB/vctk/medium
-VCTK corpus: University of Edinburgh, Centre for Speech Technology Research,
-CC BY 4.0. https://datashare.ed.ac.uk/handle/10283/3443
-https://creativecommons.org/licenses/by/4.0/
-Voice model provenance/training details: licenses/Piper-VCTK-model-card.txt.
-Narrator p227; Sameer p226; Parth p232; mother p231; officer p241;
-unknown voice p243. Generated speech normalized and encoded to MP3.
-The unknown voice has pitch, band-pass and echo processing.
-The Piper engine/model are build tools, not shipped as a runtime service.
+217 unique authored lines recorded locally with Kokoro-82M v1.0, Apache 2.0.
+https://huggingface.co/hexgrad/Kokoro-82M
+https://github.com/hexgrad/kokoro
+ONNX CPU inference via kokoro-onnx 0.6.1, MIT.
+https://github.com/thewh1teagle/kokoro-onnx
+Licenses: licenses/Kokoro-Apache-2.0.txt and licenses/Kokoro-ONNX-MIT.txt.
+Narrator bm_george; Sameer am_puck; Parth am_fenrir; mother bf_emma;
+officer am_onyx; unknown am_echo; Veer am_liam; Tanush bm_lewis;
+leader am_michael; Enakshi af_bella. Stock voices, no voice cloning.
+All Act 0 cues, every Act 1–8 opening/closing and finite authored dialogue
+are covered. Recordings normalized to -18 LUFS / -2 dBTP and encoded as
+24 kHz mono 80 kbps MP3. Mouth envelopes sampled at 20 Hz after encoding.
+Content hashes in filenames prevent old cached speech from being replayed.
+The ONNX model and voice tensors are build tools, never shipped to clients.
+Rebuild with scripts/prepare-speech.mjs and scripts/record-campaign.py.
 
 ## Font
 

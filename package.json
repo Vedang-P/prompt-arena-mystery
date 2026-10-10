@@ -1,6 +1,6 @@
 {
   "name": "prompt-arena-mystery",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "private": true,
   "type": "module",
   "engines": {
@@ -12,6 +12,8 @@
     "build:case": "node scripts/merge-case.mjs && node scripts/build-case.mjs",
     "validate:case": "node scripts/build-case.mjs --check",
     "test:engine": "node scripts/run-engine-tests.mjs",
+    "test:scenes": "node scripts/measure-actors.mjs && node scripts/test-scene-staging.mjs",
+    "test:voices": "node scripts/prepare-speech.mjs && node scripts/test-voice-catalog.mjs",
     "gen:team": "node scripts/make-team.mjs",
     "import:mixamo": "blender --background --python scripts/blender/import_mixamo.py",
     "dev": "npm run build:case && wrangler dev",

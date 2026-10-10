@@ -10,7 +10,9 @@ import './styles-scene.css';
 import './styles-cinema.css';
 import './release.css';
 
-createRoot(document.getElementById('root')).render(<SettingsProvider><App /></SettingsProvider>);
+const Application=import.meta.env.DEV&&new URLSearchParams(location.search).has('review')
+  ? (await import('./SceneReview.jsx')).default : App;
+createRoot(document.getElementById('root')).render(<SettingsProvider><Application /></SettingsProvider>);
 
 import './event.css';
 import './scene-fixes.css';

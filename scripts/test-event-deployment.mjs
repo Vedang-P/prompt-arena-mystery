@@ -13,12 +13,18 @@ async function call(route, body, expected=200, {redirect='follow', headers={}}={
   assert.equal(response.status,expected,route);
   return response;
 }
-assert.equal((await(await call('/api/health')).json()).version,'1.1.4');
+assert.equal((await(await call('/api/health')).json()).version,'1.1.5');
 const config=await(await call('/api/auth/config')).json();assert.equal(config.eventMode,true);assert.equal(config.guest,false);
 await call('/api/login',{code:(await fs.readFile(codeFile,'utf8')).trim()});
 const state=await(await call('/api/state')).json();assert.equal(state.team,'Instructor preview');assert.equal(state.acts.length,9);assert.equal(state.puzzles.length,46);
 await call('/api/guest',{},403);await call('/api/practice',{act:'act8'},403);await call('/api/accuse',{culprit:'sameer'},403);
 const manifest=await(await call('/assets/audio/prologue/manifest.json')).json();assert(Object.keys(manifest).length>=40);
+const voices=await(await call('/assets/audio/voices/manifest.json')).json();assert.equal(Object.keys(voices).length,217);
+assert(Object.values(manifest).every(t=>t.url.startsWith('/assets/audio/voices/')),'Prologue still uses old speech');
+for(const speaker of ['narrator','sameer','parth','mother','officer','voice','veer','tanush','leader','enakshi']){
+  const track=Object.values(voices).find(t=>t.speaker===speaker);assert(track,'Missing '+speaker+' voice');
+  assert((await(await call(track.url)).arrayBuffer()).byteLength>1000);
+}
 for (const path of ['/assets/cast/sameer.glb','/assets/cast/officer.glb','/assets/cinema/gazebo.glb','/assets/cinema/tree_small_02.glb','/assets/cinema/tree_background.glb','/assets/cinema/park_sunrise_1k.hdr','/assets/env/tiles_Diffuse.jpg','/assets/signs/police.svg',Object.values(manifest)[0].url,'/assets/audio/dusk.mp3','/credits.html']) {
   const response=await call(path);assert((await response.arrayBuffer()).byteLength>100,path);
 }

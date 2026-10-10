@@ -4,9 +4,10 @@ import { useFrame } from '@react-three/fiber';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { MathUtils, Vector3 } from 'three';
 import { speechLevel } from './VoicePlayback.js';
+import {createFootContact} from './FootContact.js';
 
 export const HUMAN_CAST = new Set(['sameer', 'parth', 'mother', 'officer']);
-export default function HumanActor({ character, pose = 'idle', focused = false, paused=false, onMeasure }) {
+export default function HumanActor({ character, pose = 'idle', focused = false, paused=false, footLift=0, onMeasure }) {
   const root = useRef();
   const { scene, animations } = useGLTF(`/assets/cast/${character}.glb`);
   const model = useMemo(() => {
@@ -15,6 +16,7 @@ export default function HumanActor({ character, pose = 'idle', focused = false, 
     return copy;
   }, [scene]);
   const { actions } = useAnimations(animations, root);
+  const contact=useMemo(()=>createFootContact(model),[model]);
   useEffect(() => {
     const action = actions[pose === 'sit' ? 'sit' : 'idle'];
     action?.reset().fadeIn(.3).play();
@@ -24,6 +26,7 @@ export default function HumanActor({ character, pose = 'idle', focused = false, 
   useEffect(() => { onMeasure?.(1.78); }, [onMeasure]);
   const at = useMemo(() => new Vector3(), []);
   useFrame(({ camera, clock }, dt) => {
+    contact(pose==='sit'?footLift:0);
     if (root.current && focused) {
       root.current.getWorldPosition(at);
       const yaw = Math.atan2(camera.position.x-at.x, camera.position.z-at.z);
