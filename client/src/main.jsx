@@ -14,3 +14,4 @@ createRoot(document.getElementById('root')).render(<SettingsProvider><App /></Se
 
 import './event.css';
 import './scene-fixes.css';
+import './investigation.css';

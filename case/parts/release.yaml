@@ -29,12 +29,14 @@ clues:
   - id: c_hq
     description: "Perigee headquarters is enormous for a four-year-old NGO. Veer walks away to take a call. Near the archive door is a nine-letter motto: A _ C _ N _ I _ N — ‘the soul’s ascent’. A note warns: use the motto to open the archived offering records."
   - id: c_diary
+    page: "/assets/pictures/evidence_diary_morse.jpg"
     description: "A leather diary engraved with a moon and stars. Its final page reads: --- / -.-. / .---- / ---.. / ----- / ---.. . On the facing page: O = ---; C = -.-.; 1 = .----; 8 = ---..; 0 = -----. A scribbled arrow points from the code to the laptop."
 
 puzzles:
   - id: p_morse
+    prompt: "Decode the groups in Parth's diary, then enter the six-character code. Review the diary entry below; the photograph shows the letter key."
     hint: "Separate the groups at the slashes. Decode each group with the facing-page key in your notebook. Letters first, then four digits."
-    answers: ["OC1808 in laptop", "OC1808 in the laptop"]
+    answers: ["OC1808", "OC 1808", "OC1808 in laptop", "OC1808 in the laptop"]
   - id: p_band_name
     hint: "The opposite of Perigee: the point in an orbit farthest from Earth."
   - id: p_ascension

@@ -282,7 +282,8 @@ export default function App() {
     if (!state.puzzles?.some((p) => p.id === devPuzzle)) return;
     devPuzzleOpened.current = true;
     setNotebookOpen(false);
-    setPuzzleSpot({ puzzle: devPuzzle, label: devPuzzle });
+    const placement = state.rooms.flatMap(r => r.hotspots).find(h => h.puzzle === devPuzzle);
+    setPuzzleSpot({ puzzle: devPuzzle, label: placement?.label ?? 'Examine the clue' });
     setPuzzleResult(null);
   }, [devPuzzle, devBeat, state, phase]);
 
@@ -321,7 +322,8 @@ export default function App() {
     const id = typeof target === 'string' ? target : target?.puzzle;
     if (!id) return;
     setNotebookOpen(false);
-    setPuzzleSpot(typeof target === 'string' ? { puzzle: id, label: id } : target);
+    const placement = state.rooms.flatMap(r => r.hotspots).find(h => h.puzzle === id);
+    setPuzzleSpot(typeof target === 'string' ? { puzzle: id, label: placement?.label ?? 'Examine the clue' } : target);
     setPuzzleResult(null);
   };
 
@@ -350,21 +352,11 @@ export default function App() {
         }
         return next;
       });
-      const granted = (res.grants ?? []).map((id) => clueLabels[id] ?? id);
-      if (res.correct || res.alreadySolved || granted.length) {
-        setNotice({
-          kicker: res.correct ? 'Puzzle solved' : res.alreadySolved ? 'No new ground' : 'Exhibit logged',
-          title: res.correct ? 'A thread pulled loose' : res.alreadySolved ? 'Already cracked' : 'Evidence logged',
-          body: res.message,
-          facts: res.newlyUnlocked,
-          clues: granted,
-        });
-      }
       // Reconcile derived server state (canAdvance) without a page reload.
       refreshState();
     } catch (e) {
       if (e.status === 403) {
-        setNotice({ kicker: 'Sealed', title: 'Locked', body: 'Something else has to come first.' });
+        setPuzzleResult({ correct: false, message: 'This lead is locked. Inspect the other evidence first.', penalty: 0 });
       } else if (e.status === 404) {
         setNotice({ kicker: 'Missing', title: 'Dead end', body: 'That line of inquiry is not available.' });
         closePuzzle();
@@ -697,9 +689,7 @@ export default function App() {
       </button>
 
       {notebookOpen && (
-        <div className="notebook-panel">
-          <Notebook state={state} onClose={() => setNotebookOpen(false)} onInspect={(id) => setEvidence(state.clues.find((c) => c.id === id))} />
-        </div>
+        <Notebook state={state} onClose={() => setNotebookOpen(false)} />
       )}
 
       {!activeChar && (
@@ -742,6 +732,8 @@ export default function App() {
       )}
       {activePuzzle && (
         <PuzzleModal
+          team={state.team}
+          relatedClues={(activePuzzle.requires?.clues ?? []).filter(id => state.discovered.includes(id)).map(id => state.clues.find(c => c.id === id)).filter(Boolean)}
           puzzle={{ ...activePuzzle, title: puzzleSpot?.label }}
           solved={(state.solvedPuzzles ?? []).includes(activePuzzle.id)}
           penalties={state.penalties ?? 0}
