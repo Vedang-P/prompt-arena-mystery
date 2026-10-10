@@ -1,4 +1,5 @@
 import './styles-scene.css';
+import { CinemaProp, ParkGround } from './CinemaAssets.jsx';
 import Actor, { actorURL } from './Actor.jsx';
 import { useSettings } from './Settings.jsx';
 import { SceneLoading, WorldBoundary } from './WorldBoundary.jsx';
@@ -1588,57 +1589,23 @@ function Vestibule({ room, hot }) {
 
 // ---------- interactive room kits ----------
 
-function GazeboRoom({ room, hot }) {
-  return (
-    <group>
-      <Ground width={32} depth={32} color="#131c14" />
-      <group position={[0, 0, 0.2]}>
-        <mesh position={[0, 0.1, 0]} receiveShadow>
-          <cylinderGeometry args={[2.5, 2.5, 0.2, 12]} />
-          <meshStandardMaterial color="#3d2f22" roughness={0.9} />
-        </mesh>
-        {[...Array(6)].map((_, i) => {
-          const a = (i / 6) * Math.PI * 2;
-          return (
-            <mesh key={i} position={[Math.cos(a) * 2.2, 1.6, Math.sin(a) * 2.2]} castShadow>
-              <cylinderGeometry args={[0.08, 0.08, 3, 8]} />
-              <meshStandardMaterial color="#4a3a28" roughness={0.85} />
-            </mesh>
-          );
-        })}
-        <mesh position={[0, 3.35, 0]} castShadow>
-          <coneGeometry args={[2.8, 1.1, 6]} />
-          <meshStandardMaterial color="#2c2118" roughness={0.9} />
-        </mesh>
-        <mesh position={[0, 0.62, 0.2]} castShadow>
-          <boxGeometry args={[1.5, 0.1, 0.8]} />
-          <meshStandardMaterial color="#5a4630" roughness={0.9} />
-        </mesh>
-        <mesh position={[0, 0.44, 0.2]}>
-          <boxGeometry args={[0.16, 0.28, 0.6]} />
-          <meshStandardMaterial color="#46351f" roughness={0.9} />
-        </mesh>
-        <Bench position={[0, 0.2, 1.1]} rotation={[0, Math.PI, 0]} />
-        <pointLight position={[0, 2.9, 0]} color="#ffd9a0" intensity={1.2} distance={9} decay={0} />
-      </group>
-      <Bench position={[-3.4, 0, 2.6]} rotation={[0, 0.5, 0]} />
-      <Bench position={[3.6, 0, 2.2]} rotation={[0, -0.7, 0]} />
-      <LampPost position={[-5.6, 0, -1.6]} />
-      <LampPost position={[5.8, 0, -2.2]} />
-      <LampPost position={[0, 0, -7.5]} />
-      <Prop model="lampRoundFloor.glb" position={[-2.6, 0, 2.9]} />
-      <Prop model="table.glb" position={[3.1, 0, -0.6]} />
-      <Prop model="chair.glb" position={[2.2, 0, -0.2]} rotation={[0, 0.9, 0]} />
-      <Prop model="chair.glb" position={[4.0, 0, -0.9]} rotation={[0, -2.1, 0]} />
-      <Tree position={[-6.4, 0, 2.4]} scale={1.1} />
-      <Tree position={[-5.2, 0, -4.4]} scale={0.9} />
-      <Tree position={[6.6, 0, -3.2]} scale={1.25} />
-      <Tree position={[6.9, 0, 3.8]} scale={0.85} />
-      <Tree position={[-7.4, 0, -0.6]} scale={1.35} />
-      <Moon />
-      <HotspotMarkers room={room} hot={hot} />
-    </group>
-  );
+function GazeboRoom({room,hot}) {
+  return <group>
+    <ParkGround />
+    <CinemaProp asset="gazebo" position={[0,0,0]} height={3.32}/>
+    <CinemaProp asset="painted_wooden_bench" position={[0,.2,1.1]} height={.615} width={1.9}/>
+    <CinemaProp asset="painted_wooden_bench" position={[-3.4,0,2.6]} height={.615} width={1.9} rotation={[0,.5,0]}/>
+    <CinemaProp asset="painted_wooden_bench" position={[3.6,0,2.2]} height={.615} width={1.9} rotation={[0,-.7,0]}/>
+    <CinemaProp asset="street_lamp_02" position={[-4.2,0,-2]} height={3.6}/>
+    <CinemaProp asset="street_lamp_02" position={[4.2,0,-2]} height={3.6}/>
+    <pointLight position={[0,2.6,0]} color="#ffca8b" intensity={8} distance={7}/>
+    <pointLight position={[-4.2,2.8,-2]} color="#ffca8b" intensity={7} distance={10}/>
+    <pointLight position={[4.2,2.8,-2]} color="#ffca8b" intensity={7} distance={10}/>
+    <CinemaProp asset="tree_small_02" position={[-4.5,0,-4.5]} height={5.2}/>
+    <CinemaProp asset="tree_small_02" position={[4.5,0,-4]} height={5.5} rotation={[0,1.4,0]}/>
+    <CinemaProp asset="tree_small_02" position={[-1.6,0,-7.3]} height={6}/>
+    <HotspotMarkers room={room} hot={hot}/>
+  </group>;
 }
 
 function HomeRoom({ room, hot }) {
@@ -1677,7 +1644,8 @@ function PoliceStationRoom({ room, hot }) {
       <Prop model="desk.glb" position={[-1.6, 0, -1.2]} rotation={[0, 0.15, 0]} />
       <Prop model="chairDesk.glb" position={[-1.6, 0, 0.1]} rotation={[0, Math.PI, 0]} />
       <Prop model="desk.glb" position={[1.9, 0, -1.6]} rotation={[0, -0.12, 0]} />
-      <Prop model="chairDesk.glb" position={[1.9, 0, -0.3]} rotation={[0, Math.PI, 0]} />
+      {/* Kenney's chair origin is its corner; align the seat centre with the seated rig. */}
+      <Prop model="chairDesk.glb" position={[2.252, 0, -0.630]} rotation={[0, Math.PI, 0]} />
       <FileStack position={[-1.2, 0.8, -1.5]} />
       <FileStack position={[1.5, 0.8, -1.9]} />
       <FileStack position={[-5.0, 1.05, -2.3]} />
@@ -1701,7 +1669,7 @@ function SameerRoomScene({ room, hot }) {
       <Floor width={10} depth={8} repeat={[5, 4]} />
       <Bed position={[-3.0, 0, -1.0]} rotation={[0, 0.12, 0]} />
       <Prop model="desk.glb" position={[2.3, 0, -0.6]} rotation={[0, -Math.PI / 2, 0]} />
-      <Prop model="chairDesk.glb" position={[1.3, 0, -0.6]} rotation={[0, Math.PI / 2, 0]} />
+      <Prop model="chairDesk.glb" position={[1.630, 0, -0.248]} rotation={[0, Math.PI / 2, 0]} />
       <Laptop position={[2.6, 0.76, -0.4]} rotation={[0, -1.1, 0]} />
       <CeilingFan position={[0, 3.05, 0]} />
       <Window position={[4.95, 1.75, -1.6]} rotation={[0, -Math.PI / 2, 0]} />
@@ -2058,7 +2026,7 @@ export function RoomEnvironment({ roomId, room = null, hot = null }) {
 export function RoomLighting({ roomId, quality = 'high' }) {
   const outdoor = OUTDOOR_ROOMS.has(roomId);
   return <>
-    <Environment files="/assets/env/ballroom_2k.hdr" background={false} environmentIntensity={outdoor ? 0.5 : 0.62} />
+    <Environment files={outdoor ? "/assets/cinema/park_bench_1k.hdr" : "/assets/env/ballroom_2k.hdr"} background={outdoor} backgroundBlurriness={.18} environmentIntensity={outdoor ? 0.5 : 0.62} />
     <ambientLight intensity={outdoor ? 0.65 : 0.8} color="#bdcce8" />
     <directionalLight position={[-4, 8, 6]} intensity={1.7} color="#c5d9ff" castShadow={quality !== 'low'}
       shadow-mapSize={quality === 'high' ? [2048, 2048] : [1024, 1024]}
@@ -2149,11 +2117,11 @@ export default function Scene({
     if (!focus || !focusPosition) return null;
     const height = heights[focus.character] || 1.9;
     return {
-      look: [focusPosition[0], focusPosition[1] + height * 0.6, focusPosition[2]],
+      look: [focusPosition[0], focusPosition[1] + height * 0.82, focusPosition[2]],
       camera: [
         focusPosition[0] + height * 0.03,
-        focusPosition[1] + height * 0.55,
-        focusPosition[2] + height * 1.35,
+        focusPosition[1] + height * 0.84,
+        focusPosition[2] + height * 1.05,
       ],
     };
   }, [focus, focusPosition, heights]);

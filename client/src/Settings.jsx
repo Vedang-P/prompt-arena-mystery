@@ -19,9 +19,10 @@ export function SettingsPanel({ onClose }) {
     </select></label>
     <label className="settings-row">Ambient soundtrack<input type="checkbox" checked={sound} onChange={(e) => update({ sound: e.target.checked })} /></label>
     <label className="settings-row">Read cinematic dialogue aloud<input type="checkbox" checked={narration} onChange={(e) => update({ narration: e.target.checked })} /></label>
-    <p className="settings-note">Narration uses your device’s installed voices. Subtitles are always on.</p>
+    <p className="settings-note">The prologue uses recorded neural voices. Subtitles are always on. Later chapters use available device voices.</p>
     <div className="controls-grid"><span>Look around</span><b>Drag / one finger</b><span>Move the camera</span><b>W A S D / arrow keys</b><span>Zoom</span><b>Scroll / pinch</b><span>Inspect an object</span><b>Click its marker</b><span>Close a panel</span><b>Esc</b></div>
     <p className="settings-note">Progress saves after each discovery and answer. Rooms also have an accessible “Explore” list.</p>
+    <p className="settings-note"><a href="/credits.html" target="_blank" rel="noreferrer">Cast, music & asset credits ↗</a></p>
     <button className="btn brass" onClick={onClose}>Back to the case</button>
   </section></div>;
 }

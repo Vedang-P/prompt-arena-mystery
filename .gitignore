@@ -23,3 +23,5 @@ assets/animations/
 assets/pictures/
 .vercel
 .env*
+.asset-cache/
+event-private/

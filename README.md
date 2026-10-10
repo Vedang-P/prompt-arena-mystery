@@ -36,7 +36,7 @@ The engine tests cover rule enforcement. Campaign integration tests walk every a
 
 Edit `case/parts/*.yaml`; the build merges and validates the story into generated server/client case files. Hidden answers remain in the server case. The release fragment repairs progression gates and adds readable evidence for image-dependent ciphers.
 
-The 3D environments use bundled CC0 Kenney furniture and animated character rigs. Each character has an original procedural face and wardrobe, independent animation, lighting, and shadows. No remote model service or missing Mixamo files are required. Attribution is in `client/public/assets/ATTRIBUTION.md`.
+Act 0 uses licensed Microsoft Rocketbox textured human rigs, retargeted breathing/seated animations, Poly Haven park assets, and an Innerscene gazebo. Blender's Python API prepares existing source models; no new character geometry is generated. Later environments retain CC0 Kenney furniture and some stylized cast. Recorded Piper/VCTK prologue voices and Kevin MacLeod music ship as static MP3s. Source URLs, licenses and modifications are in `client/public/assets/ASSETS.md`, with player-facing credits at `/credits.html`.
 
 ## Deploy to Vercel
 
@@ -50,3 +50,9 @@ The existing project is `prompt-arena-mystery`. Build output is `dist/`, and `ap
 Characters use authored, evidence-grounded dialogue when no LLM key is configured. An optional OpenAI-compatible provider can be configured with the LLM environment variables; it is not needed to finish the game.
 
 The legacy Cloudflare Worker/D1 adapter and scripts remain available for event hosting.
+
+## Classroom event
+
+Set EVENT_MODE=true and ALLOW_CODE_LOGIN=true. TEAM_CODES accepts comma-separated `Team name=assigned-code` entries. Guest sign-in, Google sign-in, practice starts, chapter selection and the legacy accusation shortcut are disabled in event mode. Only teams that have entered appear on the leaderboard; elapsed time starts when Act 0 finishes and Act 1 opens. Instructor preview is excluded from rankings.
+
+The private roster is in `event-private/team-codes.csv` (70 teams) and the instructor preview code is in `event-private/instructor-code.txt`. These are ignored by Git and Vercel; distribute one assigned code per team. Production stores progress in Postgres. Music, voices and models are bundled static assets; no speech-generation calls are needed during the prologue. Run `npm run test:event` for 70 concurrent local sessions and event gate/timer checks. A classroom device/network rehearsal is still needed before the event.

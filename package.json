@@ -1,6 +1,6 @@
 {
   "name": "prompt-arena-mystery",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -24,10 +24,12 @@
     "tail": "wrangler tail",
     "dev:game": "npm run build:case && node scripts/dev-server.mjs",
     "test:campaign": "npm run build:case && node scripts/test-campaign.mjs",
-    "deploy:vercel": "vercel deploy --prod"
+    "deploy:vercel": "vercel deploy --prod",
+    "test:event": "npm run build:case && node scripts/test-event.mjs"
   },
   "dependencies": {
     "@fontsource/eb-garamond": "^5.3.0",
+    "@fontsource/inter": "^5.3.0",
     "@fontsource/playfair-display": "^5.3.0",
     "@react-three/drei": "^10.7.8",
     "@react-three/fiber": "^9.7.0",

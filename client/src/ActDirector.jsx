@@ -1,291 +1,86 @@
-// Act Director — plays cinematic acts beat by beat. Autoplay, subtitle-driven,
-// with skip, letterbox, and the phone voice-note overlay.
-//
-// mode="beats" (default): 3D shot scenes driven by act.beats (Act 0 and any
-// future cinematic). mode="story": text-only letterboxed overlay for
-// act.intro/outro lines — no 3D canvas, used by App if it prefers this over
-// the separate StoryOverlay component.
-
 import { useEffect, useMemo, useRef, useState } from 'react';
-import Cinema, { BACKDROPS } from './Cinema.jsx';
+import { useGLTF } from '@react-three/drei';
+import Cinema from './Cinema.jsx';
 import { useSettings } from './Settings.jsx';
-
-const SPEAKER_LABEL = { narrator: 'NARRATOR', voice: 'UNKNOWN VOICE' };
-const DEFAULT_KICKER = 'Act 0';
-const DEFAULT_SUBTITLE = "The Moon's Dark Side";
-
-function labelFor(speakerId, names) {
-  return SPEAKER_LABEL[speakerId] ?? names[speakerId] ?? speakerId?.toUpperCase();
-}
-
-export default function ActDirector({
-  act,
-  characters = [],
-  onComplete,
-  busy,
-  mode = 'beats',
-  lines = null,
-  backdrop = null,
-  nextActTitle = null,
-  nextActKicker = null,
-  endLabel = null,
-  doneLabel = null,
-  onDone = null,
-}) {
-  const isBeats = mode !== 'story';
-  const beats = useMemo(() => act?.beats ?? [], [act]);
-  const names = useMemo(() => Object.fromEntries(characters.map((c) => [c.id, c.name])), [characters]);
-
-  // Dev aid: ?beat=<id> jumps straight to a beat (used by the screenshot harness).
-  const startIndex = useMemo(() => {
-    const id = new URLSearchParams(window.location.search).get('beat');
-    if (!id) return 0;
-    const idx = beats.findIndex((b) => b.id === id);
-    return idx === -1 ? 0 : idx;
-  }, [beats]);
-
-  const [phase, setPhase] = useState(startIndex > 0 ? 'play' : 'card');
-  const [beatIndex, setBeatIndex] = useState(startIndex);
-  const [lineIndex, setLineIndex] = useState(0);
-  const [fade, setFade] = useState(false);
-  const [storyIndex, setStoryIndex] = useState(0);
-  const timer = useRef(null);
-  const [paused, setPaused] = useState(false);
-  const { narration } = useSettings();
-
-  const beat = beats[beatIndex];
-  const line = beat?.lines?.[lineIndex];
-
-  // Story mode lines: prop > act.intro > act.outro; plain strings are allowed.
-  const storyLines = useMemo(() => {
-    if (isBeats) return [];
-    const src = lines ?? act?.intro ?? act?.outro ?? [];
-    if (!Array.isArray(src)) return [];
-    return src
-      .map((l) => (typeof l === 'string' ? { speaker: 'narrator', text: l } : l))
-      .filter((l) => l && l.text);
-  }, [isBeats, lines, act]);
-
-  useEffect(() => {
-    if (!isBeats || phase !== 'card' || paused) return;
-    const t = setTimeout(() => setPhase('play'), 2600);
-    return () => clearTimeout(t);
-  }, [isBeats, phase, paused]);
-
-  useEffect(() => {
-    setLineIndex(0);
-  }, [beatIndex]);
-
-  useEffect(() => {
-    if (!isBeats || phase !== 'play' || !beat || paused) return;
-    const perLine = Math.max(3500, (line?.text?.length ?? 0) * 55, (beat.seconds * 1000) / Math.max(1, beat.lines.length));
-    timer.current = setTimeout(() => {
-      if (lineIndex < beat.lines.length - 1) {
-        setLineIndex((i) => i + 1);
-      } else if (beatIndex < beats.length - 1) {
-        setBeatIndex((i) => i + 1);
-      } else {
-        setPhase('end');
-      }
-    }, perLine);
-    return () => clearTimeout(timer.current);
-  }, [isBeats, phase, beat, lineIndex, beatIndex, beats.length, paused]);
-
-  useEffect(() => {
-    if (!narration || paused || phase !== 'play' || !line || !window.speechSynthesis) return;
-    const utterance = new SpeechSynthesisUtterance(line.text); utterance.rate = 0.92;
-    window.speechSynthesis.speak(utterance);
-    return () => window.speechSynthesis.cancel();
-  }, [line, narration, paused, phase]);
-
-  const advance = () => {
-    clearTimeout(timer.current);
-    if (phase === 'card') { setPhase('play'); return; }
-    if (!beat) return;
-    if (lineIndex < beat.lines.length - 1) setLineIndex((i) => i + 1);
-    else if (beatIndex < beats.length - 1) {
-      setBeatIndex((i) => i + 1);
-    } else setPhase('end');
-  };
-
-  useEffect(() => {
-    if (!isBeats) return;
-    const key = (e) => {
-      if ((e.code === 'Space' || e.code === 'Enter') && !['BUTTON', 'INPUT'].includes(e.target.tagName)) {
-        e.preventDefault(); if (phase === 'end') { if (!busy) onComplete?.(); } else advance();
-      }
-    };
-    window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key);
-  });
-
-  if (!isBeats) {
-    if (!act && !lines) return null;
-
-    const storyLine = storyLines[storyIndex];
-    const storyIsLast = storyIndex >= storyLines.length - 1;
-    const finishStory = () => (onDone ?? onComplete)?.();
-
-    const storyAdvance = () => {
-      if (storyIsLast) finishStory();
-      else setStoryIndex((i) => i + 1);
-    };
-
-    const rawBackdrop = backdrop ?? act?.backdrop ?? null;
-    const mapped =
-      typeof rawBackdrop === 'string' && rawBackdrop && !rawBackdrop.includes('/')
-        ? BACKDROPS[rawBackdrop] ?? rawBackdrop
-        : rawBackdrop;
-    const isGradient = typeof mapped === 'string' && mapped.includes('gradient(');
-
-    const speakerId = storyLine?.speaker;
-    const speaker = labelFor(speakerId, names);
-    const isNarration = speakerId === 'narrator';
-    const isVoice = speakerId === 'voice';
-
-    return (
-      <div className="cinema story-mode">
-        <div className="cinema-stage story-stage" onClick={storyAdvance}>
-          {mapped ? (
-            <div
-              className="story-backdrop"
-              style={{ backgroundImage: isGradient ? mapped : `url(${mapped})` }}
-            />
-          ) : (
-            <div className="story-backdrop story-backdrop-fallback" />
-          )}
-          <div className="story-shade" />
-          <div className="cinema-bar top" />
-          <div className="cinema-bar bottom" />
-
-          <div className="story-lines">
-            {storyLine && (
-              <p
-                key={storyIndex}
-                className={`cinema-line story-line ${isNarration ? 'narration' : ''} ${isVoice ? 'voice' : ''}`}
-              >
-                {!isNarration && <span className="cinema-speaker">{speaker}</span>}
-                {storyLine.text}
-              </p>
-            )}
-          </div>
-        </div>
-
-        <div className="cinema-controls story-controls">
-          <div className="cinema-progress">
-            {storyLines.map((l, i) => (
-              <span key={i} className={`seg ${i < storyIndex ? 'done' : ''} ${i === storyIndex ? 'active' : ''}`} />
-            ))}
-          </div>
-          <div className="cinema-buttons">
-            {storyIsLast ? (
-              <button className="btn brass" onClick={finishStory} disabled={busy}>
-                {busy ? 'One moment…' : doneLabel ?? endLabel ?? 'Begin'}
-              </button>
-            ) : (
-              <>
-                <button className="btn ghost" onClick={storyAdvance}>
-                  Continue
-                </button>
-                <button className="btn ghost" onClick={finishStory} disabled={busy}>
-                  Skip
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!act) return null;
-
-  const speakerId = line?.speaker;
-  const speaker = labelFor(speakerId, names);
-  const isNarration = speakerId === 'narrator';
-  const isVoice = speakerId === 'voice';
-  const isVoicenote = beat?.overlay === 'phone_voicenote' || beat?.overlay === 'voicenote_alt';
-
-  return (
-    <div className={`cinema ${phase === 'card' ? 'cinema-card-phase' : ''}`}>
-      <div className="cinema-stage">
-        {phase !== 'card' && beat && (
-          <Cinema sceneId={beat.room} shot={beat.shot} cast={beat.cast ?? []} speaker={speakerId} />
-        )}
-        <div className={`cinema-fade ${fade ? 'on' : ''}`} />
-        <div className="cinema-bar top" />
-        <div className="cinema-bar bottom" />
-      </div>
-
-      {phase === 'card' && (
-        <div className="cinema-titlecard">
-          <p className="cinema-act-kicker">{act.kicker ?? DEFAULT_KICKER}</p>
-          <h1 className="cinema-act-title">{act.title}</h1>
-          <p className="cinema-act-sub">{act.subtitle ?? DEFAULT_SUBTITLE}</p>
-        </div>
-      )}
-
-      {phase === 'play' && line && (
-        <>
-          <div className="cinema-subtitles">
-            {!isVoicenote && (
-              <p className={`cinema-line ${isNarration ? 'narration' : ''} ${isVoice ? 'voice' : ''}`}>
-                {!isNarration && <span className="cinema-speaker">{speaker}</span>}
-                {line.text}
-              </p>
-            )}
-          </div>
-
-          {isVoicenote && (
-            <div className={`phone-note ${beat.overlay === 'voicenote_alt' ? 'alt' : ''}`}>
-              <div className="phone-note-head">
-                <span className="phone-note-from">{beat.noteFrom ?? 'Parth'}</span>
-                <span className="phone-note-kind">{beat.noteKind ?? 'voice note · 0:14'}</span>
-              </div>
-              <div className="phone-note-wave">
-                {[...Array(28)].map((_, i) => (
-                  <i key={i} style={{ height: `${18 + Math.abs(Math.sin(i * 1.7)) * 20}px`, animationDelay: `${i * 60}ms` }} />
-                ))}
-              </div>
-              <p className="phone-note-line">{line.text}</p>
-            </div>
-          )}
-
-          <div className="cinema-controls">
-            <div className="cinema-progress">
-              {beats.map((b, i) => (
-                <span key={b.id} className={`seg ${i < beatIndex ? 'done' : ''} ${i === beatIndex ? 'active' : ''}`} />
-              ))}
-            </div>
-            <div className="cinema-buttons">
-              <button className="btn ghost" onClick={() => setPaused((p) => !p)}>{paused ? 'Play' : 'Pause'}</button>
-              <button className="btn ghost" onClick={advance}>
-                Continue
-              </button>
-              <button className="btn ghost" onClick={() => setPhase('end')}>
-                Skip act
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-
-      {phase === 'end' && (
-        <div className="cinema-endcard">
-          <p className="cinema-act-kicker">{`${act.kicker ?? DEFAULT_KICKER} complete`}</p>
-          {nextActKicker || nextActTitle ? (
-            <>
-              <h1 className="cinema-act-title">{nextActKicker ?? nextActTitle}</h1>
-              {nextActKicker && nextActTitle && <h2 className="cinema-act-subtitle">{nextActTitle}</h2>}
-            </>
-          ) : (
-            <h1 className="cinema-act-title">{act.title}</h1>
-          )}
-          {act.subtitle && <p className="cinema-act-hint">{act.subtitle}</p>}
-          <button className="btn brass" onClick={() => onComplete?.()} disabled={busy}>
-            {busy ? 'Entering…' : endLabel ?? 'Continue'}
-          </button>
-        </div>
-      )}
-    </div>
-  );
+import { publishSpeech } from './VoicePlayback.js';
+const SPEAKERS={narrator:'Narrator',voice:'Unknown voice'};
+export default function ActDirector({act,characters=[],onComplete,busy,nextActTitle,nextActKicker,onLeaderboard}) {
+  const beats=act?.beats??[],names=useMemo(()=>Object.fromEntries(characters.map(c=>[c.id,c.name])),[characters]);
+  const debug=import.meta.env.DEV?new URLSearchParams(location.search).get('beat'):null;
+  const start=Math.max(0,beats.findIndex(b=>b.id===debug));
+  const [phase,setPhase]=useState(debug?'play':'card'),[beatIndex,setBeatIndex]=useState(start),[lineIndex,setLineIndex]=useState(0);
+  const [paused,setPaused]=useState(false),[manifest,setManifest]=useState(null),[readyRoom,setReadyRoom]=useState(null),[blocked,setBlocked]=useState(false);
+  const {narration,sound,update}=useSettings();
+  const player=useRef(null),advanceRef=useRef(null),completeRef=useRef(onComplete),finishing=useRef(false);
+  completeRef.current=onComplete;
+  const beat=beats[beatIndex],line=beat?.lines?.[lineIndex],track=manifest?.[`${beat?.id}-${lineIndex}`];
+  const advance=()=>{
+    if(phase==='card'){setPhase('play');return;}
+    if(lineIndex<(beat?.lines.length??0)-1)setLineIndex(i=>i+1);
+    else if(beatIndex<beats.length-1){setLineIndex(0);setBeatIndex(i=>i+1);}
+    else setPhase('end');
+  };advanceRef.current=advance;
+  useEffect(()=>{
+    let alive=true;
+    fetch('/assets/audio/prologue/manifest.json').then(r=>{if(!r.ok)throw Error('audio');return r.json();}).then(j=>{if(alive)setManifest(j);}).catch(()=>{if(alive)setManifest({});});
+    ['sameer','parth','mother','officer'].forEach(c=>useGLTF.preload(`/assets/cast/${c}.glb`));
+    return()=>{alive=false;};
+  },[]);
+  useEffect(()=>{
+    if(phase!=='card'||!manifest||readyRoom!==beat?.room)return;
+    const timer=setTimeout(()=>setPhase('play'),2400);return()=>clearTimeout(timer);
+  },[phase,manifest,readyRoom,beat?.room]);
+  useEffect(()=>{
+    window.dispatchEvent(new CustomEvent('arena-cue',{detail:{cue:beatIndex<3?'dusk':beat?.room==='sameer_room'?'unknown':'search',paused}}));
+    return()=>window.dispatchEvent(new CustomEvent('arena-cue',{detail:{cue:'dusk',paused:false}}));
+  },[beatIndex,beat?.room,paused]);
+  useEffect(()=>{
+    if(phase!=='play'||!line||!manifest||readyRoom!==beat.room)return;
+    let elapsed=0,last=performance.now();
+    const duration=Math.max(2.2,(track?.duration??line.text.length*.045)+.65);
+    const audio=track&&narration?new Audio(track.url):null;
+    player.current={audio,paused};setBlocked(false);
+    const play=()=>audio?.play().then(()=>setBlocked(false)).catch(()=>setBlocked(true));
+    if(audio){audio.volume=.95;audio.preload='auto';audio.onerror=()=>{publishSpeech(null,null);};publishSpeech(line.speaker,audio,track.envelope);if(!paused)play();}
+    const timer=setInterval(()=>{
+      const now=performance.now(),delta=Math.min((now-last)/1000,.3);last=now;
+      if(player.current?.paused)return;
+      // Audio is the master clock. A rejected autoplay requires a real gesture.
+      if(audio&&!audio.error){
+        if(audio.ended){elapsed+=delta;if(elapsed>.6)advanceRef.current();}
+        else if(audio.paused)return;
+      }else{elapsed+=delta;if(elapsed>=duration)advanceRef.current();}
+    },80);
+    const retry=()=>{if(!player.current?.paused&&audio?.paused&&!audio.ended)play();};
+    window.addEventListener('pointerdown',retry);
+    return()=>{clearInterval(timer);window.removeEventListener('pointerdown',retry);audio?.pause();publishSpeech(null,null);player.current=null;};
+  },[phase,line,track,narration,manifest,readyRoom,beat?.room]);
+  useEffect(()=>{
+    if(!player.current)return;player.current.paused=paused;
+    if(paused)player.current.audio?.pause();else player.current.audio?.play().catch(()=>setBlocked(true));
+  },[paused]);
+  useEffect(()=>{
+    if(phase!=='end'||busy||finishing.current)return;
+    const timer=setTimeout(()=>{finishing.current=true;completeRef.current?.();},2200);
+    return()=>clearTimeout(timer);
+  },[phase,busy]);
+  useEffect(()=>{
+    const key=e=>{if(e.code==='Space'&&!['BUTTON','INPUT'].includes(e.target.tagName)){e.preventDefault();setPaused(p=>!p);}};
+    window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);
+  },[]);
+  if(!act)return null;
+  const phone=beat?.overlay?.includes('voicenote');
+  return <main className={`cinema prologue ${phase==='card'?'cinema-card-phase':''}`}>
+    <div className="cinema-stage"><Cinema sceneId={beat.room} shot={beat.shot} cast={beat.cast??[]} speaker={phase==='play'?line?.speaker:null} paused={paused} onReady={()=>setReadyRoom(beat.room)}/><div className="cinema-bar top"/><div className="cinema-bar bottom"/></div>
+    <header className="prologue-header"><span>Prompt Arena <i>/</i> Prologue</span><button className="quiet-button" onClick={()=>{setPaused(true);onLeaderboard?.();}}>Live leaderboard ↗</button></header>
+    {phase==='card'&&<div className="cinema-titlecard"><p className="cinema-act-kicker">Act 0 · Prologue</p><h1 className="cinema-act-title">The Vanishing</h1><p className="cinema-act-sub">Yesterday, he was right beside you.</p><small>{!manifest||readyRoom!==beat.room?'Preparing the opening scene…':'The story is about to begin'}</small></div>}
+    {phase==='play'&&line&&<>
+      <aside className="scene-caption"><span>{beat.room==='gazebo'?(beatIndex<3?'Yesterday · 6:42 PM':'Today · 6:30 PM'):beat.room==='parth_home'?'Parth’s home · 7:15 PM':beat.room==='police_station'?'Police station · 9:08 PM':'Sameer’s room · 11:47 PM'}</span><small>{String(beatIndex+1).padStart(2,'0')} / {String(beats.length).padStart(2,'0')}</small></aside>
+      <div className={`cinema-subtitles ${phone?'voicenote-subtitles':''}`}><div className="subtitle-card" key={`${beat.id}-${lineIndex}`}><span className="cinema-speaker">{phone?'Voice message · Unknown sender':SPEAKERS[line.speaker]??names[line.speaker]??line.speaker}</span>{phone&&<div className={`message-wave ${paused?'paused':''}`} aria-hidden="true">{Array.from({length:25},(_,i)=><i key={i} style={{height:12+Math.abs(Math.sin(i*2.7))*23,animationDelay:`${i*35}ms`}}/>)}</div>}<p>{line.text}</p></div></div>
+      {blocked&&<button className="audio-unlock" onClick={()=>player.current?.audio?.play().then(()=>setBlocked(false))}>Click to play cinematic audio</button>}
+      <footer className="cinema-controls"><div className="cinema-progress" aria-label="Opening progress">{beats.map((b,i)=><span key={b.id} className={`seg ${i<beatIndex?'done':''} ${i===beatIndex?'active':''}`}/>)}</div><div className="cinema-buttons"><button className="btn ghost" onClick={()=>setPaused(p=>!p)}>{paused?'Resume':'Pause'}</button><button className="btn ghost" onClick={()=>update({narration:!narration,sound:!narration})}>{narration?'Mute audio':'Enable audio'}</button><button className="btn ghost" onClick={()=>setPhase('end')}>Skip prologue →</button></div></footer>
+      {paused&&<div className="pause-label">Paused <small>Space to resume</small></div>}
+    </>}
+    {phase==='end'&&<div className="cinema-endcard"><p className="cinema-act-kicker">The investigation begins</p><h1 className="cinema-act-title">{nextActKicker??'Act I'}</h1><p className="cinema-act-sub">{nextActTitle??'The Room'}</p><p className="cinema-act-hint">{busy?'Opening your case…':'Entering Act 1…'}</p><button className="btn brass" disabled={busy} onClick={()=>{finishing.current=true;onComplete?.();}}>Enter Act 1 →</button></div>}
+  </main>;
 }

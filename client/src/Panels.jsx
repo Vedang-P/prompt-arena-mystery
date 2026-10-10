@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import CaseJournal from './CaseJournal.jsx';
+import { useSettings } from './Settings.jsx';
+import { speakCharacter } from './CharacterSpeech.js';
 
 const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
 
@@ -74,6 +77,33 @@ export function DialogueOverlay({
   const [text, setText] = useState('');
   const logRef = useRef(null);
   const busyRef = useRef(false);
+  const { narration } = useSettings();
+  const initialCount = useRef(messages.length);
+  const spoken = useRef('');
+  const heardTurn = useRef(false);
+  const recognition = useRef(null);
+  const [listening,setListening] = useState(false);
+  const [speechError,setSpeechError] = useState(null);
+  const Recognition=window.SpeechRecognition??window.webkitSpeechRecognition;
+  useEffect(()=>{
+    if(typing){heardTurn.current=true;return;}
+    if(!heardTurn.current||!narration||messages.length<=initialCount.current)return;
+    const last=messages.at(-1);const key=`${messages.length}:${last?.content}`;
+    if(last?.role!=='npc'||!last.content||spoken.current===key)return;
+    spoken.current=key;
+    return speakCharacter(character.id,last.content);
+  },[messages,typing,narration,character.id]);
+  useEffect(()=>()=>{recognition.current?.abort();window.speechSynthesis?.cancel();},[]);
+  const dictate=()=>{
+    if(listening){recognition.current?.stop();return;}
+    if(!Recognition)return;
+    window.speechSynthesis?.cancel();
+    const r=new Recognition();recognition.current=r;r.lang='en-IN';r.interimResults=false;r.continuous=false;
+    r.onstart=()=>{setListening(true);setSpeechError(null);};r.onend=()=>setListening(false);
+    r.onresult=e=>setText(e.results[0][0].transcript);
+    r.onerror=e=>{setListening(false);setSpeechError(e.error==='not-allowed'?'Microphone permission is off. You can type your question.':'Speech could not be heard. Try again or type your question.');};
+    r.start();
+  };
 
   useEffect(() => {
     const el = logRef.current;
@@ -143,8 +173,10 @@ export function DialogueOverlay({
 
       <div className="suggested-questions">{(character.questions ?? []).map((q) => <button key={q} disabled={typing} onClick={() => setText(q)}>{q}</button>)}</div>
       {error && <p className="dialogue-error">{error}</p>}
+      {speechError && <p className="dialogue-error">{speechError}</p>}
 
       <form className="ask-bar" onSubmit={send}>
+        {Recognition && <button type="button" className="dictate-button" disabled={typing||disabled} onClick={dictate}>{listening?'Stop mic':'Speak'}</button>}
         <div className="ask-field">
           <input
             autoFocus
@@ -172,6 +204,9 @@ export function DialogueOverlay({
 }
 
 export function Notebook({ state, onClose, onInspect }) {
+  return <CaseJournal state={state} onClose={onClose} onInspect={onInspect} />;
+}
+function LegacyNotebook({ state, onClose, onInspect }) {
   const characters = Object.fromEntries(state.characters.map((c) => [c.id, c.name]));
   const byCharacter = {};
   for (const f of state.unlocked) {

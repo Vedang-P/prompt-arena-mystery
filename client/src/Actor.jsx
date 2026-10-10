@@ -4,6 +4,7 @@ import { useFrame } from '@react-three/fiber';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { Box3, MathUtils, MeshStandardMaterial, Vector3 } from 'three';
 import { actorTexture } from './ActorStyle.js';
+import HumanActor, { HUMAN_CAST } from './HumanActor.jsx';
 
 // Complete, bundled, CC0 actors. Each instance owns its animation hierarchy;
 // never attach the cached GLTF scene directly to two rooms or two canvases.
@@ -14,7 +15,10 @@ export const CAST = {
 };
 export const actorURL = (id) => `/assets/characters/character-${CAST[id] ?? 'c'}.glb`;
 
-export default function Actor({ character, pose = 'idle', speaking = false, focused = false, onMeasure }) {
+export default function Actor(props) {
+  return HUMAN_CAST.has(props.character) ? <HumanActor {...props} /> : <LegacyActor {...props} />;
+}
+function LegacyActor({ character, pose = 'idle', speaking = false, focused = false, onMeasure }) {
   const root = useRef();
   const { scene, animations } = useGLTF(actorURL(character));
   const model = useMemo(() => {

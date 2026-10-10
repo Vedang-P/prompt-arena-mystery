@@ -10,4 +10,5 @@ const server = http.createServer((req, res) => {
   if (req.url.startsWith('/api/')) return handler(req, res);
   vite.middlewares(req, res);
 });
-server.listen(5173, '127.0.0.1', () => console.log('Game running at http://127.0.0.1:5173'));
+const port=Number(process.env.PORT||5173);
+server.listen(port, '127.0.0.1', () => console.log(`Game running at http://127.0.0.1:${port}`));

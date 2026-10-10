@@ -17,3 +17,5 @@ cookies.txt
 /client/public/assets/mixamo/
 /case/teams.csv
 /case/teams-printable.txt
+/.asset-cache/
+/event-private/

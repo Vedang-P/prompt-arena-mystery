@@ -1,31 +1,34 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSettings } from './Settings.jsx';
-export default function Soundtrack({ roomId = 'gazebo' }) {
+const musicFor = (room) => ['sameer_room','ngo_archive','hospital'].includes(room) ? 'unknown' : ['police_station','parth_home','abandoned_field'].includes(room) ? 'search' : 'dusk';
+export default function Soundtrack({ roomId='gazebo' }) {
   const { sound } = useSettings();
-  const graph = useRef(null);
+  const [cue,setCue] = useState(musicFor(roomId));
+  const tracks = useRef([]), ducked=useRef(false), paused=useRef(false);
+  useEffect(() => { setCue(musicFor(roomId)); },[roomId]);
   useEffect(() => {
-    if (!sound) { graph.current?.context.close(); graph.current = null; return; }
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) return;
-    const context = new AudioContext();
-    const gain = context.createGain(); gain.gain.value = 0.025; gain.connect(context.destination);
-    const filter = context.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 450; filter.connect(gain);
-    const oscillators = [110, 164.81, 220.13].map((freq, i) => {
-      const o = context.createOscillator(); o.type = i ? 'sine' : 'triangle'; o.frequency.value = freq; o.connect(filter); o.start(); return o;
-    });
-    const lfo = context.createOscillator(); lfo.frequency.value = 0.09;
-    const depth = context.createGain(); depth.gain.value = 70; lfo.connect(depth); depth.connect(filter.frequency); lfo.start();
-    graph.current = { context, filter, oscillators };
-    const resume = () => context.resume().catch(() => {});
-    window.addEventListener('pointerdown', resume); window.addEventListener('keydown', resume);
-    resume();
-    return () => { window.removeEventListener('pointerdown', resume); window.removeEventListener('keydown', resume); context.close().catch(() => {}); graph.current = null; };
-  }, [sound]);
+    const cinematic=e=>{setCue(e.detail.cue); paused.current=e.detail.paused;};
+    const speech=e=>{ducked.current=e.detail.active;};
+    window.addEventListener('arena-cue',cinematic); window.addEventListener('arena-speech',speech);
+    return()=>{window.removeEventListener('arena-cue',cinematic);window.removeEventListener('arena-speech',speech);};
+  },[]);
   useEffect(() => {
-    const audio = graph.current; if (!audio) return;
-    const tense = ['hospital', 'ngo_archive', 'tanush_office'].includes(roomId);
-    audio.filter.frequency.setTargetAtTime(tense ? 230 : 500, audio.context.currentTime, 1.5);
-    audio.oscillators[1].frequency.setTargetAtTime(tense ? 155.56 : 164.81, audio.context.currentTime, 2);
-  }, [roomId, sound]);
+    if(!sound){tracks.current.forEach(t=>t.audio.pause());tracks.current=[];return;}
+    const audio=new Audio(`/assets/audio/${cue}.mp3`);audio.loop=true;audio.volume=0;
+    const track={audio,target:true};tracks.current.forEach(t=>t.target=false);tracks.current.push(track);
+    const play=()=>{if(!paused.current)audio.play().catch(()=>{});};play();window.addEventListener('pointerdown',play);
+    return()=>{window.removeEventListener('pointerdown',play);track.target=false;};
+  },[sound,cue]);
+  useEffect(() => {
+    const interval=setInterval(()=>{
+      tracks.current=tracks.current.filter(t=>{
+        const target=t.target&&sound&&!paused.current?(ducked.current?.065:.18):0;
+        t.audio.volume+=(target-t.audio.volume)*.12;
+        if(paused.current)t.audio.pause();else if(t.target&&sound&&t.audio.paused)t.audio.play().catch(()=>{});
+        if(!t.target&&t.audio.volume<.001){t.audio.pause();return false;}return true;
+      });
+    },70);
+    return()=>{clearInterval(interval);tracks.current.forEach(t=>t.audio.pause());tracks.current=[];};
+  },[sound]);
   return null;
 }

@@ -1,31 +1,17 @@
 import { useState } from 'react';
 import Cinema from './Cinema.jsx';
 import { useSettings } from './Settings.jsx';
-const TITLE_CAST = [{ character: 'sameer', at: [-0.7, 0.1], pose: 'sit', rot: 0.35 }, { character: 'parth', at: [0.75, 0.05], pose: 'sit', rot: -0.35 }];
-export default function TitleScreen({ config, state, busy, error, onGuest, onResume, onDevLogin, onSettings, onChapters }) {
-  const [code, setCode] = useState('');
-  const { sound, update } = useSettings();
-  const current = state?.acts?.find((a) => a.id === state.act);
-  return <main className={`title-screen ${state ? 'saved-case' : ''}`}>
-    <div className="title-world"><Cinema sceneId="gazebo" shot="wide" cast={TITLE_CAST} /></div>
-    <div className="title-shade" />
-    <header className="title-header"><span className="brand"><span className="brand-moon">◒</span> PROMPT ARENA</span><span className="title-tag">AN INTERACTIVE MYSTERY</span><button className="quiet-button" onClick={onSettings}>Settings ↗</button></header>
-    <div className="title-content">
-      <p className="eyebrow"><span className="small-line" /> Every secret has an orbit</p>
-      <h1>The Moon’s<br /><em>Dark Side.</em></h1>
-      <p className="title-description">Your best friend has vanished.<br />His secrets are still here.</p>
-      <p className="title-detail">Search the city. Decode what he left behind.<br />Follow the truth, wherever it takes you.</p>
-      <div className="title-actions">
-        {state && <button className="primary-play" onClick={onResume} disabled={busy}><span>{state.ending ? 'View your ending' : 'Continue investigation'}<small>{current?.kicker} · {current?.title}</small></span><span>↗</span></button>}
-        <button className={state ? 'secondary-play' : 'primary-play'} onClick={onGuest} disabled={busy}><span>{busy ? 'Opening your case…' : state ? 'Start a new solo case' : 'Begin investigation'}{!state && <small>No account needed · progress saves automatically</small>}</span><span>→</span></button>
-        {state && <button className="secondary-play" onClick={onChapters}>Chapter select <small>Play any act in a separate practice save</small></button>}
-        {!state && config?.google && <a className="title-google" href="/api/auth/google">Continue with Google <span>→</span><small>Save under your Google profile</small></a>}
-      </div>
-      {error && <p className="title-error" role="alert">{error}</p>}
-      {config?.devLogin && <details className="dev-signin"><summary>Team code</summary><form onSubmit={(e) => { e.preventDefault(); onDevLogin(code); }}><input aria-label="Team code" value={code} onChange={(e) => setCode(e.target.value)} placeholder="PANDA-7K2" /><button className="btn ghost" disabled={busy}>Enter</button></form></details>}
-      <div className="title-facts"><span><b>09</b> acts</span><span><b>14</b> locations</span><span><b>46</b> puzzles</span></div>
-    </div>
-    <footer className="title-footer"><span>THE NIGHT IS ONLY JUST BEGINNING.</span><button className="quiet-button" onClick={() => update({ sound: !sound })}>{sound ? '◉ Sound on' : '◎ Enable sound'}</button><span className="title-genre">A story of friendship, obsession & the things we don’t see.</span></footer>
+const TITLE_CAST=[{character:'sameer',at:[-.54,.99],pose:'sit'},{character:'parth',at:[.54,.99],pose:'sit'}];
+export default function TitleScreen({config,state,busy,error,onGuest,onResume,onDevLogin,onSettings,onLeaderboard}) {
+  const [entry,setEntry]=useState(false),[code,setCode]=useState('');
+  const {update}=useSettings();
+  const enter=()=>{update({sound:true,narration:true});if(state)onResume();else setEntry(true);};
+  return <main className="title-screen arena-title">
+    <div className="title-world"><Cinema sceneId="gazebo" shot="two" cast={TITLE_CAST}/></div><div className="title-shade"/>
+    <header className="title-header"><span className="brand">◒ Prompt Arena</span><button className="quiet-button" onClick={onLeaderboard}>Live leaderboard ↗</button></header>
+    <div className="title-content"><p className="eyebrow">A disappearance. A voice. A trail of secrets.</p><h1>Prompt<br/>Arena<span className="title-period">.</span></h1><p className="title-description">The Moon’s Dark Side</p><button className="primary-play" onClick={enter} disabled={busy}><span>{state?'Continue':'Enter'}<small>{state?state.team:'Open your team’s case'}</small></span><span>→</span></button></div>
+    <footer className="title-footer"><span>An interactive mystery</span><button className="quiet-button" onClick={onSettings}>Audio & settings</button></footer>
+    {entry&&<div className="modal-backdrop" onClick={()=>setEntry(false)}><section className="entry-card" role="dialog" aria-modal="true" aria-label="Team entry" onClick={e=>e.stopPropagation()}><p className="eyebrow">Your table. Your case.</p><h2>Enter the arena</h2><p>Use the team code supplied by your invigilator.</p><form onSubmit={e=>{e.preventDefault();update({sound:true,narration:true});onDevLogin(code);}}><label htmlFor="team-code">Team code</label><input id="team-code" autoFocus autoComplete="off" autoCapitalize="characters" spellCheck={false} value={code} onChange={e=>setCode(e.target.value)} placeholder="Enter assigned code" required maxLength={48}/><button className="btn brass" disabled={busy||!code.trim()}>{busy?'Opening your case…':'Begin →'}</button></form>{error&&<p className="title-error" role="alert">{error}</p>}{!config?.eventMode&&<button className="quiet-button" onClick={onGuest} disabled={busy}>Preview without a team code</button>}<button className="quiet-button" onClick={()=>setEntry(false)}>Back</button></section></div>}
   </main>;
 }
 

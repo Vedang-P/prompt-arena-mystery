@@ -4,6 +4,7 @@ import TitleScreen, { ChapterSelect, EvidenceCard } from './TitleScreen.jsx';
 import CinematicStory from './CinematicStory.jsx';
 import { SettingsPanel, useSettings } from './Settings.jsx';
 import Soundtrack from './Soundtrack.jsx';
+import Leaderboard from './Leaderboard.jsx';
 import ActDirector from './ActDirector.jsx';
 import {
   AccuseModal,
@@ -52,11 +53,12 @@ export default function App() {
   const [phase, setPhase] = useState('loading');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [chaptersOpen, setChaptersOpen] = useState(false);
+  const [leaderboardOpen,setLeaderboardOpen] = useState(false);
   const [exploreOpen, setExploreOpen] = useState(false);
   const [evidence, setEvidence] = useState(null);
   const { sound, update } = useSettings();
   useEffect(() => {
-    const key = (e) => { if (e.key === 'Escape') { setSettingsOpen(false); setChaptersOpen(false); setEvidence(null); setNotebookOpen(false); setPuzzleSpot(null); setActiveChar(null); setExploreOpen(false); } };
+    const key = (e) => { if (e.key === 'Escape') { setSettingsOpen(false); setChaptersOpen(false); setLeaderboardOpen(false); setEvidence(null); setNotebookOpen(false); setPuzzleSpot(null); setActiveChar(null); setExploreOpen(false); } };
     window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key);
   }, []);
   const [state, setState] = useState(null);
@@ -86,7 +88,7 @@ export default function App() {
   // Dev/testing shortcuts: ?beat=<id> replays the cinematic from that beat, even
   // after the act is complete; ?puzzle=<id> opens that puzzle's modal once on
   // load; ?room=<id> preselects a room when it belongs to the current act.
-  const devParams = useMemo(() => new URLSearchParams(window.location.search), []);
+  const devParams = useMemo(() => new URLSearchParams(import.meta.env.DEV ? window.location.search : ''), []);
   const devBeat = useMemo(() => devParams.get('beat'), [devParams]);
   const devPuzzle = useMemo(() => devParams.get('puzzle'), [devParams]);
   const devRoom = useMemo(() => devParams.get('room'), [devParams]);
@@ -378,7 +380,9 @@ export default function App() {
     setLoginBusy(true);
     setLoginError(null);
     try {
+      localStorage.setItem('moon-mode','campaign');
       await devLogin(code);
+      clearIntros(); setStory(null); setRoomId(null); setChats({}); setActiveChar(null); setEvidence(null); setPuzzleSpot(null);
       await loadGame('game');
     } catch (e) {
       setLoginError(e.status === 401 ? 'Wrong code. Check the label on your table.' : 'Sign-in failed.');
@@ -551,6 +555,7 @@ export default function App() {
     else setNotice({ title: 'Finish this chapter first', body: currentAct.objective });
   };
   const overlays = <>
+    {leaderboardOpen && <Leaderboard team={state?.team} onClose={()=>setLeaderboardOpen(false)} />}
     {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
     {chaptersOpen && <ChapterSelect acts={state?.acts ?? []} onSelect={beginPractice} onClose={() => setChaptersOpen(false)} busy={loginBusy} practice={state?.practice} onCampaign={returnCampaign} />}
   </>;
@@ -567,7 +572,7 @@ export default function App() {
   if (phase === 'login' || phase === 'menu') {
     return <>{audio}<TitleScreen config={authConfig} state={state} busy={loginBusy} error={loginError}
       onGuest={beginGuest} onResume={() => setPhase(state.solved ? 'solved' : 'game')}
-      onDevLogin={handleDevLogin} onSettings={() => setSettingsOpen(true)} onChapters={() => setChaptersOpen(true)} />{overlays}</>;
+      onLeaderboard={()=>setLeaderboardOpen(true)} onDevLogin={handleDevLogin} onSettings={() => setSettingsOpen(true)} onChapters={() => setChaptersOpen(true)} />{overlays}</>;
   }
 
   if (devBeat && state?.acts?.length) {
@@ -575,16 +580,17 @@ export default function App() {
     if (cinematic?.type === 'cinematic') {
       const next = nextActFor(cinematic);
       return (
-        <ActDirector
+        <>{audio}{overlays}<ActDirector
           key={cinematic.id}
           act={cinematic}
           characters={state.characters}
           busy={actBusy}
           onComplete={() => finishAct(cinematic.id)}
+          onLeaderboard={()=>setLeaderboardOpen(true)}
           nextActKicker={next?.kicker}
           nextActTitle={next?.title}
           endLabel={next ? (next.type === 'cinematic' ? 'Continue' : 'Enter') : undefined}
-        />
+        /></>
       );
     }
   }
@@ -628,11 +634,12 @@ export default function App() {
   if (currentAct?.type === 'cinematic') {
     const next = nextActFor(currentAct);
     return (
-      <>{audio}<ActDirector
+      <>{audio}{overlays}<ActDirector
         key={currentAct.id}
         act={currentAct}
         characters={state.characters}
         busy={actBusy}
+        onLeaderboard={()=>setLeaderboardOpen(true)}
         onComplete={() => finishAct(currentAct.id)}
         nextActKicker={next?.kicker}
         nextActTitle={next?.title}
@@ -663,7 +670,8 @@ export default function App() {
         <div className="release-tools"><span className="save-status">{actBusy || puzzleBusy ? 'Saving…' : '● Case saved'}</span>
           <button className="quiet-button" onClick={() => update({ sound: !sound })} aria-label={sound ? 'Mute sound' : 'Enable sound'}>{sound ? 'Sound on' : 'Sound off'}</button>
           <button className="quiet-button" onClick={() => setSettingsOpen(true)}>Settings</button>
-          <button className="quiet-button" onClick={() => setChaptersOpen(true)}>Chapters</button>
+          {!authConfig?.eventMode && <button className="quiet-button" onClick={() => setChaptersOpen(true)}>Chapters</button>}
+          <button className="quiet-button" onClick={()=>setLeaderboardOpen(true)}>Live leaderboard</button>
           <button className="quiet-button" onClick={() => { setStory(null); setPhase('menu'); }}>Menu</button>
         </div>
       </header>

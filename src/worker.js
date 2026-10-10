@@ -34,7 +34,7 @@ const RATE_MIN_MS = 1500;
 const RATE_WINDOW_MS = 60_000;
 const RATE_WINDOW_MAX = 12;
 
-app.get('/api/health', (c) => c.json({ ok: true, service: 'prompt-arena-mystery', version: '1.0.0' }));
+app.get('/api/health', (c) => c.json({ ok: true, service: 'prompt-arena-mystery', version: '1.1.0' }));
 
 // ---------- helpers ----------
 
@@ -45,11 +45,12 @@ async function requireTeam(c) {
   );
   if (!teamId) return null;
   const row = await c.env.DB.prepare(
-    'SELECT t.name AS team_name, p.* FROM teams t JOIN progress p ON p.team_id = t.id WHERE t.id = ?'
+    'SELECT t.name AS team_name, t.code_hash, p.* FROM teams t JOIN progress p ON p.team_id = t.id WHERE t.id = ?'
   )
     .bind(teamId)
     .first();
   if (!row) return null;
+  if (isTruthy(c.env.EVENT_MODE) && (/^(guest:|practice:|google:)/.test(row.code_hash) || row.team_name === 'TEAM-042')) return null;
   return { teamId, teamName: row.team_name, progress: row };
 }
 
@@ -135,14 +136,16 @@ async function upsertGoogleTeam(env, profile) {
 // Which sign-in methods this deployment offers (the login screen asks first).
 app.get('/api/auth/config', (c) =>
   c.json({
-    google: googleReady(c.env),
-    guest: true,
+    google: !isTruthy(c.env.EVENT_MODE) && googleReady(c.env),
+    guest: !isTruthy(c.env.EVENT_MODE),
     devLogin: isTruthy(c.env.ALLOW_CODE_LOGIN),
+    eventMode: isTruthy(c.env.EVENT_MODE),
   })
 );
 
 // A solo run gets its own durable save, never the shared demo team's progress.
 app.post('/api/guest', async (c) => {
+  if (isTruthy(c.env.EVENT_MODE)) return c.json({ error: 'assigned_code_required' }, 403);
   const id = crypto.randomUUID();
   const name = `Detective-${id.slice(0, 8)}`;
   await c.env.DB.prepare('INSERT INTO teams(name, code_hash) VALUES (?, ?)')
@@ -156,6 +159,7 @@ app.post('/api/guest', async (c) => {
 });
 
 app.post('/api/practice', async (c) => {
+  if (isTruthy(c.env.EVENT_MODE)) return c.json({ error: 'practice_disabled_during_event' }, 403);
   const auth = await requireTeam(c);
   if (!auth) return c.json({ error: 'unauthorized' }, 401);
   const { act } = await c.req.json().catch(() => ({}));
@@ -175,6 +179,7 @@ app.post('/api/practice', async (c) => {
 
 // Google OAuth 2.0 authorization-code flow.
 app.get('/api/auth/google', (c) => {
+  if (isTruthy(c.env.EVENT_MODE)) return c.json({ error: 'assigned_code_required' }, 403);
   if (!googleReady(c.env)) return authErrorRedirect(c, 'google_not_configured');
   const state = crypto.randomUUID();
   setCookie(c, 'pa_oauth_state', state, {
@@ -267,6 +272,11 @@ app.post('/api/login', async (c) => {
     .run();
 
   await setSessionCookie(c, team.id);
+  if (isTruthy(c.env.EVENT_MODE)) {
+    const progress = await c.env.DB.prepare('SELECT flags FROM progress WHERE team_id = ?').bind(team.id).first();
+    await c.env.DB.prepare('UPDATE progress SET flags = ? WHERE team_id = ?')
+      .bind(JSON.stringify({ ...JSON.parse(progress?.flags || '{}'), eventEntered: true }), team.id).run();
+  }
   return c.json({ team: team.name });
 });
 
@@ -326,8 +336,8 @@ app.post('/api/act/complete', async (c) => {
 
   const next = acts[Math.min(actIndex + 1, acts.length - 1)] ?? act;
   const stored = actIndex >= currentIndex ? next.id : current;
-  await c.env.DB.prepare('UPDATE progress SET act = ? WHERE team_id = ?')
-    .bind(stored, auth.teamId)
+  await c.env.DB.prepare("UPDATE progress SET act = ?, started_at = CASE WHEN act = 'act0' AND ? != 'act0' THEN datetime('now') ELSE started_at END WHERE team_id = ?")
+    .bind(stored, stored, auth.teamId)
     .run();
 
   // Completing the final act ends the run; solved_at is only set the first time.
@@ -586,6 +596,7 @@ app.post('/api/interrogate', async (c) => {
 app.post('/api/accuse', async (c) => {
   const auth = await requireTeam(c);
   if (!auth) return c.json({ error: 'unauthorized' }, 401);
+  if (isTruthy(c.env.EVENT_MODE)) return c.json({ error: 'Complete the final act to submit the case conclusion.' }, 403);
   const body = await c.req.json().catch(() => ({}));
   const culprit = String(body.culprit || '');
   const method = String(body.method || '').trim().slice(0, 800);
@@ -644,18 +655,27 @@ app.post('/api/accuse', async (c) => {
 
 app.get('/api/leaderboard', async (c) => {
   const rows = await c.env.DB.prepare(
-    `SELECT t.name, p.solved, p.solved_at,
+    `SELECT t.name, t.code_hash, p.act, p.started_at, p.solved, p.solved_at,
             json_array_length(COALESCE(p.discovered, '[]')) AS clues_found,
             json_array_length(COALESCE(p.solved_puzzles, '[]')) AS puzzles_solved,
             p.hints_used, COALESCE(p.penalties, 0) AS penalties
      FROM progress p JOIN teams t ON t.id = p.team_id
      WHERE COALESCE(p.flags, '{}') NOT LIKE '%"practice":true%'
+     AND t.name != 'Instructor preview'
+     ${isTruthy(c.env.EVENT_MODE) ? `AND COALESCE(p.flags, '{}') LIKE '%"eventEntered":true%'` : ''}
      ORDER BY p.solved_at IS NULL, p.solved_at ASC,
               (json_array_length(COALESCE(p.solved_puzzles, '[]')) +
                json_array_length(COALESCE(p.discovered, '[]'))) DESC,
               COALESCE(p.penalties, 0) ASC, p.hints_used ASC`
   ).all();
-  return c.json({ teams: rows.results });
+  const now = Date.now();
+  const timestamp = value => value ? Date.parse(value.includes('T') ? value : value.replace(' ','T')+'Z') : null;
+  const teams = rows.results.filter(row => !isTruthy(c.env.EVENT_MODE) || (!/^(guest:|practice:|google:)/.test(row.code_hash) && row.name !== 'TEAM-042'))
+    .map(({ code_hash, ...row }) => ({ ...row, actTitle: `${caseData.acts.find(a=>a.id===row.act)?.kicker ?? row.act} · ${caseData.acts.find(a=>a.id===row.act)?.title ?? ''}`,
+      elapsedSeconds: row.act === 'act0' || !row.started_at ? 0 : Math.max(0, Math.floor(((timestamp(row.solved_at) ?? now) - timestamp(row.started_at)) / 1000)) }));
+  teams.sort((a,b) => Number(b.solved)-Number(a.solved) || Number(b.act?.replace('act',''))-Number(a.act?.replace('act','')) || a.elapsedSeconds-b.elapsedSeconds || a.name.localeCompare(b.name));
+  c.header('Cache-Control', 'public, max-age=0, s-maxage=5');
+  return c.json({ teams, serverTime: new Date(now).toISOString() });
 });
 
 export default app;
