@@ -103,15 +103,19 @@ const clickThroughStory = async () => {
 try {
   await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
+  await page.waitForSelector('.title-screen', { timeout: 30000 });
   if (wants('login')) {
-    await page.waitForSelector('.login-card', { timeout: 30000 });
     await sleep(800);
-    await shot('01-login');
+    await shot('01-title-screen');
   }
 
-  await page.waitForSelector('.login-card', { timeout: 30000 });
-  await page.type('.login-card input', TEAM_CODE);
-  await page.click('.login-card button[type=submit]');
+  await page.click('.primary-play');
+  await page.waitForSelector('.entry-card input', { timeout: 15000 });
+  if (wants('login')) {
+    await shot('02-team-entry');
+  } else {
+  await page.type('.entry-card input', TEAM_CODE);
+  await page.click('.entry-card button[type=submit]');
 
   // A team that already finished Act 0 skips the cinematic — the app goes
   // straight to the current act (story overlay or game view). Either way is
@@ -209,6 +213,7 @@ try {
       await sleep(8000);
       await shot(`beat-${id}`);
     }
+  }
   }
 } finally {
   await browser.close();

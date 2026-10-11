@@ -1,6 +1,7 @@
-import {useEffect,useMemo} from 'react';
+import {useEffect,useLayoutEffect,useMemo,useRef} from 'react';
 import {useGLTF,useTexture} from '@react-three/drei';
 import {Box3,Vector3,RepeatWrapping,SRGBColorSpace,CanvasTexture,CatmullRomCurve3} from 'three';
+import {scatterInstanceMatrix} from './InstanceTransform.js';
 
 // Original licensed meshes. Centre/ground each selected modular part independently.
 export function DetailProp({asset,part,position=[0,0,0],rotation=[0,0,0],scale=1,height,tint,alphaMap,castShadow=true,receiveShadow=true}){
@@ -15,7 +16,7 @@ export function DetailProp({asset,part,position=[0,0,0],rotation=[0,0,0],scale=1
     if(tint)mat.color.set(tint);
     if(asset==='sedan'&&mat.name==='blue'){mat.color.set('#b7b9ad');mat.metalness=.55;mat.roughness=.62;}
     if(asset==='sedan_detailed'&&mat.name==='paint'){mat.color.set('#b9bcb2');mat.metalness=.24;mat.roughness=.52;}
-    if(asset==='sedan_detailed'&&mat.name.startsWith('glass')){mat.transparent=true;mat.opacity=.3;mat.depthWrite=false;mat.roughness=.12;}
+    if(asset==='sedan_detailed'&&mat.name.startsWith('glass')){mat.transparent=true;mat.opacity=.18;mat.depthWrite=false;mat.roughness=.12;}
     if(asset==='modular_chainlink_fence'&&mat.name.includes('wire')){mat.alphaTest=.45;mat.transparent=false;mat.depthWrite=true;
      if(alphaMap){mat.alphaMap=alphaMap.clone();if(mat.map){mat.alphaMap.repeat.copy(mat.map.repeat);mat.alphaMap.offset.copy(mat.map.offset);mat.alphaMap.rotation=mat.map.rotation;mat.alphaMap.wrapS=mat.map.wrapS;mat.alphaMap.wrapT=mat.map.wrapT;mat.alphaMap.flipY=mat.map.flipY;}mat.alphaMap.needsUpdate=true;}
     }
@@ -27,6 +28,37 @@ export function DetailProp({asset,part,position=[0,0,0],rotation=[0,0,0],scale=1
  },[scene,part,asset,tint,alphaMap,castShadow,receiveShadow]);
  useEffect(()=>()=>model.materials.forEach(m=>{if(alphaMap&&m.alphaMap)m.alphaMap.dispose();m.dispose();}),[model]);
  return <group position={position} rotation={rotation} scale={height?height/model.size.y:scale}><group position={model.offset}><primitive object={model.copy}/></group></group>;
+}
+
+// Repeated field plants share geometry and material; one instanced draw per
+// species keeps the overgrowth without paying for a draw call per tuft.
+export function InstancedDetailScatter({asset,part,placements,castShadow=false,receiveShadow=true}){
+ const {scene}=useGLTF(`/assets/detail/${asset}.glb`);
+ const ref=useRef();
+ const source=useMemo(()=>{
+  const original=part?scene.getObjectByName(part):scene;
+  if(!original)throw Error(`Missing ${asset}/${part}`);
+  const copy=original.clone(true);copy.updateMatrixWorld(true);
+  const bounds=new Box3().setFromObject(copy),size=bounds.getSize(new Vector3());
+  const offset=new Vector3(-(bounds.min.x+bounds.max.x)/2,-bounds.min.y,-(bounds.min.z+bounds.max.z)/2);
+  const meshes=[];
+  copy.traverse(o=>{if(o.isMesh){
+   const materials=[].concat(o.material).map(m=>{const mat=m.clone();if(/grass|weed|plant/.test(asset)){mat.alphaTest=.4;mat.transparent=false;mat.depthWrite=true;}return mat;});
+   meshes.push({geometry:o.geometry,material:Array.isArray(o.material)?materials:materials[0],materials,matrix:o.matrixWorld.clone()});
+  }});
+  return {meshes,offset,size};
+ },[scene,part,asset]);
+ useLayoutEffect(()=>{
+  if(!ref.current)return;
+  placements.forEach((item,i)=>{
+   ref.current.setMatrixAt(i,scatterInstanceMatrix(item,source.offset,source.meshes[0].matrix));
+  });
+  ref.current.count=placements.length;ref.current.instanceMatrix.needsUpdate=true;ref.current.computeBoundingSphere();
+ },[placements,source]);
+ useEffect(()=>()=>source.meshes.forEach(mesh=>mesh.materials.forEach(material=>material.dispose())),[source]);
+ if(source.meshes.length!==1)throw Error(`${asset}/${part??'all'} must contain exactly one mesh for instanced scatter`);
+ const mesh=source.meshes[0];
+ return <instancedMesh ref={ref} args={[mesh.geometry,mesh.material,placements.length]} castShadow={castShadow} receiveShadow={receiveShadow} />;
 }
 
 export function FencePanel(props){const alpha=useTexture('/assets/detail/fence-alpha.png');return <DetailProp asset="modular_chainlink_fence" part="modular_chainlink_fence_double" height={1.7} alphaMap={alpha} {...props} castShadow={false}/>;}

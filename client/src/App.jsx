@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import Scene from './Scene.jsx';
+import { lazy, useEffect, useMemo, useRef, useState } from 'react';
+const Scene = lazy(() => import('./Scene.jsx'));
 import TitleScreen, { ChapterSelect, EvidenceCard } from './TitleScreen.jsx';
-import CinematicStory from './CinematicStory.jsx';
+const CinematicStory = lazy(() => import('./CinematicStory.jsx'));
 import { SettingsPanel, useSettings } from './Settings.jsx';
 import Soundtrack from './Soundtrack.jsx';
 import Leaderboard from './Leaderboard.jsx';
-import ActDirector from './ActDirector.jsx';
+const ActDirector = lazy(() => import('./ActDirector.jsx'));
 import LogoutButton from './LogoutButton.jsx';
 import {
   AccuseModal,

@@ -650,7 +650,7 @@ puzzles:
     answers: [oc1808, "oc 1808"]
     success: "Dots and dashes fall into place: O, C, 1, 8, 0, 8. The full line reads \"OC1808 in laptop.\" A very strange thing to encode — but Sameer shelves it for later."
     grants: [c_morse]
-    requires: { clues: [c_diary] }
+    requires: { clues: [c_diary, c_laptop_locked] }
     penalty: 0
     fail_message: "Sameer squints at the decoder again. That's not it."
 

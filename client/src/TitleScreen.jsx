@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import Cinema from './Cinema.jsx';
+import { lazy, Suspense, useState } from 'react';
+const Cinema=lazy(()=>import('./Cinema.jsx'));
 import { useSettings } from './Settings.jsx';
 import LogoutButton from './LogoutButton.jsx';
 const TITLE_CAST=[{character:'sameer',at:[-.54,.99],pose:'sit'},{character:'parth',at:[.54,.99],pose:'sit'}];
@@ -8,7 +8,7 @@ export default function TitleScreen({config,state,busy,error,onGuest,onResume,on
   const {update}=useSettings();
   const enter=()=>{update({sound:true,narration:true});if(state)onResume();else setEntry(true);};
   return <main className="title-screen arena-title">
-    <div className="title-world"><Cinema sceneId="gazebo" shot="two" cast={TITLE_CAST}/></div><div className="title-shade"/>
+    <Suspense fallback={<div className="title-world" aria-hidden="true"/>}><div className="title-world"><Cinema sceneId="gazebo" shot="two" cast={TITLE_CAST}/></div></Suspense><div className="title-shade"/>
     <header className="title-header"><span className="brand">◒ Prompt Arena</span><div className="arena-account-actions"><button className="quiet-button" onClick={onLeaderboard}>Live leaderboard ↗</button>{state && <LogoutButton disabled={busy}/>}</div></header>
     <div className="title-content"><p className="eyebrow">A disappearance. A voice. A trail of secrets.</p><h1>Prompt<br/>Arena<span className="title-period">.</span></h1><p className="title-description">The Moon’s Dark Side</p><button className="primary-play" onClick={enter} disabled={busy}><span>{state?'Continue':'Enter'}<small>{state?state.team:'Open your team’s case'}</small></span><span>→</span></button></div>
     <footer className="title-footer"><span>An interactive mystery</span><button className="quiet-button" onClick={onSettings}>Audio & settings</button></footer>

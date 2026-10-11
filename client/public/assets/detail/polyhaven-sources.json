@@ -1,10 +1,5 @@
 [
   {
-    "id": "modern_coffee_table_01",
-    "source": "https://polyhaven.com/a/modern_coffee_table_01",
-    "license": "CC0"
-  },
-  {
     "id": "sofa_03",
     "source": "https://polyhaven.com/a/sofa_03",
     "license": "CC0"
@@ -15,13 +10,8 @@
     "license": "CC0"
   },
   {
-    "id": "wooden_bookshelf_worn",
-    "source": "https://polyhaven.com/a/wooden_bookshelf_worn",
-    "license": "CC0"
-  },
-  {
-    "id": "metal_office_desk",
-    "source": "https://polyhaven.com/a/metal_office_desk",
+    "id": "modern_coffee_table_01",
+    "source": "https://polyhaven.com/a/modern_coffee_table_01",
     "license": "CC0"
   },
   {
@@ -30,8 +20,13 @@
     "license": "CC0"
   },
   {
-    "id": "classic_laptop",
-    "source": "https://polyhaven.com/a/classic_laptop",
+    "id": "metal_office_desk",
+    "source": "https://polyhaven.com/a/metal_office_desk",
+    "license": "CC0"
+  },
+  {
+    "id": "wooden_bookshelf_worn",
+    "source": "https://polyhaven.com/a/wooden_bookshelf_worn",
     "license": "CC0"
   },
   {
@@ -45,8 +40,13 @@
     "license": "CC0"
   },
   {
-    "id": "wall_clock",
-    "source": "https://polyhaven.com/a/wall_clock",
+    "id": "classic_laptop",
+    "source": "https://polyhaven.com/a/classic_laptop",
+    "license": "CC0"
+  },
+  {
+    "id": "book_encyclopedia_set_01",
+    "source": "https://polyhaven.com/a/book_encyclopedia_set_01",
     "license": "CC0"
   },
   {
@@ -55,8 +55,13 @@
     "license": "CC0"
   },
   {
-    "id": "book_encyclopedia_set_01",
-    "source": "https://polyhaven.com/a/book_encyclopedia_set_01",
+    "id": "wall_clock",
+    "source": "https://polyhaven.com/a/wall_clock",
+    "license": "CC0"
+  },
+  {
+    "id": "cardboard_box_01",
+    "source": "https://polyhaven.com/a/cardboard_box_01",
     "license": "CC0"
   },
   {
@@ -70,8 +75,8 @@
     "license": "CC0"
   },
   {
-    "id": "cardboard_box_01",
-    "source": "https://polyhaven.com/a/cardboard_box_01",
+    "id": "grass_medium_01",
+    "source": "https://polyhaven.com/a/grass_medium_01",
     "license": "CC0"
   },
   {
@@ -85,8 +90,8 @@
     "license": "CC0"
   },
   {
-    "id": "grass_medium_01",
-    "source": "https://polyhaven.com/a/grass_medium_01",
+    "id": "can_rusted",
+    "source": "https://polyhaven.com/a/can_rusted",
     "license": "CC0"
   },
   {
@@ -95,13 +100,13 @@
     "license": "CC0"
   },
   {
-    "id": "can_rusted",
-    "source": "https://polyhaven.com/a/can_rusted",
+    "id": "vintage_electric_kettle",
+    "source": "https://polyhaven.com/a/vintage_electric_kettle",
     "license": "CC0"
   },
   {
-    "id": "vintage_electric_kettle",
-    "source": "https://polyhaven.com/a/vintage_electric_kettle",
+    "id": "wooden_bowl_01",
+    "source": "https://polyhaven.com/a/wooden_bowl_01",
     "license": "CC0"
   },
   {
@@ -112,11 +117,6 @@
   {
     "id": "desk_lamp_arm_01",
     "source": "https://polyhaven.com/a/desk_lamp_arm_01",
-    "license": "CC0"
-  },
-  {
-    "id": "wooden_bowl_01",
-    "source": "https://polyhaven.com/a/wooden_bowl_01",
     "license": "CC0"
   },
   {
@@ -135,18 +135,23 @@
     "license": "CC0"
   },
   {
-    "id": "metal_trash_can",
-    "source": "https://polyhaven.com/a/metal_trash_can",
-    "license": "CC0"
-  },
-  {
     "id": "modern_ceiling_lamp_01",
     "source": "https://polyhaven.com/a/modern_ceiling_lamp_01",
     "license": "CC0"
   },
   {
+    "id": "metal_trash_can",
+    "source": "https://polyhaven.com/a/metal_trash_can",
+    "license": "CC0"
+  },
+  {
     "id": "dining_table",
     "source": "https://polyhaven.com/a/dining_table",
+    "license": "CC0"
+  },
+  {
+    "id": "modular_factory_facade",
+    "source": "https://polyhaven.com/a/modular_factory_facade",
     "license": "CC0"
   }
 ]

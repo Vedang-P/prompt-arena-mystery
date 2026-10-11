@@ -91,7 +91,7 @@ rooms:
         type: puzzle
         puzzle: p_mask_owner
         label: "The wendigo mask on his bed"
-        position: [3.5, 0.9, -3.5]
+        position: [-2.8, 0.705, -1.35]
       - id: sameer_room_a7_veer
         act: act7
         type: character
@@ -599,7 +599,7 @@ puzzles:
       - "ngo pamphlet"
     success: "The NGO pamphlet! Perigee had hosted a huge workshop in Nigeria just a year ago. He looked up the aftermath — an article on the second page of Google, connecting the same dots he was about to connect. This was the journalist's last article. He tries not to think about what happened to her."
     grants: [c_article]
-    requires: { puzzles: [p_lua] }
+    requires: { clues: [c_lua_files] }
 
   - id: p_continue
     kind: choice

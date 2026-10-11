@@ -1,7 +1,8 @@
 import './styles-scene.css';
 import { CinemaProp, ParkGround, WindTree, CeilingFan } from './CinemaAssets.jsx';
-import {DetailProp,TerrainSurface,WallSign,Cable,ComputerStation,ShelfContents,FencePanel} from './EnvironmentDetails.jsx';
-import { BEDROOM, HOME_STAIRS, HOME_UPPER_DOORWAY, HOME_BEDROOM, backWallPanels, POLICE, DESK_TOP, DESK_SEAT, PARTH_ANCHORS, PARK, DETAIL_ANCHORS,FIELD,ROOM_VIEWS } from './SceneLayout.js';
+import {DetailProp,InstancedDetailScatter,TerrainSurface,WallSign,Cable,ComputerStation,ShelfContents,FencePanel} from './EnvironmentDetails.jsx';
+import { BEDROOM, SAMEER_BED, HOME_STAIRS, HOME_UPPER_DOORWAY, HOME_BEDROOM, backWallPanels, POLICE, HOSPITAL_BED, DESK_TOP, DESK_SEAT, PARTH_ANCHORS, PARK, DETAIL_ANCHORS,FIELD,FIELD_TRACKS,FIELD_BACKGROUND_BUILDING,FIELD_OVERGROWTH,ROOM_VIEWS,updateFieldBackpackOrbit } from './SceneLayout.js';
+import DemonMask from './DemonMask.jsx';
 import {seatContact} from './SceneStaging.js';
 import Actor, { actorURL } from './Actor.jsx';
 import { useSettings } from './Settings.jsx';
@@ -514,13 +515,32 @@ function HotspotMarkers({ room, hot }) {
     const anchors=room.id==='parth_room'?PARTH_ANCHORS:DETAIL_ANCHORS[room.id]??{};
     const characters=(room.hotspots??[]).filter(h=>h.type==='character');
     for(const h of room.hotspots??[]){if(h.type==='character')continue;const position=anchors[h.id]??hotspotPosition(h,0);const key=position[0]+':'+position[2];if(!groups.has(key))groups.set(key,{position,hotspots:[]});groups.get(key).hotspots.push(h);}
-    return <>{characters.map(h=>{const officer=room.id==='police_station'&&h.character==='officer';return <CharacterHotspot key={h.id} hotspot={h} position={officer?[POLICE.officer[0],DESK_SEAT-.4915,POLICE.officer[1]]:hotspotPosition(h)} hot={hot} pose={officer?'sit':'idle'} rotation={[0,0,0]}/>;})}{[...groups.entries()].map(([key,group])=><AnchoredHotspot key={key} {...group} hot={hot}/>)}</>;
+    return <>{characters.map(h=>{const officer=room.id==='police_station'&&h.character==='officer';return <CharacterHotspot key={h.id} hotspot={h} position={officer?[POLICE.officer[0],DESK_SEAT-.4915,POLICE.officer[1]]:hotspotPosition(h)} hot={hot} pose={officer?'sit':'idle'} rotation={[0,0,0]}/>;})}{[...groups.entries()].map(([key,group])=><AnchoredHotspot key={key} {...group} hot={hot} avoidLabelOverlap={room.id==='abandoned_field'&&group.hotspots.some(h=>h.id==='af_backpack')}/>)}</>;
   }
 }
 
-function AnchoredHotspot({hotspots,position,hot}) {
+function AnchoredHotspot({hotspots,position,hot,avoidLabelOverlap=false}) {
+  const [orbitShiftY,setOrbitShiftY]=useState(0),wasOverlapping=useRef(false),appliedShiftY=useRef(0);
+  const {size}=useThree();
+  const sedanLabel=useRef(new THREE.Vector3()),backpackLabel=useRef(new THREE.Vector3());
+  useFrame(({camera})=>{
+    if(!avoidLabelOverlap)return;
+    const sedan=DETAIL_ANCHORS.abandoned_field.af_sedan;
+    sedanLabel.current.set(sedan[0],sedan[1]+.28,sedan[2]).project(camera);
+    backpackLabel.current.set(position[0],position[1]+.28,position[2]).project(camera);
+    const next=updateFieldBackpackOrbit({
+      screenDx:Math.abs(sedanLabel.current.x-backpackLabel.current.x)*size.width/2,
+      screenDy:(sedanLabel.current.y-backpackLabel.current.y)*size.height/2,
+      viewportWidth:size.width,
+    },wasOverlapping.current);
+    wasOverlapping.current=next.overlapping;
+    if(Math.abs(next.shiftY-appliedShiftY.current)>2){
+      appliedShiftY.current=next.shiftY;
+      setOrbitShiftY(next.shiftY);
+    }
+  });
   const open=h=>h.type==='puzzle'?hot.onPuzzle?.(h):h.type==='travel'?hot.onTravel?.(h):hot.onClue?.(h);
-  return <group position={position}><Html position={[0,.28,0]} center zIndexRange={[30,0]}><div className="object-actions">{hotspots.map(h=>{const solved=(hot.solvedPuzzles??[]).includes(h.puzzle),found=(hot.state.discovered??[]).includes(h.clue);return <button key={h.id} className="object-anchor" disabled={solved} onClick={()=>open(h)}>{h.label}{found||solved?' ✓':''}</button>;})}</div></Html><mesh onClick={e=>{e.stopPropagation();open(hotspots[0]);}}><sphereGeometry args={[.045,12,8]}/><meshStandardMaterial color="#d4b67c" emissive="#b39256" emissiveIntensity={.4}/></mesh></group>;
+  return <group position={position}><Html position={[0,.28,0]} center zIndexRange={[30,0]}><div className="object-actions" style={orbitShiftY?{transform:`translateY(${orbitShiftY}px)`}:undefined}>{hotspots.map(h=>{const solved=(hot.solvedPuzzles??[]).includes(h.puzzle),found=(hot.state.discovered??[]).includes(h.clue);return <button key={h.id} className="object-anchor" disabled={solved} onClick={()=>open(h)}>{h.label}{found||solved?' ✓':''}</button>;})}</div></Html><mesh onClick={e=>{e.stopPropagation();open(hotspots[0]);}}><sphereGeometry args={[.045,12,8]}/><meshStandardMaterial color="#d4b67c" emissive="#b39256" emissiveIntensity={.4}/></mesh></group>;
 }
 
 // ---------- room shell ----------
@@ -1382,11 +1402,13 @@ function BedroomWorkstation({paused}) {
     <Cable points={[[2.85,DESK_TOP,-1.7],[3.14,.68,-1.7],[3.17,.09,-1.7],[4.92,.07,-1.7]]}/>
   </group>;
 }
-function SameerRoomScene({ room, hot, paused=false }) {
+function SameerRoomScene({ room, hot, paused=false, phase }) {
+  const maskVisible=phase==='mask_reveal'||(phase!=='mask_taken'&&['act7','act8'].includes(hot.state?.act));
   return <group>
     <Shell width={10} depth={8} height={3.2} tint="#786957" painted/>
     <Floor width={10} depth={8} repeat={[5,4]}/>
-    <Bed position={[-2.8,0,-1.35]}/>
+    <Bed position={SAMEER_BED.center}/>
+    {maskVisible&&<DemonMask position={[SAMEER_BED.center[0],SAMEER_BED.surfaceY+.018,SAMEER_BED.center[2]]} rotation={[-Math.PI/2,0,0]} scale={.95}/>}
     <BedroomWorkstation paused={paused}/>
     <Prop model="bookcaseOpen.glb" position={[-3.8,0,-3.25]}/>
     <Window position={[4.95,1.75,-1.6]} rotation={[0,-Math.PI/2,0]}/>
@@ -1431,24 +1453,30 @@ function ParthRoomScene({ room, hot, paused=false }) {
   </group>;
 }
 
+function FieldOvergrowth(){
+ const plants=useMemo(()=>FIELD_OVERGROWTH,[]);
+ return <>{['grass_medium_01_large_a_LOD0','grass_medium_01_tall_a_LOD0'].map(part=><InstancedDetailScatter key={part} asset="grass_medium_01" part={part} placements={plants.filter(plant=>plant.part===part)}/>)}</>;
+}
+
 function AbandonedFieldRoom({ room, hot }) {
   return <group>
    <NightSky/>
    <TerrainSurface width={70} depth={70}/>
-   <TerrainSurface material="brown_mud_leaves_01" width={6.4} depth={40} position={[-.6,.003,5]} repeat={[2,12]} color="#77583b" trail/>
-   <group position={[FIELD.car[0],.006,FIELD.car[2]+2.8]} rotation={[0,FIELD.yaw,0]}>
-    {[-.58,.58].map(x=><TerrainSurface key={x} material="brown_mud_leaves_01" width={.34} depth={7} position={[x,0,0]} repeat={[1,5]} color="#514437" trail/>)}
+   <TerrainSurface material="brown_mud_leaves_01" width={4.8} depth={30} position={[-1.4,.003,-7]} repeat={[1.8,8]} color="#967f68" trail/>
+   <group position={[FIELD_TRACKS.center[0],.006,FIELD_TRACKS.center[1]]} rotation={[0,FIELD.yaw,0]}>
+    {[-FIELD_TRACKS.offset,FIELD_TRACKS.offset].map(x=><TerrainSurface key={x} material="brown_mud_leaves_01" width={FIELD_TRACKS.width} depth={FIELD_TRACKS.length} position={[x,0,0]} repeat={[1,3]} color="#817461" trail/>)}
    </group>
    <group position={FIELD.car} rotation={[0,FIELD.yaw,0]}>
     <DetailProp asset="sedan_detailed"/>
     <DetailProp asset="backpack" position={FIELD.seat} height={.38} rotation={[0,-Math.PI/2,0]}/>
     <WallSign position={[2.307,.697,0]} rotation={[0,Math.PI/2,0]} width={.39} height={.084} title="KA01OC1808" background="#dddac8" ink="#1b2325"/>
    </group>
-   {Array.from({length:36},(_,i)=>{const side=i%2?-1:1,x=side*(3.6+(i*17%37)/5),z=-11+(i*11%75)/5;return <DetailProp key={i} asset="grass_medium_01" part={`grass_medium_01_${i%3?'large_a':'tall_a'}_LOD0`} position={[x,.008,z]} rotation={[0,i*2.4,0]} scale={2+(i%4)*.42}/>;})}
+   <FieldOvergrowth/>
    {Array.from({length:8},(_,i)=>{const side=i%2?-1:1,x=side*(5.2+(i*13%22)/5),z=-9+(i*17%60)/5;return <DetailProp key={`weed-${i}`} asset="weed_plant_02" position={[x,.006,z]} rotation={[0,i*1.73,0]} scale={.9+(i%3)*.2}/>;})}
    {Array.from({length:10},(_,i)=><DetailProp key={i} asset="rock_09" position={[(i%2?-1:1)*(3.5+i%5),.006,-5+i*.72]} scale={2.5+(i%3)} rotation={[0,i*.7,0]}/>)}
    {[-8.05,-6.55,-5.05,-3.55,-2.05,-.55,.95,2.45,3.95,5.45,6.95,8.45].map(x=><FencePanel key={x} position={[x,0,-9]}/>)}
    {[-13,-9,-5,-1,3,7,11].map((x,i)=><CinemaProp key={x} asset="tree_background" position={[x,0,-14-(i%2)*3]} height={8+(i%4)} rotation={[0,i*.73,0]}/>)}
+   <DetailProp asset="modular_factory_facade" {...FIELD_BACKGROUND_BUILDING} castShadow={false} receiveShadow={false}/>
    <WindTree position={[-7.2,0,-4.3]} height={5.5}/><WindTree position={[8,0,-5]} height={6}/>
    <DetailProp asset="old_tyre" position={[4.3,.005,-4]} rotation={[0,.6,0]}/>
    <DetailProp asset="can_rusted" position={[-3.5,.006,.2]} rotation={[0,1,0]}/>
@@ -1645,16 +1673,17 @@ function NgoArchiveRoom({room,hot}) {
  </group>;
 }
 
-function HospitalRoom({room,hot,actId}) {
+function HospitalRoom({room,hot,actId,phase,paused=false}) {
+ if(actId==='act8'&&String(phase??'').startsWith('ending_'))return <HospitalEndingRoom phase={phase} paused={paused}/>;
  const ritual=['act6','act8'].includes(actId),cargo=actId==='act7';
- if(cargo)return <HospitalDispatch room={room} hot={hot}/>;
+ if(cargo)return <HospitalDispatch room={room} hot={hot} loading={phase==='cargo_loading'}/>;
  return <group>
   <Shell width={16} depth={10} height={3.4} tint="#b9c6c5" painted/>
   <Floor width={16} depth={10} repeat={[8,5]} color="#c8d3ce" tiled/>
   <WallSign position={[0,2.6,-4.93]} width={3.4} height={.7} title="SHASHDHAR HOSPITAL" lines={['WARD 03 / RESTRICTED ACCESS']} background="#325052" ink="#e4eee9"/>
   <DoorOpening position={[-5.8,0,-4.4]} label="SERVICE ACCESS"/>
   <DoorOpening position={[5.8,0,-4.4]} label="OPERATING THEATRE"/>
-  {!cargo&&<DetailProp asset="hospital_bed" position={[-4.5,0,-1.1]} rotation={[0,.08,0]}/>}
+  {!cargo&&<DetailProp asset="hospital_bed" position={HOSPITAL_BED.center} rotation={[0,.08,0]}/>}
   <DetailProp asset="bedside_cabinet" position={[-6,0,-1.1]}/>
   <DetailProp asset="privacy_curtain" position={[-3,1.045,-2]} rotation={[0,Math.PI/2,0]}/>
   <DetailProp asset="medical_cart" position={[-5.8,0,1.3]}/>
@@ -1680,7 +1709,68 @@ function HospitalRoom({room,hot,actId}) {
  </group>;
 }
 
-function HospitalDispatch({room,hot}) {
+function FireWindow({paused=false}) {
+ const glow=useRef();
+ useFrame(({clock})=>{if(!paused&&glow.current){const t=clock.elapsedTime;glow.current.intensity=5.5+Math.sin(t*8.1)*1.1+Math.sin(t*13.7)*.55;}});
+ const flameTextures=useMemo(()=>Array.from({length:5},(_,i)=>{
+  const canvas=document.createElement('canvas');canvas.width=128;canvas.height=224;
+  const ctx=canvas.getContext('2d'),s=i-2;
+  // Give each tongue a distinct crest and width so the burning window reads as
+  // an irregular fire line, rather than a row of cloned warning icons.
+  ctx.shadowColor='rgba(255,101,30,.68)';ctx.shadowBlur=13;
+  ctx.beginPath();ctx.moveTo(14+s*2,220);
+  ctx.bezierCurveTo(7+s*3,179,24-s*2,164,19+s*4,130);
+  ctx.bezierCurveTo(14+s*5,103,35-s*3,91,34+s*2,61);
+  ctx.bezierCurveTo(42-s*4,78,43+s*5,93,55+s*2,108);
+  ctx.bezierCurveTo(71-s*3,126,69+s*2,151,80-s*4,166);
+  ctx.bezierCurveTo(96+s*4,184,101-s*5,197,111-s*2,220);ctx.closePath();
+  const outer=ctx.createLinearGradient(0,220,0,54);outer.addColorStop(0,'rgba(255,239,153,.98)');outer.addColorStop(.2,'rgba(255,162,55,.96)');outer.addColorStop(.62,'rgba(231,75,25,.89)');outer.addColorStop(1,'rgba(153,36,20,.08)');ctx.fillStyle=outer;ctx.fill();
+  ctx.shadowBlur=0;ctx.beginPath();ctx.moveTo(38+s,220);
+  ctx.bezierCurveTo(29-s*2,184,49+s,169,43-s,146);
+  ctx.bezierCurveTo(39+s*2,125,58-s*2,112,61+s,90);
+  ctx.bezierCurveTo(72-s,117,72+s*2,133,84-s,153);
+  ctx.bezierCurveTo(94+s,177,79-s,196,91+s,220);ctx.closePath();
+  const inner=ctx.createLinearGradient(0,220,0,91);inner.addColorStop(0,'rgba(255,255,218,.98)');inner.addColorStop(.42,'rgba(255,194,78,.94)');inner.addColorStop(1,'rgba(246,105,24,.04)');ctx.fillStyle=inner;ctx.fill();
+  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.needsUpdate=true;return texture;
+ }),[]);
+ useEffect(()=>()=>flameTextures.forEach(texture=>texture.dispose()),[flameTextures]);
+ const flames=[[-1.55,1.9,.56,1.25],[-.67,2.05,.68,1.75],[.25,1.95,.62,1.42],[1.18,2.04,.66,1.68],[1.72,1.82,.42,1.08]];
+ return <group>
+  <mesh position={[0,2.48,-7.38]}><planeGeometry args={[4.25,2.65]}/><meshBasicMaterial color="#210d0a"/></mesh>
+  {flames.map(([x,y,radius,height],i)=><mesh key={x} position={[x,y,-7.18+i*.002]} scale={[radius*1.9,height*.84,1]}><planeGeometry args={[1,1]}/><meshBasicMaterial map={flameTextures[i]} transparent opacity={.94} depthWrite={false} toneMapped={false} blending={THREE.AdditiveBlending}/></mesh>)}
+  {[[-2.23,2.55,.12,2.65],[2.23,2.55,.12,2.65],[0,1.24,4.56,.12],[0,3.86,4.56,.12]].map(([x,y,w,h])=><mesh key={`${x}:${y}`} position={[x,y,-7.02]}><boxGeometry args={[w,h,.2]}/><meshStandardMaterial color="#34302c" roughness={.9}/></mesh>)}
+  <pointLight ref={glow} position={[0,2,-6.15]} color="#ff6128" intensity={5.5} distance={15} decay={1}/>
+ </group>;
+}
+
+function PhoneScreen({active}) {
+ return <group rotation={[-.02,0,0]}>
+  <mesh><boxGeometry args={[.118,.018,.235]}/><meshStandardMaterial color="#14181c" metalness={.45} roughness={.4}/></mesh>
+  <mesh position={[0,.0102,0]}><boxGeometry args={[.098,.003,.208]}/><meshStandardMaterial color={active?'#9cdbed':'#202a2d'} emissive={active?'#49b9dc':'#000000'} emissiveIntensity={active?1.8:0} roughness={.35}/></mesh>
+ </group>;
+}
+
+function HospitalEndingRoom({phase,paused}) {
+ const phoneActive=phase==='ending_phone'||phase==='ending_voice';
+ return <group>
+  <Shell width={13} depth={14} height={4.2} tint="#687477" painted backOpening={{centerX:0,bottomY:1.25,width:4.45,height:2.55}}/>
+  <Floor width={13} depth={14} repeat={[6,7]} color="#727b79" tiled/>
+  <FireWindow paused={paused}/>
+  <DetailProp asset="side_table_01" position={[2.45,0,.85]} height={.55066}/>
+  <group position={[2.45,.551,.85]}><PhoneScreen active={phoneActive}/></group>
+  <DoorOpening position={[-5.8,0,-4.1]} label="STAIR B / ROOF ACCESS"/>
+  <DoorOpening position={[5.8,0,-4.1]} label="WARD 03 / RESTRICTED ACCESS"/>
+  <mesh position={[-5.4,2.2,-4.02]}><boxGeometry args={[.12,.14,.08]}/><meshStandardMaterial color="#bf3d2f" emissive="#d32218" emissiveIntensity={1.4}/></mesh>
+  <pointLight position={[-5.3,2.2,-3.5]} color="#d34236" intensity={1.6} distance={5}/>
+  <DetailProp asset="medical_cart" position={[-3.4,0,-1.5]} rotation={[0,.25,0]}/>
+  <DetailProp asset="hospital_bed" position={[4.55,0,-4.85]} rotation={[0,-.15,0]}/>
+  <Fluorescent position={[-3,4.08,-1.5]} delay={2.6}/><Fluorescent position={[3,4.08,2]} delay={4.1}/>
+  <pointLight position={[0,3.2,3.1]} color="#6688a4" intensity={phoneActive ? .75 : 1.1} distance={9}/>
+  <pointLight position={[2.45,.8,.85]} color={phoneActive?'#5ccbed':'#23323a'} intensity={phoneActive?1.7:.12} distance={3}/>
+ </group>;
+}
+
+function HospitalDispatch({room,hot,loading=false}) {
  return <group>
   <Shell width={12} depth={14} height={4.2} tint="#8e9997" painted/>
   <Floor width={12} depth={14} repeat={[4,4]} color="#8e9895" tiled/>
@@ -1689,8 +1779,21 @@ function HospitalDispatch({room,hot}) {
   <WallSign position={[-2,3.6,-6.9]} width={3.5} height={.5} title="SHASHDHAR / LOADING BAY"/>
   <DoorOpening position={[4.2,0,-6.75]} label="SERVICE LIFT / STAFF"/>
   <DetailProp asset="cargo_van" position={[-3,0,-2.2]} height={2.2} rotation={[0,Math.PI/2,0]}/>
-  <DetailProp asset="hand_truck" position={[-.3,0,-1]}/>
-  {[-4.9,-3.8,-2.7].map(x=><DetailProp key={x} asset="cardboard_box_01" position={[x,0,1.4]}/>)}
+  {loading ? <>
+   {/* Cargo is staged between the shutter and the van's rear; the loaded dolly
+       and clear path make the dispatch line legible from the story camera. */}
+   <DetailProp asset="hand_truck" position={[-.65,0,-4.45]} rotation={[0,Math.PI,0]}/>
+   <DetailProp asset="cardboard_box_01" position={[-.65,.48,-4.45]} scale={.82}/>
+   <DetailProp asset="cardboard_box_01" position={[-.65,.98,-4.45]} scale={.82}/>
+   <DetailProp asset="cardboard_box_01" position={[-1.65,0,-4.45]}/>
+   <DetailProp asset="cardboard_box_01" position={[-1.65,.5,-4.45]}/>
+   <DetailProp asset="cardboard_box_01" position={[-.35,0,-3.45]}/>
+   <DetailProp asset="cardboard_box_01" position={[-.35,0,-2.45]}/>
+   <WallSign position={[-2,2.02,-6.89]} width={2.55} height={.32} title="SEALED MEDICAL SUPPLIES" background="#334b47"/>
+  </> : <>
+   <DetailProp asset="hand_truck" position={[-.3,0,-1]}/>
+   {[-4.9,-3.8,-2.7].map(x=><DetailProp key={x} asset="cardboard_box_01" position={[x,0,1.4]}/>)}
+  </>}
   <DetailProp asset="metal_office_desk" position={[3.8,0,-2.8]}/>
   <DetailProp asset="clipboard" position={[3.8,.7875,-2.8]} scale={.7}/>
   <DetailProp asset="office_chair" position={[3.8,0,-1.65]} height={1.168*DESK_SEAT/.618} rotation={[0,Math.PI,0]}/>
@@ -1803,14 +1906,15 @@ export function RoomLighting({ roomId, quality = 'high',cinematicPhase }) {
   const night=outdoor&&roomId!=='gazebo';
   const field=roomId==='abandoned_field';
   const cinematicNight=roomId==='concert'&&['capture','departure'].includes(cinematicPhase);
+  const finalHospital=roomId==='hospital'&&String(cinematicPhase??'').startsWith('ending_');
   return <>
-    <Environment files={gazebo?"/assets/cinema/park_sunrise_1k.hdr":outdoor ? "/assets/cinema/park_bench_1k.hdr" : "/assets/env/ballroom_2k.hdr"} ground={gazebo?{height:2,radius:70,scale:120}:undefined} background={outdoor&&roomId!=='abandoned_field'&&!cinematicNight} backgroundBlurriness={.02} backgroundIntensity={gazebo ? .35 : night ? .045 : .8} environmentIntensity={gazebo ? .56 : field ? .68 : night ? .3 : outdoor ? .85 : .62} />
-    <ambientLight intensity={gazebo ? .5 : field ? 1.05 : night ? .5 : outdoor ? .65 : .8} color={gazebo?'#e8caa7':field?'#cbd8e8':'#bdcce8'} />
-    <directionalLight position={[-4, 8, 6]} intensity={gazebo ? 1.1 : field ? 1.7 : night ? .85 : outdoor ? 2 : 1.7} color={gazebo?'#ffd2a4':field?'#d7e3f4':night?'#a5bcdc':outdoor?'#ffe2a9':'#d7e5ee'} castShadow={quality !== 'low'}
+    <Environment files={gazebo?"/assets/cinema/park_sunrise_1k.hdr":outdoor ? "/assets/cinema/park_bench_1k.hdr" : "/assets/env/ballroom_2k.hdr"} ground={gazebo?{height:2,radius:70,scale:120}:undefined} background={outdoor&&roomId!=='abandoned_field'&&!cinematicNight} backgroundBlurriness={.02} backgroundIntensity={finalHospital ? .06 : gazebo ? .35 : night ? .045 : .8} environmentIntensity={finalHospital ? .19 : gazebo ? .56 : field ? .68 : night ? .3 : outdoor ? .85 : .62} />
+    <ambientLight intensity={finalHospital ? .24 : gazebo ? .5 : field ? 1.05 : night ? .5 : outdoor ? .65 : .8} color={finalHospital?'#8193a2':gazebo?'#e8caa7':field?'#cbd8e8':'#bdcce8'} />
+    <directionalLight position={[-4, 8, 6]} intensity={finalHospital ? .38 : gazebo ? 1.1 : field ? 1.7 : night ? .85 : outdoor ? 2 : 1.7} color={finalHospital?'#9aacbf':gazebo?'#ffd2a4':field?'#d7e3f4':night?'#a5bcdc':outdoor?'#ffe2a9':'#d7e5ee'} castShadow={quality !== 'low'}
       shadow-mapSize={quality === 'high' ? [2048, 2048] : [1024, 1024]}
       shadow-camera-left={-14} shadow-camera-right={14} shadow-camera-top={14} shadow-camera-bottom={-14}
       shadow-camera-far={38} shadow-bias={-0.0005} />
-    <directionalLight position={[4, 4, -3]} intensity={field ? .72 : gazebo ? .38 : night ? .22 : .6} color={field?'#9db8e4':night?'#7b9fce':'#e0ab7b'} />
+    <directionalLight position={[4, 4, -3]} intensity={finalHospital ? .12 : field ? .72 : gazebo ? .38 : night ? .22 : .6} color={finalHospital?'#667a8d':field?'#9db8e4':night?'#7b9fce':'#e0ab7b'} />
   </>;
 }
 
@@ -1949,9 +2053,9 @@ export default function Scene({
   const { quality } = useSettings();
   return (
     <WorldBoundary key={room.id}>
-      <Canvas shadows={quality !== 'low'} dpr={[1, quality === 'high' ? 1.65 : 1]} camera={{ position: view.at, fov: view.fov }}>
+      <Canvas shadows={quality !== 'low' ? 'percentage' : false} dpr={[1, quality === 'high' ? 1.65 : 1]} camera={{ position: view.at, fov: view.fov }}>
         <color attach="background" args={[bg]} />
-        <fog attach="fog" args={isOutdoor ? [bg, 25, 65] : [bg, 22, 42]} />
+        <fog attach="fog" args={room.id==='abandoned_field'?[bg,12,50]:isOutdoor ? [bg, 25, 65] : [bg, 22, 42]} />
         <Suspense fallback={<SceneLoading />}>
           <RoomLighting roomId={room.id} quality={quality} />
           <RoomEnvironment roomId={room.id} room={room} hot={hot} />

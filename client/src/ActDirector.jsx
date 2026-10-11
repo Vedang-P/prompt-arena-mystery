@@ -3,6 +3,7 @@ import { useGLTF } from '@react-three/drei';
 import Cinema from './Cinema.jsx';
 import { useSettings } from './Settings.jsx';
 import { publishSpeech } from './VoicePlayback.js';
+import {ambienceFor} from './MusicCues.js';
 import LogoutButton from './LogoutButton.jsx';
 const SPEAKERS={narrator:'Narrator',voice:'Unknown voice'};
 export default function ActDirector({act,characters=[],onComplete,busy,nextActTitle,nextActKicker,onLeaderboard,review=false}) {
@@ -32,8 +33,8 @@ export default function ActDirector({act,characters=[],onComplete,busy,nextActTi
     const timer=setTimeout(()=>setPhase('play'),2400);return()=>clearTimeout(timer);
   },[phase,manifest,readyRoom,beat?.room]);
   useEffect(()=>{
-    window.dispatchEvent(new CustomEvent('arena-cue',{detail:{cue:beatIndex<3?'dusk':beat?.room==='sameer_room'?'unknown':'search',paused}}));
-    return()=>window.dispatchEvent(new CustomEvent('arena-cue',{detail:{cue:'dusk',paused:false}}));
+    window.dispatchEvent(new CustomEvent('arena-cue',{detail:{cue:beatIndex<3?'dusk':beat?.room==='sameer_room'?'unknown':'search',ambience:ambienceFor(beat?.room),paused}}));
+    return()=>window.dispatchEvent(new CustomEvent('arena-cue',{detail:{cue:'dusk',ambience:ambienceFor(act.entry_room),paused:false}}));
   },[beatIndex,beat?.room,paused]);
   useEffect(()=>{
     if(phase!=='play'||!line||!manifest||readyRoom!==beat.room)return;

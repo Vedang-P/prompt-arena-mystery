@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import Cinema from './Cinema.jsx';
 import { useSettings } from './Settings.jsx';
 import LogoutButton from './LogoutButton.jsx';
-import {locationFor,storyCast} from './SceneStaging.js';
+import {locationFor,storyCast,cinematicPhaseFor} from './SceneStaging.js';
 import {useRecordedLine} from './useRecordedLine.js';
-import {musicFor} from './MusicCues.js';
+import {ambienceFor,musicFor} from './MusicCues.js';
 
 export default function CinematicStory({ story, act, characters, onDone, busy, initialIndex=0, initiallyPaused=false }) {
   const [index, setIndex] = useState(initialIndex);
@@ -15,12 +15,12 @@ export default function CinematicStory({ story, act, characters, onDone, busy, i
   const last = index >= story.lines.length - 1;
   const names = Object.fromEntries(characters.map((c) => [c.id, c.name]));
   const sceneId = locationFor(act, story.after, index);
-  const cinematicPhase=act.id==='act3'&&story.after==='outro'&&sceneId==='concert'?(index===0?'capture':'departure'):null;
+  const cinematicPhase=cinematicPhaseFor(act,story.after,sceneId,index);
   const sceneReadyKey=`${sceneId}:${cinematicPhase??'default'}`;
-  const cast = useMemo(()=>storyCast(act,story.after,sceneId),[act.id,sceneId,story.after]);
+  const cast = useMemo(()=>storyCast(act,story.after,sceneId,index),[act.id,index,sceneId,story.after]);
   useEffect(()=>{
-    window.dispatchEvent(new CustomEvent('arena-cue',{detail:{cue:musicFor(sceneId),paused}}));
-    return()=>window.dispatchEvent(new CustomEvent('arena-cue',{detail:{cue:musicFor(act.entry_room),paused:false}}));
+    window.dispatchEvent(new CustomEvent('arena-cue',{detail:{cue:musicFor(sceneId),ambience:ambienceFor(sceneId),paused}}));
+    return()=>window.dispatchEvent(new CustomEvent('arena-cue',{detail:{cue:musicFor(act.entry_room),ambience:ambienceFor(act.entry_room),paused:false}}));
   },[sceneId,paused,act.entry_room]);
   const voice=useRecordedLine({line,enabled:narration,paused,ready:readyRoom===sceneReadyKey,onEnd:()=>{if(!last)setIndex(i=>i+1);}});
   const advance = () => { if (busy) return; if (!last) setIndex((i) => i + 1); else onDone(); };

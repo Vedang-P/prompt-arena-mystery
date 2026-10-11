@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {AnimationMixer,Box3,PerspectiveCamera,Vector3} from 'three';
 import {caseData} from '../src/case.js';
-import {locationFor,storyCast,placeCast,wideShot,roomWideShot,captureShot} from '../client/src/SceneStaging.js';
+import {locationFor,storyCast,placeCast,wideShot,roomWideShot,captureShot,cinematicPhaseFor} from '../client/src/SceneStaging.js';
 import {createFootContact} from '../client/src/FootContact.js';
-import {PARK,BEDROOM,HOME_STAIRS,HOME_UPPER_DOORWAY,HOME_BEDROOM,backWallPanels,DESK_TOP} from '../client/src/SceneLayout.js';
+import {PARK,BEDROOM,SAMEER_BED,DETAIL_ANCHORS,HOME_STAIRS,HOME_UPPER_DOORWAY,HOME_BEDROOM,backWallPanels,DESK_TOP,FIELD,FIELD_TRACKS,ROOM_VIEWS,updateFieldBackpackOrbit} from '../client/src/SceneLayout.js';
 import {loadGeometry} from './gltf-geometry.mjs';
 const scenes=[];
 for(const act of caseData.acts){
@@ -14,10 +14,37 @@ for(const act of caseData.acts){
   }
 }
 const measurements=JSON.parse(await fs.readFile('.asset-cache/actor-measurements.json','utf8'));
-const act2=caseData.acts.find(act=>act.id==='act2'),act3=caseData.acts.find(act=>act.id==='act3');
+const act2=caseData.acts.find(act=>act.id==='act2'),act3=caseData.acts.find(act=>act.id==='act3'),act4=caseData.acts.find(act=>act.id==='act4'),act7=caseData.acts.find(act=>act.id==='act7'),act8=caseData.acts.find(act=>act.id==='act8');
 assert.equal(locationFor(act2,'intro',1),'cyber_cafe','The café scene must accompany the café narration');
 assert.equal(locationFor(act3,'outro',0),'concert','The capture must begin at the concert service yard');
 assert.equal(locationFor(act3,'outro',1),'concert','The departure shot must remain at the concert service yard');
+const discoveryCast=placeCast('hospital',storyCast(act4,'outro','hospital',0));
+const parthDiscovery=discoveryCast.find(c=>c.character==='parth');
+assert(parthDiscovery,'Act 4 discovery must show Parth in the ward');
+assert.equal(parthDiscovery.pose,'sit','Parth must be upright and visibly alive during the discovery');
+assert(Math.abs(parthDiscovery.y+0.4903-.84002)<.002,'Parth must sit on the measured hospital mattress surface');
+assert(discoveryCast.find(c=>c.character==='sameer'),'Sameer must be present for the reunion');
+const maskCastBefore=storyCast(act8,'intro','hospital',4),maskCastAfter=storyCast(act8,'intro','hospital',5);
+assert(!maskCastBefore.find(c=>c.character==='sameer').wearingMask,'Sameer must not wear the mask before the leader puts it on him');
+assert(maskCastAfter.find(c=>c.character==='sameer').wearingMask,'Sameer must wear the physical mask after the leader puts it on him');
+assert(maskCastAfter.find(c=>c.character==='leader').wearingMask,'The leader must wear the cult mask at the ritual');
+assert.deepEqual(Array.from({length:5},(_,i)=>cinematicPhaseFor(act8,'outro','hospital',i)),['ending_fire','ending_fire','ending_phone','ending_voice','ending_fall'],'Act 8 ending must progress through its burning room, phone, voice note and fall beats');
+for(let i=0;i<act8.outro.length;i++){
+  const endingCast=storyCast(act8,'outro','hospital',i);
+  assert.equal(endingCast.length,1,'The leader must not stand alive beside Sameer during the post-ritual ending');
+  assert.equal(endingCast[0].character,'sameer','Sameer must carry the final hospital scene');
+}
+assert.equal(storyCast(act8,'outro','hospital',4)[0].pose,'fall','The last Act 8 cue must stage Sameer falling');
+assert.equal(storyCast(act8,'outro','hospital',4)[0].rotationX,Math.PI/2,'The last Act 8 cue must lay Sameer on the floor');
+assert(Math.abs(storyCast(act8,'outro','hospital',0)[0].rotationX)>0,'Sameer must lean toward the burning window before the voice note');
+assert.equal(cinematicPhaseFor(act7,'outro','hospital',2),'cargo_loading','Act 7 arrival must use a loading-bay story phase');
+assert.deepEqual(storyCast(act7,'outro','hospital',2)[0].at,[1.9,.85],'Sameer must stand beside the loading path instead of blocking it');
+assert.equal(storyCast(act7,'outro','hospital',2)[0].rot,-Math.PI/2,'Sameer must face the loading activity');
+const maskPickup=storyCast(act7,'outro','sameer_room',1).find(c=>c.character==='sameer');
+assert(maskPickup.holdingMask,'Sameer must pick up the mask when the closing narration says he does');
+const maskHotspot=caseData.rooms.find(r=>r.id==='sameer_room').hotspots.find(h=>h.id==='sameer_room_a7_mask');
+assert.deepEqual(maskHotspot.position,[-2.8,.705,-1.35],'The Act 7 mask clue must be positioned on Sameer’s bed');
+assert.deepEqual(DETAIL_ANCHORS.sameer_room.sameer_room_a7_mask,[SAMEER_BED.center[0],SAMEER_BED.surfaceY+.018,SAMEER_BED.center[2]],'The mask marker must share its measured bed surface anchor');
 const captureCast=placeCast('concert',storyCast(act3,'outro','concert'));
 const sameerCapture=captureCast.find(c=>c.character==='sameer');
 assert(sameerCapture,'Sameer must be present in the capture scene');
@@ -108,6 +135,49 @@ assert(Math.min(upperMax[0],bedroomBounds.maxX)-Math.max(upperMin[0],bedroomBoun
 const bedAsset=await loadGeometry('client/public/assets/detail/bed.glb'),bedSize=new Box3().setFromObject(bedAsset.scene,true).getSize(new Vector3());
 assert(HOME_BEDROOM.bed[0]-bedSize.x/2>=bedroomBounds.minX&&HOME_BEDROOM.bed[0]+bedSize.x/2<=bedroomBounds.maxX,'The imported bedroom bed must fit between the extension walls');
 assert(HOME_BEDROOM.bed[2]-bedSize.z/2>=bedroomBounds.minZ&&HOME_BEDROOM.bed[2]+bedSize.z/2<=bedroomBounds.maxZ,'The imported bedroom bed must stay inside the rear room');
+assert(FIELD_TRACKS.width<=.25&&FIELD_TRACKS.length<=4.2,'Field tire ruts must remain subtle and short around the car, not stripe the foreground');
+assert(Math.hypot(FIELD_TRACKS.center[0]-FIELD.car[0],FIELD_TRACKS.center[1]-FIELD.car[2])<=1.25,'Field tire ruts must stay anchored to the car');
+const fieldView=ROOM_VIEWS.abandoned_field,fieldHotspots=DETAIL_ANCHORS.abandoned_field;
+const projectFieldLabels=(camera,width,height,wasOverlapping=false)=>{
+  const car=fieldHotspots.af_sedan,bag=fieldHotspots.af_backpack;
+  const carScreen=new Vector3(car[0],car[1]+.28,car[2]).project(camera);
+  const bagScreen=new Vector3(bag[0],bag[1]+.28,bag[2]).project(camera);
+  return updateFieldBackpackOrbit({screenDx:Math.abs(carScreen.x-bagScreen.x)*width/2,screenDy:(carScreen.y-bagScreen.y)*height/2,viewportWidth:width},wasOverlapping);
+};
+let overlapping=false;
+for(const [screenDx,screenDy,expected] of [[100,10,true],[240,30,true],[500,100,false],[100,10,true]]){
+  const next=updateFieldBackpackOrbit({screenDx,screenDy,viewportWidth:1280},overlapping);
+  assert.equal(next.overlapping,expected,'Field backpack label overlap hysteresis must enter, hold, exit and re-enter consistently');
+  assert.equal(Math.abs(next.shiftY)>0,expected,'Field backpack label offset must follow overlap state');
+  overlapping=next.overlapping;
+}
+for(const aspect of [390/520,676/715,1280/720,1920/1080]){
+  const width=aspect*720,height=720;
+  const camera=new PerspectiveCamera(fieldView.fov,aspect,.1,100);
+  camera.position.set(...fieldView.at);camera.lookAt(new Vector3(...fieldView.look));camera.updateMatrixWorld();
+  const layout=projectFieldLabels(camera,width,height);
+  const points=['af_sedan','af_backpack'].map(id=>new Vector3(...fieldHotspots[id]).add(new Vector3(0,.28,0)).project(camera));
+  assert(points.every(p=>Math.abs(p.x)<.5&&Math.abs(p.y)<.8),`Field clue labels must stay within the player camera at ${aspect}`);
+  const gapY=Math.abs(points[0].y-points[1].y)*height/2+Math.abs(layout.shiftY);
+  const horizontalLimit=width<=700?324:384;
+  assert(layout.overlapping?gapY>=64:Math.abs(points[0].x-points[1].x)*width/2>=horizontalLimit||Math.abs(points[0].y-points[1].y)*height/2>=56,`Field clue labels overlap at ${aspect}`);
+  const adjustedBagY=(1-points[1].y)*height/2+layout.shiftY;
+  assert(adjustedBagY>=24&&adjustedBagY<=height-24,`Field backpack label moves outside the viewport at ${aspect}`);
+}
+const look=new Vector3(...fieldView.look),base=new Vector3(...fieldView.at).sub(look);
+for(let angle=-Math.PI;angle<Math.PI;angle+=Math.PI/12)for(const [width,height] of [[390,520],[676,715],[1280,720],[1920,1080]]){
+  const aspect=width/height,c=Math.cos(angle),s=Math.sin(angle),camera=new PerspectiveCamera(fieldView.fov,aspect,.1,100);
+  const horizontalLimit=width<=700?324:384;
+  camera.position.set(look.x+base.x*c+base.z*s,fieldView.at[1],look.z-base.x*s+base.z*c);camera.lookAt(look);camera.updateMatrixWorld();
+  const overlap=projectFieldLabels(camera,width,height);
+  const car=fieldHotspots.af_sedan,bag=fieldHotspots.af_backpack;
+  const points=[new Vector3(car[0],car[1]+.28,car[2]).project(camera),new Vector3(bag[0],bag[1]+.28,bag[2]).project(camera)];
+  assert(points.every(p=>Math.abs(p.x)<.98&&Math.abs(p.y)<.98),`Field clue labels leave the view after orbit ${angle} at ${width}x${height}`);
+  const adjustedBagY=(1-points[1].y)*height/2+overlap.shiftY,carY=(1-points[0].y)*height/2;
+  assert(adjustedBagY>=24&&adjustedBagY<=height-24,`Field backpack label leaves the viewport after orbit ${angle} at ${width}x${height}`);
+  if(overlap.overlapping)assert(Math.abs(adjustedBagY-carY)>=63.5,`Field clue labels remain vertically overlapped after orbit ${angle} at ${width}x${height}: ${JSON.stringify({gap:Math.abs(adjustedBagY-carY),shift:overlap.shiftY,dx:Math.abs(points[0].x-points[1].x)*width/2,dy:Math.abs(points[0].y-points[1].y)*height/2})}`);
+  else assert(Math.abs(points[0].x-points[1].x)*width/2>=horizontalLimit||Math.abs(points[0].y-points[1].y)*height/2>=56,`Field clue labels overlap after orbit ${angle} at ${width}x${height}`);
+}
 assert.equal(BEDROOM.laptop[1],DESK_TOP);assert.equal(BEDROOM.lamp[1],DESK_TOP);
 const source=await fs.readFile('client/src/Scene.jsx','utf8');
 assert.equal((source.match(/<BedroomWorkstation paused=/g)??[]).length,2,'Both bedroom kits must share the fan and workstation');

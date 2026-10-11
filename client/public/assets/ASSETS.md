@@ -104,9 +104,20 @@ https://incompetech.com/music/royalty-free/
 Files transcoded to browser MP3s. Cue names: dusk, search, unknown.
 Playback crossfades and ducks beneath speech; no music was generated.
 
+## Environmental audio
+
+Crickets: Ted Kerr / Wolfgang_, CC0, loopable 11.45-second night recording.
+https://opengameart.org/content/crickets-ambient-noise-loopable
+Wind: edited into a loop by AntumDeluge from the original field recording by
+Jonathan Shaw (InspectorJ), CC BY 3.0.
+https://opengameart.org/content/wind-loop
+https://freesound.org/people/InspectorJ/sounds/376415/
+Only the abandoned field uses these outdoor layers; they fade with the room,
+duck under dialogue, respect the shared sound toggle and pause with cinematics.
+
 ## Campaign speech
 
-217 unique authored lines recorded locally with Kokoro-82M v1.0, Apache 2.0.
+227 unique authored lines recorded locally with Kokoro-82M v1.0, Apache 2.0.
 https://huggingface.co/hexgrad/Kokoro-82M
 https://github.com/hexgrad/kokoro
 ONNX CPU inference via kokoro-onnx 0.6.1, MIT.

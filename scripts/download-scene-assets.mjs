@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-const assets=['sofa_03','modern_arm_chair_01','modern_coffee_table_01','side_table_01','wooden_bookshelf_worn','metal_office_desk','plastic_monobloc_chair_01','classic_laptop','portable_cassette_player','wall_clock','potted_plant_02','book_encyclopedia_set_01','binder_notebook','cardboard_box_01','modular_chainlink_fence','grass_medium_01','weed_plant_02','rock_09','can_rusted','old_tyre','vintage_electric_kettle','wooden_bowl_01','desk_lamp_arm_01','wheelchair_01','clipboard','CashRegister_01','street_lamp_01','dining_table','modern_ceiling_lamp_01','metal_trash_can'];
+const assets=['sofa_03','modern_arm_chair_01','modern_coffee_table_01','side_table_01','wooden_bookshelf_worn','metal_office_desk','plastic_monobloc_chair_01','classic_laptop','portable_cassette_player','wall_clock','potted_plant_02','book_encyclopedia_set_01','binder_notebook','cardboard_box_01','modular_chainlink_fence','grass_medium_01','weed_plant_02','rock_09','can_rusted','old_tyre','vintage_electric_kettle','wooden_bowl_01','desk_lamp_arm_01','wheelchair_01','clipboard','CashRegister_01','street_lamp_01','dining_table','modern_ceiling_lamp_01','metal_trash_can','modular_factory_facade'];
 const log=[];
 async function download(name,file,root){
  const dest=path.join(root,name);await fs.mkdir(path.dirname(dest),{recursive:true});

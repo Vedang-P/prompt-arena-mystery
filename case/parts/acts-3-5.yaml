@@ -66,7 +66,7 @@ rooms:
       - { id: cc_veer_qa2, type: puzzle, puzzle: p_veer_2, label: "Know what they do?", position: [2, 0.9, -0.6], requires: { puzzles: [p_veer_1] } }
       - { id: cc_band_name, type: puzzle, puzzle: p_band_name, label: "The band's name", position: [1, 0.6, 0.2], requires: { puzzles: [p_veer_2] } }
       - { id: cc_registration, type: puzzle, puzzle: p_registration, label: "Member registration link", position: [3, 0.6, -0.8], requires: { puzzles: [p_band_name] } }
-      - { id: cc_fare, type: puzzle, puzzle: p_fare, label: "An auto to the workshop", position: [-1.2, 0, 2.6], requires: { puzzles: [p_registration] } }
+      - { id: cc_fare, type: puzzle, puzzle: p_fare, label: "An auto to the workshop", position: [-1.2, 0, 2.6], requires: { clues: [c_workshop_address] } }
       - { id: cc_to_workshop, type: travel, to: workshop, label: "Take the auto to the workshop", position: [-3, 0, 2.4], requires: { puzzles: [p_fare] } }
 
   - id: workshop
@@ -108,7 +108,7 @@ rooms:
       - { id: h4_backdoor, act: act4, type: clue, clue: c_janitor, label: "Janitor's backdoor", position: [-3, 0, -1.8] }
       - { id: h4_theatre, act: act4, type: clue, clue: c_ritual, label: "Third-floor operating theatre", position: [0, 0.6, -3], requires: { clues: [c_janitor] } }
       - { id: h4_security, act: act4, type: puzzle, puzzle: p_security_pin, label: "Security control panel", position: [2.6, 0.6, -1.4] }
-      - { id: h4_crowd, act: act4, type: puzzle, puzzle: p_parth_alive, label: "A group surrounding a person", position: [-1.6, 0.4, 1.2], requires: { puzzles: [p_security_pin] } }
+      - { id: h4_crowd, act: act4, type: puzzle, puzzle: p_parth_alive, label: "A group surrounding a person", position: [-1.6, 0.4, 1.2], requires: { clues: [c_cameras] } }
       - { id: h4_to_tanush_office, act: act4, type: travel, to: tanush_office, label: "The office door", position: [3, 0, 1.8], requires: { clues: [c_parth_alive] } }
 
   - id: tanush_office
@@ -126,9 +126,9 @@ rooms:
     name: "Enakshi's House"
     scene: enakshi_house
     hotspots:
-      - { id: eh_door, act: act5, type: clue, clue: c_enakshi, label: "The front door", position: [-0.5, 0, -2.6], requires: { puzzles: [p_tablet] } }
-      - { id: eh_tablet, act: act5, type: puzzle, puzzle: p_knowledge, label: "The tablet", position: [0.5, 0.6, -1] }
-      - { id: eh_tablet_content, act: act5, type: puzzle, puzzle: p_tablet_content, label: "Tablet contents", position: [1.5, 0.6, 0.4], requires: { puzzles: [p_knowledge] } }
+      - { id: eh_door, act: act5, type: clue, clue: c_enakshi, label: "The front door", position: [-0.5, 0, -2.6] }
+      - { id: eh_tablet, act: act5, type: puzzle, puzzle: p_knowledge, label: "The tablet", position: [0.5, 0.6, -1], requires: { clues: [c_enakshi] } }
+      - { id: eh_tablet_content, act: act5, type: puzzle, puzzle: p_tablet_content, label: "Tablet contents", position: [1.5, 0.6, 0.4], requires: { clues: [c_tablet_data] } }
       - { id: eh_window, act: act5, type: travel, to: sameer_room, label: "Jump out of the window", position: [2.8, 0, 2], requires: { puzzles: [p_tablet_content] } }
 
 characters:
@@ -280,6 +280,7 @@ puzzles:
     prompt: "He plans to go to the workshop and finds an auto. \"Where do you want to go, sir?\" — \"Hutting, 3rd cross, DJ Halli.\" — \"300.\""
     options: ["100", "200", "230", "Walk away"]
     answers: ["230"]
+    requires: { clues: [c_workshop_address] }
     fail_message: "\"Ok sir, find someone else then.\""
     success: "\"The hell — I'll give 100, no more.\" — \"Ok sir, find someone else then.\" Sameer looked around; the auto guy looked at him. Sameer sighed, \"I can't give more than 200.\" — \"230.\" Sameer sighed and got into the auto. After that daylight robbery, he saw the workshop: it was in an open field, kids were running around and volunteers were setting up the instruments for observation."
     penalty: 0
@@ -362,6 +363,7 @@ puzzles:
     prompt: "What could be found in the tablet?"
     options: ["Chants, schedules, and holy blade maintenance", "Lua Pharmaceuticals invoices", "The full member list"]
     answers: ["Chants, schedules, and holy blade maintenance"]
+    requires: { clues: [c_tablet_data] }
     fail_message: "Not quite. He swipes back — the handbook said the tablet holds the chants, the schedules, and the maintenance of the holy blade."
     success: "Chants, schedules, and the proper maintenance of the holy blade — blood included. And when he digs further: the number of people recruited by the cult and its different domains, plus a spreadsheet of the financial records — where the funds were collected from and allocated. A lot of donations by a company named Lua Pharmaceuticals."
     penalty: 0

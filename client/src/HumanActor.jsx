@@ -2,19 +2,22 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useAnimations, useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
-import { MathUtils, Vector3 } from 'three';
+import { MathUtils, Quaternion, Vector3 } from 'three';
 import { speechLevel } from './VoicePlayback.js';
 import {createFootContact} from './FootContact.js';
+import DemonMask from './DemonMask.jsx';
 
 export const HUMAN_CAST = new Set(['sameer', 'parth', 'mother', 'officer','veer','tanush','leader','enakshi','ramu']);
-export default function HumanActor({ character, pose = 'idle', focused = false, paused=false, footLift=0, onMeasure }) {
+export default function HumanActor({ character, pose = 'idle', focused = false, paused=false, footLift=0, onMeasure, wearingMask=false,holdingMask=false }) {
   const root = useRef();
+  const heldMask=useRef();
   const { scene, animations } = useGLTF(`/assets/cast/${character}.glb`);
   const model = useMemo(() => {
     const copy = clone(scene);
     copy.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false; } });
     return copy;
   }, [scene]);
+  const rightHand=useMemo(()=>model.getObjectByName('Bip01_R_Hand')??model.getObjectByName('RightHand'),[model]);
   const { actions } = useAnimations(animations, root);
   const contact=useMemo(()=>createFootContact(model),[model]);
   useEffect(() => {
@@ -27,6 +30,15 @@ export default function HumanActor({ character, pose = 'idle', focused = false, 
   const at = useMemo(() => new Vector3(), []);
   useFrame(({ camera, clock }, dt) => {
     contact(pose==='sit'?footLift:0);
+    if(holdingMask&&rightHand&&heldMask.current&&root.current){
+      rightHand.updateWorldMatrix(true,false);
+      const worldPosition=rightHand.getWorldPosition(new Vector3());
+      worldPosition.addScaledVector(camera.position.clone().sub(worldPosition).normalize(),.06);
+      root.current.worldToLocal(worldPosition);
+      heldMask.current.position.copy(worldPosition);
+      root.current.getWorldQuaternion(heldMask.current.quaternion);
+      heldMask.current.quaternion.invert();
+    }
     if (root.current && focused) {
       root.current.getWorldPosition(at);
       const yaw = Math.atan2(camera.position.x-at.x, camera.position.z-at.z);
@@ -43,5 +55,5 @@ export default function HumanActor({ character, pose = 'idle', focused = false, 
       }
     });
   });
-  return <group ref={root}><primitive object={model} /></group>;
+  return <group ref={root}><primitive object={model} />{wearingMask ? <DemonMask position={[0,1.42,.3]} scale={.8} /> : null}{holdingMask ? <group ref={heldMask}><DemonMask scale={.55}/></group> : null}</group>;
 }

@@ -870,9 +870,9 @@ rooms:
         puzzle: p_mask_owner
         label: The wendigo mask on his bed
         position:
-          - 3.5
-          - 0.9
-          - -3.5
+          - -2.8
+          - 0.705
+          - -1.35
       - id: sameer_room_a7_veer
         act: act7
         type: character
@@ -1130,8 +1130,8 @@ rooms:
           - 0
           - 2.6
         requires:
-          puzzles:
-            - p_registration
+          clues:
+            - c_workshop_address
       - id: cc_to_workshop
         type: travel
         to: workshop
@@ -1289,8 +1289,8 @@ rooms:
           - 0.4
           - 1.2
         requires:
-          puzzles:
-            - p_security_pin
+          clues:
+            - c_cameras
       - id: h4_to_tanush_office
         act: act4
         type: travel
@@ -1593,9 +1593,6 @@ rooms:
           - -0.5
           - 0
           - -2.6
-        requires:
-          puzzles:
-            - p_tablet
       - id: eh_tablet
         act: act5
         type: puzzle
@@ -1605,6 +1602,9 @@ rooms:
           - 0.5
           - 0.6
           - -1
+        requires:
+          clues:
+            - c_enakshi
       - id: eh_tablet_content
         act: act5
         type: puzzle
@@ -1615,8 +1615,8 @@ rooms:
           - 0.6
           - 0.4
         requires:
-          puzzles:
-            - p_knowledge
+          clues:
+            - c_tablet_data
       - id: eh_window
         act: act5
         type: travel
@@ -2210,6 +2210,7 @@ puzzles:
     requires:
       clues:
         - c_diary
+        - c_laptop_locked
     penalty: 0
     fail_message: Sameer squints at the decoder again. That's not it.
   - id: p_laptop
@@ -2372,6 +2373,9 @@ puzzles:
       - Walk away
     answers:
       - "230"
+    requires:
+      clues:
+        - c_workshop_address
     fail_message: '"Ok sir, find someone else then."'
     success: "\"The hell — I'll give 100, no more.\" — \"Ok sir, find someone else then.\" Sameer looked around; the auto guy looked at him. Sameer sighed, \"I can't give more than 200.\" — \"230.\" Sameer sighed and got into the auto. After that daylight robbery, he saw the workshop: it was in an open field, kids were running around and volunteers were setting up the instruments for observation."
     penalty: 0
@@ -2491,6 +2495,9 @@ puzzles:
       - The full member list
     answers:
       - Chants, schedules, and holy blade maintenance
+    requires:
+      clues:
+        - c_tablet_data
     fail_message: Not quite. He swipes back — the handbook said the tablet holds the chants, the schedules, and the maintenance of the holy blade.
     success: "Chants, schedules, and the proper maintenance of the holy blade — blood included. And when he digs further: the number of people recruited by the cult and its different domains, plus a spreadsheet of the financial records — where the funds were collected from and allocated. A lot of donations by a company named Lua Pharmaceuticals."
     penalty: 0
@@ -2665,8 +2672,8 @@ puzzles:
     grants:
       - c_article
     requires:
-      puzzles:
-        - p_lua
+      clues:
+        - c_lua_files
     hint: The first piece of printed advertising Sameer received mentioned an astronomy workshop there.
   - id: p_continue
     kind: choice

@@ -15,6 +15,7 @@
     "test:scenes": "node scripts/measure-actors.mjs && node scripts/test-scene-staging.mjs",
     "test:voices": "node scripts/prepare-speech.mjs && node scripts/test-voice-catalog.mjs",
     "test:assets": "node scripts/test-environment-assets.mjs",
+    "prepare:facade": "node scripts/prepare-factory-facade.mjs",
     "gen:team": "node scripts/make-team.mjs",
     "import:mixamo": "blender --background --python scripts/blender/import_mixamo.py",
     "dev": "npm run build:case && wrangler dev",

@@ -7,6 +7,19 @@ const { getEnv } = await import('../lib/vercel-env.js');
 const { caseData } = await import('../src/case.js');
 const { chapterCheckpoint, canAdvanceAct, puzzleGate, clueGate } = await import('../src/engine.js');
 const env = await getEnv();
+for (const [act,solved,discovered,puzzle,missingClue] of [
+  ['act1',[],['c_diary'],'p_morse','c_laptop_locked'],
+  ['act3',['p_registration'],[],'p_fare','c_workshop_address'],
+  ['act4',['p_security_pin'],[],'p_parth_alive','c_cameras'],
+  ['act5',['p_tablet'],['c_handbook'],'p_knowledge','c_enakshi'],
+  ['act5',['p_knowledge','p_tablet'],['c_handbook'],'p_tablet_content','c_tablet_data'],
+  ['act7',['p_veer_mask'],[],'p_nigeria','c_lua_files'],
+]) {
+  const gate=puzzleGate(act,solved,discovered,puzzle);
+  assert.equal(gate.error,'locked',`${puzzle} must wait for its narrative clue`);
+  assert(gate.missing.clues.includes(missingClue),`${puzzle} must name missing clue ${missingClue}`);
+}
+assert(clueGate('act5',[],[],'c_enakshi').ok,'Enakshi encounter must be available on entering the house');
 const cookies = new Map();
 let mode = 'campaign';
 async function call(path, payload, expected = 200) {
