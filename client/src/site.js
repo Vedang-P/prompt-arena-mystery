@@ -129,8 +129,18 @@
   let session = null;
   let codeLogin = false;
 
-  const openEntry = () => {
-    codeError.textContent = '';
+  const AUTH_ERRORS = {
+    google_not_configured: 'Google sign-in is not configured on this deployment.',
+    google_denied: 'Google sign-in was cancelled.',
+    state: 'That sign-in attempt expired — try again.',
+    token: 'Google sign-in failed while signing you in.',
+    profile: 'Google sign-in failed while reading your profile.',
+    network: 'The sign-in service could not be reached.',
+  };
+  const authError = new URLSearchParams(window.location.search).get('auth_error');
+
+  const openEntry = (message = '') => {
+    codeError.textContent = message;
     if (!entry.open) entry.showModal();
     codeInput.focus();
   };
@@ -167,6 +177,11 @@
         body: JSON.stringify({ code }),
       });
       if (res.ok) {
+        // A team-code sign-in is always the campaign save; a stale practice marker from the
+        // chapter picker would make every later request look for the practice cookie.
+        try {
+          localStorage.setItem('moon-mode', 'campaign');
+        } catch {}
         window.location.assign(GAME);
         return;
       }
@@ -189,6 +204,8 @@
     .then((res) => (res.ok ? res.json() : null))
     .then((config) => {
       if (config) codeLogin = !!config.devLogin;
+      // A Google round-trip that failed bounces here from /play/ — say why, in the dialog.
+      if (authError && codeLogin) openEntry(AUTH_ERRORS[authError] ?? 'Sign-in failed. Try again.');
     })
     .catch(() => {});
 

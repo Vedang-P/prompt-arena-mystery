@@ -205,7 +205,19 @@ export default function App() {
 
   const loadGame = async (destination = 'menu') => {
     try {
-      const data = await getState();
+      let data;
+      try {
+        data = await getState();
+      } catch (first) {
+        // A stale practice marker (chapter picker) makes the client ask for the practice
+        // session; if that cookie is gone, fall back to the campaign session once.
+        const stale = first?.status === 401 && (() => { try { return localStorage.getItem('moon-mode') === 'practice'; } catch { return false; } })();
+        if (!stale) throw first;
+        try {
+          localStorage.setItem('moon-mode', 'campaign');
+        } catch {}
+        data = await getState();
+      }
       setState(data);
       const act = data.acts?.find((a) => a.id === data.act);
       const actRoomIds = act?.rooms?.length ? act.rooms : data.rooms.map((r) => r.id);
@@ -236,20 +248,25 @@ export default function App() {
   };
 
   useEffect(() => {
-    // ?resume=1 hands a signed-in player straight into the game, skipping the menu
-    // (the title card sends players here after a team code is accepted).
-    const wantsResume = new URLSearchParams(window.location.search).get('resume') === '1';
-    loadGame(wantsResume ? 'game' : 'menu').then(() => {
-      if (!wantsResume) return;
+    // The cinematic title card is the only landing page: /play/ never shows a menu when a
+    // team code (or event mode) is how players sign in — no session bounces back to `/`, a
+    // session drops straight into the current act.
+    const params = new URLSearchParams(window.location.search);
+    const authError = params.get('auth_error');
+    (async () => {
+      const config = await getAuthConfig().catch(() => ({ google: false, devLogin: false, eventMode: false }));
+      setAuthConfig(config);
+      const codeIsTheWay = Boolean(config.devLogin || config.eventMode || !config.google);
+      const entered = await loadGame(codeIsTheWay ? 'game' : 'menu');
       const url = new URL(window.location.href);
       if (url.searchParams.has('resume')) {
         url.searchParams.delete('resume');
         window.history.replaceState(null, '', url);
       }
-    });
-    getAuthConfig()
-      .then(setAuthConfig)
-      .catch(() => setAuthConfig({ google: false, devLogin: false }));
+      if (!entered && codeIsTheWay) {
+        window.location.replace(authError ? '/?auth_error=' + encodeURIComponent(authError) : '/');
+      }
+    })();
   }, []);
 
   useEffect(() => {
@@ -686,7 +703,7 @@ export default function App() {
           {!authConfig?.eventMode && <button className="quiet-button" onClick={() => setChaptersOpen(true)}>Chapters</button>}
           <button className="quiet-button" onClick={()=>setLeaderboardOpen(true)}>Live leaderboard</button>
           {!authConfig?.eventMode && <button className="quiet-button" onClick={()=>{setAccuseResult(null);setAccuseOpen(true);}}>Accuse</button>}
-          <button className="quiet-button" onClick={() => { setStory(null); setPhase('menu'); }}>Menu</button>
+          <button className="quiet-button" onClick={() => { setStory(null); window.location.assign('/'); }}>Menu</button>
           <LogoutButton disabled={actBusy || puzzleBusy || typing || accuseBusy}/>
         </div>
       </header>
