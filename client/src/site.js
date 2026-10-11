@@ -94,6 +94,10 @@
   });
   paintAudio();
 
+  /* ---------- which build is this? ---------- */
+  const stamp = document.getElementById('build-stamp');
+  if (stamp) stamp.textContent = 'build ' + __BUILD__;
+
   /* ---------- dialogs ---------- */
   const board = document.getElementById('board');
   const settings = document.getElementById('settings');
