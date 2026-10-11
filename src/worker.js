@@ -35,7 +35,22 @@ const RATE_MIN_MS = 1500;
 const RATE_WINDOW_MS = 60_000;
 const RATE_WINDOW_MAX = 12;
 
-app.get('/api/health', (c) => c.json({ ok: true, service: 'prompt-arena-mystery', version: '1.1.5' }));
+app.get('/api/health', (c) =>
+  c.json({
+    ok: true,
+    service: 'prompt-arena-mystery',
+    version: '1.1.5',
+    // Booleans only — never values. Tells an operator at a glance which knobs this
+    // deployment actually has wired up.
+    env: {
+      sessionSecret: Boolean(c.env.SESSION_SECRET),
+      codePepper: Boolean(c.env.CODE_PEPPER),
+      eventMode: isTruthy(c.env.EVENT_MODE),
+      codeLogin: isTruthy(c.env.ALLOW_CODE_LOGIN),
+      llm: Boolean(c.env.LLM_BASE_URL && c.env.LLM_API_KEY && c.env.LLM_MODEL),
+    },
+  })
+);
 
 // ---------- helpers ----------
 
