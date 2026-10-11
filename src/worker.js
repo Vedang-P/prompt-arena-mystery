@@ -100,7 +100,7 @@ async function setSessionCookie(c, teamId) {
 }
 
 const authErrorRedirect = (c, code) => {
-  const url = new URL('/', c.req.url);
+  const url = new URL('/play/', c.req.url);
   url.searchParams.set('auth_error', code);
   return c.redirect(url.toString());
 };
@@ -243,7 +243,7 @@ app.get('/api/auth/google/callback', async (c) => {
     .bind(teamId, 'login', JSON.stringify({ provider: 'google' }))
     .run();
   await setSessionCookie(c, teamId);
-  return c.redirect('/');
+  return c.redirect('/play/');
 });
 
 app.get('/api/auth/logout', (c) => {

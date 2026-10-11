@@ -8,6 +8,15 @@ Play the release at https://prompt-arena-mystery.vercel.app/.
 
 Choose **Enter**, then use your assigned team code. Discover evidence, decode puzzles, and question the characters. The notebook keeps every exhibit. Each chapter unlocks once its required evidence and puzzles are complete. Classroom event mode disables guest and Google entry and chapter shortcuts.
 
+### Entry points
+
+| Route | What it is |
+| --- | --- |
+| `/` | The title card: a cinematic "MIST presents" card, the wordmark over the gazebo art, a live leaderboard dialog, and the buttons into the game (`Continue` / `Sign in to play`, `Live leaderboard`, `Log out`) |
+| `/play/` | The game: its own 3D title screen (`Live leaderboard ↗`, `Audio & settings`, `Mute audio`, `Log out`), the team-code entry modal, then the acts |
+
+Both pages come from one Vite build (`client/index.html` and `client/play/index.html`); the static files for the title card live in `client/public/site/`, and `/api/*` still runs on the worker.
+
 Drag to orbit, scroll/pinch to zoom, and use WASD/arrows to move the camera. Click world markers or use **Explore this room**. Escape closes panels. Cinematics support recorded character/narrator voices, subtitles, pause, continue, skip and mute. Graphics settings support mobile and slower devices. The header provides **Log out** and **Live leaderboard**.
 
 Outside event mode, **Chapter select** creates an independent practice save with earlier prerequisites prepared. It does not overwrite the campaign. Select **Return to campaign** to resume the original save. Event teams resume their server-side campaign with the assigned code.
