@@ -417,8 +417,10 @@ export default function App() {
       ...prev,
       [character]: [...(prev[character] ?? []), { role: 'player', content: text }, { role: 'npc', content: '' }],
     }));
+    const reqId = crypto.randomUUID?.() ?? String(Date.now()) + Math.random().toString(16).slice(2);
     try {
       await interrogate(character, text, {
+        reqId,
         onDelta: (delta) =>
           setChats((prev) => {
             const list = [...(prev[character] ?? [])];
@@ -440,6 +442,14 @@ export default function App() {
       });
     } catch (e) {
       setChatError(e.status === 429 ? 'Give them a moment to breathe.' : 'The line went dead. Try again.');
+      // The server may have finished and stored the reply after the client gave up
+      // (failover can outlast the browser timeout), so reconcile with the transcript.
+      try {
+        const stored = await getHistory(character);
+        if (Array.isArray(stored.messages) && stored.messages.length) {
+          setChats((prev) => ({ ...prev, [character]: stored.messages }));
+        }
+      } catch {}
       setChats((prev) => {
         const list = [...(prev[character] ?? [])];
         if (list.length && list[list.length - 1].role === 'npc' && !list[list.length - 1].content) {
@@ -675,6 +685,7 @@ export default function App() {
           <button className="quiet-button" onClick={() => setSettingsOpen(true)}>Settings</button>
           {!authConfig?.eventMode && <button className="quiet-button" onClick={() => setChaptersOpen(true)}>Chapters</button>}
           <button className="quiet-button" onClick={()=>setLeaderboardOpen(true)}>Live leaderboard</button>
+          {!authConfig?.eventMode && <button className="quiet-button" onClick={()=>{setAccuseResult(null);setAccuseOpen(true);}}>Accuse</button>}
           <button className="quiet-button" onClick={() => { setStory(null); setPhase('menu'); }}>Menu</button>
           <LogoutButton disabled={actBusy || puzzleBusy || typing || accuseBusy}/>
         </div>

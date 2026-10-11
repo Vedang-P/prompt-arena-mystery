@@ -207,6 +207,17 @@ function GLTFModel({
     });
   }, [model, castShadow, receiveShadow]);
 
+  // Tinted clones are ours to dispose — R3F deliberately never disposes primitives.
+  useEffect(() => {
+    if (!tint) return;
+    return () => {
+      model.traverse((o) => {
+        if (!o.isMesh || !o.material) return;
+        for (const mat of Array.isArray(o.material) ? o.material : [o.material]) mat?.dispose?.();
+      });
+    };
+  }, [model, tint]);
+
   const origin = useMemo(() => {
     const bounds = new THREE.Box3().setFromObject(model);
     return [-(bounds.min.x+bounds.max.x)/2, -bounds.min.y, -(bounds.min.z+bounds.max.z)/2];

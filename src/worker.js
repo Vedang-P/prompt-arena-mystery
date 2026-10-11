@@ -11,6 +11,7 @@ import {
   chapterCheckpoint,
   canAdvanceAct,
   canonicalAnswer,
+  characterAvailable,
   checkCulprit,
   clueGate,
   conclusionMatches,
@@ -39,9 +40,11 @@ app.get('/api/health', (c) => c.json({ ok: true, service: 'prompt-arena-mystery'
 // ---------- helpers ----------
 
 async function requireTeam(c) {
+  const secret = sessionSecretFor(c);
+  if (!secret) return null;
   const teamId = await readSession(
     getCookie(c, c.req.header('x-game-mode') === 'practice' ? 'pa_practice' : 'pa_session'),
-    c.env.SESSION_SECRET || 'dev-secret'
+    secret
   );
   if (!teamId) return null;
   const row = await c.env.DB.prepare(
@@ -54,7 +57,34 @@ async function requireTeam(c) {
   return { teamId, teamName: row.team_name, progress: row };
 }
 
-const isLocalHost = (c) => /^(127\.0\.0\.1|localhost)$/.test(new URL(c.req.url).hostname);
+// Loopback and private-LAN hosts are the only places the built-in development literals are
+// allowed: they run over plain http, where a Secure cookie would be dropped. Everywhere else
+// a missing (or too short) SESSION_SECRET / CODE_PEPPER fails closed instead of silently
+// signing sessions with a key that ships in this file.
+const DEV_SESSION_SECRET = 'dev-secret';
+const DEV_CODE_PEPPER = 'dev-pepper';
+const MIN_SECRET = 32;
+const MIN_PEPPER = 16;
+
+const hostOf = (c) => new URL(c.req.url).hostname;
+
+const isInsecureHost = (c) =>
+  /^(localhost|127\.|0\.0\.0\.0|\[?::1\]?|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(hostOf(c));
+
+const sessionSecretFor = (c) => {
+  const secret = typeof c.env.SESSION_SECRET === 'string' ? c.env.SESSION_SECRET : '';
+  if (secret.length >= MIN_SECRET) return secret;
+  return isInsecureHost(c) ? secret || DEV_SESSION_SECRET : null;
+};
+
+const codePepperFor = (c) => {
+  const pepper = typeof c.env.CODE_PEPPER === 'string' ? c.env.CODE_PEPPER : '';
+  if (pepper.length >= MIN_PEPPER) return pepper;
+  return isInsecureHost(c) ? pepper || DEV_CODE_PEPPER : null;
+};
+
+const misconfigured = (c) =>
+  c.json({ error: 'server_misconfigured', detail: 'This deployment is missing its session secret.' }, 500);
 
 // JSON list columns may predate the NOT NULL defaults on a migrated database.
 const parseJsonArray = (value) => {
@@ -63,6 +93,15 @@ const parseJsonArray = (value) => {
     return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
+  }
+};
+
+const parseJsonObject = (value) => {
+  try {
+    const parsed = JSON.parse(value || '{}');
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
   }
 };
 
@@ -90,9 +129,11 @@ const googleUrls = (env) => ({
 const googleReady = (env) => Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
 
 async function setSessionCookie(c, teamId) {
-  setCookie(c, 'pa_session', await createSession(teamId, c.env.SESSION_SECRET || 'dev-secret'), {
+  const secret = sessionSecretFor(c);
+  if (!secret) throw new Error('SESSION_SECRET is not configured');
+  setCookie(c, 'pa_session', await createSession(teamId, secret), {
     httpOnly: true,
-    secure: !isLocalHost(c),
+    secure: !isInsecureHost(c),
     sameSite: 'Lax',
     path: '/',
     maxAge: 30 * 24 * 3600,
@@ -171,8 +212,10 @@ app.post('/api/practice', async (c) => {
   const checkpoint = chapterCheckpoint(act);
   await c.env.DB.prepare("INSERT INTO progress(team_id, started_at, act, discovered, solved_puzzles, flags) VALUES (?, datetime('now'), ?, ?, ?, ?)")
     .bind(team.id, act, JSON.stringify(checkpoint.discovered), JSON.stringify(checkpoint.solvedPuzzles), '{"practice":true}').run();
-  setCookie(c, 'pa_practice', await createSession(team.id, c.env.SESSION_SECRET || 'dev-secret'), {
-    httpOnly: true, secure: !isLocalHost(c), sameSite: 'Lax', path: '/', maxAge: 30 * 24 * 3600,
+  const practiceSecret = sessionSecretFor(c);
+  if (!practiceSecret) return misconfigured(c);
+  setCookie(c, 'pa_practice', await createSession(team.id, practiceSecret), {
+    httpOnly: true, secure: !isInsecureHost(c), sameSite: 'Lax', path: '/', maxAge: 30 * 24 * 3600,
   });
   return c.json({ act });
 });
@@ -184,7 +227,7 @@ app.get('/api/auth/google', (c) => {
   const state = crypto.randomUUID();
   setCookie(c, 'pa_oauth_state', state, {
     httpOnly: true,
-    secure: !isLocalHost(c),
+    secure: !isInsecureHost(c),
     sameSite: 'Lax',
     path: '/',
     maxAge: 600,
@@ -261,7 +304,9 @@ app.post('/api/login', async (c) => {
   const code = String(body.code || '').trim();
   if (!code) return c.json({ error: 'code_required' }, 400);
 
-  const hash = await hashCode(code, c.env.CODE_PEPPER || 'dev-pepper');
+  const pepper = codePepperFor(c);
+  if (!pepper) return misconfigured(c);
+  const hash = await hashCode(code, pepper);
   const team = await c.env.DB.prepare('SELECT id, name FROM teams WHERE code_hash = ?')
     .bind(hash)
     .first();
@@ -277,7 +322,7 @@ app.post('/api/login', async (c) => {
   if (isTruthy(c.env.EVENT_MODE)) {
     const progress = await c.env.DB.prepare('SELECT flags FROM progress WHERE team_id = ?').bind(team.id).first();
     await c.env.DB.prepare('UPDATE progress SET flags = ? WHERE team_id = ?')
-      .bind(JSON.stringify({ ...JSON.parse(progress?.flags || '{}'), eventEntered: true }), team.id).run();
+      .bind(JSON.stringify({ ...parseJsonObject(progress?.flags), eventEntered: true }), team.id).run();
   }
   return c.json({ team: team.name });
 });
@@ -285,19 +330,20 @@ app.post('/api/login', async (c) => {
 // ---------- game state ----------
 
 app.get('/api/state', async (c) => {
+  if (!sessionSecretFor(c)) return misconfigured(c);
   const auth = await requireTeam(c);
   if (!auth) return c.json({ error: 'unauthorized' }, 401);
-  const discovered = JSON.parse(auth.progress.discovered || '[]');
+  const discovered = parseJsonArray(auth.progress.discovered);
   const solvedPuzzles = parseJsonArray(auth.progress.solved_puzzles);
   const penalties = Number(auth.progress.penalties ?? 0);
   const act = auth.progress.act ?? 'act0';
   return c.json({
     team: auth.teamName,
-    practice: !!JSON.parse(auth.progress.flags || '{}').practice,
+    practice: !!parseJsonObject(auth.progress.flags).practice,
     eventStarted: true,
     paused: false,
     llm: !!(c.env.LLM_API_KEY && c.env.LLM_BASE_URL && c.env.LLM_MODEL),
-    ...publicCase(),
+    ...publicCase({ act, discovered, solvedPuzzles }),
     act,
     discovered,
     solvedPuzzles,
@@ -329,7 +375,7 @@ app.post('/api/act/complete', async (c) => {
 
   // Interactive acts unlock only once their complete.clues/complete.puzzles are done.
   if (act.type === 'interactive') {
-    const discovered = JSON.parse(auth.progress.discovered || '[]');
+    const discovered = parseJsonArray(auth.progress.discovered);
     const gate = canAdvanceAct(auth.progress.solved_puzzles, discovered, actId);
     if (!gate.ok) {
       return c.json({ error: 'act_locked', missing: gate.missing ?? { clues: [], puzzles: [] } }, 409);
@@ -366,7 +412,7 @@ app.post('/api/clues/:id/discover', async (c) => {
   const auth = await requireTeam(c);
   if (!auth) return c.json({ error: 'unauthorized' }, 401);
   const clueId = c.req.param('id');
-  const discovered = JSON.parse(auth.progress.discovered || '[]');
+  const discovered = parseJsonArray(auth.progress.discovered);
   const gate = clueGate(auth.progress.act ?? 'act0', auth.progress.solved_puzzles, discovered, clueId);
   if (!gate.ok && gate.error === 'locked') {
     return c.json({ error: 'locked', missing: gate.missing }, 409);
@@ -394,7 +440,7 @@ app.post('/api/puzzles/:id/solve', async (c) => {
   const puzzleId = c.req.param('id');
   const body = await c.req.json().catch(() => ({}));
   const answer = String(body.answer ?? '');
-  const discovered = JSON.parse(auth.progress.discovered || '[]');
+  const discovered = parseJsonArray(auth.progress.discovered);
   const solvedPuzzles = parseJsonArray(auth.progress.solved_puzzles);
 
   // A puzzle is only solvable from the act that offers it, once its requires are met.
@@ -480,6 +526,7 @@ app.get('/api/characters/:id/history', async (c) => {
   if (!auth) return c.json({ error: 'unauthorized' }, 401);
   const characterId = c.req.param('id');
   if (!getCharacter(characterId)) return c.json({ error: 'unknown_character' }, 404);
+  if (!characterAvailable(characterId, auth.progress.act ?? 'act0')) return c.json({ error: 'not_available' }, 403);
   const rows = await c.env.DB.prepare(
     'SELECT role, content, source FROM messages WHERE team_id = ? AND character = ? ORDER BY id ASC LIMIT 100'
   )
@@ -497,7 +544,39 @@ app.post('/api/interrogate', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const characterId = String(body.character || '');
   const text = String(body.text || '').trim().slice(0, 600);
+  const reqId = String(body.reqId || '').slice(0, 64) || null;
   if (!getCharacter(characterId) || !text) return c.json({ error: 'bad_request' }, 400);
+  if (!characterAvailable(characterId, auth.progress.act ?? 'act0')) {
+    return c.json({ error: 'not_available' }, 403);
+  }
+
+  // Replaying a request must not spend a second model call or a second rate-limit slot.
+  // The unique index allows one row per (team, req_id), so the player row is the anchor and
+  // the reply is the next npc row after it; a retry of a turn that died mid-stream reuses
+  // the stored question instead of inserting it again.
+  let playerStored = false;
+  if (reqId) {
+    const prior = await c.env.DB.prepare(
+      'SELECT id FROM messages WHERE team_id = ? AND character = ? AND req_id = ? ORDER BY id LIMIT 1'
+    )
+      .bind(auth.teamId, characterId, reqId)
+      .first();
+    if (prior) {
+      const reply = await c.env.DB.prepare(
+        "SELECT content, source FROM messages WHERE team_id = ? AND character = ? AND role = 'npc' AND id > ? ORDER BY id LIMIT 1"
+      )
+        .bind(auth.teamId, characterId, prior.id)
+        .first();
+      if (reply) {
+        return streamSSE(c, async (stream) => {
+          await stream.writeSSE({ event: 'meta', data: JSON.stringify({ character: characterId, replayed: true }) });
+          await stream.writeSSE({ event: 'reset', data: JSON.stringify({ text: reply.content }) });
+          await stream.writeSSE({ event: 'done', data: JSON.stringify({ source: reply.source, replayed: true }) });
+        });
+      }
+      playerStored = true;
+    }
+  }
 
   const now = Date.now();
   const p = auth.progress;
@@ -529,11 +608,13 @@ app.post('/api/interrogate', async (c) => {
     .bind(auth.teamId, characterId)
     .first();
 
-  await c.env.DB.prepare(
-    'INSERT INTO messages(team_id, character, role, content, source) VALUES (?,?,?,?,?)'
-  )
-    .bind(auth.teamId, characterId, 'player', text, 'player')
-    .run();
+  if (!playerStored) {
+    await c.env.DB.prepare(
+      'INSERT INTO messages(team_id, character, role, content, source, req_id) VALUES (?,?,?,?,?,?)'
+    )
+      .bind(auth.teamId, characterId, 'player', text, 'player', reqId)
+      .run();
+  }
 
   const llm = makeLLM(c.env, (event) => console.log(JSON.stringify({ ...event, teamId: auth.teamId })));
 
@@ -608,7 +689,7 @@ app.post('/api/accuse', async (c) => {
     return c.json({ correct: false, stage: 'culprit' });
   }
 
-  const discovered = JSON.parse(auth.progress.discovered || '[]');
+  const discovered = parseJsonArray(auth.progress.discovered);
   const required = caseData.solution.required_clues ?? [];
   const missing = required.filter((id) => !discovered.includes(id));
   if (missing.length) {

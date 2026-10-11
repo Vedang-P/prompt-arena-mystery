@@ -34,8 +34,10 @@ export default function ActDirector({act,characters=[],onComplete,busy,nextActTi
   },[phase,manifest,readyRoom,beat?.room]);
   useEffect(()=>{
     window.dispatchEvent(new CustomEvent('arena-cue',{detail:{cue:beatIndex<3?'dusk':beat?.room==='sameer_room'?'unknown':'search',ambience:ambienceFor(beat?.room),paused}}));
-    return()=>window.dispatchEvent(new CustomEvent('arena-cue',{detail:{cue:'dusk',ambience:ambienceFor(act.entry_room),paused:false}}));
   },[beatIndex,beat?.room,paused]);
+  // Hand the room's own cue back only when the cinematic goes away — running this on every
+  // beat restarted the score each time a dependency changed.
+  useEffect(()=>()=>window.dispatchEvent(new CustomEvent('arena-cue',{detail:{cue:'dusk',ambience:ambienceFor(act.entry_room),paused:false}})),[]);
   useEffect(()=>{
     if(phase!=='play'||!line||!manifest||readyRoom!==beat.room)return;
     let elapsed=0,last=performance.now(),disposed=false;

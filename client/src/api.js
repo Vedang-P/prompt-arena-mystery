@@ -1,4 +1,4 @@
-const request = (url, options = {}) => fetch(url, { ...options, headers: { ...(options.headers ?? {}), ...(localStorage.getItem('moon-mode') === 'practice' ? { 'x-game-mode': 'practice' } : {}) }, signal: AbortSignal.timeout(65000) });
+const request = (url, { timeout = 65000, ...options } = {}) => fetch(url, { ...options, headers: { ...(options.headers ?? {}), ...(localStorage.getItem('moon-mode') === 'practice' ? { 'x-game-mode': 'practice' } : {}) }, signal: AbortSignal.timeout(timeout) });
 
 async function json(res) {
   const data = await res.json().catch(() => ({}));
@@ -52,11 +52,14 @@ export const accuse = (payload) =>
     body: JSON.stringify(payload),
   }).then(json);
 
-export async function interrogate(character, text, { onDelta, onReset, onDone } = {}) {
+export async function interrogate(character, text, { onDelta, onReset, onDone, reqId } = {}) {
+  // The server may walk its whole failover chain (12s first token + up to 60s per model),
+  // so this call gets a wider budget than ordinary requests.
   const res = await request('/api/interrogate', {
     method: 'POST',
+    timeout: 150000,
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ character, text }),
+    body: JSON.stringify({ character, text, reqId }),
   });
   if (!res.ok || !res.body) throw await json(res);
   const reader = res.body.getReader();

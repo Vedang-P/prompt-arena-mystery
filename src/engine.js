@@ -332,7 +332,31 @@ export function chapterCheckpoint(actId) {
   return { discovered, solvedPuzzles };
 }
 
-export function publicCase() {
+// A character may only be questioned where the case actually places them: they are
+// reachable when a room of the current act has a character hotspot for them (the same
+// walk the puzzle and clue gates use). Without this, any character id answers in any act.
+export function characterAvailable(characterId, actId) {
+  const act = (caseData.acts ?? []).find((a) => a.id === actId);
+  if (!act) return false;
+  const roomIds = new Set(act.rooms ?? []);
+  for (const room of caseData.rooms ?? []) {
+    if (!roomIds.has(room.id)) continue;
+    for (const h of room.hotspots ?? []) {
+      if (h.type !== 'character' || h.character !== characterId) continue;
+      if (!h.act || h.act === actId) return true;
+    }
+  }
+  return false;
+}
+
+export function publicCase(progress = null) {
+  // With progress supplied, the payload is scoped to what this team may actually
+  // render: undiscovered clues keep their identity but lose their text and evidence
+  // image, and hints for puzzles outside the current act never leave the server.
+  const discovered = new Set(progress?.discovered ?? []);
+  const solved = new Set(progress?.solvedPuzzles ?? []);
+  const actData = progress?.act ? (caseData.acts ?? []).find((a) => a.id === progress.act) : null;
+  const thisActPuzzles = new Set(actData?.complete?.puzzles ?? []);
   return {
     title: caseData.title,
     subtitle: caseData.subtitle ?? null,
@@ -371,14 +395,22 @@ export function publicCase() {
         return pub;
       }),
     })),
-    clues: (caseData.clues ?? []).map((clue) => ({
-      id: clue.id,
-      name: clue.name,
-      description: clue.description,
-      page: clue.page ?? null,
-      requires: clue.requires ?? [],
-    })),
-    puzzles: (caseData.puzzles ?? []).map((puzzle) => publicPuzzle(puzzle.id)),
+    clues: (caseData.clues ?? []).map((clue) => {
+      const found = !progress || discovered.has(clue.id);
+      return {
+        id: clue.id,
+        name: clue.name,
+        description: found ? clue.description : '',
+        page: found ? (clue.page ?? null) : null,
+        requires: clue.requires ?? [],
+      };
+    }),
+    puzzles: (caseData.puzzles ?? []).map((puzzle) => {
+      const pub = publicPuzzle(puzzle.id);
+      if (!pub || !progress) return pub;
+      if (solved.has(puzzle.id) || thisActPuzzles.has(puzzle.id)) return pub;
+      return { ...pub, hint: null };
+    }),
     endings: (caseData.endings ?? []).map((ending) => ({ id: ending.id, title: ending.title })),
     characters: (caseData.characters ?? []).map((ch) => ({ id: ch.id, name: ch.name,
       questions: (caseData.canonical_qa ?? []).filter((qa) => qa.character === ch.id).map((qa) => qa.q).slice(0, 4) })),

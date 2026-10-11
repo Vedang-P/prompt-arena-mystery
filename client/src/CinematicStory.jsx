@@ -20,8 +20,10 @@ export default function CinematicStory({ story, act, characters, onDone, busy, i
   const cast = useMemo(()=>storyCast(act,story.after,sceneId,index),[act.id,index,sceneId,story.after]);
   useEffect(()=>{
     window.dispatchEvent(new CustomEvent('arena-cue',{detail:{cue:musicFor(sceneId),ambience:ambienceFor(sceneId),paused}}));
-    return()=>window.dispatchEvent(new CustomEvent('arena-cue',{detail:{cue:musicFor(act.entry_room),ambience:ambienceFor(act.entry_room),paused:false}}));
-  },[sceneId,paused,act.entry_room]);
+  },[sceneId,paused]);
+  // Restore the act's room cue on unmount only, so changing scene or pausing does not
+  // restart the score from the top.
+  useEffect(()=>()=>window.dispatchEvent(new CustomEvent('arena-cue',{detail:{cue:musicFor(act.entry_room),ambience:ambienceFor(act.entry_room),paused:false}})),[]);
   const voice=useRecordedLine({line,enabled:narration,paused,ready:readyRoom===sceneReadyKey,onEnd:()=>{if(!last)setIndex(i=>i+1);}});
   const advance = () => { if (busy) return; if (!last) setIndex((i) => i + 1); else onDone(); };
   useEffect(() => {

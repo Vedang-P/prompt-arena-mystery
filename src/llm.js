@@ -4,6 +4,20 @@
 
 const FIRST_TOKEN_MS = 12000;
 const DEFAULT_TIMEOUT_MS = 60000;
+const ACQUIRE_TIMEOUT_MS = 20000;
+
+// The concurrency cap has to span requests inside an isolate, not just one call, so the
+// counters live at module scope keyed by upstream base URL.
+const limiters = new Map();
+const limiterFor = (base, limit) => {
+  let limiter = limiters.get(base);
+  if (!limiter) {
+    limiter = { active: 0, waiters: [], limit };
+    limiters.set(base, limiter);
+  }
+  limiter.limit = limit;
+  return limiter;
+};
 
 export function makeLLM(env, onEvent = () => {}) {
   const base = (env.LLM_BASE_URL || '').replace(/\/+$/, '');
@@ -25,24 +39,38 @@ export function makeLLM(env, onEvent = () => {}) {
       })
   );
 
-  const maxConcurrent = Number(env.LLM_MAX_CONCURRENT || 10);
-  let active = 0;
-  const waiters = [];
+  const maxConcurrent = Math.max(1, Number.parseInt(env.LLM_MAX_CONCURRENT, 10) || 10);
+  const limiter = limiterFor(base, maxConcurrent);
   let preferred = null;
 
   async function acquire() {
-    if (active < maxConcurrent) {
-      active++;
+    if (limiter.active < limiter.limit) {
+      limiter.active++;
       return;
     }
-    await new Promise((resolve) => waiters.push(resolve));
-    active++;
+    // Never park a request forever: a wedged upstream rejects and the degradation
+    // ladder takes over instead of hanging the SSE stream.
+    await new Promise((resolve, reject) => {
+      const waiter = {
+        resolve,
+        reject,
+        timer: setTimeout(() => {
+          limiter.waiters = limiter.waiters.filter((w) => w !== waiter);
+          reject(new Error('llm_capacity_timeout'));
+        }, ACQUIRE_TIMEOUT_MS),
+      };
+      limiter.waiters.push(waiter);
+    });
+    limiter.active++;
   }
 
   function release() {
-    active--;
-    const next = waiters.shift();
-    if (next) next();
+    limiter.active = Math.max(0, limiter.active - 1);
+    const next = limiter.waiters.shift();
+    if (next) {
+      clearTimeout(next.timer);
+      next.resolve();
+    }
   }
 
   // Whichever model answered last is tried first next time.
