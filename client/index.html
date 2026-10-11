@@ -10,9 +10,9 @@
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2305070f'/%3E%3Cpath d='M16 5l9 11-9 11-9-11z' fill='%238ba6dd'/%3E%3C/svg%3E"
     />
-    <link rel="preload" as="font" type="font/woff2" href="/site/fonts/cinzel-latin-700-normal.woff2" crossorigin />
-    <link rel="preload" as="font" type="font/woff2" href="/site/fonts/eb-garamond-latin-400-normal.woff2" crossorigin />
-    <link rel="stylesheet" href="/site/site.css" />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/cinzel-latin-700-normal.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/eb-garamond-latin-400-normal.woff2" crossorigin />
+    <link rel="stylesheet" href="/src/site.css" />
     <script>
       /* the cinematic card is only armed when scripting is on, so a no-JS visit
          still lands on the title screen */
@@ -32,6 +32,8 @@
 
     <div class="topbar">
       <button class="chip" type="button" id="board-btn" aria-haspopup="dialog">Live leaderboard</button>
+      <button class="chip" type="button" id="settings-btn" aria-haspopup="dialog">Audio &amp; settings</button>
+      <button class="chip" type="button" id="mute-btn" aria-pressed="false">Mute audio</button>
       <a class="chip" href="/api/auth/logout">Log out</a>
     </div>
 
@@ -39,17 +41,40 @@
       <h1 class="title">Prompt Arena</h1>
 
       <nav class="actions" aria-label="Enter the game">
-        <!-- the game itself lives one level down -->
-        <a class="btn btn--primary" id="enter" href="/play/">Continue</a>
+        <!-- the game itself lives one level down; the code is taken here first -->
+        <button class="btn btn--primary" id="enter" type="button">Sign in to play</button>
       </nav>
     </main>
 
+    <dialog id="entry" aria-labelledby="entry-title">
+      <div class="board__head">
+        <h2 id="entry-title">Enter the arena</h2>
+        <button class="board__close" type="button" id="entry-close" aria-label="Close team entry">&times;</button>
+      </div>
+      <div class="settings-body">
+        <p class="settings-note" style="margin-top: 0">Use the team code supplied by your invigilator.</p>
+        <form id="entry-form">
+          <label class="settings-row" for="team-code">Team code</label>
+          <input
+            id="team-code"
+            name="code"
+            type="text"
+            autocomplete="off"
+            autocapitalize="characters"
+            spellcheck="false"
+            maxlength="48"
+            placeholder="Enter assigned code"
+            required
+          />
+          <p class="entry-error" id="entry-error" role="alert"></p>
+          <button class="btn btn--primary entry-submit" id="begin-btn" type="submit">Begin &rarr;</button>
+        </form>
+      </div>
+    </dialog>
+
     <dialog id="board" aria-labelledby="board-title">
       <div class="board__head">
-        <h2 id="board-title">
-          <i class="live" aria-hidden="true"></i>
-          Live leaderboard
-        </h2>
+        <h2 id="board-title">Live leaderboard</h2>
         <button class="board__close" type="button" id="board-close" aria-label="Close leaderboard">&times;</button>
       </div>
 
@@ -59,12 +84,13 @@
         <table class="board">
           <thead>
             <tr>
-              <th scope="col">#</th>
+              <th scope="col">Rank</th>
               <th scope="col">Team</th>
-              <th scope="col">Solved</th>
+              <th scope="col">Latest act</th>
               <th scope="col">Clues</th>
               <th scope="col">Puzzles</th>
-              <th scope="col">Hints</th>
+              <th scope="col">Time</th>
+              <th scope="col">Solved</th>
             </tr>
           </thead>
           <tbody id="board-body"></tbody>
@@ -72,6 +98,36 @@
       </div>
     </dialog>
 
-    <script src="/site/site.js" defer></script>
+    <dialog id="settings" aria-labelledby="settings-title">
+      <div class="board__head">
+        <h2 id="settings-title">Audio &amp; settings</h2>
+        <button class="board__close" type="button" id="settings-close" aria-label="Close settings">&times;</button>
+      </div>
+
+      <div class="settings-body">
+        <label class="settings-row" for="set-quality">
+          Graphics
+          <select id="set-quality">
+            <option value="low">Low · battery friendly</option>
+            <option value="medium">Balanced</option>
+            <option value="high">High · shadows &amp; bloom</option>
+          </select>
+        </label>
+        <label class="settings-row" for="set-sound">
+          Ambient soundtrack
+          <input type="checkbox" id="set-sound" />
+        </label>
+        <label class="settings-row" for="set-narration">
+          Narrator &amp; character voices
+          <input type="checkbox" id="set-narration" />
+        </label>
+        <p class="settings-note">
+          The game opens with the same preferences you set here. In play: drag to look, <kbd>W</kbd>
+          <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> to move, <kbd>Esc</kbd> to close a panel. Subtitles stay on.
+        </p>
+      </div>
+    </dialog>
+
+    <script type="module" src="/src/site.js"></script>
   </body>
 </html>

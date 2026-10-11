@@ -12,10 +12,10 @@ Choose **Enter**, then use your assigned team code. Discover evidence, decode pu
 
 | Route | What it is |
 | --- | --- |
-| `/` | The title card: a cinematic "MIST presents" card, the wordmark over the gazebo art, a live leaderboard dialog, and the buttons into the game (`Continue` / `Sign in to play`, `Live leaderboard`, `Log out`) |
+| `/` | The title card: a cinematic "MIST presents" card, the wordmark over the gazebo art, a team-code dialog, a live leaderboard, and audio settings the game inherits (`client/index.html` + `client/src/site.css` / `site.js`, fonts in `client/public/fonts/`) |
 | `/play/` | The game: its own 3D title screen (`Live leaderboard ↗`, `Audio & settings`, `Mute audio`, `Log out`), the team-code entry modal, then the acts |
 
-Both pages come from one Vite build (`client/index.html` and `client/play/index.html`); the static files for the title card live in `client/public/site/`, and `/api/*` still runs on the worker.
+A code accepted on the title card posts to `/api/login` and hands off to `/play/?resume=1`, which drops straight into the current act — Act 0's cinematic for a new team — instead of the game's menu.
 
 Drag to orbit, scroll/pinch to zoom, and use WASD/arrows to move the camera. Click world markers or use **Explore this room**. Escape closes panels. Cinematics support recorded character/narrator voices, subtitles, pause, continue, skip and mute. Graphics settings support mobile and slower devices. The header provides **Log out** and **Live leaderboard**.
 

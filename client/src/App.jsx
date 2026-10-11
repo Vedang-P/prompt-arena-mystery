@@ -236,7 +236,17 @@ export default function App() {
   };
 
   useEffect(() => {
-    loadGame();
+    // ?resume=1 hands a signed-in player straight into the game, skipping the menu
+    // (the title card sends players here after a team code is accepted).
+    const wantsResume = new URLSearchParams(window.location.search).get('resume') === '1';
+    loadGame(wantsResume ? 'game' : 'menu').then(() => {
+      if (!wantsResume) return;
+      const url = new URL(window.location.href);
+      if (url.searchParams.has('resume')) {
+        url.searchParams.delete('resume');
+        window.history.replaceState(null, '', url);
+      }
+    });
     getAuthConfig()
       .then(setAuthConfig)
       .catch(() => setAuthConfig({ google: false, devLogin: false }));
