@@ -4,7 +4,7 @@ import {AnimationMixer,Box3,PerspectiveCamera,Vector3} from 'three';
 import {caseData} from '../src/case.js';
 import {locationFor,storyCast,placeCast,wideShot,roomWideShot,captureShot} from '../client/src/SceneStaging.js';
 import {createFootContact} from '../client/src/FootContact.js';
-import {PARK,BEDROOM,HOME_STAIRS,DESK_TOP} from '../client/src/SceneLayout.js';
+import {PARK,BEDROOM,HOME_STAIRS,HOME_UPPER_DOORWAY,HOME_BEDROOM,backWallPanels,DESK_TOP} from '../client/src/SceneLayout.js';
 import {loadGeometry} from './gltf-geometry.mjs';
 const scenes=[];
 for(const act of caseData.acts){
@@ -92,6 +92,22 @@ const landingMin=[HOME_STAIRS.landingCenter[0]-HOME_STAIRS.landingSize[0]/2,HOME
 assert(landingMin[0]<=stairTop.min.x+.01&&landingMax[0]>=stairTop.max.x-.01&&landingMin[1]<=stairTop.min.z+.01&&landingMax[1]>=stairTop.max.z-.01,'The landing must cover the actual stair top face in world X/Z');
 const upperMin=[HOME_STAIRS.upperCenter[0]-HOME_STAIRS.upperSize[0]/2,HOME_STAIRS.upperCenter[1]-HOME_STAIRS.upperSize[2]/2],upperMax=[HOME_STAIRS.upperCenter[0]+HOME_STAIRS.upperSize[0]/2,HOME_STAIRS.upperCenter[1]+HOME_STAIRS.upperSize[2]/2];
 assert(Math.min(landingMax[0],upperMax[0])-Math.max(landingMin[0],upperMin[0])>.1&&Math.min(landingMax[1],upperMax[1])-Math.max(landingMin[1],upperMin[1])>.1,'The stair landing must overlap the upper hall on both floor axes');
+const backPanels=backWallPanels(13,5.65,HOME_UPPER_DOORWAY),doorLeft=HOME_UPPER_DOORWAY.centerX-HOME_UPPER_DOORWAY.width/2,doorRight=HOME_UPPER_DOORWAY.centerX+HOME_UPPER_DOORWAY.width/2,doorTop=HOME_UPPER_DOORWAY.bottomY+HOME_UPPER_DOORWAY.height;
+assert(Math.abs(HOME_UPPER_DOORWAY.bottomY-HOME_STAIRS.top)<.002,'The upstairs doorway sill must meet the stair landing surface');
+assert(HOME_UPPER_DOORWAY.height>=1.8&&HOME_UPPER_DOORWAY.width>=.8,'The upstairs doorway must clear a standing character');
+for(const p of backPanels){
+  const x0=p.centerX-p.width/2,x1=p.centerX+p.width/2,y0=p.centerY-p.height/2,y1=p.centerY+p.height/2;
+  assert(!(x0<doorRight&&x1>doorLeft&&y0<doorTop&&y1>HOME_UPPER_DOORWAY.bottomY),'A back-wall panel obstructs the stair-to-bedroom doorway');
+}
+assert(backPanels.some(p=>p.centerX+p.width/2<=doorLeft+.001)&&backPanels.some(p=>p.centerX-p.width/2>=doorRight-.001),'The rear wall must remain intact on both sides of the doorway');
+const bedroomBounds={minX:HOME_BEDROOM.centerX-HOME_BEDROOM.width/2,maxX:HOME_BEDROOM.centerX+HOME_BEDROOM.width/2,minZ:HOME_BEDROOM.centerZ-HOME_BEDROOM.depth/2,maxZ:HOME_BEDROOM.centerZ+HOME_BEDROOM.depth/2};
+const bedroomFloorTop=HOME_STAIRS.landingY+HOME_STAIRS.landingSize[1]/2;
+assert(Math.abs(bedroomFloorTop-HOME_STAIRS.top)<.002,'The bedroom floor must continue from the stair landing datum');
+assert(bedroomBounds.minX<=doorLeft&&bedroomBounds.maxX>=doorRight,'The bedroom floor must span the entire stair-to-room doorway');
+assert(Math.min(upperMax[0],bedroomBounds.maxX)-Math.max(upperMin[0],bedroomBounds.minX)>.1&&Math.min(upperMax[1],bedroomBounds.maxZ)-Math.max(upperMin[1],bedroomBounds.minZ)>.04,'The stair landing and bedroom floor must form one continuous platform');
+const bedAsset=await loadGeometry('client/public/assets/detail/bed.glb'),bedSize=new Box3().setFromObject(bedAsset.scene,true).getSize(new Vector3());
+assert(HOME_BEDROOM.bed[0]-bedSize.x/2>=bedroomBounds.minX&&HOME_BEDROOM.bed[0]+bedSize.x/2<=bedroomBounds.maxX,'The imported bedroom bed must fit between the extension walls');
+assert(HOME_BEDROOM.bed[2]-bedSize.z/2>=bedroomBounds.minZ&&HOME_BEDROOM.bed[2]+bedSize.z/2<=bedroomBounds.maxZ,'The imported bedroom bed must stay inside the rear room');
 assert.equal(BEDROOM.laptop[1],DESK_TOP);assert.equal(BEDROOM.lamp[1],DESK_TOP);
 const source=await fs.readFile('client/src/Scene.jsx','utf8');
 assert.equal((source.match(/<BedroomWorkstation paused=/g)??[]).length,2,'Both bedroom kits must share the fan and workstation');

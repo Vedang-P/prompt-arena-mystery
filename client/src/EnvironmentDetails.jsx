@@ -3,14 +3,14 @@ import {useGLTF,useTexture} from '@react-three/drei';
 import {Box3,Vector3,RepeatWrapping,SRGBColorSpace,CanvasTexture,CatmullRomCurve3} from 'three';
 
 // Original licensed meshes. Centre/ground each selected modular part independently.
-export function DetailProp({asset,part,position=[0,0,0],rotation=[0,0,0],scale=1,height,tint,alphaMap}){
+export function DetailProp({asset,part,position=[0,0,0],rotation=[0,0,0],scale=1,height,tint,alphaMap,castShadow=true,receiveShadow=true}){
  const {scene}=useGLTF(`/assets/detail/${asset}.glb`);
  const model=useMemo(()=>{
   const original=part?scene.getObjectByName(part):scene;
   if(!original)throw Error(`Missing ${asset}/${part}`);
   const copy=original.clone(true);copy.updateMatrixWorld(true);
   const materials=[];
-  copy.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;
+  copy.traverse(o=>{if(o.isMesh){o.castShadow=castShadow;o.receiveShadow=receiveShadow;
    o.material=[].concat(o.material).map(m=>{const mat=m.clone();materials.push(mat);
     if(tint)mat.color.set(tint);
     if(asset==='sedan'&&mat.name==='blue'){mat.color.set('#b7b9ad');mat.metalness=.55;mat.roughness=.62;}
@@ -24,12 +24,12 @@ export function DetailProp({asset,part,position=[0,0,0],rotation=[0,0,0],scale=1
   }});
   const bounds=new Box3().setFromObject(copy),size=bounds.getSize(new Vector3());
   return {copy,materials,size,offset:[-(bounds.min.x+bounds.max.x)/2,-bounds.min.y,-(bounds.min.z+bounds.max.z)/2]};
- },[scene,part,asset,tint,alphaMap]);
+ },[scene,part,asset,tint,alphaMap,castShadow,receiveShadow]);
  useEffect(()=>()=>model.materials.forEach(m=>{if(alphaMap&&m.alphaMap)m.alphaMap.dispose();m.dispose();}),[model]);
  return <group position={position} rotation={rotation} scale={height?height/model.size.y:scale}><group position={model.offset}><primitive object={model.copy}/></group></group>;
 }
 
-export function FencePanel(props){const alpha=useTexture('/assets/detail/fence-alpha.png');return <DetailProp asset="modular_chainlink_fence" part="modular_chainlink_fence_double" height={1.7} alphaMap={alpha} {...props}/>;}
+export function FencePanel(props){const alpha=useTexture('/assets/detail/fence-alpha.png');return <DetailProp asset="modular_chainlink_fence" part="modular_chainlink_fence_double" height={1.7} alphaMap={alpha} {...props} castShadow={false}/>;}
 
 export function TerrainSurface({material='aerial_grass_rock',width=48,depth=48,position=[0,0,0],repeat=[12,12],color='#c0bfaf',trail=false}){
  const source=useTexture(['diff','normal','rough'].map(n=>`/assets/detail/${material}-${n}.jpg`));

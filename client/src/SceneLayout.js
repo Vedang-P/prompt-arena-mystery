@@ -6,19 +6,31 @@ export const DESK_SEAT = .49035;
 export const PARK = { deckY:.2198, bench:[0,.2198,1.1], seatY:.6703, waiting:[-1.3,.15] };
 export const BEDROOM = { desk:[2.8,0,-1.5], chair:[1.78,0,-1.5], laptop:[2.8,DESK_TOP,-1.5], lamp:[2.8,DESK_TOP,-2.08], shelf:[-3.8,0,-2.85] };
 export const HOME_STAIRS={top:3.7176,landingY:3.6476,landingCenter:[4.7,-2.5],landingSize:[2.7,.14,2.55],upperCenter:[4.55,-4.2],upperSize:[2.65,.14,2.6]};
+// The measured stair landing reaches the back wall. Keep an unobstructed
+// doorway aligned to it and continue the upper floor into Parth's room.
+export const HOME_UPPER_DOORWAY={centerX:4.55,bottomY:HOME_STAIRS.top,width:1.72,height:1.86};
+export const HOME_BEDROOM={centerX:4.325,centerZ:-7.65,width:4.35,depth:4.4,ceilingY:5.65,bed:[5.5,HOME_STAIRS.top,-7.7],shelf:[3.05,HOME_STAIRS.top,-7.65],nightstand:[4.1,HOME_STAIRS.top,-8.6],box:[6,HOME_STAIRS.top,-9.05]};
+export function backWallPanels(width,height,opening){
+  if(!opening)return [{centerX:0,centerY:height/2,width,height}];
+  const left=-width/2,right=width/2,doorLeft=opening.centerX-opening.width/2,doorRight=opening.centerX+opening.width/2;
+  const top=Math.min(height,opening.bottomY+opening.height),panels=[];
+  const add=(x0,x1,y0,y1)=>{if(x1-x0>1e-4&&y1-y0>1e-4)panels.push({centerX:(x0+x1)/2,centerY:(y0+y1)/2,width:x1-x0,height:y1-y0});};
+  add(left,doorLeft,0,height);add(doorRight,right,0,height);add(doorLeft,doorRight,0,opening.bottomY);add(doorLeft,doorRight,top,height);
+  return panels;
+}
 export const POLICE = { desk:[0,0,-1.05], chair:[0,0,-2.05], officer:[0,-2.05], sameer:[-.72,.55], mother:[.7,.6] };
 export const FIELD={car:[-1.4,.006,-1.6],yaw:-1.05,seat:[-.535,.723,.408]};
 export function carPoint([x,y,z]){return [FIELD.car[0]+x*Math.cos(FIELD.yaw)+z*Math.sin(FIELD.yaw),FIELD.car[1]+y,FIELD.car[2]-x*Math.sin(FIELD.yaw)+z*Math.cos(FIELD.yaw)];}
 export const ROOM_VIEWS={
  gazebo:{at:[0,2.15,6.8],look:[0,1.35,0],fov:58},
- abandoned_field:{at:[1.1,3,6.5],look:[-.5,1,-2.35],fov:63},
+ abandoned_field:{at:[1,2.25,4.7],look:[-1,.9,-1.7],fov:68},
  concert:{at:[0,1.85,5.7],look:[0,1.5,-3],fov:62},
  workshop:{at:[0,1.8,5.2],look:[0,1.1,-2.2],fov:64},
- parth_home:{at:[1.55,1.9,5.05],look:[1.45,1.25,-1.45],fov:82},
+ parth_home:{at:[1.55,1.9,5.05],look:[1.45,3.15,-1.45],fov:82},
  police_station:{at:[.3,1.7,3.5],look:[0,1.3,-1.8],fov:64},
  sameer_room:{at:[.2,2.05,3.55],look:[0,1.25,-1.45],fov:88},
  parth_room:{at:[.2,2.05,3.55],look:[0,1.25,-1.45],fov:88},
- cyber_cafe:{at:[.2,1.7,4.4],look:[0,1.3,-1.8],fov:68},
+ cyber_cafe:{at:[.2,2.05,5.2],look:[0,1.45,-1.8],fov:74},
  ngo_hq:{at:[0,1.8,4.5],look:[0,1.4,-3],fov:68},
  ngo_archive:{at:[0,1.7,2.8],look:[0,1.3,-1.8],fov:68},
  hospital:{at:[0,1.7,3.8],look:[0,1.25,-2],fov:66},
