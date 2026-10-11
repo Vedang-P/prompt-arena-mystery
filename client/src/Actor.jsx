@@ -11,7 +11,7 @@ import HumanActor, { HUMAN_CAST } from './HumanActor.jsx';
 export const CAST = {
   sameer: 'a', parth: 'd', mother: 'q', officer: 'b',
   veer: 'j', enakshi: 'p', tanush: 'h', leader: 'm',
-  victor: 'h', elise: 'p',
+  victor: 'h', elise: 'p', ramu: 'r',
 };
 export const actorURL = (id) => `/assets/characters/character-${CAST[id] ?? 'c'}.glb`;
 

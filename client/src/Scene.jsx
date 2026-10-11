@@ -1,7 +1,7 @@
 import './styles-scene.css';
 import { CinemaProp, ParkGround, WindTree, CeilingFan } from './CinemaAssets.jsx';
 import {DetailProp,TerrainSurface,WallSign,Cable,ComputerStation,ShelfContents,FencePanel} from './EnvironmentDetails.jsx';
-import { BEDROOM, POLICE, DESK_TOP, DESK_SEAT, PARTH_ANCHORS, PARK, DETAIL_ANCHORS,FIELD,ROOM_VIEWS } from './SceneLayout.js';
+import { BEDROOM, HOME_STAIRS, POLICE, DESK_TOP, DESK_SEAT, PARTH_ANCHORS, PARK, DETAIL_ANCHORS,FIELD,ROOM_VIEWS } from './SceneLayout.js';
 import {seatContact} from './SceneStaging.js';
 import Actor, { actorURL } from './Actor.jsx';
 import { useSettings } from './Settings.jsx';
@@ -27,7 +27,7 @@ const CHARACTER_URL = actorURL;
 
 // Only these Mixamo actors ship in the bundle; any other character hotspot
 // falls back to a primitive stand-in so a room never suspends on a 404.
-const KNOWN_CHARACTER_MODELS = new Set(['mother', 'officer', 'parth']);
+const KNOWN_CHARACTER_MODELS = new Set(['mother', 'officer', 'parth', 'ramu']);
 
 // Kenney's furniture kit ships at roughly half human scale; these bring each
 // piece to believable real-world size (metres).
@@ -731,6 +731,30 @@ function Moon({ position = [-6, 7.5, -14], size = 1.6 }) {
   );
 }
 
+function NightSky() {
+  const texture=useMemo(()=>{
+    const canvas=document.createElement('canvas');canvas.width=2048;canvas.height=1024;
+    const ctx=canvas.getContext('2d');
+    const sky=ctx.createLinearGradient(0,0,0,1024);
+    sky.addColorStop(0,'#101b31');sky.addColorStop(.42,'#263b51');sky.addColorStop(.69,'#7b8790');sky.addColorStop(.8,'#46525a');sky.addColorStop(1,'#18222b');
+    ctx.fillStyle=sky;ctx.fillRect(0,0,2048,1024);
+    const glow=ctx.createRadialGradient(1024,730,4,1024,730,510);
+    glow.addColorStop(0,'rgba(235,184,127,.36)');glow.addColorStop(1,'rgba(202,166,120,0)');ctx.fillStyle=glow;ctx.fillRect(0,220,2048,800);
+    let seed=78123;const random=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);
+    for(let i=0;i<260;i++){const y=25+random()*510;ctx.globalAlpha=.22+random()*.48;ctx.fillStyle=i%7?'#dce5ee':'#f2d6a2';ctx.beginPath();ctx.arc(random()*2048,y,.45+random()*1.05,0,Math.PI*2);ctx.fill();}
+    ctx.globalAlpha=1;
+    const map=new THREE.CanvasTexture(canvas);map.colorSpace=THREE.SRGBColorSpace;return map;
+  },[]);
+  useEffect(()=>()=>texture.dispose(),[texture]);
+  return <>
+    <color attach="background" args={['#26394e']}/>
+    <mesh scale={[95,95,95]} renderOrder={-10}>
+      <sphereGeometry args={[1,48,32]}/><meshBasicMaterial map={texture} side={THREE.BackSide} depthWrite={false} toneMapped={false}/>
+    </mesh>
+    <Moon position={[-8,13,-42]} size={1.35}/>
+  </>;
+}
+
 function Tree({ position, scale = 1 }) {
   return <WindTree position={position} height={4.8*scale}/>;
 }
@@ -1287,14 +1311,14 @@ function HomeRoom({room,hot}) {
   <DetailProp asset="wall_clock" position={[.6,2.35,-5.42]}/>
   <Window position={[-6.44,1.9,1.1]} rotation={[0,Math.PI/2,0]} width={2.2} height={1.8} moon={false}/>
   <DetailProp asset="curtains" position={[-6.35,.45,1.1]} rotation={[0,Math.PI/2,0]} height={2.55}/>
-  {/* The imported stair's 2.8 m rise terminates on this continuous landing. */}
+  {/* The imported stair's measured 3.72 m rise meets a continuous upper landing. */}
   <DetailProp asset="stairs" position={[4.7,0,.65]} rotation={[0,Math.PI/2,0]}/>
-  <mesh position={[4.7,2.73,-2.27]} receiveShadow castShadow><boxGeometry args={[2.4,.14,1.65]}/><meshStandardMaterial color="#ac8e68" roughness={.8}/></mesh>
+  <mesh position={[HOME_STAIRS.landingCenter[0],HOME_STAIRS.landingY,HOME_STAIRS.landingCenter[1]]} receiveShadow castShadow><boxGeometry args={HOME_STAIRS.landingSize}/><meshStandardMaterial color="#ac8e68" roughness={.8}/></mesh>
   {/* Upper corridor: the doorway is an actual opening, with a room beyond. */}
   <mesh position={[3.5,3.85,-3.06]}><boxGeometry args={[.15,2.1,.18]}/><meshStandardMaterial color="#c8b699"/></mesh>
   <mesh position={[5.6,3.85,-3.06]}><boxGeometry args={[.6,2.1,.18]}/><meshStandardMaterial color="#c8b699"/></mesh>
   <mesh position={[4.55,5.03,-3.06]}><boxGeometry args={[2.7,.26,.18]}/><meshStandardMaterial color="#c8b699"/></mesh>
-  <mesh position={[4.55,2.73,-4.2]} receiveShadow><boxGeometry args={[2.65,.14,2.6]}/><meshStandardMaterial color="#ac8e68"/></mesh>
+  <mesh position={[HOME_STAIRS.upperCenter[0],HOME_STAIRS.landingY,HOME_STAIRS.upperCenter[1]]} receiveShadow><boxGeometry args={HOME_STAIRS.upperSize}/><meshStandardMaterial color="#ac8e68"/></mesh>
   <mesh position={[4.55,4,-5.4]}><planeGeometry args={[2.65,2.4]}/><meshStandardMaterial color="#857960"/></mesh>
   <WallSign position={[4.4,4.8,-3.17]} title="PARTH" width={.72} height={.23}/>
   <pointLight position={[4.55,4.7,-3.7]} color="#ffd8a9" intensity={8} distance={5}/>
@@ -1380,7 +1404,15 @@ function ParthRoomScene({ room, hot, paused=false }) {
     <Window position={[4.95,1.8,-1.2]} rotation={[0,-Math.PI/2,0]}/>
     <DetailProp asset="curtains" position={[4.84,.45,-1.2]} rotation={[0,-Math.PI/2,0]} height={2.25}/>
     <DetailProp asset="binder_notebook" position={[-3.42,1.285,-2.65]} scale={.6}/>
-    <DetailProp asset="portable_cassette_player" position={[-.8,.73038,-1.5]} scale={.9}/>
+  <DetailProp asset="portable_cassette_player" position={[-.8,.73038,-1.5]} scale={.9}/>
+  <DetailProp asset="bedside_cabinet" position={[-.92,0,.76]} height={.67}/>
+  <DetailProp asset="desk_lamp_arm_01" position={[-.92,.55066,.76]} scale={.62}/>
+  <DetailProp asset="book_encyclopedia_set_01" position={[-.92,.55066,1.08]} scale={.6}/>
+  <DetailProp asset="pencil_cup" position={[3.55,DESK_TOP,-1.98]} scale={.85}/>
+  <DetailProp asset="star_chart" position={[1.95,DESK_TOP,-1.98]} scale={.62}/>
+  <DetailProp asset="cardboard_box_01" position={[-4.2,0,-.6]} scale={.78}/>
+  <DetailProp asset="cardboard_box_01" position={[-3.78,.342,-.6]} scale={.67}/>
+  <WallSign position={[4.94,2.35,.9]} rotation={[0,-Math.PI/2,0]} width={1.35} height={.55} title="APOGEE / 2019" lines={['FIRST SHOW • FRONT ROW']} background="#263c43"/>
     <DetailProp asset="cardboard_box_01" position={[-4.25,0,2.6]}/>
     <WallSign position={[-.5,2.3,-3.93]} width={1.6} height={.6} title="THE MOON'S DARK SIDE" lines={['NOT EVERYTHING IS AS IT SEEMS']} background="#263c43"/>
     <pointLight position={[-2,2.7,1]} color="#ecd4b8" intensity={9} distance={8}/>
@@ -1391,25 +1423,31 @@ function ParthRoomScene({ room, hot, paused=false }) {
 
 function AbandonedFieldRoom({ room, hot }) {
   return <group>
+   <NightSky/>
    <TerrainSurface width={70} depth={70}/>
-   <TerrainSurface material="brown_mud_leaves_01" width={7.5} depth={40} position={[-.6,.003,5]} repeat={[2,12]} color="#b8b3a6" trail/>
+   <TerrainSurface material="brown_mud_leaves_01" width={6.4} depth={40} position={[-.6,.003,5]} repeat={[2,12]} color="#817b6f" trail/>
+   <group position={[FIELD.car[0],.006,FIELD.car[2]+5]} rotation={[0,FIELD.yaw,0]}>
+    {[-.58,.58].map(x=><TerrainSurface key={x} material="brown_mud_leaves_01" width={11} depth={.28} position={[x,0,0]} repeat={[5,1]} color="#514a3e" trail/>)}
+   </group>
    <group position={FIELD.car} rotation={[0,FIELD.yaw,0]}>
     <DetailProp asset="sedan_detailed"/>
     <DetailProp asset="backpack" position={FIELD.seat} height={.38} rotation={[0,-Math.PI/2,0]}/>
     <WallSign position={[2.307,.697,0]} rotation={[0,Math.PI/2,0]} width={.39} height={.084} title="KA01OC1808" background="#dddac8" ink="#1b2325"/>
    </group>
-   {Array.from({length:48},(_,i)=>{const side=i%2?-1:1,x=side*(3.3+(i*17%27)/5),z=-10+(i*11%65)/5;return <DetailProp key={i} asset="grass_medium_01" part={`grass_medium_01_${i%3?'large_a':'tall_a'}_LOD0`} position={[x,.008,z]} rotation={[0,i*2.4,0]} scale={1.6+(i%3)*.35}/>;})}
+   {Array.from({length:56},(_,i)=>{const side=i%2?-1:1,x=side*(3.6+(i*17%37)/5),z=-11+(i*11%75)/5;return <DetailProp key={i} asset="grass_medium_01" part={`grass_medium_01_${i%3?'large_a':'tall_a'}_LOD0`} position={[x,.008,z]} rotation={[0,i*2.4,0]} scale={1.45+(i%4)*.28}/>;})}
+   {Array.from({length:12},(_,i)=>{const side=i%2?-1:1,x=side*(5.2+(i*13%22)/5),z=-9+(i*17%60)/5;return <DetailProp key={`weed-${i}`} asset="weed_plant_02" position={[x,.006,z]} rotation={[0,i*1.73,0]} scale={.62+(i%3)*.12}/>;})}
    {Array.from({length:14},(_,i)=><DetailProp key={i} asset="rock_09" position={[(i%2?-1:1)*(3.5+i%5),.006,-5+i*.65]} scale={2.5+(i%3)} rotation={[0,i*.7,0]}/>)}
-   {[-8.4,-7.2,-6,-4.8,-3.6,-2.4,-1.2,0,1.2,2.4,3.6,4.8,6,7.2,8.4].map(x=><FencePanel key={x} position={[x,0,-9]}/>)}
-   {[-9,-5,4,9].map((x,i)=><CinemaProp key={x} asset="tree_background" position={[x,0,-12-(i%2)*3]} height={7+i} rotation={[0,i,0]}/>)}
+   {[-8.05,-6.55,-5.05,-3.55,-2.05,-.55,.95,2.45,3.95,5.45,6.95,8.45].map(x=><FencePanel key={x} position={[x,0,-9]}/>)}
+   {[-13,-9,-5,-1,3,7,11].map((x,i)=><CinemaProp key={x} asset="tree_background" position={[x,0,-14-(i%2)*3]} height={8+(i%4)} rotation={[0,i*.73,0]}/>)}
    <WindTree position={[-7.2,0,-4.3]} height={5.5}/><WindTree position={[8,0,-5]} height={6}/>
    <DetailProp asset="old_tyre" position={[4.3,.005,-4]} rotation={[0,.6,0]}/>
    <DetailProp asset="can_rusted" position={[-3.5,.006,.2]} rotation={[0,1,0]}/>
    <DetailProp asset="cardboard_box_01" position={[4.1,.006,-3.1]} rotation={[0,.4,0]}/>
    <DetailProp asset="street_lamp_01" position={[6.5,0,1]} height={3.8}/>
-   <pointLight position={[6.5,3.4,1]} color="#ffcf84" intensity={20} distance={13}/>
-   <pointLight position={[.8,2.3,3.7]} color="#c7d7ed" intensity={10} distance={9}/>
-   <WallSign position={[4.5,1.05,-8.7]} width={1.4} height={.65} title="PRIVATE LAND" lines={['NO ENTRY AFTER DARK']} background="#68583e" ink="#d9c9a2"/>
+   <pointLight position={[6.5,3.4,1]} color="#ffcf84" intensity={28} distance={16}/>
+   <pointLight position={[.8,2.3,3.7]} color="#c7d7ed" intensity={15} distance={12}/>
+   {[-.58,.58].map(x=><mesh key={x} position={[4.5+x,.57,-8.83]} castShadow><boxGeometry args={[.065,1.08,.065]}/><meshStandardMaterial color="#514335" roughness={.9}/></mesh>)}
+   <WallSign position={[4.5,1.22,-8.82]} width={1.42} height={.62} title="PRIVATE LAND" lines={['NO ENTRY AFTER DARK']} background="#68583e" ink="#d9c9a2"/>
    <HotspotMarkers room={room} hot={hot}/>
   </group>;
 }
@@ -1418,12 +1456,17 @@ function CyberCafeRoom({room,hot,paused=false}) {
  return <group>
   <Shell width={13} depth={11} height={3.4} tint="#92958b" painted/>
   <Floor width={13} depth={11} repeat={[6,5]} color="#aab5ac" tiled/>
-  {[[-2.4,-3.5],[.2,-3.5],[2.8,-3.5],[-2.4,-.65],[.2,-.65],[2.8,-.65]].map(([x,z],i)=><ComputerStation key={i} position={[x,0,z]} number={i+1}/>)}
+  {[[-2.4,-3.5],[.2,-3.5],[2.8,-3.5],[-2.4,-.65],[.2,-.65],[2.8,-.65]].map(([x,z],i)=><ComputerStation key={i} position={[x,0,z]} number={i+1} deskTint={['#8a6446','#73563d','#92704e','#745541','#896849','#6e5140'][i]}/>)}
   <DetailProp asset="counter" position={[-3.9,0,2]} rotation={[0,Math.PI/2,0]}/>
   <DetailProp asset="CashRegister_01" position={[-3.8,1.1275,1.05]} scale={.6} rotation={[0,Math.PI/2,0]}/>
   <DetailProp asset="vintage_electric_kettle" position={[-3.9,1.1275,2.7]} scale={.85}/>
   <DetailProp asset="wooden_bowl_01" position={[-3.9,1.1275,2]} scale={.8}/>
   <DetailProp asset="cup" position={[-3.9,1.1275,3.05]} scale={1.1}/>
+  <DetailProp asset="dining_table" position={[2.2,0,3.6]} height={.74}/>
+  <DetailProp asset="wooden_bowl_01" position={[2.2,.74,3.6]} scale={.72}/>
+  <DetailProp asset="cup" position={[1.74,.74,3.38]} scale={.8}/>
+  {[1.05,3.35].map(x=><DetailProp key={x} asset="plastic_monobloc_chair_01" position={[x,0,3.62]} rotation={[0,x<2?Math.PI/2:-Math.PI/2,0]}/>)}
+  <WallSign position={[2.2,1.46,3.6]} width={.62} height={.28} title="TABLE 7" lines={['RESERVED']}/>
   <DetailProp asset="metal_office_desk" position={[4.7,0,-2.3]} rotation={[0,Math.PI/2,0]}/>
   <DetailProp asset="printer" position={[4.7,.7875,-2.6]}/>
   <DetailProp asset="router" position={[4.7,.7875,-1.6]}/>
@@ -1435,6 +1478,7 @@ function CyberCafeRoom({room,hot,paused=false}) {
   <WallSign position={[0,2.55,-5.42]} width={4.4} height={.85} title="RAMU'S CYBER CAFÉ" lines={['INTERNET • PRINTING • SCANNING']}/>
   <WallSign position={[-6.42,2,2]} rotation={[0,Math.PI/2,0]} width={2} height={1.05} title="DOSA CORNER" lines={['PLAIN DOSA   ₹40','MASALA DOSA   ₹60']}/>
   <WallSign position={[5,2.4,-5.42]} width={1.3} height={.65} title="HOUSE RULES" lines={['SAVE YOUR WORK','ASK RAMU FOR HELP']}/>
+  <WallSign position={[-2.2,2.38,-5.42]} width={1.6} height={.62} title="RAMU'S DOSA CORNER" lines={['FRESH BATTER • HOT FILTER COFFEE']}/>
   <DetailProp asset="wall_clock" position={[-4.8,2.55,-5.4]} height={.4}/>
   <CeilingFan position={[-1.9,3.4,-2]} paused={paused}/><CeilingFan position={[2.7,3.4,1.4]} paused={paused}/>
   <Fluorescent position={[0,3.2,-3.8]}/><Fluorescent position={[0,3.2,1.7]}/>
@@ -1478,6 +1522,41 @@ function ConcertRoom({room,hot}) {
   <pointLight position={[0,4.3,-3.8]} color="#c2cef4" intensity={30} distance={14}/>
   <HotspotMarkers room={room} hot={hot}/>
  </group>;
+}
+
+function EmergencyBeacon({position}) {
+  const redBulb=useRef(),blueBulb=useRef(),redLight=useRef(),blueLight=useRef();
+  useFrame(({clock})=>{const t=clock.elapsedTime;for(const [bulb,light,on] of [[redBulb,redLight,Math.sin(t*8)>0],[blueBulb,blueLight,Math.sin(t*8)<=0]]){if(bulb.current)bulb.current.material.emissiveIntensity=on?2.6:.18;if(light.current)light.current.intensity=on?3.5:.15;}});
+  return <group position={position}>{[[redBulb,redLight,'#d83932',-.2],[blueBulb,blueLight,'#3983d8',.2]].map(([bulb,light,color,x])=><group key={color} position={[x,0,0]}><mesh ref={bulb}><boxGeometry args={[.26,.11,.13]}/><meshStandardMaterial color={color} emissive={color} emissiveIntensity={.2}/></mesh><pointLight ref={light} color={color} intensity={.2} distance={5}/></group>)}</group>;
+}
+
+function ConcertCaptureRoom({phase='capture'}) {
+  const departing=phase==='departure';
+  return <group>
+    <NightSky/>
+    <TerrainSurface material="brown_mud_leaves_01" width={34} depth={28} position={[0,.002,-2]} repeat={[12,8]} color="#777168"/>
+    <TerrainSurface width={34} depth={34} position={[0,0,8]} repeat={[8,8]} color="#697168"/>
+    <group position={departing?[.7,0,-4.2]:[-.5,0,-3.1]}>
+      <DetailProp asset="cargo_van" height={2.5} rotation={[0,.08,0]}/>
+      <WallSign position={[.4,1.47,1.31]} width={1.48} height={.38} title="SHASHDHAR EMS" lines={['EMERGENCY RESPONSE']} background="#e1ded2" ink="#9c302c"/>
+      <mesh position={[1.5,1.48,1.322]}><boxGeometry args={[.52,.12,.018]}/><meshStandardMaterial color="#b33631" emissive="#36100e"/></mesh>
+      <mesh position={[1.5,1.48,1.334]}><boxGeometry args={[.12,.52,.018]}/><meshStandardMaterial color="#b33631" emissive="#36100e"/></mesh>
+      <EmergencyBeacon position={[0,2.62,0]}/>
+      {[-2.25,2.25].map(x=><mesh key={x} position={[x,.71,1.23]}><boxGeometry args={[.21,.23,.035]}/><meshStandardMaterial color="#a83d33" emissive="#4d1512"/></mesh>)}
+    </group>
+    <DetailProp asset="hospital_bed" position={[3.3,0,-.6]} rotation={[0,-.22,0]}/>
+    <DetailProp asset="medical_cart" position={[5.1,0,-2.8]} rotation={[0,-.2,0]}/>
+    {[-8,-6,-4,-2,0,2,4,6,8].map(x=><FencePanel key={x} position={[x,0,-8.5]}/>)}
+    <WallSign position={[-5.6,1.6,-8.42]} width={2.5} height={.62} title="APOGEE / SERVICE YARD" lines={['STAFF & VEHICLES ONLY']} background="#1e2b30"/>
+    <DetailProp asset="metal_trash_can" position={[5.45,0,1.05]}/>
+    <DetailProp asset="metal_trash_can" position={[7.05,0,1.9]} rotation={[0,-.3,0]}/>
+    <DetailProp asset="cardboard_box_01" position={[4.55,0,.7]} scale={.8}/>
+    <DetailProp asset="can_rusted" position={[4.7,.006,1.05]} rotation={[0,.6,0]} scale={1.4}/>
+    <DetailProp asset="street_lamp_01" position={[-7,0,1]} height={3.8}/>
+    <pointLight position={[-7,3,1]} color="#efc98d" intensity={16} distance={12}/>
+    <pointLight position={[3,2,1]} color={departing?'#3b78b5':'#bd5945'} intensity={departing?8:4} distance={9}/>
+    <WindTree position={[-10,0,-8]} height={7}/><WindTree position={[10,0,-8]} height={7}/>
+  </group>;
 }
 
 function WorkshopRoom({room,hot}) {
@@ -1698,22 +1777,25 @@ const ROOM_KITS = {
 
 // The campaign and every cinematic share the same fully modelled environments.
 export const ROOM_IDS = Object.keys(ROOM_KITS);
-export function RoomEnvironment({ roomId, room = null, hot = null, paused=false,storyAct }) {
-  const Kit = ROOM_KITS[roomId] ?? SameerRoomScene;
+export function RoomEnvironment({ roomId, room = null, hot = null, paused=false,storyAct,cinematicPhase }) {
+  const Kit = roomId==='concert'&&['capture','departure'].includes(cinematicPhase)?ConcertCaptureRoom:(ROOM_KITS[roomId] ?? SameerRoomScene);
   const empty = { id: roomId, hotspots: [] };
-  return <Kit room={room ?? empty} hot={hot ?? { state: { discovered: [] }, solvedPuzzles: [] }} paused={paused} actId={storyAct??hot?.state?.act}/>;
+  return <Kit room={room ?? empty} hot={hot ?? { state: { discovered: [] }, solvedPuzzles: [] }} paused={paused} actId={storyAct??hot?.state?.act} phase={cinematicPhase}/>;
 }
-export function RoomLighting({ roomId, quality = 'high' }) {
+export function RoomLighting({ roomId, quality = 'high',cinematicPhase }) {
   const outdoor = OUTDOOR_ROOMS.has(roomId);
+  const gazebo=roomId==='gazebo';
   const night=outdoor&&roomId!=='gazebo';
+  const field=roomId==='abandoned_field';
+  const cinematicNight=roomId==='concert'&&['capture','departure'].includes(cinematicPhase);
   return <>
-    <Environment files={roomId==='gazebo'?"/assets/cinema/park_sunrise_1k.hdr":outdoor ? "/assets/cinema/park_bench_1k.hdr" : "/assets/env/ballroom_2k.hdr"} ground={roomId==='gazebo'?{height:2,radius:70,scale:120}:undefined} background={outdoor} backgroundBlurriness={.02} backgroundIntensity={night?.045:.8} environmentIntensity={night?.3:outdoor ? .85 : .62} />
-    <ambientLight intensity={night?.5:outdoor ? 0.65 : 0.8} color="#bdcce8" />
-    <directionalLight position={[-4, 8, 6]} intensity={night?.85:outdoor?2:1.7} color={night?'#a5bcdc':outdoor?'#ffe2a9':'#d7e5ee'} castShadow={quality !== 'low'}
+    <Environment files={gazebo?"/assets/cinema/park_sunrise_1k.hdr":outdoor ? "/assets/cinema/park_bench_1k.hdr" : "/assets/env/ballroom_2k.hdr"} ground={gazebo?{height:2,radius:70,scale:120}:undefined} background={outdoor&&roomId!=='abandoned_field'&&!cinematicNight} backgroundBlurriness={.02} backgroundIntensity={gazebo ? .35 : night ? .045 : .8} environmentIntensity={gazebo ? .56 : field ? .58 : night ? .3 : outdoor ? .85 : .62} />
+    <ambientLight intensity={gazebo ? .5 : field ? .82 : night ? .5 : outdoor ? .65 : .8} color={gazebo?'#e8caa7':field?'#c2cbd5':'#bdcce8'} />
+    <directionalLight position={[-4, 8, 6]} intensity={gazebo ? 1.1 : field ? 1.2 : night ? .85 : outdoor ? 2 : 1.7} color={gazebo?'#ffd2a4':night?'#a5bcdc':outdoor?'#ffe2a9':'#d7e5ee'} castShadow={quality !== 'low'}
       shadow-mapSize={quality === 'high' ? [2048, 2048] : [1024, 1024]}
       shadow-camera-left={-14} shadow-camera-right={14} shadow-camera-top={14} shadow-camera-bottom={-14}
       shadow-camera-far={38} shadow-bias={-0.0005} />
-    <directionalLight position={[4, 4, -3]} intensity={night?.22:0.6} color={night?'#7b9fce':'#e0ab7b'} />
+    <directionalLight position={[4, 4, -3]} intensity={field ? .5 : gazebo ? .38 : night ? .22 : .6} color={night?'#7b9fce':'#e0ab7b'} />
   </>;
 }
 
@@ -1847,7 +1929,7 @@ export default function Scene({
   );
 
   const Kit = ROOM_KITS[room.id] ?? Vestibule;
-  const bg = isOutdoor ? '#05070d' : '#080604';
+  const bg = room.id==='abandoned_field' ? '#26394e' : isOutdoor ? '#05070d' : '#080604';
 
   const { quality } = useSettings();
   return (

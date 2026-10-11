@@ -9,8 +9,8 @@ export function seatContact(character,seatY,floorY){
 export function locationFor(act, kind, index) {
   const scenes = {
     act1:{intro:['parth_home','parth_home','parth_home','parth_home','parth_room'],outro:['parth_room']},
-    act2:{intro:['gazebo','gazebo','sameer_room'],outro:['sameer_room']},
-    act3:{intro:['concert'],outro:['workshop','workshop','sameer_room']},
+    act2:{intro:['sameer_room','cyber_cafe','sameer_room','sameer_room'],outro:['sameer_room']},
+    act3:{intro:['concert'],outro:['concert','concert','sameer_room']},
     act4:{intro:['sameer_room','hospital'],outro:['hospital']},
     act5:{intro:['hospital','hospital','tanush_office'],outro:['sameer_room']},
     act6:{intro:['sameer_room'],outro:['police_station','sameer_room']},
@@ -20,8 +20,9 @@ export function locationFor(act, kind, index) {
   return scenes?.[Math.min(index,scenes.length-1)] ?? act.entry_room;
 }
 export function storyCast(act,kind,sceneId) {
-  const companion=sceneId==='parth_home'?'mother':sceneId==='police_station'?'officer':sceneId==='tanush_office'?'tanush':act.id==='act8'?'leader':(act.id==='act7'&&kind==='intro')||sceneId==='concert'?'veer':null;
-  return ['sameer',...(companion?[companion]:[])].map((character,i)=>({character,at:[companion?(i-.5)*1.8:0,1],rot:i?-.2:.2,pose:sceneId==='sameer_room'&&character==='sameer'?'sit':'idle'}));
+  const capture=act.id==='act3'&&kind==='outro'&&sceneId==='concert';
+  const companion=sceneId==='parth_home'?'mother':sceneId==='cyber_cafe'?'ramu':sceneId==='police_station'?'officer':sceneId==='tanush_office'?'tanush':act.id==='act8'?'leader':capture?null:(act.id==='act7'&&kind==='intro')||sceneId==='concert'?'veer':null;
+  return ['sameer',...(companion?[companion]:[])].map((character,i)=>({character,at:capture?[4,3]:[companion?(i-.5)*1.8:0,1],rot:capture?-.7:i?-.2:.2,pose:sceneId==='sameer_room'&&character==='sameer'?'sit':'idle'}));
 }
 // All acts use these furniture-relative marks. Standing actors never inherit a
 // seated origin; the raised gazebo and chair seats have explicit surfaces.
@@ -40,6 +41,9 @@ export function placeCast(sceneId,cast) {
     if(sceneId==='police_station')return c.character==='officer'
       ? {...base,at:POLICE.officer,pose:'sit',rot:0,...seatContact(c.character,DESK_SEAT,0)}
       : {...base,at:POLICE[c.character]??[1.5,1],rot:Math.PI};
+    if(sceneId==='cyber_cafe')return c.character==='ramu'
+      ? {...base,at:[-5.15,2.1],rot:.1}
+      : {...base,at:[-3.15,3.4],rot:-2.1};
     // Office marks avoid the central chair and the raised rugs entirely.
     if(sceneId==='tanush_office')return {...base,at:[c.character==='tanush'?2:-1.6,1.6],rot:c.character==='tanush'?-.35:.35};
     return base;
@@ -53,4 +57,25 @@ export function wideShot(cast,aspect=16/9) {
   const tan=Math.tan(39*Math.PI/360);
   const distance=Math.max(5.7,halfWidth/(tan*Math.max(.25,aspect)*.8)+depth,1.55/(tan*.82)+depth);
   return {center,at:[center[0]+.25,center[1]+distance*.16,center[2]+distance]};
+}
+
+export function roomWideShot(roomId,cast,aspect=16/9) {
+  const shot=wideShot(cast,aspect);
+  // The prologue's actors sit inside the gazebo; include the roof and posts in
+  // the establishing frame instead of solving the shot from the actors alone.
+  if(roomId==='gazebo'){
+    shot.center[1]=1.5;
+    const distance=Math.max(shot.at[2]-shot.center[2],7.8,1.14+2.15/(Math.tan(39*Math.PI/360)*Math.max(.25,aspect)*.86));
+    shot.at[2]=shot.center[2]+distance;
+    shot.at[1]=shot.center[1]+distance*.16;
+  }
+  return shot;
+}
+
+// Frame the ambulance, its loading area, and Sameer together. The shot backs
+// off on narrow screens instead of cutting Sameer off beside the dumpsters.
+export function captureShot(aspect=16/9) {
+  const center=[1.2,1.1,-.55],tan=Math.tan(39*Math.PI/360);
+  const distance=Math.max(8.5,10.2/(2*tan*Math.max(.25,aspect))+2);
+  return {center,at:[1.4,center[1]+distance*.16,center[2]+distance]};
 }

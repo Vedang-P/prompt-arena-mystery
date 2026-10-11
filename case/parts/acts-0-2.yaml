@@ -357,6 +357,11 @@ rooms:
         puzzle: p_cassette
         label: "Cassette player"
         position: [0.6, 0.7, -1.0]
+      - id: cc_ramu
+        type: character
+        character: ramu
+        label: Ramu
+        position: [-5.15, 0, 2.1]
 
 characters:
   - id: sameer
@@ -543,6 +548,26 @@ characters:
         unlock: { requires: [c_ritual2] }
         disposition: deflect
 
+  - id: ramu
+    name: Ramu
+    persona: "The owner of Ramu's Dosa Corner, a patient regular in Parth and Sameer's lives. He is warm but busy, never a detective, and speaks in short, grounded observations."
+    goals: ["Keep his shop running", "Look out for the boys", "Offer help without inventing a lead"]
+    demeanor: welcoming
+    voice_examples:
+      - "Masala dosa and filter coffee. Same table, nearly every time."
+      - "I wish I knew more, Sameer. He paid and left like usual."
+    deflections:
+      - "Ramu glances toward the counter. 'Let me finish this order, then I'll tell you what I remember.'"
+      - "Ramu shakes his head. 'I only know what I saw in my shop.'"
+    snubs:
+      - "Ramu lowers his voice. 'Don't put words in my mouth. I wasn't there.'"
+      - "He turns the stove down. 'If I had seen something important, I'd have told you.'"
+    facts:
+      - id: ramu_regular
+        text: "Parth and Sameer were regulars at Ramu's Dosa Corner. Parth ordered masala dosa and filter coffee; they usually sat together until closing. Ramu has no direct knowledge of the abduction."
+        unlock: always
+        disposition: admit
+
 clues:
   - id: c_diary
     name: "Leather diary"
@@ -721,3 +746,21 @@ canonical_qa:
   - character: officer
     q: "missing cases full moon"
     a: "Every full moon someone goes missing. We file the reports, and then... nothing. Don't quote me on that."
+  - character: ramu
+    q: "what did parth usually order"
+    a: "Masala dosa and filter coffee. Same table, nearly every time. Some habits stick."
+  - character: ramu
+    q: "have you seen parth lately"
+    a: "Not since he stopped by the other day. He was quiet, but he paid and left like usual. I don't know where he went after that."
+  - character: ramu
+    q: "what was parth like"
+    a: "A good customer, a better friend to Sameer. They used to sit at that table and talk until I had to remind them we were closing."
+  - character: ramu
+    q: "what did parth usually order"
+    a: "Masala dosa and filter coffee. Same table, nearly every time. Some habits stick."
+  - character: ramu
+    q: "have you seen parth lately"
+    a: "Not since he stopped by the other day. He was quiet, but he paid and left like usual. I don't know where he went after that."
+  - character: ramu
+    q: "what was parth like"
+    a: "A good customer, a better friend to Sameer. They used to sit at that table and talk until I had to remind them we were closing."

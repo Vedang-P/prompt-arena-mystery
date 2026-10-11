@@ -6,7 +6,7 @@ import { MathUtils, Vector3 } from 'three';
 import { speechLevel } from './VoicePlayback.js';
 import {createFootContact} from './FootContact.js';
 
-export const HUMAN_CAST = new Set(['sameer', 'parth', 'mother', 'officer','veer','tanush','leader','enakshi']);
+export const HUMAN_CAST = new Set(['sameer', 'parth', 'mother', 'officer','veer','tanush','leader','enakshi','ramu']);
 export default function HumanActor({ character, pose = 'idle', focused = false, paused=false, footLift=0, onMeasure }) {
   const root = useRef();
   const { scene, animations } = useGLTF(`/assets/cast/${character}.glb`);

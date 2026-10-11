@@ -5,18 +5,19 @@ export const DESK_SEAT = .49035;
 // Gazebo deck and bench seat measured from the CC0 models in inspect_park.py.
 export const PARK = { deckY:.2198, bench:[0,.2198,1.1], seatY:.6703, waiting:[-1.3,.15] };
 export const BEDROOM = { desk:[2.8,0,-1.5], chair:[1.78,0,-1.5], laptop:[2.8,DESK_TOP,-1.5], lamp:[2.8,DESK_TOP,-2.08], shelf:[-3.8,0,-2.85] };
+export const HOME_STAIRS={top:3.7176,landingY:3.6476,landingCenter:[4.7,-2.5],landingSize:[2.7,.14,2.55],upperCenter:[4.55,-4.2],upperSize:[2.65,.14,2.6]};
 export const POLICE = { desk:[0,0,-1.05], chair:[0,0,-2.05], officer:[0,-2.05], sameer:[-.72,.55], mother:[.7,.6] };
 export const FIELD={car:[-1.4,.006,-1.6],yaw:-1.05,seat:[-.535,.723,.408]};
 export function carPoint([x,y,z]){return [FIELD.car[0]+x*Math.cos(FIELD.yaw)+z*Math.sin(FIELD.yaw),FIELD.car[1]+y,FIELD.car[2]-x*Math.sin(FIELD.yaw)+z*Math.cos(FIELD.yaw)];}
 export const ROOM_VIEWS={
  gazebo:{at:[0,2.15,6.8],look:[0,1.35,0],fov:58},
- abandoned_field:{at:[.2,1.95,6.4],look:[-.6,1,-1.3],fov:55},
+ abandoned_field:{at:[1.1,1.95,3.4],look:[-.5,.86,-2.35],fov:55},
  concert:{at:[0,1.85,5.7],look:[0,1.5,-3],fov:62},
  workshop:{at:[0,1.8,5.2],look:[0,1.1,-2.2],fov:64},
- parth_home:{at:[.2,1.8,4.4],look:[.2,1.25,-1],fov:68},
+ parth_home:{at:[1.55,1.9,5.05],look:[1.45,1.25,-1.45],fov:82},
  police_station:{at:[.3,1.7,3.5],look:[0,1.3,-1.8],fov:64},
- sameer_room:{at:[.1,1.7,2.7],look:[0,1.2,-1.8],fov:66},
- parth_room:{at:[.1,1.7,2.7],look:[0,1.2,-1.8],fov:66},
+ sameer_room:{at:[.2,2.05,3.55],look:[0,1.25,-1.45],fov:88},
+ parth_room:{at:[.2,2.05,3.55],look:[0,1.25,-1.45],fov:88},
  cyber_cafe:{at:[.2,1.7,4.4],look:[0,1.3,-1.8],fov:68},
  ngo_hq:{at:[0,1.8,4.5],look:[0,1.4,-3],fov:68},
  ngo_archive:{at:[0,1.7,2.8],look:[0,1.3,-1.8],fov:68},

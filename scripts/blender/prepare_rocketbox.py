@@ -14,7 +14,8 @@ OUT = BASE / 'client/public/assets/cast'
 OUT.mkdir(parents=True, exist_ok=True)
 CAST = {'sameer': 'Male_Adult_04', 'parth': 'Male_Adult_12',
         'mother': 'Female_Adult_07', 'officer': 'Police_Male_01',
-        'veer':'Male_Adult_17','tanush':'Male_Adult_08','leader':'Male_Adult_13','enakshi':'Female_Adult_09'}
+        'veer':'Male_Adult_17','tanush':'Male_Adult_08','leader':'Male_Adult_13','enakshi':'Female_Adult_09',
+        'ramu':'Male_Adult_15'}
 metadata = json.loads((OUT / 'measurements.json').read_text()) if (OUT / 'measurements.json').exists() else {}
 for character, asset in CAST.items():
     if os.environ.get('CAST_FILTER') and character not in os.environ['CAST_FILTER'].split(','): continue

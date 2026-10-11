@@ -110,5 +110,19 @@
       1.2975
     ],
     "seatHeight": 0.5163
+  },
+  "ramu": {
+    "source": "Male_Adult_15",
+    "standingHead": [
+      0.0025,
+      0.0362,
+      1.5548
+    ],
+    "seatedHead": [
+      -0.0061,
+      0.0546,
+      1.238
+    ],
+    "seatHeight": 0.4867
   }
 }

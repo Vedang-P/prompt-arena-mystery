@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {AnimationMixer,Box3,PerspectiveCamera,Vector3} from 'three';
 import {caseData} from '../src/case.js';
-import {locationFor,storyCast,placeCast,wideShot} from '../client/src/SceneStaging.js';
+import {locationFor,storyCast,placeCast,wideShot,roomWideShot,captureShot} from '../client/src/SceneStaging.js';
 import {createFootContact} from '../client/src/FootContact.js';
-import {PARK,BEDROOM,DESK_TOP} from '../client/src/SceneLayout.js';
+import {PARK,BEDROOM,HOME_STAIRS,DESK_TOP} from '../client/src/SceneLayout.js';
 import {loadGeometry} from './gltf-geometry.mjs';
 const scenes=[];
 for(const act of caseData.acts){
@@ -14,6 +14,37 @@ for(const act of caseData.acts){
   }
 }
 const measurements=JSON.parse(await fs.readFile('.asset-cache/actor-measurements.json','utf8'));
+const act2=caseData.acts.find(act=>act.id==='act2'),act3=caseData.acts.find(act=>act.id==='act3');
+assert.equal(locationFor(act2,'intro',1),'cyber_cafe','The café scene must accompany the café narration');
+assert.equal(locationFor(act3,'outro',0),'concert','The capture must begin at the concert service yard');
+assert.equal(locationFor(act3,'outro',1),'concert','The departure shot must remain at the concert service yard');
+const captureCast=placeCast('concert',storyCast(act3,'outro','concert'));
+const sameerCapture=captureCast.find(c=>c.character==='sameer');
+assert(sameerCapture,'Sameer must be present in the capture scene');
+assert(Math.hypot(sameerCapture.at[0]-5.45,sameerCapture.at[1]-1.05)>1.8,'Sameer must remain visible beside, not behind, the trash cans');
+for(const aspect of [390/520,676/490,844/390,1280/600,1920/780]){
+  const shot=captureShot(aspect),camera=new PerspectiveCamera(39,aspect,.1,100);
+  camera.position.set(...shot.at);camera.lookAt(new Vector3(...shot.center));camera.updateMatrixWorld();
+  for(const [label,point] of [['Sameer-feet',[sameerCapture.at[0],0,sameerCapture.at[1]]],['Sameer-head',[sameerCapture.at[0],1.85,sameerCapture.at[1]]],['ambulance-roof',[-.5,2.45,-3.1]]]){
+    const p=new Vector3(...point).project(camera);
+    assert(Math.abs(p.x)<.92&&Math.abs(p.y)<.95,`${label} is cropped in Act 3 at ${aspect}`);
+  }
+}
+const gazebo=await loadGeometry('client/public/assets/cinema/gazebo.glb');
+const gazeboBounds=new Box3().setFromObject(gazebo.scene,true),gazeboHeight=gazeboBounds.max.y-gazeboBounds.min.y;
+const gazeboScale=3.32/gazeboHeight,gazeboCast=placeCast('gazebo',[{character:'sameer',pose:'sit'},{character:'parth',pose:'sit'}]);
+for(const aspect of [390/520,676/490,1280/720,1920/1080]){
+  const shot=roomWideShot('gazebo',gazeboCast,aspect),camera=new PerspectiveCamera(39,aspect,.1,100);
+  camera.position.set(...shot.at);camera.lookAt(new Vector3(...shot.center));camera.updateMatrixWorld();
+  for(const x of [gazeboBounds.min.x*gazeboScale,gazeboBounds.max.x*gazeboScale])for(const z of [gazeboBounds.min.z*gazeboScale,gazeboBounds.max.z*gazeboScale]){
+    const top=new Vector3(x,3.32,z).project(camera);
+    assert(Math.abs(top.x)<.94&&Math.abs(top.y)<.94,`Gazebo roof is cropped at ${aspect}`);
+  }
+}
+assert(measurements.ramu?.idle,"Ramu's Rocketbox actor must be included in the contact measurements");
+const cafeCast=placeCast('cyber_cafe',storyCast(act2,'intro','cyber_cafe'));
+assert(cafeCast.some(c=>c.character==='ramu'),'The café cinematic must stage Ramu');
+assert(Math.hypot(cafeCast[0].at[0]-cafeCast[1].at[0],cafeCast[0].at[1]-cafeCast[1].at[1])>1.5,'Sameer and Ramu must have room to face one another');
 let projections=0;
 for(const scene of scenes){
   const cast=placeCast(scene.room,scene.cast);
@@ -50,7 +81,18 @@ const fan=await loadGeometry('client/public/assets/cinema/ceiling_fan.glb');
 assert(fan.scene.getObjectByName('ceiling_fan_blades'),'Fan rotor missing');
 const fanBox=new Box3().setFromObject(fan.scene,true);
 assert(Math.abs(fanBox.max.y)<.003&&fanBox.min.y>-.6,'Fan is not mounted downward from ceiling');
+const stairAsset=await loadGeometry('client/public/assets/detail/stairs.glb');
+stairAsset.scene.rotation.y=Math.PI/2;stairAsset.scene.position.set(4.7,0,.65);stairAsset.scene.updateMatrixWorld(true);
+const stairBounds=new Box3().setFromObject(stairAsset.scene,true);
+assert(Math.abs(stairBounds.max.y-HOME_STAIRS.top)<.01,'Upper landing datum must follow the imported stair top');
+assert(Math.abs(stairBounds.min.y)<.002,'The stair foot must meet the ground floor');
+assert(Math.abs(HOME_STAIRS.landingY+HOME_STAIRS.landingSize[1]/2-HOME_STAIRS.top)<.002,'Landing must meet the stair top without a step or gap');
+const stairTop=new Box3();stairAsset.scene.traverse(o=>{if(o.isMesh){const p=o.geometry.attributes.position;for(let i=0;i<p.count;i++){const v=new Vector3().fromBufferAttribute(p,i).applyMatrix4(o.matrixWorld);if(v.y>HOME_STAIRS.top-.12)stairTop.expandByPoint(v);}}});
+const landingMin=[HOME_STAIRS.landingCenter[0]-HOME_STAIRS.landingSize[0]/2,HOME_STAIRS.landingCenter[1]-HOME_STAIRS.landingSize[2]/2],landingMax=[HOME_STAIRS.landingCenter[0]+HOME_STAIRS.landingSize[0]/2,HOME_STAIRS.landingCenter[1]+HOME_STAIRS.landingSize[2]/2];
+assert(landingMin[0]<=stairTop.min.x+.01&&landingMax[0]>=stairTop.max.x-.01&&landingMin[1]<=stairTop.min.z+.01&&landingMax[1]>=stairTop.max.z-.01,'The landing must cover the actual stair top face in world X/Z');
+const upperMin=[HOME_STAIRS.upperCenter[0]-HOME_STAIRS.upperSize[0]/2,HOME_STAIRS.upperCenter[1]-HOME_STAIRS.upperSize[2]/2],upperMax=[HOME_STAIRS.upperCenter[0]+HOME_STAIRS.upperSize[0]/2,HOME_STAIRS.upperCenter[1]+HOME_STAIRS.upperSize[2]/2];
+assert(Math.min(landingMax[0],upperMax[0])-Math.max(landingMin[0],upperMin[0])>.1&&Math.min(landingMax[1],upperMax[1])-Math.max(landingMin[1],upperMin[1])>.1,'The stair landing must overlap the upper hall on both floor axes');
 assert.equal(BEDROOM.laptop[1],DESK_TOP);assert.equal(BEDROOM.lamp[1],DESK_TOP);
 const source=await fs.readFile('client/src/Scene.jsx','utf8');
 assert.equal((source.match(/<BedroomWorkstation paused=/g)??[]).length,2,'Both bedroom kits must share the fan and workstation');
-console.log(`${scenes.length} campaign cinematic cues checked; ${projections} full-body projections across four aspect ratios, 300 seated animation frames, shared fan/workstation checked.`);
+console.log(`${scenes.length} campaign cinematic cues checked; ${projections} full-body projections, capture shots on five aspect ratios, gazebo roof on four, 300 seated frames, shared fan/workstation checked.`);

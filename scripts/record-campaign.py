@@ -9,7 +9,8 @@ from kokoro_onnx import Kokoro
 
 VOICES = {'narrator':'bm_george','sameer':'am_puck','parth':'am_fenrir',
           'mother':'bf_emma','officer':'am_onyx','voice':'am_echo',
-          'veer':'am_liam','tanush':'bm_lewis','leader':'am_michael','enakshi':'af_bella'}
+          'veer':'am_liam','tanush':'bm_lewis','leader':'am_michael','enakshi':'af_bella',
+          'ramu':'am_adam'}
 options = ort.SessionOptions()
 options.intra_op_num_threads = 4
 options.inter_op_num_threads = 1

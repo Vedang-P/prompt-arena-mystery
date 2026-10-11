@@ -9,7 +9,8 @@ Sameer: Male_Adult_04. Parth: Male_Adult_12. Mother: Female_Adult_07.
 Officer: Police_Male_01. Body motion: m_idle_breathe_01,
 f_idle_breathe_01, m_sit_chair_breathe_01.
 Veer: Male_Adult_17. Tanush: Male_Adult_08. Leader: Male_Adult_13.
-Enakshi: Female_Adult_09. All eight principal characters use Rocketbox rigs.
+Enakshi: Female_Adult_09. Ramu: Male_Adult_15. All nine named campaign
+characters use Rocketbox rigs.
 Original geometry/textures were downloaded, retargeted and exported using
 Blender's Python API. No new character geometry was generated. Textures capped
 at 1024px; unused facial shapes removed; WebP compression applied.

@@ -14,7 +14,7 @@ export function DetailProp({asset,part,position=[0,0,0],rotation=[0,0,0],scale=1
    o.material=[].concat(o.material).map(m=>{const mat=m.clone();materials.push(mat);
     if(tint)mat.color.set(tint);
     if(asset==='sedan'&&mat.name==='blue'){mat.color.set('#b7b9ad');mat.metalness=.55;mat.roughness=.62;}
-    if(asset==='sedan_detailed'&&mat.name==='paint'){mat.map=null;mat.color.set('#b9bcb2');mat.metalness=.55;mat.roughness=.6;}
+    if(asset==='sedan_detailed'&&mat.name==='paint'){mat.color.set('#b9bcb2');mat.metalness=.24;mat.roughness=.52;}
     if(asset==='sedan_detailed'&&mat.name.startsWith('glass')){mat.transparent=true;mat.opacity=.3;mat.depthWrite=false;mat.roughness=.12;}
     if(asset==='modular_chainlink_fence'&&mat.name.includes('wire')){mat.alphaTest=.45;mat.transparent=false;mat.depthWrite=true;
      if(alphaMap){mat.alphaMap=alphaMap.clone();if(mat.map){mat.alphaMap.repeat.copy(mat.map.repeat);mat.alphaMap.offset.copy(mat.map.offset);mat.alphaMap.rotation=mat.map.rotation;mat.alphaMap.wrapS=mat.map.wrapS;mat.alphaMap.wrapT=mat.map.wrapT;mat.alphaMap.flipY=mat.map.flipY;}mat.alphaMap.needsUpdate=true;}
@@ -59,9 +59,9 @@ export function Cable({points,color='#20272b',radius=.009}){
  return <mesh><tubeGeometry args={[curve,24,radius,5,false]}/><meshStandardMaterial color={color} roughness={.85}/></mesh>;
 }
 
-export function ComputerStation({position=[0,0,0],number=1,deskY=.7875,rotation=[0,0,0]}){
+export function ComputerStation({position=[0,0,0],number=1,deskY=.7875,rotation=[0,0,0],deskTint}){
  return <group position={position} rotation={rotation}>
-  <DetailProp asset="metal_office_desk"/>
+  <DetailProp asset="metal_office_desk" tint={deskTint}/>
   <DetailProp asset="monitor" position={[-.18,deskY,-.2]}/>
   <DetailProp asset="keyboard" position={[-.2,deskY,.25]}/>
   <DetailProp asset="mouse" position={[.42,deskY,.22]}/>

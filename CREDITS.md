@@ -1,9 +1,15 @@
 # Credits
 
-All third-party assets are CC0 (public domain) unless noted otherwise. Attribution is given
-voluntarily and required nowhere — see each license file for details.
+Assets are CC0 unless a different license is listed below. Source and license records for the
+prepared Poly Haven props are also shipped in `client/public/assets/detail/polyhaven-sources.json`.
 
 ## 3D characters
+
+- **Microsoft Rocketbox Characters** — MIT License
+  https://github.com/microsoft/Microsoft-Rocketbox
+  Used: the nine textured campaign actors under `client/public/assets/cast/`, including Ramu
+  (Male_Adult_15). The original meshes and textures are prepared and retargeted with Blender;
+  no character geometry is authored for the game.
 
 - **Blocky Characters** — Kenney (kenney.nl), CC0 1.0
   https://kenney.nl/assets/blocky-characters
