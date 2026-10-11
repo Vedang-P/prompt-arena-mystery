@@ -1,29 +1,53 @@
-# The Moon’s Dark Side — Prompt Arena
+# The Moon’s Dark Side
 
-A browser-based, cinematic 3D mystery. The complete authored story spans **nine acts**, **fourteen locations**, **eight animated characters**, **46 puzzles**, and two endings.
+**Prompt Arena: Mystery** — a cinematic, browser-based 3D whodunit. A student vanishes under a full moon, and every answer is buried in a room, a recording, or the person standing in front of you.
 
-Play the release at https://prompt-arena-mystery.vercel.app/.
+**Play it:** https://prompt-arena-mystery.vercel.app/
+
+| The case | |
+| --- | --- |
+| Story | 9 acts — an opening prologue and eight playable chapters |
+| Locations | 14 fully modelled rooms and outdoor sets |
+| Cast | 9 animated characters with recorded voices |
+| Content | 54 clues, 46 puzzles, 37 unlockable facts, 2 endings |
+| Audio | 227 recorded lines (Kokoro-82M), 3 music cues, ambient beds |
+| Runtime | React 19 + Vite + three.js; Hono on Node 22; Postgres (SQLite in local development) |
+
+---
 
 ## Play
 
-Choose **Enter**, then use your assigned team code. Discover evidence, decode puzzles, and question the characters. The notebook keeps every exhibit. Each chapter unlocks once its required evidence and puzzles are complete. Classroom event mode disables guest and Google entry and chapter shortcuts.
+Choose **Enter** on the title card, then open your case with the team code supplied to you. Each chapter unlocks only once its required evidence and puzzles are complete; the notebook keeps every exhibit, statement and resolved lead.
 
 ### Entry points
 
 | Route | What it is |
 | --- | --- |
-| `/` | The title card: a cinematic "MIST presents" card, the wordmark over the gazebo art, a team-code dialog, a live leaderboard, and audio settings the game inherits (`client/index.html` + `client/src/site.css` / `site.js`, fonts in `client/public/fonts/`) |
-| `/play/` | The game: its own 3D title screen (`Live leaderboard ↗`, `Audio & settings`, `Mute audio`, `Log out`), the team-code entry modal, then the acts |
+| `/` | The title card — a cinematic “MIST presents” intro, the wordmark over the gazebo art, a team-code dialog, the live leaderboard, and audio settings the game inherits (`client/index.html`, `client/src/site.js`) |
+| `/play/` | The game — its own 3D title screen, sign-in, then the acts (`client/play/index.html`, `client/src/App.jsx`) |
 
-A code accepted on the title card posts to `/api/login` and hands off to `/play/?resume=1`, which drops straight into the current act — Act 0's cinematic for a new team — instead of the game's menu.
+A code accepted on the title card posts to `/api/login` and hands off to `/play/?resume=1`, which drops straight into the team’s current act — Act 0’s cinematic for a new team — instead of the menu.
 
-Drag to orbit, scroll/pinch to zoom, and use WASD/arrows to move the camera. Click world markers or use **Explore this room**. Escape closes panels. Cinematics support recorded character/narrator voices, subtitles, pause, continue, skip and mute. Graphics settings support mobile and slower devices. The header provides **Log out** and **Live leaderboard**.
+### Controls
 
-Outside event mode, **Chapter select** creates an independent practice save with earlier prerequisites prepared. It does not overwrite the campaign. Select **Return to campaign** to resume the original save. Event teams resume their server-side campaign with the assigned code.
+| Action | Input |
+| --- | --- |
+| Look around | Drag / one finger |
+| Zoom | Scroll / pinch |
+| Move the camera | `W` `A` `S` `D` or arrow keys |
+| Inspect an object | Click its marker, or use **Explore this room** |
+| Close a panel | `Esc` |
+| Pause a cinematic | `Space` or the on-screen controls |
+
+Cinematics ship with recorded character and narrator voices, subtitles, and pause / continue / skip / mute controls. Graphics settings cover mobile and slower classroom devices. The header carries **Live leaderboard**, **Audio & settings**, and **Log out**.
+
+Outside event mode, **Chapter select** creates an independent practice save with the earlier prerequisites prepared; it never touches the campaign. **Return to campaign** restores the original save.
+
+---
 
 ## Develop
 
-Node.js 22:
+Requires **Node.js 22**.
 
 ```sh
 npm ci
@@ -31,31 +55,67 @@ npm run dev:game
 # http://127.0.0.1:5173
 ```
 
-The local single-origin server uses the same Node/Hono API as Vercel, with isolated SQLite storage. Production uses the existing Postgres connection. Local database and environment files are ignored by Git and deployment.
+`dev:game` runs a single origin: Vite in middleware mode for the client, and the exact Vercel API entry (`api/index.js`) for `/api/*`, with an isolated SQLite file at `.game-dev.local`. No environment variables are needed locally — the server enables team-code login and falls back to development secrets on loopback hosts only.
+
+### Project layout
+
+```
+api/index.js            Vercel Node entry — also serves local development
+src/worker.js           Hono API: auth, state, discovery, interrogation, leaderboard
+src/engine.js           Pure game rules (no I/O — unit-testable in plain Node)
+src/case.js             Indexes the compiled case; src/generated/ is build output
+lib/vercel-env.js       Runtime env + storage selection
+lib/db-postgres.js      Postgres adapter (translates the worker’s SQLite-isms)
+case/parts/*.yaml       Authored story fragments — edit these, never case/main.yaml
+scripts/                Case build, tests, asset prep, speech and screenshot tooling
+client/src/             React app: scenes, cinematics, panels, audio
+client/public/assets/   Models, textures, voice MP3s, fonts, music
+vercel.json             Build command and function configuration
+```
+
+### Scripts
+
+| Script | Purpose |
+| --- | --- |
+| `npm run dev:game` | Full local server (client + API + SQLite) |
+| `npm run build` | Merge + validate the case, then build `dist/` |
+| `npm run deploy:vercel` | Build and deploy to production |
+| `npm run merge:case` | Merge `case/parts/*.yaml` into `case/main.yaml` |
+| `npm run build:case` | Merge, validate and compile `src/generated/case.js` |
+| `npm run validate:case` | Validate the compiled case without writing |
+| `npm run test:engine` | Pure rule tests against a fixture case |
+| `npm run test:campaign` | Full campaign walk: every act, puzzle, gate and ending |
+| `npm run test:event` | 70 concurrent team sessions, event gates and timers |
+| `npm run test:assets` | GLB integrity, draw budgets, surface contacts |
+| `npm run test:scenes` | Actor/camera staging against measured geometry |
+| `npm run test:voices` | Recording coverage, durations and hash verification |
+| `npm run test:deployment` | Hosted smoke walk (`-- https://your-deployment`) |
+| `npm run shot` | Puppeteer screenshots of the running game (`shots/`) |
+| `npm run gen:team` | Hash team codes for seeding |
+
+### Testing
 
 ```sh
-npm run test:engine
-npm run test:campaign
-npm run test:assets
-npm run test:scenes
-npm run test:voices
-npm run test:event
+npm run test:engine && npm run test:campaign && npm run test:event
+npm run test:assets && npm run test:scenes && npm run test:voices
 npm run build
 ```
 
-The engine tests cover rule enforcement. Campaign integration tests walk every act and puzzle, check prerequisite gates, both endings, all nine practice starts, wrong-answer continuation, and campaign/practice save isolation.
+The engine tests cover rule enforcement. Campaign integration walks every act and puzzle, checks prerequisite gates, both endings, all nine practice starts, wrong-answer continuation, and campaign/practice save isolation. The scene and voice suites decode the actual shipped GLBs and MP3s, so asset changes cannot silently drift from the staging code.
+
+In development, `http://127.0.0.1:5173/play/?review=scenes` opens a review browser for all 14 environments and the cinematic arrangements; it never writes progress and is omitted from production.
+
+---
 
 ## Content and assets
 
-Edit `case/parts/*.yaml`; the build merges and validates the story into generated server/client case files. Hidden answers remain in the server case. The release fragment repairs progression gates and adds readable evidence for image-dependent ciphers.
+Edit `case/parts/*.yaml`; `npm run build:case` merges and validates the story into `case/main.yaml` and compiles `src/generated/case.js`. Hidden answers, grants and ending text remain in the server case — the client only ever receives what a team has unlocked.
 
-All eight principal characters use licensed Microsoft Rocketbox textured human rigs with retargeted breathing/seated animations. Detailed environments use finished CC0 Poly Haven and Innerscene models, with a published CC0 astronomy kit and some retained Kenney secondary furnishings. Blender's Python API prepares existing source models; no new character geometry is generated. All acts and authored character replies use locally recorded Kokoro-82M voices; Kevin MacLeod music ships as static MP3s. Source URLs, licenses, provenance and modifications are in `client/public/assets/ASSETS.md`, with player-facing credits at `/credits.html`.
+All nine characters are licensed Microsoft Rocketbox textured rigs with retargeted breathing and seated animation. Environments use finished CC0 Poly Haven and Innerscene models, with a published CC0 astronomy kit and retained Kenney rugs. Blender’s Python API prepares the existing source models; no new character geometry is generated. All acts and authored replies use locally recorded Kokoro-82M voices; Kevin MacLeod music ships as static MP3s.
 
-The detailed location rebuild plan is `docs/SCENE_QUALITY_PLAN.html`. The current local rebuilds remain in review: location identity, sparse dressing, narrative actions, reused cameras and classroom-device performance need acceptance checks. Inspect all 14 environments and 62 distinct cinematic arrangements without progress writes at `http://127.0.0.1:5173/?review=scenes` with `npm run dev:game`. The review UI and local-only review API are omitted from production.
+Source URLs, licenses, provenance and modifications are catalogued in `client/public/assets/ASSETS.md`, with player-facing credits at `/credits.html`.
 
-Asset regeneration downloads original sources into ignored `.asset-cache/` folders with `scripts/download-scene-assets.mjs`, `download-interior-assets.mjs`, `download-campaign-cast.mjs` and `download-astronomy-assets.mjs`. Run Blender preparation and geometry measurements before `scripts/optimize-scene-assets.mjs`; then rerun asset and staging checks. Ordinary builds use the prepared assets already in `client/public/assets/`.
-
-Run `npm run test:scenes` for actual animated-geometry contacts and camera projection checks; `npm run test:voices` verifies coverage, encoded-duration mouth envelopes and audio hashes. Optional voice regeneration needs Python, ffmpeg and the pinned local ONNX tools:
+Voice regeneration (optional — the 227 recordings are already bundled) needs Python, ffmpeg and the pinned ONNX tools:
 
 ```sh
 python -m pip install --target .asset-cache/kokoro-python kokoro-onnx==0.6.1
@@ -66,7 +126,45 @@ python scripts/record-campaign.py
 npm run test:voices
 ```
 
-The 227 recordings are already bundled; ordinary builds need neither Python nor the model. Newly authored or changed dialogue requires regeneration.
+Asset regeneration downloads original sources into ignored `.asset-cache/` folders via `scripts/download-*.mjs`, prepares them in Blender, optimises with `scripts/optimize-scene-assets.mjs`, and re-runs the asset and staging checks. Ordinary builds need none of this.
+
+---
+
+## Architecture
+
+```
+Browser
+  ├── /            static title card (client/src/site.js)
+  └── /play/       React app (client/src/App.jsx → Scene / Cinema3D / Panels)
+        │  JSON + SSE
+        ▼
+api/index.js       Node 22 function (Vercel) / local dev server
+  └── src/worker.js  Hono routes
+        ├── src/engine.js   pure rules and gates
+        ├── src/llm.js      optional OpenAI-compatible adapter
+        └── Postgres (DATABASE_URL)  ·  node:sqlite fallback in /tmp
+```
+
+Team progress is server-authoritative: clue discovery, puzzle answers, act gates, penalties, endings and leaderboard timing all live behind the API. Sessions are HMAC-signed cookies; team codes are stored as salted hashes. Interrogation streams over SSE and falls back through authored answers and in-character deflections when no LLM key is configured — the game is fully playable without one.
+
+### Environment variables
+
+Everything is optional in local development. Production needs the first three.
+
+| Variable | Purpose |
+| --- | --- |
+| `SESSION_SECRET` | Signs session cookies (required on public hosts) |
+| `CODE_PEPPER` | Salts team-code hashes (required when code login is on) |
+| `DATABASE_URL` | Postgres connection string (also `POSTGRES_URL`, `POSTGRES_PRISMA_URL`); without it the API falls back to per-instance `/tmp` SQLite |
+| `TEAM_CODES` | `Team name=assigned-code,Another=code,…` seeded on start |
+| `ALLOW_CODE_LOGIN` | Enables `POST /api/login` |
+| `EVENT_MODE` | Classroom rules — see below |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google sign-in (optional sign-in method) |
+| `LLM_BASE_URL` / `LLM_API_KEY` / `LLM_MODEL` / `LLM_FALLBACK_MODELS` | Optional live AI suspects |
+
+`.env.example` documents the full surface.
+
+---
 
 ## Deploy to Vercel
 
@@ -75,14 +173,20 @@ npx vercel link
 npx vercel deploy --prod
 ```
 
-The existing project is `prompt-arena-mystery`. Build output is `dist/`, and `api/index.js` serves the backend. Required production settings: `DATABASE_URL` (or the supported Postgres connection aliases), `SESSION_SECRET`, and `CODE_PEPPER`. Google sign-in additionally uses `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. The current project already has these settings.
+The project is `prompt-arena-mystery`. `npm run build` produces `dist/` (two Vite entry points), `vercel.json` wires `api/index.js` as the Node 22 function, and `/api/*` is rewritten to it. Health at `/api/health` reports the version and which knobs the deployment actually has configured (booleans only, never values).
 
-Characters use authored, evidence-grounded dialogue when no LLM key is configured. An optional OpenAI-compatible provider can be configured with the LLM environment variables; it is not needed to finish the game.
+A hosted smoke walk of the full campaign:
 
-Vercel is the only deployment target: `api/index.js` runs the Hono app on the Node 22 runtime, and `vercel.json` serves the built `dist/`.
+```sh
+npm run test:deployment -- https://your-deployment.vercel.app [team-code]
+```
+
+---
 
 ## Classroom event
 
-Set EVENT_MODE=true and ALLOW_CODE_LOGIN=true. TEAM_CODES accepts comma-separated `Team name=assigned-code` entries. Guest sign-in, Google sign-in, practice starts, chapter selection and the legacy accusation shortcut are disabled in event mode. Only teams that have entered appear on the leaderboard; elapsed time starts when Act 0 finishes and Act 1 opens. Instructor preview is excluded from rankings.
+Set `EVENT_MODE=true` and `ALLOW_CODE_LOGIN=true`. `TEAM_CODES` accepts comma-separated `Team name=assigned-code` entries.
 
-The private roster is in `event-private/team-codes.csv` (70 teams) and the instructor preview code is in `event-private/instructor-code.txt`. These are ignored by Git and Vercel; distribute one assigned code per team. Production stores progress in Postgres. Music, voices and models are bundled static assets; no speech-generation calls are needed during the campaign. Run `npm run test:event` for 70 concurrent local sessions and event gate/timer checks. A classroom device/network rehearsal is still needed before the event.
+In event mode, guest and Google sign-in, practice starts, chapter selection and the accusation shortcut are disabled; only teams that have entered appear on the leaderboard, and elapsed time starts when Act 0 finishes and Act 1 opens. Instructor preview is excluded from rankings. Music, voices and models are bundled static assets, so the campaign needs no network calls beyond the API itself.
+
+The private roster lives in `event-private/team-codes.csv` (ignored by Git and Vercel); distribute one assigned code per team. Run `npm run test:event` for 70 concurrent local sessions and gate/timer checks, then rehearse on the actual classroom network before the event.
