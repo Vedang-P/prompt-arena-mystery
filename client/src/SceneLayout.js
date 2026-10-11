@@ -11,7 +11,7 @@ export const FIELD={car:[-1.4,.006,-1.6],yaw:-1.05,seat:[-.535,.723,.408]};
 export function carPoint([x,y,z]){return [FIELD.car[0]+x*Math.cos(FIELD.yaw)+z*Math.sin(FIELD.yaw),FIELD.car[1]+y,FIELD.car[2]-x*Math.sin(FIELD.yaw)+z*Math.cos(FIELD.yaw)];}
 export const ROOM_VIEWS={
  gazebo:{at:[0,2.15,6.8],look:[0,1.35,0],fov:58},
- abandoned_field:{at:[1.1,1.95,3.4],look:[-.5,.86,-2.35],fov:55},
+ abandoned_field:{at:[1.1,3,6.5],look:[-.5,1,-2.35],fov:63},
  concert:{at:[0,1.85,5.7],look:[0,1.5,-3],fov:62},
  workshop:{at:[0,1.8,5.2],look:[0,1.1,-2.2],fov:64},
  parth_home:{at:[1.55,1.9,5.05],look:[1.45,1.25,-1.45],fov:82},

@@ -1789,13 +1789,13 @@ export function RoomLighting({ roomId, quality = 'high',cinematicPhase }) {
   const field=roomId==='abandoned_field';
   const cinematicNight=roomId==='concert'&&['capture','departure'].includes(cinematicPhase);
   return <>
-    <Environment files={gazebo?"/assets/cinema/park_sunrise_1k.hdr":outdoor ? "/assets/cinema/park_bench_1k.hdr" : "/assets/env/ballroom_2k.hdr"} ground={gazebo?{height:2,radius:70,scale:120}:undefined} background={outdoor&&roomId!=='abandoned_field'&&!cinematicNight} backgroundBlurriness={.02} backgroundIntensity={gazebo ? .35 : night ? .045 : .8} environmentIntensity={gazebo ? .56 : field ? .58 : night ? .3 : outdoor ? .85 : .62} />
-    <ambientLight intensity={gazebo ? .5 : field ? .82 : night ? .5 : outdoor ? .65 : .8} color={gazebo?'#e8caa7':field?'#c2cbd5':'#bdcce8'} />
-    <directionalLight position={[-4, 8, 6]} intensity={gazebo ? 1.1 : field ? 1.2 : night ? .85 : outdoor ? 2 : 1.7} color={gazebo?'#ffd2a4':night?'#a5bcdc':outdoor?'#ffe2a9':'#d7e5ee'} castShadow={quality !== 'low'}
+    <Environment files={gazebo?"/assets/cinema/park_sunrise_1k.hdr":outdoor ? "/assets/cinema/park_bench_1k.hdr" : "/assets/env/ballroom_2k.hdr"} ground={gazebo?{height:2,radius:70,scale:120}:undefined} background={outdoor&&roomId!=='abandoned_field'&&!cinematicNight} backgroundBlurriness={.02} backgroundIntensity={gazebo ? .35 : night ? .045 : .8} environmentIntensity={gazebo ? .56 : field ? .68 : night ? .3 : outdoor ? .85 : .62} />
+    <ambientLight intensity={gazebo ? .5 : field ? 1.05 : night ? .5 : outdoor ? .65 : .8} color={gazebo?'#e8caa7':field?'#cbd8e8':'#bdcce8'} />
+    <directionalLight position={[-4, 8, 6]} intensity={gazebo ? 1.1 : field ? 1.7 : night ? .85 : outdoor ? 2 : 1.7} color={gazebo?'#ffd2a4':field?'#d7e3f4':night?'#a5bcdc':outdoor?'#ffe2a9':'#d7e5ee'} castShadow={quality !== 'low'}
       shadow-mapSize={quality === 'high' ? [2048, 2048] : [1024, 1024]}
       shadow-camera-left={-14} shadow-camera-right={14} shadow-camera-top={14} shadow-camera-bottom={-14}
       shadow-camera-far={38} shadow-bias={-0.0005} />
-    <directionalLight position={[4, 4, -3]} intensity={field ? .5 : gazebo ? .38 : night ? .22 : .6} color={night?'#7b9fce':'#e0ab7b'} />
+    <directionalLight position={[4, 4, -3]} intensity={field ? .72 : gazebo ? .38 : night ? .22 : .6} color={field?'#9db8e4':night?'#7b9fce':'#e0ab7b'} />
   </>;
 }
 
@@ -1949,7 +1949,7 @@ export default function Scene({
         </Suspense>
         {quality === 'high' && <EffectComposer multisampling={2}>
           <Bloom intensity={0.18} luminanceThreshold={0.85} mipmapBlur />
-          <Vignette offset={0.3} darkness={0.35} />
+          <Vignette offset={0.3} darkness={room.id==='abandoned_field'?.16:.35} />
         </EffectComposer>}
       </Canvas>
     </WorldBoundary>
