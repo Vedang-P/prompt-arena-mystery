@@ -59,12 +59,10 @@ async function requireTeam(c) {
 
 // Loopback and private-LAN hosts are the only places the built-in development literals are
 // allowed: they run over plain http, where a Secure cookie would be dropped. Everywhere else
-// a missing (or too short) SESSION_SECRET / CODE_PEPPER fails closed instead of silently
-// signing sessions with a key that ships in this file.
+// the value must come from the environment — the hole being closed is the *public fallback*
+// in this file, not the length of whatever secret the deployment chose.
 const DEV_SESSION_SECRET = 'dev-secret';
 const DEV_CODE_PEPPER = 'dev-pepper';
-const MIN_SECRET = 32;
-const MIN_PEPPER = 16;
 
 const hostOf = (c) => new URL(c.req.url).hostname;
 
@@ -73,13 +71,13 @@ const isInsecureHost = (c) =>
 
 const sessionSecretFor = (c) => {
   const secret = typeof c.env.SESSION_SECRET === 'string' ? c.env.SESSION_SECRET : '';
-  if (secret.length >= MIN_SECRET) return secret;
+  if (secret && secret !== DEV_SESSION_SECRET) return secret;
   return isInsecureHost(c) ? secret || DEV_SESSION_SECRET : null;
 };
 
 const codePepperFor = (c) => {
   const pepper = typeof c.env.CODE_PEPPER === 'string' ? c.env.CODE_PEPPER : '';
-  if (pepper.length >= MIN_PEPPER) return pepper;
+  if (pepper && pepper !== DEV_CODE_PEPPER) return pepper;
   return isInsecureHost(c) ? pepper || DEV_CODE_PEPPER : null;
 };
 
