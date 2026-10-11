@@ -2,19 +2,12 @@
 /assets/
 /shots/
 /dist/
-/.wrangler/
-/.vercel/
 /src/generated/
-/final script/
 *.log
-.dev.vars
-.dev.vars.*
-!.dev.vars.example
 cookies.txt
 *.local
 *.local-shm
 *.local-wal
-/client/public/assets/mixamo/
 /case/teams.csv
 /case/teams-printable.txt
 /.asset-cache/

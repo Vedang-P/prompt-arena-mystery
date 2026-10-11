@@ -1,27 +1,20 @@
 node_modules/
 dist/
-.wrangler/
 src/generated/
-.dev.vars
-.dev.vars.*
-!.dev.vars.example
+.env*
+!.env.example
 cookies.txt
 *.local
 *.local-shm
 *.local-wal
-# Mixamo assets are licensed for use but not redistribution
-client/public/assets/mixamo/
 case/teams.csv
 case/teams-printable.txt
 .DS_Store
 *.log
 shots/
 
-# raw source art + Mixamo downloads (no redistribution, large)
-assets/character models/
-assets/animations/
-assets/pictures/
+# raw source art (no redistribution, large)
+assets/
 .vercel
-.env*
 .asset-cache/
 event-private/

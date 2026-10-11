@@ -39,12 +39,14 @@ app.get('/api/health', (c) =>
   c.json({
     ok: true,
     service: 'prompt-arena-mystery',
-    version: '1.1.5',
+    version: '1.1.6',
     // Booleans only — never values. Tells an operator at a glance which knobs this
     // deployment actually has wired up.
     env: {
       sessionSecret: Boolean(c.env.SESSION_SECRET),
       codePepper: Boolean(c.env.CODE_PEPPER),
+      sessionSecretIsExample: envString(c.env.SESSION_SECRET) === DEV_SESSION_SECRET,
+      codePepperIsExample: envString(c.env.CODE_PEPPER) === DEV_CODE_PEPPER,
       eventMode: isTruthy(c.env.EVENT_MODE),
       codeLogin: isTruthy(c.env.ALLOW_CODE_LOGIN),
       llm: Boolean(c.env.LLM_BASE_URL && c.env.LLM_API_KEY && c.env.LLM_MODEL),
@@ -72,10 +74,10 @@ async function requireTeam(c) {
   return { teamId, teamName: row.team_name, progress: row };
 }
 
-// Loopback and private-LAN hosts are the only places the built-in development literals are
-// allowed: they run over plain http, where a Secure cookie would be dropped. Everywhere else
-// the value must come from the environment — the hole being closed is the *public fallback*
-// in this file, not the length of whatever secret the deployment chose.
+// Loopback and private-LAN hosts may fall back to the built-in literals (they run over plain
+// http, where a Secure cookie would be dropped). A *configured* value is always honoured,
+// even if it happens to be the documented example — the hole being closed is a deployment
+// that never set one at all. Health reports whether an example value is still in place.
 const DEV_SESSION_SECRET = 'dev-secret';
 const DEV_CODE_PEPPER = 'dev-pepper';
 
@@ -84,16 +86,18 @@ const hostOf = (c) => new URL(c.req.url).hostname;
 const isInsecureHost = (c) =>
   /^(localhost|127\.|0\.0\.0\.0|\[?::1\]?|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(hostOf(c));
 
+const envString = (value) => (typeof value === 'string' ? value : '');
+
 const sessionSecretFor = (c) => {
-  const secret = typeof c.env.SESSION_SECRET === 'string' ? c.env.SESSION_SECRET : '';
-  if (secret && secret !== DEV_SESSION_SECRET) return secret;
-  return isInsecureHost(c) ? secret || DEV_SESSION_SECRET : null;
+  const secret = envString(c.env.SESSION_SECRET);
+  if (secret) return secret;
+  return isInsecureHost(c) ? DEV_SESSION_SECRET : null;
 };
 
 const codePepperFor = (c) => {
-  const pepper = typeof c.env.CODE_PEPPER === 'string' ? c.env.CODE_PEPPER : '';
-  if (pepper && pepper !== DEV_CODE_PEPPER) return pepper;
-  return isInsecureHost(c) ? pepper || DEV_CODE_PEPPER : null;
+  const pepper = envString(c.env.CODE_PEPPER);
+  if (pepper) return pepper;
+  return isInsecureHost(c) ? DEV_CODE_PEPPER : null;
 };
 
 const misconfigured = (c) =>

@@ -6,65 +6,6 @@ import { useSettings } from './Settings.jsx';
 import { speakCharacter,stopCharacterSpeech } from './CharacterSpeech.js';
 
 
-export function Login({ config, onDevLogin, error, busy }) {
-  const [code, setCode] = useState('');
-  const googleReady = !!config?.google;
-  return (
-    <div className="center-screen">
-      <div className="login-card">
-        <p className="login-kicker">Prompt Arena presents</p>
-        <h1 className="login-title">
-          Mystery<em>a live interrogation</em>
-        </h1>
-        <p className="login-sub">One case file per detective. Sign in to open yours.</p>
-
-        {googleReady ? (
-          <a className="btn brass google-login" href="/api/auth/google">
-            <svg className="google-g" viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">
-              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
-              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
-              <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
-              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
-            </svg>
-            Continue with Google
-          </a>
-        ) : (
-          <p className="login-note">
-            {config
-              ? 'Google sign-in is not configured on this deployment yet.'
-              : 'Checking sign-in options…'}
-          </p>
-        )}
-
-        {config?.devLogin && (
-          <form
-            className="login-dev"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (code.trim()) onDevLogin(code.trim());
-            }}
-          >
-            <label>
-              <span className="field-label">Dev team code</span>
-              <input
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                placeholder="PANDA-7K2"
-                spellCheck={false}
-              />
-            </label>
-            <button className="btn ghost" type="submit" disabled={busy}>
-              {busy ? 'Checking…' : 'Enter with code'}
-            </button>
-          </form>
-        )}
-
-        {error && <p className="login-error">{error}</p>}
-      </div>
-    </div>
-  );
-}
-
 export function DialogueOverlay({
   character,
   subtitle,
@@ -102,9 +43,9 @@ export function DialogueOverlay({
     stopCharacterSpeech();
     const r=new Recognition();recognition.current=r;r.lang='en-IN';r.interimResults=false;r.continuous=false;
     r.onstart=()=>{setListening(true);setSpeechError(null);};r.onend=()=>setListening(false);
-    r.onresult=e=>setText(e.results[0][0].transcript);
+    r.onresult=e=>setText(e.results?.[0]?.[0]?.transcript ?? '');
     r.onerror=e=>{setListening(false);setSpeechError(e.error==='not-allowed'?'Microphone permission is off. You can type your question.':'Speech could not be heard. Try again or type your question.');};
-    r.start();
+    try{r.start();}catch{setListening(false);}
   };
 
   useEffect(() => {
@@ -308,91 +249,6 @@ export function PuzzleModal(props) {
   return <PuzzleWorkbench {...props} />;
 }
 
-const titleize = (id) =>
-  String(id ?? '')
-    .replace(/[_-]+/g, ' ')
-    .replace(/\b\w/g, (m) => m.toUpperCase());
-
-export function StoryOverlay({
-  lines = [],
-  kicker,
-  title,
-  backdrop,
-  onDone,
-  busy,
-  doneLabel = 'Continue',
-  names = {},
-}) {
-  const [index, setIndex] = useState(0);
-  const total = lines.length;
-  const line = lines[Math.min(index, Math.max(0, total - 1))];
-  const last = index >= total - 1;
-  const speaker = line?.speaker;
-  const isNarration = speaker === 'narrator';
-  const isVoice = speaker === 'voice';
-  const label = names[speaker] ?? (speaker ? titleize(speaker) : '');
-
-  const advance = () => {
-    if (!last) setIndex((i) => i + 1);
-  };
-
-  return (
-    <div className="story-overlay" onClick={advance} role="presentation">
-      {backdrop && <div className="story-backdrop" style={{ backgroundImage: `url(${backdrop})` }} />}
-      <div className="story-shade" />
-      <div className="story-bar top" />
-      <div className="story-bar bottom" />
-
-      <div className="story-stage">
-        {(kicker || title) && (
-          <header className="story-head">
-            {kicker && <p className="story-kicker">{kicker}</p>}
-            {title && <h1 className="story-title">{title}</h1>}
-          </header>
-        )}
-
-        {line && (
-          <div className="story-line-wrap" key={index}>
-            <p
-              className={`story-line ${isNarration ? 'narrator' : ''} ${isVoice ? 'voice' : ''}`}
-            >
-              {!isNarration && label && <span className="story-speaker">{label}</span>}
-              {line.text}
-            </p>
-          </div>
-        )}
-
-        <div className="story-controls" onClick={(e) => e.stopPropagation()}>
-          <div className="story-progress">
-            {lines.map((l, i) => (
-              <span
-                key={i}
-                className={`seg ${i < index ? 'done' : ''} ${i === index ? 'active' : ''}`}
-              />
-            ))}
-          </div>
-          <div className="story-buttons">
-            <button className="btn ghost" onClick={() => onDone?.()} disabled={busy}>
-              Skip
-            </button>
-            {last ? (
-              <button className="btn brass" onClick={() => onDone?.()} disabled={busy}>
-                {busy ? 'Entering…' : doneLabel}
-              </button>
-            ) : (
-              <button className="btn ghost" onClick={advance}>
-                Continue
-              </button>
-            )}
-          </div>
-        </div>
-
-        {!last && <p className="story-hint">Click to continue</p>}
-      </div>
-    </div>
-  );
-}
-
 const ENDING_FALLBACK = {
   ending_main: [
     'The game has ended. Sameer can leave. Before it restarts, he can go back to his life.',
@@ -460,15 +316,6 @@ export function Notice({ notice, onClose }) {
       <p className="toast-kicker">{notice.kicker ?? 'Case file updated'}</p>
       <strong className="toast-title">{notice.title}</strong>
       {notice.body && <p className="toast-body">{notice.body}</p>}
-      {notice.clues?.length > 0 && (
-        <div className="toast-chips">
-          {notice.clues.map((label) => (
-            <span key={label} className="exhibit-chip">
-              {label}
-            </span>
-          ))}
-        </div>
-      )}
       {notice.facts?.length > 0 && (
         <ul className="toast-facts">
           {notice.facts.map((f) => (

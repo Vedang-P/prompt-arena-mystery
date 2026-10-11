@@ -1,6 +1,6 @@
 {
   "name": "prompt-arena-mystery",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "private": true,
   "type": "module",
   "engines": {
@@ -15,26 +15,18 @@
     "test:scenes": "node scripts/measure-actors.mjs && node scripts/test-scene-staging.mjs",
     "test:voices": "node scripts/prepare-speech.mjs && node scripts/test-voice-catalog.mjs",
     "test:assets": "node scripts/test-environment-assets.mjs",
+    "test:campaign": "npm run build:case && node scripts/test-campaign.mjs",
+    "test:event": "npm run build:case && node scripts/test-event.mjs",
+    "test:deployment": "npm run build:case && node scripts/test-deployment.mjs",
     "prepare:facade": "node scripts/prepare-factory-facade.mjs",
     "gen:team": "node scripts/make-team.mjs",
-    "import:mixamo": "blender --background --python scripts/blender/import_mixamo.py",
-    "dev": "npm run build:case && wrangler dev",
-    "dev:web": "vite",
     "shot": "node scripts/shot.mjs",
-    "build": "npm run build:case && vite build",
-    "deploy": "npm run build && wrangler deploy",
-    "db:local": "wrangler d1 execute DB --local --file=./schema.sql && wrangler d1 execute DB --local --file=./seed.sql",
-    "db:remote": "wrangler d1 execute DB --remote --file=./schema.sql",
-    "tail": "wrangler tail",
     "dev:game": "npm run build:case && node scripts/dev-server.mjs",
-    "test:campaign": "npm run build:case && node scripts/test-campaign.mjs",
-    "deploy:vercel": "vercel deploy --prod",
-    "test:event": "npm run build:case && node scripts/test-event.mjs"
+    "build": "npm run build:case && vite build",
+    "deploy:vercel": "vercel deploy --prod"
   },
   "dependencies": {
-    "@fontsource/eb-garamond": "^5.3.0",
     "@fontsource/inter": "^5.3.0",
-    "@fontsource/playfair-display": "^5.3.0",
     "@react-three/drei": "^10.7.8",
     "@react-three/fiber": "^9.7.0",
     "@react-three/postprocessing": "^3.1.1",
@@ -44,14 +36,12 @@
     "three": "^0.186.0"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20260831.1",
     "@gltf-transform/cli": "4.5.0",
     "@vitejs/plugin-react": "^4.3.4",
     "puppeteer-core": "^25.11.0",
     "react": "19.2",
     "react-dom": "19.2",
     "vite": "^6.0.0",
-    "wrangler": "^4.0.0",
     "yaml": "^2.6.0"
   }
 }

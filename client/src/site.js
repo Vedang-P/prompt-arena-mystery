@@ -128,6 +128,11 @@
   const beginBtn = document.getElementById('begin-btn');
   let session = null;
   let codeLogin = false;
+  // Enter must not act before /api/auth/config answers, or a quick click races
+  // the request and bounces through /play/ for no reason.
+  let configKnown = false;
+  let markConfigKnown = () => {};
+  const configReady = new Promise((resolve) => { markConfigKnown = resolve; });
 
   const AUTH_ERRORS = {
     google_not_configured: 'Google sign-in is not configured on this deployment.',
@@ -147,11 +152,12 @@
 
   const closeEntry = () => entry.close();
 
-  enter.addEventListener('click', () => {
+  enter.addEventListener('click', async () => {
     if (session) {
       window.location.assign(GAME);
       return;
     }
+    if (!configKnown) await configReady;
     if (codeLogin) openEntry();
     else window.location.assign('/play/');
   });
@@ -207,7 +213,11 @@
       // A Google round-trip that failed bounces here from /play/ — say why, in the dialog.
       if (authError && codeLogin) openEntry(AUTH_ERRORS[authError] ?? 'Sign-in failed. Try again.');
     })
-    .catch(() => {});
+    .catch(() => {})
+    .finally(() => {
+      configKnown = true;
+      markConfigKnown();
+    });
 
   fetch('/api/state', { headers: { accept: 'application/json' } })
     .then(async (res) => {

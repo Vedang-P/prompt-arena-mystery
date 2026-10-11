@@ -11,17 +11,12 @@ prepared Poly Haven props are also shipped in `client/public/assets/detail/polyh
   (Male_Adult_15). The original meshes and textures are prepared and retargeted with Blender;
   no character geometry is authored for the game.
 
-- **Blocky Characters** — Kenney (kenney.nl), CC0 1.0
-  https://kenney.nl/assets/blocky-characters
-  Used: `client/public/assets/characters/character-*.glb` (19 characters, 27 animation clips each).
-  Rendered thumbnails during selection with Blender 5.2 (see `scripts/blender/`).
-
 ## 3D furniture and props
 
 - **Furniture Kit** — Kenney (kenney.nl), CC0 1.0
   https://kenney.nl/assets/furniture-kit
-  Used: selected props in `client/public/assets/furniture/` (tables, chairs, sofas, bookcases,
-  lamps, rugs, plants, doorway, bar counter, side table).
+  Used: the two rug models in `client/public/assets/furniture/`. All other furnishings
+  remap to the finished Poly Haven/Innerscene detail assets below.
 
 ## Environment
 

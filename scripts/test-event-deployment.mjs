@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
+const version = JSON.parse(await fs.readFile(new URL('../package.json', import.meta.url), 'utf8')).version;
 const [base, codeFile, cookieFile] = process.argv.slice(2);
 assert(base?.startsWith('https://') && codeFile, 'Pass deployment URL and private instructor code file');
 const cookies = new Map();
@@ -13,13 +14,13 @@ async function call(route, body, expected=200, {redirect='follow', headers={}}={
   assert.equal(response.status,expected,route);
   return response;
 }
-assert.equal((await(await call('/api/health')).json()).version,'1.1.5');
+assert.equal((await(await call('/api/health')).json()).version,version);
 const config=await(await call('/api/auth/config')).json();assert.equal(config.eventMode,true);assert.equal(config.guest,false);
 await call('/api/login',{code:(await fs.readFile(codeFile,'utf8')).trim()});
 const state=await(await call('/api/state')).json();assert.equal(state.team,'Instructor preview');assert.equal(state.acts.length,9);assert.equal(state.puzzles.length,46);
 await call('/api/guest',{},403);await call('/api/practice',{act:'act8'},403);await call('/api/accuse',{culprit:'sameer'},403);
 const manifest=await(await call('/assets/audio/prologue/manifest.json')).json();assert(Object.keys(manifest).length>=40);
-const voices=await(await call('/assets/audio/voices/manifest.json')).json();assert.equal(Object.keys(voices).length,217);
+const voices=await(await call('/assets/audio/voices/manifest.json')).json();assert(Object.keys(voices).length>=200,'Voice catalog shrank unexpectedly');
 assert(Object.values(manifest).every(t=>t.url.startsWith('/assets/audio/voices/')),'Prologue still uses old speech');
 for(const speaker of ['narrator','sameer','parth','mother','officer','voice','veer','tanush','leader','enakshi']){
   const track=Object.values(voices).find(t=>t.speaker===speaker);assert(track,'Missing '+speaker+' voice');

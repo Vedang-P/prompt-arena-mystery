@@ -1,9 +1,0 @@
-SESSION_SECRET=change-me
-CODE_PEPPER=change-me
-# Live AI suspects (optional). Any OpenAI-compatible endpoint works.
-# LLM_BASE_URL=https://opencode.ai/zen/v1
-# LLM_API_KEY=sk-...
-# LLM_MODEL=big-pickle
-# LLM_FALLBACK_MODELS=ling-3.0-flash-fin-free
-# Some gateways expect extra headers, pipe-separated key:value|key:value
-# LLM_EXTRA_HEADERS=x-opencode-session:00000000-0000-0000-0000-000000000000

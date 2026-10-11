@@ -8,7 +8,9 @@ export function speakCharacter(character,text,onError=()=>{}) {
   const stop=()=>{disposed=true;releaseSpeech(audio);};cancelCurrent=stop;
   getVoiceTrack(character,text).then(track=>{
     if(disposed)return;
-    if(!track){onError('This reply has subtitles only.');return;}
+    // Dynamic replies (and unusual phrasing) are subtitle-only by design; that
+    // is not an error, so nothing is announced for a missing recording.
+    if(!track)return;
     audio=new Audio(track.url);audio.volume=.95;publishSpeech(character,audio,track.envelope);
     audio.onended=()=>releaseSpeech(audio);
     audio.onerror=()=>{releaseSpeech(audio);if(!disposed)onError('Voice audio could not load. Use Replay reply to try again.');};

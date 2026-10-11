@@ -6,7 +6,7 @@
 //   npm run shot story      (or --story: story-mode overlay, logs in first)
 //   npm run shot hud        (game view + notebook, logs in first)
 //
-// Expects a dev server (vite proxy or wrangler) at SHOT_BASE.
+// Expects the development server (npm run dev:game) at SHOT_BASE.
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import puppeteer from 'puppeteer-core';
@@ -79,43 +79,42 @@ const clickSelectorText = async (selector, text) => {
   if (!hit) throw new Error(`no ${selector} matching "${text ?? '*'}")`);
 };
 
-// StoryOverlay intros (W6) advance on click; the brass button on the last line
+// CinematicStory intros advance on click; the brass button on the last line
 // enters the act. Click through until it appears, then press it.
 const clickThroughStory = async () => {
-  if (!(await page.$('.story-overlay'))) return;
-  for (let i = 0; i < 120; i += 1) {
-    if (await page.$('.story-buttons .btn.brass')) {
-      await clickSelectorText('.story-buttons .btn.brass');
-      return;
+  for (let i = 0; i < 80; i += 1) {
+    if (!(await page.$('.story-overlay'))) return;
+    if (await page.$('.story-buttons .btn.brass, .cinematic-tools .btn.brass')) {
+      await clickSelectorText('.story-buttons .btn.brass, .cinematic-tools .btn.brass').catch(() => {});
+    } else {
+      await page.evaluate(() => document.querySelector('.story-overlay')?.click()).catch(() => {});
     }
-    const alive = await page.evaluate(() => {
-      const el = document.querySelector('.story-overlay');
-      if (!el) return false;
-      el.click();
-      return true;
-    });
-    if (!alive) return;
-    await sleep(350);
+    await sleep(150);
   }
   console.log('[warn] story overlay did not finish clicking through');
 };
 
 try {
+  // The static title card signs teams in and hands off to /play/.
   await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
-  await page.waitForSelector('.title-screen', { timeout: 30000 });
+  await page.waitForSelector('#enter', { timeout: 30000 });
   if (wants('login')) {
     await sleep(800);
-    await shot('01-title-screen');
+    await shot('01-title-card');
   }
+  // The MIST intro card swallows the first click; wait until it has lifted.
+  await page
+    .waitForFunction(() => document.documentElement.classList.contains('is-entered'), { timeout: 10000 })
+    .catch(() => {});
 
-  await page.click('.primary-play');
-  await page.waitForSelector('.entry-card input', { timeout: 15000 });
+  await page.click('#enter');
+  await page.waitForSelector('#entry[open]', { timeout: 15000 });
   if (wants('login')) {
     await shot('02-team-entry');
-  } else {
-  await page.type('.entry-card input', TEAM_CODE);
-  await page.click('.entry-card button[type=submit]');
+  }
+  await page.type('#team-code', TEAM_CODE);
+  await page.evaluate(() => document.getElementById('begin-btn').click());
 
   // A team that already finished Act 0 skips the cinematic — the app goes
   // straight to the current act (story overlay or game view). Either way is
@@ -141,7 +140,7 @@ try {
 
   if ((wants('end') || wants('act0')) && hasCinema) {
     await page.waitForSelector('.cinema-subtitles', { timeout: 20000 });
-    await clickSelectorText('.cinema-buttons button', 'Skip act');
+    await clickSelectorText('.cinema-buttons button', 'Skip');
     await page.waitForSelector('.cinema-endcard', { timeout: 15000 });
     await sleep(900);
     await shot('04-act0-end');
@@ -150,12 +149,13 @@ try {
       .waitForSelector('.story-overlay, .hud-top', { timeout: 30000 })
       .catch(() => null);
     if (nextView) {
-      if (await page.$('.story-overlay')) {
-        await clickThroughStory();
-        await page
-          .waitForSelector('.hud-top', { timeout: 30000 })
-          .catch(() => console.log('[warn] game view did not appear after the act 1 intro'));
-      }
+      // The HUD renders underneath a story overlay, so wait for the overlay to
+      // actually clear before calling the room view settled.
+      await page.waitForSelector('.story-overlay', { timeout: 8000 }).catch(() => null);
+      await clickThroughStory();
+      await page
+        .waitForFunction(() => !document.querySelector('.story-overlay'), { timeout: 30000 })
+        .catch(() => console.log('[warn] game view did not appear after the act 1 intro'));
       await sleep(3500);
       await shot('05-act1-room');
     } else {
@@ -163,8 +163,8 @@ try {
     }
   }
 
-  // Story-mode overlay (text-only intro/outro). Non-fatal: the app may render
-  // the separate StoryOverlay component instead of ActDirector mode="story".
+  // Cinematic intro/outro overlay (CinematicStory). Non-fatal: depends on where
+  // in the act the session currently is.
   if (wants('story')) {
     const found = await page
       .waitForSelector('.story-mode, .story-overlay', { timeout: 10000 })
@@ -175,7 +175,11 @@ try {
 
   // Game view + notebook. Non-fatal: takes whatever is on screen.
   if (wants('hud')) {
+    await page.waitForSelector('.story-overlay', { timeout: 8000 }).catch(() => null);
     await clickThroughStory();
+    await page
+      .waitForFunction(() => !document.querySelector('.story-overlay'), { timeout: 30000 })
+      .catch(() => null);
     const hud = await page
       .waitForSelector('.hud-top', { timeout: 30000 })
       .catch(() => null);
@@ -185,7 +189,7 @@ try {
       const toggle = await page.$('.notebook-toggle');
       if (toggle) {
         await toggle.click();
-        await page.waitForSelector('.notebook-panel', { timeout: 10000 }).catch(() => null);
+        await page.waitForSelector('.case-panel', { timeout: 10000 }).catch(() => null);
         await sleep(600);
         await shot('07-notebook');
         await toggle.click().catch(() => {});
@@ -208,12 +212,11 @@ try {
       .map((s) => s.trim())
       .filter(Boolean);
     for (const id of ids) {
-      await page.goto(`${BASE}/?beat=${id}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+      await page.goto(`${BASE}/play/?beat=${id}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
       await page.waitForSelector('.cinema-subtitles, .phone-note', { timeout: 30000 });
       await sleep(8000);
       await shot(`beat-${id}`);
     }
-  }
   }
 } finally {
   await browser.close();

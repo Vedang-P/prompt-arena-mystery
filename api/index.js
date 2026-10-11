@@ -1,6 +1,6 @@
 // Vercel Node.js function entry — bridges the Node request/response pair to the
-// same Hono app the Cloudflare Worker runs (src/worker.js), with a node:sqlite
-// backed DB from lib/vercel-env.js.
+// Hono app in src/worker.js, with a Postgres (or node:sqlite fallback) DB from
+// lib/vercel-env.js. The same entry point powers local development.
 
 import app from '../src/worker.js';
 import { getEnv } from '../lib/vercel-env.js';
@@ -28,7 +28,11 @@ export default async function handler(req, res) {
 
     const method = req.method ?? 'GET';
     const body = method === 'GET' || method === 'HEAD' ? undefined : await readBody(req);
-    const request = new Request(url, { method, headers, body });
+    // A player who closes the tab mid-SSE aborts the Request, which lets the
+    // worker notice the dropped client and still persist the finished reply.
+    const abort = new AbortController();
+    res.on('close', () => abort.abort());
+    const request = new Request(url, { method, headers, body, signal: abort.signal });
 
     const response = await app.fetch(request, env, {
       waitUntil() {},
@@ -58,10 +62,13 @@ export default async function handler(req, res) {
     res.end();
   } catch (error) {
     console.error('vercel_handler_error', error);
-    if (!res.headersSent) {
-      res.statusCode = 500;
-      res.setHeader('content-type', 'application/json');
+    // Never append an error payload to an already-streaming response body.
+    if (res.headersSent) {
+      res.end();
+      return;
     }
+    res.statusCode = 500;
+    res.setHeader('content-type', 'application/json');
     res.end(JSON.stringify({ error: 'server_error' }));
   }
 }

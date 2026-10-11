@@ -1,7 +1,10 @@
 # Prompt Arena: Mystery — Design Doc
 
-Status: v0.3 — decisions locked 2026-09-17. Working title; the case itself is still unnamed.
-Standalone design: no game code or mechanics are derived from earlier Prompt Arena editions.
+Status: v0.3 — decisions locked 2026-09-17. Historical design record: the shipped game adds
+authored dialogue fallbacks, runs the same Hono API on Vercel/Node with Postgres, and does
+not include the admin/hint console described in section 9. The case title is *The Moon's
+Dark Side*. Standalone design: no game code or mechanics are derived from earlier Prompt
+Arena editions.
 
 ## 1. Concept
 

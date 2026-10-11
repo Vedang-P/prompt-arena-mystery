@@ -43,9 +43,8 @@ seat heights measured in Blender and used by shared scene placements.
 Octagonal gazebo: Innerscene, CC0 original exterior model.
 https://www.innerscene.com/tools/library/3d-parts/octagonal-gazebo-original-exterior-model-07eaba19
 
-Retained secondary furnishings (rugs and small structural decorations): Kenney, CC0.
+Retained secondary furnishings (rugs): Kenney, CC0.
 https://kenney.nl/assets/furniture-kit
-https://kenney.nl/assets/blocky-characters
 
 ## Detailed environments
 

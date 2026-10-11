@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState } from 'react';
-const Cinema=lazy(()=>import('./Cinema.jsx'));
+const Cinema=lazy(()=>import('./Cinema3D.jsx'));
 import { useSettings } from './Settings.jsx';
 import LogoutButton from './LogoutButton.jsx';
 import MuteButton from './MuteButton.jsx';
@@ -15,12 +15,14 @@ export default function TitleScreen({config,state,busy,error,onGuest,onResume,on
     if(!silenced) update({sound:true,narration:true});
   };
   const enter=()=>{armAudio();if(state)onResume();else setEntry(true);};
+  const codeLogin=!!(config?.devLogin||config?.eventMode);
+  const googleLogin=!!config?.google;
   return <main className="title-screen arena-title">
     <Suspense fallback={<div className="title-world" aria-hidden="true"/>}><div className="title-world"><Cinema sceneId="gazebo" shot="two" cast={TITLE_CAST}/></div></Suspense><div className="title-shade"/>
     <header className="title-header"><span className="brand">◒ Prompt Arena</span><div className="arena-account-actions"><button className="quiet-button" onClick={onLeaderboard}>Live leaderboard ↗</button><button className="quiet-button" onClick={onSettings}>Audio & settings</button><MuteButton/>{state && <LogoutButton disabled={busy}/>}</div></header>
-    <div className="title-content"><p className="eyebrow">A disappearance. A voice. A trail of secrets.</p><h1>Prompt<br/>Arena<span className="title-period">.</span></h1><p className="title-description">The Moon’s Dark Side</p><button className="primary-play" onClick={enter} disabled={busy}><span>{state?'Continue':'Enter'}<small>{state?state.team:'Open your team’s case'}</small></span><span>→</span></button></div>
+    <div className="title-content"><p className="eyebrow">A disappearance. A voice. A trail of secrets.</p><h1>Prompt<br/>Arena<span className="title-period">.</span></h1><p className="title-description">The Moon’s Dark Side</p><button className="primary-play" onClick={enter} disabled={busy}><span>{state?'Continue':'Enter'}<small>{state?state.team:'Open your team’s case'}</small></span><span>→</span></button>{error&&!entry&&<p className="title-error" role="alert">{error}</p>}</div>
     <footer className="title-footer"><span>An interactive mystery</span><span className="build-stamp-inline">build {__BUILD__}</span></footer>
-    {entry&&<div className="modal-backdrop" onClick={()=>setEntry(false)}><section className="entry-card" role="dialog" aria-modal="true" aria-label="Team entry" onClick={e=>e.stopPropagation()}><p className="eyebrow">Your table. Your case.</p><h2>Enter the arena</h2><p>Use the team code supplied by your invigilator.</p><form onSubmit={e=>{e.preventDefault();armAudio();onDevLogin(code);}}><label htmlFor="team-code">Team code</label><input id="team-code" autoFocus autoComplete="off" autoCapitalize="characters" spellCheck={false} value={code} onChange={e=>setCode(e.target.value)} placeholder="Enter assigned code" required maxLength={48}/><button className="btn brass" disabled={busy||!code.trim()}>{busy?'Opening your case…':'Begin →'}</button></form>{error&&<p className="title-error" role="alert">{error}</p>}{!config?.eventMode&&<button className="quiet-button" onClick={onGuest} disabled={busy}>Preview without a team code</button>}<button className="quiet-button" onClick={()=>setEntry(false)}>Back</button></section></div>}
+    {entry&&<div className="modal-backdrop" onClick={()=>setEntry(false)}><section className="entry-card" role="dialog" aria-modal="true" aria-label="Enter the arena" onClick={e=>e.stopPropagation()}><p className="eyebrow">Your table. Your case.</p><h2>Enter the arena</h2>{codeLogin?<><p>Use the team code supplied by your invigilator.</p><form onSubmit={e=>{e.preventDefault();armAudio();onDevLogin(code);}}><label htmlFor="team-code">Team code</label><input id="team-code" autoFocus autoComplete="off" autoCapitalize="characters" spellCheck={false} value={code} onChange={e=>setCode(e.target.value)} placeholder="Enter assigned code" required maxLength={48}/><button className="btn brass" disabled={busy||!code.trim()}>{busy?'Opening your case…':'Begin →'}</button></form></>:googleLogin?<><p>Sign in to open your case file.</p><a className="btn brass google-login" href="/api/auth/google">Continue with Google</a></>:<p className="title-error" role="alert">Sign-in is not configured on this deployment yet.</p>}{error&&<p className="title-error" role="alert">{error}</p>}{!config?.eventMode&&<button className="quiet-button" onClick={onGuest} disabled={busy}>Preview without a team code</button>}<button className="quiet-button" onClick={()=>setEntry(false)}>Back</button></section></div>}
   </main>;
 }
 

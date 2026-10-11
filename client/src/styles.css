@@ -102,6 +102,19 @@ h4 {
   filter: grayscale(0.4);
 }
 
+/* The quiet variant used for secondary actions (pause, skip, back). */
+.btn.ghost {
+  background: transparent;
+  border-color: var(--glass-border);
+  color: var(--ink-soft);
+}
+
+.btn.ghost:hover {
+  color: var(--ink);
+  border-color: var(--brass-soft);
+  background: rgba(201, 162, 74, 0.07);
+}
+
 .btn.wine {
   background: linear-gradient(180deg, #8a2530, #5d161e);
   border-color: rgba(255, 220, 180, 0.16);

@@ -1,5 +1,10 @@
 # Build Spec — "The Moon's Dark Side" full game
 
+Note: the parallel build is finished. Storage now lives in `lib/vercel-env.js`
+(Postgres DDL + local SQLite) and `schema.sql`/`seed.sql` no longer exist; the
+cinematic renderer is `client/src/Cinema3D.jsx`. The rest of this document is a
+historical record of the workstream contract.
+
 Frozen interface contract for the parallel build. The story source of truth is
 `docs/FINAL_SCRIPT.md` (Acts 0–8). The registry below is FROZEN: do not invent new
 act/room/puzzle/clue ids. If something is missing, reuse the nearest id and note it.

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import Cinema from './Cinema.jsx';
+import Cinema from './Cinema3D.jsx';
 import { useSettings } from './Settings.jsx';
 import LogoutButton from './LogoutButton.jsx';
 import {locationFor,storyCast,cinematicPhaseFor} from './SceneStaging.js';

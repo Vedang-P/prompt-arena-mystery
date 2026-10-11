@@ -1,10 +1,10 @@
 import './styles-scene.css';
 import { CinemaProp, ParkGround, WindTree, CeilingFan } from './CinemaAssets.jsx';
 import {DetailProp,InstancedDetailScatter,TerrainSurface,WallSign,Cable,ComputerStation,ShelfContents,FencePanel} from './EnvironmentDetails.jsx';
-import { BEDROOM, SAMEER_BED, HOME_STAIRS, HOME_UPPER_DOORWAY, HOME_BEDROOM, backWallPanels, POLICE, HOSPITAL_BED, DESK_TOP, DESK_SEAT, PARTH_ANCHORS, PARK, DETAIL_ANCHORS,FIELD,FIELD_TRACKS,FIELD_BACKGROUND_BUILDING,FIELD_OVERGROWTH,ROOM_VIEWS,updateFieldBackpackOrbit } from './SceneLayout.js';
+import { BEDROOM, SAMEER_BED, HOME_STAIRS, HOME_UPPER_DOORWAY, HOME_BEDROOM, backWallPanels, POLICE, HOSPITAL_BED, DESK_TOP, DESK_SEAT, PARTH_ANCHORS, PARK, DETAIL_ANCHORS,FIELD,FIELD_TRACKS,FIELD_BACKGROUND_BUILDING,FIELD_OVERGROWTH,ROOM_VIEWS,ROOM_BOUNDS,updateFieldBackpackOrbit } from './SceneLayout.js';
 import DemonMask from './DemonMask.jsx';
 import {seatContact} from './SceneStaging.js';
-import Actor, { actorURL } from './Actor.jsx';
+import Actor from './Actor.jsx';
 import { useSettings } from './Settings.jsx';
 import { SceneLoading, WorldBoundary,SceneReady } from './WorldBoundary.jsx';
 import { useCallback, Suspense, useEffect, useMemo, useRef, useState } from 'react';
@@ -22,73 +22,23 @@ import * as THREE from 'three';
 
 const ASSETS = '/assets';
 const F = (name) => `${ASSETS}/furniture/${name}`;
-const C = (name) => `${ASSETS}/characters/${name}`;
 
-const CHARACTER_URL = actorURL;
-
-// Only these Mixamo actors ship in the bundle; any other character hotspot
-// falls back to a primitive stand-in so a room never suspends on a 404.
-const KNOWN_CHARACTER_MODELS = new Set(['mother', 'officer', 'parth', 'ramu']);
-
-// Kenney's furniture kit ships at roughly half human scale; these bring each
-// piece to believable real-world size (metres).
+// The only furniture GLBs still fetched whole are the rugs; every other Prop
+// model name remaps to a finished Poly Haven detail asset inside Prop().
+// Kenney's kit ships at roughly half human scale; these bring each piece to
+// believable real-world size (metres).
 const SCALE = {
-  'chair.glb': 2.0,
-  'chairCushion.glb': 2.0,
-  'chairDesk.glb': 2.1,
-  'desk.glb': 2.0,
-  'table.glb': 2.3,
-  'tableCloth.glb': 2.3,
-  'tableGlass.glb': 2.3,
-  'sideTable.glb': 1.9,
-  'loungeSofa.glb': 2.0,
-  'loungeChair.glb': 2.0,
-  'bookcaseClosed.glb': 2.2,
-  'bookcaseOpen.glb': 2.2,
-  'kitchenBar.glb': 2.6,
-  'stoolBar.glb': 2.4,
-  'lampRoundFloor.glb': 2.0,
-  'lampRoundTable.glb': 1.9,
-  'lampWall.glb': 2.2,
-  'pottedPlant.glb': 2.6,
-  'plantSmall1.glb': 2.8,
-  'plantSmall2.glb': 2.8,
-  'doorway.glb': 2.3,
   'rugRectangle.glb': 1.7,
-  'rugRound.glb': 3.4,
   'rugSquare.glb': 2.0,
 };
 
 // Colour grading: Kenney's palette is pastel, so each piece is multiplied
 // towards the room's oxblood / dark-walnut palette.
 const TINT = {
-  'chair.glb': '#8a6a4a',
-  'chairCushion.glb': '#8a6a4a',
-  'chairDesk.glb': '#7a5a3e',
-  'desk.glb': '#6b4a33',
-  'table.glb': '#7a5a3e',
-  'tableCloth.glb': '#6b4a33',
-  'tableGlass.glb': '#7a5a3e',
-  'sideTable.glb': '#6b4a33',
-  'loungeSofa.glb': '#8a4a44',
-  'loungeChair.glb': '#8a4a44',
-  'bookcaseClosed.glb': '#6b4a33',
-  'bookcaseOpen.glb': '#6b4a33',
-  'kitchenBar.glb': '#6b4a33',
-  'stoolBar.glb': '#7a5a3e',
-  'lampRoundFloor.glb': '#c8a878',
-  'lampRoundTable.glb': '#c8a878',
-  'lampWall.glb': '#c8a878',
-  'pottedPlant.glb': '#7a8a5a',
-  'plantSmall1.glb': '#7a8a5a',
-  'plantSmall2.glb': '#7a8a5a',
-  'doorway.glb': '#6b4a33',
   'rugRectangle.glb': '#3f4a56',
-  'rugRound.glb': '#7a3a36',
   'rugSquare.glb': '#4a4038',
 };
 
-const DEMO_ROOMS = new Set(['ballroom', 'vestibule']);
 const OUTDOOR_ROOMS = new Set(['gazebo', 'abandoned_field', 'concert', 'workshop']);
 
 // Hotspot labels are compact chips so busy rooms stay readable: smaller type,
@@ -236,7 +186,7 @@ function Prop({ model, position, rotation = [0, 0, 0], tint, scale }) {
   if(['bookcaseOpen.glb','bookcaseClosed.glb'].includes(model))return <ShelfContents position={position} rotation={rotation}/>;
   if(model==='sideTable.glb')return <DetailProp asset="side_table_01" height={.73038} position={position} rotation={rotation}/>;
   if(model==='lampRoundTable.glb')return <DetailProp asset="desk_lamp_arm_01" height={.89261*(scale??1.45)/3.1} position={position} rotation={rotation}/>;
-  if(['lampRoundFloor.glb','lampSquareFloor.glb'].includes(model))return <DetailProp asset="floor_lamp" height={1.75} position={position} rotation={rotation}/>;
+  if(model==='lampRoundFloor.glb')return <DetailProp asset="floor_lamp" height={1.75} position={position} rotation={rotation}/>;
   if(['table.glb','tableCloth.glb','tableGlass.glb'].includes(model))return <DetailProp asset="dining_table" height={.77} position={position} rotation={rotation}/>;
   if(['pottedPlant.glb','plantSmall1.glb','plantSmall2.glb'].includes(model))return <DetailProp asset="potted_plant_02" height={model==='pottedPlant.glb'?1.1:.5} position={position} rotation={rotation}/>;
   return (
@@ -250,7 +200,7 @@ function Prop({ model, position, rotation = [0, 0, 0], tint, scale }) {
   );
 }
 
-function Character({ url, label, clip = 'idle', position = [0, 0, 0], rotation = [0, 0, 0], footLift=0, onClick, focused = false, showLabel = true, labelOffsetY = 0, onMeasure, character }) {
+function Character({ label, clip = 'idle', position = [0, 0, 0], rotation = [0, 0, 0], footLift=0, onClick, focused = false, showLabel = true, labelOffsetY = 0, onMeasure, character }) {
   const [hover, setHover] = useState(false);
   return <group position={position} rotation={focused ? [0, 0, 0] : rotation}>
     <Actor character={character} pose={clip} footLift={footLift} focused={focused} speaking={focused} onMeasure={onMeasure} />
@@ -459,59 +409,6 @@ function TravelMarker({ hotspot, position, labelOffsetY = 0, onClick }) {
   );
 }
 
-function ScriptedFigure({ hotspot, position, labelOffsetY = 0, onClick }) {
-  const [hover, setHover] = useState(false);
-  const [x, y, z] = position;
-  return (
-    <group position={[x, y, z]}>
-      <mesh position={[0, 0.86, 0]} castShadow>
-        <capsuleGeometry args={[0.17, 0.82, 6, 12]} />
-        <meshStandardMaterial color="#2c3038" roughness={0.9} />
-      </mesh>
-      <mesh position={[0, 1.58, 0]} castShadow>
-        <sphereGeometry args={[0.16, 16, 16]} />
-        <meshStandardMaterial color="#2c3038" roughness={0.9} />
-      </mesh>
-      <mesh
-        position={[0, 1.05, 0]}
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick();
-        }}
-        onPointerOver={(e) => {
-          e.stopPropagation();
-          setHover(true);
-          document.body.style.cursor = 'pointer';
-        }}
-        onPointerOut={() => {
-          setHover(false);
-          document.body.style.cursor = 'auto';
-        }}
-      >
-        <cylinderGeometry args={[0.55, 0.55, 2.2, 8]} />
-        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-      </mesh>
-      {hover && (
-        <pointLight position={[0, 1.9, 0.8]} intensity={1.4} distance={4.5} decay={0} color="#ffd9a0" />
-      )}
-      <Html position={[0, 2.45 + labelOffsetY, 0]} center distanceFactor={10} zIndexRange={[30, 0]}>
-        <button
-          className="hotspot"
-          style={labelChip({ x, hover })}
-          onClick={(e) => {
-            e.stopPropagation();
-            onClick();
-          }}
-          onPointerEnter={() => setHover(true)}
-          onPointerLeave={() => setHover(false)}
-        >
-          {clampLabel(hotspot.label)}
-        </button>
-      </Html>
-    </group>
-  );
-}
-
 function CharacterHotspot({ hotspot, position, hot, rotation, pose='idle', labelOffsetY = 0 }) {
   return <Character character={hotspot.character} clip={pose} footLift={pose==='sit'?seatContact(hotspot.character,DESK_SEAT,0).footLift:0} label={hotspot.label} position={pose==='sit'?position:[position[0], .003, position[2]]}
     rotation={rotation ?? [0, -0.5, 0]} focused={hot.focusId === hotspot.character}
@@ -606,150 +503,38 @@ function Shell({ width, depth, height, tint, painted=false, backOpening }) {
 }
 
 function Floor({ width, depth, repeat = [7, 5], color = '#b09070', tiled=false }) {
-  const [diffuse, rough, normal] = useTexture([
-    tiled?`${ASSETS}/env/tiles_Diffuse.jpg`:`${ASSETS}/env/parquet_diff_1k.jpg`,
-    tiled?`${ASSETS}/env/tiles_Rough.jpg`:`${ASSETS}/env/parquet_rough_1k.jpg`,
-    tiled?`${ASSETS}/env/tiles_nor_gl.jpg`:`${ASSETS}/env/parquet_rough_1k.jpg`,
-  ]);
-  for (const tex of [diffuse, rough, normal]) {
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(repeat[0], repeat[1]);
-    tex.anisotropy = 8;
-  }
-  diffuse.colorSpace = THREE.SRGBColorSpace;
+  // useTexture hands back process-wide cached textures; clone per surface so a
+  // repeat change in one room never leaks into another room still mounted.
+  const sources = useTexture(
+    tiled
+      ? [`${ASSETS}/env/tiles_Diffuse.jpg`, `${ASSETS}/env/tiles_nor_gl.jpg`]
+      : [`${ASSETS}/env/parquet_diff_1k.jpg`]
+  );
+  const textures = useMemo(
+    () =>
+      sources.map((source) => {
+        const texture = source.clone();
+        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set(repeat[0], repeat[1]);
+        texture.anisotropy = 8;
+        texture.needsUpdate = true;
+        return texture;
+      }),
+    [sources, repeat[0], repeat[1]]
+  );
+  useEffect(() => () => textures.forEach((texture) => texture.dispose()), [textures]);
+  const [map, normal] = textures;
+  map.colorSpace = THREE.SRGBColorSpace;
   return (
     <mesh rotation-x={-Math.PI / 2} receiveShadow>
       <planeGeometry args={[width, depth]} />
-      <meshStandardMaterial map={diffuse} normalMap={tiled?normal:null} normalScale={tiled?[.3,.3]:[1,1]} color={color} roughness={0.92} />
+      <meshStandardMaterial map={map} normalMap={normal ?? null} normalScale={tiled?[.3,.3]:[1,1]} color={color} roughness={0.92} />
     </mesh>
-  );
-}
-
-function Stage() {
-  return (
-    <group position={[0, 0, -4.6]}>
-      <mesh receiveShadow position={[0, 0.35, 0]}>
-        <boxGeometry args={[10, 0.7, 3]} />
-        <meshStandardMaterial color="#2a1a12" roughness={0.75} />
-      </mesh>
-      <mesh position={[0, 2.6, -1.4]}>
-        <planeGeometry args={[10, 4.2]} />
-        <meshStandardMaterial color="#4a0f14" roughness={0.9} />
-      </mesh>
-      {[-4.2, -2.8, -1.4, 0, 1.4, 2.8, 4.2].map((x) => (
-        <mesh key={x} position={[x, 2.6, -1.28]}>
-          <cylinderGeometry args={[0.26, 0.36, 4.2, 12]} />
-          <meshStandardMaterial color="#5c1017" roughness={0.85} />
-        </mesh>
-      ))}
-      {[-5.3, 5.3].map((x) => (
-        <mesh key={x} position={[x, 2.4, -1.1]}>
-          <boxGeometry args={[0.6, 4.8, 0.6]} />
-          <meshStandardMaterial color="#2a1a10" roughness={0.7} />
-        </mesh>
-      ))}
-      <mesh position={[0, 4.55, -1.1]}>
-        <boxGeometry args={[11.2, 0.5, 0.6]} />
-        <meshStandardMaterial color="#2a1a10" roughness={0.7} />
-      </mesh>
-    </group>
-  );
-}
-
-function Chandelier({ position }) {
-  const candles = [...Array(8)].map((_, i) => {
-    const angle = (i / 8) * Math.PI * 2;
-    return [Math.cos(angle) * 0.85, 0, Math.sin(angle) * 0.85];
-  });
-  return (
-    <group position={position}>
-      <mesh position={[0, 0.75, 0]}>
-        <cylinderGeometry args={[0.015, 0.015, 1.5, 6]} />
-        <meshStandardMaterial color="#3a2f18" metalness={0.8} roughness={0.5} />
-      </mesh>
-      <mesh rotation-x={Math.PI / 2}>
-        <torusGeometry args={[0.85, 0.045, 10, 40]} />
-        <meshStandardMaterial color="#8a6b2f" metalness={0.85} roughness={0.35} />
-      </mesh>
-      {candles.map((p, i) => (
-        <group key={i} position={p}>
-          <mesh position={[0, 0.14, 0]}>
-            <cylinderGeometry args={[0.035, 0.035, 0.28, 8]} />
-            <meshStandardMaterial color="#f2e6c8" />
-          </mesh>
-          <mesh position={[0, 0.32, 0]}>
-            <sphereGeometry args={[0.045, 8, 8]} />
-            <meshStandardMaterial color="#ffdf9a" emissive="#ffb84d" emissiveIntensity={3} />
-          </mesh>
-        </group>
-      ))}
-      <pointLight color="#ffd9a0" intensity={2.2} distance={14} decay={0} />
-    </group>
-  );
-}
-
-function Piano({ position, rotation = [0, -1.1, 0] }) {
-  return (
-    <group position={position} rotation={rotation} scale={1.12}>
-      <mesh castShadow position={[0, 0.66, 0]}>
-        <boxGeometry args={[1.7, 0.22, 1.35]} />
-        <meshStandardMaterial color="#0c0c10" roughness={0.35} metalness={0.1} />
-      </mesh>
-      {[
-        [-0.7, -0.5],
-        [0.7, -0.5],
-        [-0.7, 0.55],
-        [0.7, 0.55],
-      ].map(([x, z], i) => (
-        <mesh key={i} position={[x, 0.3, z]}>
-          <cylinderGeometry args={[0.05, 0.05, 0.6, 8]} />
-          <meshStandardMaterial color="#0c0c10" />
-        </mesh>
-      ))}
-      <mesh castShadow position={[0, 0.95, -0.45]} rotation-x={-0.28}>
-        <boxGeometry args={[1.66, 0.06, 0.7]} />
-        <meshStandardMaterial color="#121218" roughness={0.3} />
-      </mesh>
-      <mesh position={[0, 0.8, 0.5]}>
-        <boxGeometry args={[1.44, 0.05, 0.2]} />
-        <meshStandardMaterial color="#f2ecdf" roughness={0.35} />
-      </mesh>
-      <mesh position={[0, 0.82, -0.15]} rotation-x={-Math.PI / 2.8}>
-        <planeGeometry args={[0.5, 0.36]} />
-        <meshStandardMaterial
-          color="#fff6dd"
-          emissive="#ffe9b8"
-          emissiveIntensity={0.4}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-    </group>
-  );
-}
-
-function SceneProp({ model, hotspot, position, found, onClick, offset = [0, 0, 0], labelY, labelOffsetY = 0 }) {
-  const [x, y, z] = position ?? hotspotPosition(hotspot, 0);
-  return (
-    <group>
-      <Prop model={model} position={[x + offset[0], y + offset[1], z + offset[2]]} />
-      <ClueMarker
-        hotspot={hotspot}
-        position={[x, y, z]}
-        found={found}
-        onClick={onClick}
-        labelY={labelY ?? 1.7}
-        labelOffsetY={labelOffsetY}
-        pad={[1.6, 2, 1.6]}
-      />
-    </group>
   );
 }
 
 // ---------- kit primitives ----------
 
-function Ground({ width = 30, depth = 30, color = '#131c14' }) {
-  return <TerrainSurface width={width} depth={depth} color="#a6b19d" repeat={[8,8]}/>;
-}
 function Moon({ position = [-6, 7.5, -14], size = 1.6 }) {
   return (
     <group position={position}>
@@ -784,46 +569,6 @@ function NightSky() {
     </mesh>
     <Moon position={[-8,13,-42]} size={1.35}/>
   </>;
-}
-
-function Tree({ position, scale = 1 }) {
-  return <WindTree position={position} height={4.8*scale}/>;
-}
-function Bench({ position, rotation = [0, 0, 0] }) {
-  return (
-    <group position={position} rotation={rotation}>
-      <mesh position={[0, 0.45, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.6, 0.08, 0.45]} />
-        <meshStandardMaterial color="#4a3524" roughness={0.9} />
-      </mesh>
-      <mesh position={[0, 0.72, -0.19]} rotation-x={-0.15} castShadow>
-        <boxGeometry args={[1.6, 0.4, 0.06]} />
-        <meshStandardMaterial color="#4a3524" roughness={0.9} />
-      </mesh>
-      {[-0.65, 0.65].map((x) => (
-        <mesh key={x} position={[x, 0.22, 0]} castShadow>
-          <boxGeometry args={[0.08, 0.44, 0.4]} />
-          <meshStandardMaterial color="#2a2020" roughness={0.9} />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-function LampPost({ position }) {
-  return (
-    <group position={position}>
-      <mesh position={[0, 1.5, 0]} castShadow>
-        <cylinderGeometry args={[0.06, 0.09, 3, 8]} />
-        <meshStandardMaterial color="#1c1c22" roughness={0.7} />
-      </mesh>
-      <mesh position={[0, 3.05, 0]}>
-        <sphereGeometry args={[0.2, 14, 14]} />
-        <meshStandardMaterial color="#ffe6b0" emissive="#ffcf7a" emissiveIntensity={2.4} />
-      </mesh>
-      <pointLight position={[0, 3, 0]} color="#ffd9a0" intensity={1.4} distance={11} decay={0} />
-    </group>
-  );
 }
 
 function FileStack({ position }) {
@@ -884,32 +629,6 @@ function Fluorescent({ position, delay = 0 }) {
   );
 }
 
-function HangingBulb({ position, color = '#ffd9a0' }) {
-  const group = useRef();
-  useFrame((state) => {
-    if (group.current) group.current.rotation.z = Math.sin(state.clock.elapsedTime * 0.9) * 0.07;
-  });
-  return (
-    <group ref={group} position={position}>
-      <mesh position={[0, 0.5, 0]}>
-        <cylinderGeometry args={[0.012, 0.012, 1, 6]} />
-        <meshStandardMaterial color="#1a1a20" />
-      </mesh>
-      <mesh>
-        <sphereGeometry args={[0.11, 12, 12]} />
-        <meshStandardMaterial color="#ffe6b0" emissive="#ffcf7a" emissiveIntensity={2.6} />
-      </mesh>
-      <pointLight position={[0, -0.15, 0]} color={color} intensity={1.3} distance={9} decay={0} />
-    </group>
-  );
-}
-
-function Wheelchair({ position, rotation = [0, 0, 0] }) {
-  return <DetailProp asset="wheelchair_01" position={position} rotation={rotation}/>;
-}
-function Gurney({ position, rotation = [0, 0, 0] }) {
-  return <DetailProp asset="hospital_bed" position={position} rotation={rotation}/>;
-}
 function TrussLight({ position, color = '#ffd2a0' }) {
   return (
     <group position={position}>
@@ -950,21 +669,6 @@ function Column({ position, height = 5, radius = 0.34 }) {
       <mesh position={[0, height - 0.25, 0]} castShadow>
         <boxGeometry args={[radius * 2.6, 0.5, radius * 2.6]} />
         <meshStandardMaterial color="#5a5044" roughness={0.9} />
-      </mesh>
-    </group>
-  );
-}
-
-function Banner({ position }) {
-  return (
-    <group position={position}>
-      <mesh position={[0, 1.6, 0]}>
-        <cylinderGeometry args={[0.03, 0.03, 3.2, 6]} />
-        <meshStandardMaterial color="#2a241c" metalness={0.4} roughness={0.6} />
-      </mesh>
-      <mesh position={[0, 1.7, 0.04]}>
-        <planeGeometry args={[0.9, 2.2]} />
-        <meshStandardMaterial color="#5c1017" roughness={0.9} side={THREE.DoubleSide} />
       </mesh>
     </group>
   );
@@ -1046,35 +750,6 @@ function StringLights({ from = [-4, 3, 0], to = [4, 2.8, 0], count = 9 }) {
   );
 }
 
-function Skyline({ position = [0, 0, -16], count = 9 }) {
-  return (
-    <group position={position}>
-      {[...Array(count)].map((_, i) => {
-        const h = 2 + ((i * 37) % 5) * 1.1;
-        const x = (i - (count - 1) / 2) * 3.1;
-        return (
-          <mesh key={i} position={[x, h / 2, 0]}>
-            <boxGeometry args={[2.4, h, 2.4]} />
-            <meshStandardMaterial color="#0c0e14" roughness={1} />
-          </mesh>
-        );
-      })}
-    </group>
-  );
-}
-
-function NeonStrip({ position, rotation = [0, 0, 0], color = '#c95aff', length = 2.4 }) {
-  return (
-    <group position={position} rotation={rotation}>
-      <mesh>
-        <boxGeometry args={[length, 0.05, 0.05]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2.6} />
-      </mesh>
-      <pointLight color={color} intensity={0.9} distance={7} decay={0} />
-    </group>
-  );
-}
-
 function Window({ position, rotation = [0, 0, 0], width = 1.6, height = 1.4, moon = true }) {
   return (
     <group position={position} rotation={rotation}>
@@ -1097,201 +772,6 @@ function Window({ position, rotation = [0, 0, 0], width = 1.6, height = 1.4, moo
         <meshStandardMaterial color="#2a2018" roughness={0.8} />
       </mesh>
       <pointLight position={[0, 0, 0.8]} color="#9fb2ea" intensity={0.7} distance={7} decay={0} />
-    </group>
-  );
-}
-
-function Ballroom({ room, hot }) {
-  const { state, focusId, onMeasure, onCharacter, onClue, onPuzzle, onTravel, solvedPuzzles } = hot;
-  return (
-    <group>
-      <Shell width={18} depth={12} height={4.9} tint="#6d4a44" />
-      <Floor width={18} depth={12} repeat={[7, 5]} />
-      <Stage />
-      <Chandelier position={[0, 3.5, 1.2]} />
-
-      {/* dance circle */}
-      <Prop model="rugRound.glb" position={[0, 0.02, 0.4]} />
-
-      {/* west lounge */}
-      <Prop model="loungeSofa.glb" position={[-8.0, 0, 1.2]} rotation={[0, Math.PI / 2, 0]} />
-      <Prop model="loungeChair.glb" position={[-6.7, 0, 0.1]} rotation={[0, 0.4, 0]} />
-      <Prop model="loungeChair.glb" position={[-6.7, 0, 2.3]} rotation={[0, -0.4, 0]} />
-      <Prop model="sideTable.glb" position={[-7.0, 0, 1.2]} />
-      <Prop model="rugRectangle.glb" position={[-6.9, 0.02, 1.2]} />
-      <Prop model="lampRoundFloor.glb" position={[-7.7, 0, 3.6]} />
-
-      {/* library wall */}
-      <Prop model="bookcaseClosed.glb" position={[-8.5, 0, -1.4]} rotation={[0, Math.PI / 2, 0]} />
-      <Prop model="bookcaseOpen.glb" position={[-8.5, 0, -3.0]} rotation={[0, Math.PI / 2, 0]} />
-      <Prop model="desk.glb" position={[-7.4, 0, -3.4]} rotation={[0, Math.PI / 2, 0]} />
-      <Prop model="chairDesk.glb" position={[-6.5, 0, -3.4]} rotation={[0, -Math.PI / 2, 0]} />
-
-      {/* east bar */}
-      <Prop model="kitchenBar.glb" position={[8.3, 0, 1.0]} rotation={[0, -Math.PI / 2, 0]} />
-      <Prop model="kitchenBar.glb" position={[8.3, 0, 2.5]} rotation={[0, -Math.PI / 2, 0]} />
-      <Prop model="stoolBar.glb" position={[7.2, 0, 0.9]} rotation={[0, Math.PI / 2, 0]} />
-      <Prop model="stoolBar.glb" position={[7.2, 0, 2.0]} rotation={[0, Math.PI / 2, 0]} />
-      <Prop model="stoolBar.glb" position={[7.2, 0, 3.1]} rotation={[0, Math.PI / 2, 0]} />
-
-      {/* cabaret tables near the floor */}
-      <Prop model="table.glb" position={[-0.9, 0, 4.4]} />
-      <Prop model="chairCushion.glb" position={[-1.9, 0, 4.7]} rotation={[0, 0.9, 0]} />
-      <Prop model="chairCushion.glb" position={[0.1, 0, 4.2]} rotation={[0, -2.2, 0]} />
-      <Prop model="table.glb" position={[3.1, 0, 4.5]} />
-      <Prop model="chairCushion.glb" position={[2.1, 0, 4.8]} rotation={[0, 0.9, 0]} />
-      <Prop model="chairCushion.glb" position={[4.1, 0, 4.3]} rotation={[0, -2.2, 0]} />
-      <Prop model="tableCloth.glb" position={[-4.6, 0, 4.2]} />
-      <Prop model="chair.glb" position={[-5.6, 0, 4.5]} rotation={[0, 0.9, 0]} />
-      <Prop model="chair.glb" position={[-3.6, 0, 4.0]} rotation={[0, -2.2, 0]} />
-
-      {/* greenery */}
-      <Prop model="pottedPlant.glb" position={[-8.3, 0, 4.9]} />
-      <Prop model="plantSmall1.glb" position={[8.4, 0, -4.6]} />
-      <Prop model="plantSmall2.glb" position={[-8.4, 0, -4.6]} />
-
-      {(room.hotspots ?? []).map((h, i) => {
-        if (h.type === 'character') {
-          return (
-            <Character
-              key={h.id ?? i}
-              url={CHARACTER_URL(h.character)} character={h.character}
-              label={h.label}
-              clip="idle"
-              position={hotspotPosition(h, i)}
-              rotation={[0, h.character === 'victor' ? 0.5 : -0.5, 0]}
-              focused={focusId === h.character}
-              showLabel={focusId !== h.character}
-              labelOffsetY={staggerFor(i)}
-              onMeasure={(height) => onMeasure(h.character, height)}
-              onClick={() => onCharacter(h)}
-            />
-          );
-        }
-        if (h.clue === 'sheet_music') {
-          return (
-            <group key={h.id ?? i}>
-              <Piano position={hotspotPosition(h, i)} />
-              <ClueMarker
-                hotspot={h}
-                position={hotspotPosition(h, i)}
-                found={(state.discovered ?? []).includes(h.clue)}
-                onClick={() => onClue(h)}
-                pad={[2.4, 2, 2]}
-                labelY={1.25}
-                labelOffsetY={staggerFor(i)}
-              />
-            </group>
-          );
-        }
-        if (h.type === 'puzzle') {
-          return (
-            <PuzzleMarker
-              key={h.id ?? i}
-              hotspot={h}
-              position={hotspotPosition(h, i)}
-              solved={(solvedPuzzles ?? []).includes(h.puzzle)}
-              labelOffsetY={staggerFor(i)}
-              onClick={() => onPuzzle?.(h)}
-            />
-          );
-        }
-        if (h.type === 'travel') {
-          return (
-            <TravelMarker
-              key={h.id ?? i}
-              hotspot={h}
-              position={hotspotPosition(h, i)}
-              labelOffsetY={staggerFor(i)}
-              onClick={() => onTravel?.(h)}
-            />
-          );
-        }
-        return null;
-      })}
-    </group>
-  );
-}
-
-function Vestibule({ room, hot }) {
-  const { state, focusId, onMeasure, onCharacter, onClue, onPuzzle, onTravel, solvedPuzzles } = hot;
-  return (
-    <group>
-      <Shell width={11} depth={9} height={4.2} tint="#47525c" />
-      <Floor width={11} depth={9} repeat={[5, 4]} />
-      <Prop model="lampRoundFloor.glb" position={[-4.3, 0, -2.9]} />
-      <Prop model="pottedPlant.glb" position={[4.4, 0, -3.2]} />
-      <Prop model="rugSquare.glb" position={[0, 0.02, -0.6]} />
-      <Prop model="loungeChair.glb" position={[-3.6, 0, 1.7]} rotation={[0, 0.9, 0]} />
-      <Prop model="tableGlass.glb" position={[-1.9, 0, 2.3]} />
-      <Prop model="bookcaseOpen.glb" position={[4.6, 0, 0.8]} rotation={[0, -Math.PI / 2, 0]} />
-
-      {(room.hotspots ?? []).map((h, i) => {
-        if (h.type === 'character') {
-          return (
-            <Character
-              key={h.id ?? i}
-              url={CHARACTER_URL(h.character)} character={h.character}
-              label={h.label}
-              position={hotspotPosition(h, i)}
-              focused={focusId === h.character}
-              showLabel={focusId !== h.character}
-              labelOffsetY={staggerFor(i)}
-              onMeasure={(height) => onMeasure(h.character, height)}
-              onClick={() => onCharacter(h)}
-            />
-          );
-        }
-        if (h.clue === 'stage_door') {
-          return (
-            <SceneProp
-              key={h.id ?? i}
-              model="doorway.glb"
-              hotspot={h}
-              position={hotspotPosition(h, i)}
-              found={(state.discovered ?? []).includes(h.clue)}
-              onClick={() => onClue(h)}
-              offset={[0, 0, -0.75]}
-              labelY={2.1}
-              labelOffsetY={staggerFor(i)}
-            />
-          );
-        }
-        if (h.type === 'puzzle') {
-          return (
-            <PuzzleMarker
-              key={h.id ?? i}
-              hotspot={h}
-              position={hotspotPosition(h, i)}
-              solved={(solvedPuzzles ?? []).includes(h.puzzle)}
-              labelOffsetY={staggerFor(i)}
-              onClick={() => onPuzzle?.(h)}
-            />
-          );
-        }
-        if (h.type === 'travel') {
-          return (
-            <TravelMarker
-              key={h.id ?? i}
-              hotspot={h}
-              position={hotspotPosition(h, i)}
-              labelOffsetY={staggerFor(i)}
-              onClick={() => onTravel?.(h)}
-            />
-          );
-        }
-        return (
-          <SceneProp
-            key={h.id ?? i}
-            model="sideTable.glb"
-            hotspot={h}
-            position={hotspotPosition(h, i)}
-            found={(state.discovered ?? []).includes(h.clue)}
-            onClick={() => onClue(h)}
-            labelOffsetY={staggerFor(i)}
-          />
-        );
-      })}
     </group>
   );
 }
@@ -1886,8 +1366,6 @@ function DoorOpening({position,label}) {
 
 
 const ROOM_KITS = {
-  ballroom: Ballroom,
-  vestibule: Vestibule,
   gazebo: GazeboRoom,
   parth_home: HomeRoom,
   police_station: PoliceStationRoom,
@@ -1905,7 +1383,6 @@ const ROOM_KITS = {
 };
 
 // The campaign and every cinematic share the same fully modelled environments.
-export const ROOM_IDS = Object.keys(ROOM_KITS);
 export function RoomEnvironment({ roomId, room = null, hot = null, paused=false,storyAct,cinematicPhase }) {
   const Kit = roomId==='concert'&&['capture','departure'].includes(cinematicPhase)?ConcertCaptureRoom:(ROOM_KITS[roomId] ?? SameerRoomScene);
   const empty = { id: roomId, hotspots: [] };
@@ -1930,14 +1407,6 @@ export function RoomLighting({ roomId, quality = 'high',cinematicPhase }) {
 }
 
 // ---------- canvas ----------
-
-function EnvironmentIntensity({ value }) {
-  const { scene } = useThree();
-  useEffect(() => {
-    scene.environmentIntensity = value;
-  }, [scene, value]);
-  return null;
-}
 
 function CameraRig({ focusInfo,view }) {
   const { camera, controls } = useThree();
@@ -1992,7 +1461,6 @@ export default function Scene({
   onMetrics,
 }) {
   const room = state.rooms.find((r) => r.id === roomId) ?? state.rooms[0];
-  const isDemo = DEMO_ROOMS.has(room.id);
   const isOutdoor = OUTDOOR_ROOMS.has(room.id);
   const view=ROOM_VIEWS[room.id]??{at:[0,2.65,8.8],look:[0,1.1,-.4],fov:52};
   const [heights, setHeights] = useState({});
@@ -2058,7 +1526,7 @@ export default function Scene({
     [state, focus, measure, onCharacter, onClue, onPuzzle, onTravel, solvedPuzzles]
   );
 
-  const Kit = ROOM_KITS[room.id] ?? Vestibule;
+  const bounds = ROOM_BOUNDS[room.id] ?? { x: 6.5, zMin: -5.5, zMax: 9 };
   const bg = room.id==='abandoned_field' ? '#26394e' : isOutdoor ? '#05070d' : '#080604';
 
   const { quality } = useSettings();
@@ -2074,7 +1542,7 @@ export default function Scene({
             target={view.look} minDistance={2.6} maxDistance={16}
             minPolarAngle={0.35} maxPolarAngle={Math.PI / 2.02} />
           <CameraRig key={room.id} focusInfo={focusInfo} view={view} />
-          <ExploreKeys disabled={!!focus} />
+          <ExploreKeys disabled={!!focus} bounds={bounds} />
           <SceneReady onReady={onReady} onMetrics={onMetrics}/>
         </Suspense>
         {quality === 'high' && <EffectComposer multisampling={2}>
@@ -2086,7 +1554,7 @@ export default function Scene({
   );
 }
 
-function ExploreKeys({ disabled }) {
+function ExploreKeys({ disabled, bounds }) {
   const { camera, controls } = useThree();
   const keys = useRef(new Set());
   useEffect(() => {
@@ -2113,7 +1581,7 @@ function ExploreKeys({ disabled }) {
     if (step.lengthSq() === 0) return;
     step.normalize().multiplyScalar(Math.min(delta, 0.05) * 2.5);
     const next = camera.position.clone().add(step);
-    if (Math.abs(next.x) > 6 || next.z < -3.2 || next.z > 12) return;
+    if (next.x < -bounds.x || next.x > bounds.x || next.z < bounds.zMin || next.z > bounds.zMax) return;
     camera.position.add(step); controls.target.add(step); controls.update();
   });
   return null;

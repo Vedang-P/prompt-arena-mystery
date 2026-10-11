@@ -66,7 +66,7 @@ python scripts/record-campaign.py
 npm run test:voices
 ```
 
-The 217 recordings are already bundled; ordinary builds need neither Python nor the model. Newly authored or changed dialogue requires regeneration. The legacy `record-prologue.py` is an archived Piper workflow and should not be used to rebuild current speech.
+The 227 recordings are already bundled; ordinary builds need neither Python nor the model. Newly authored or changed dialogue requires regeneration.
 
 ## Deploy to Vercel
 
@@ -79,7 +79,7 @@ The existing project is `prompt-arena-mystery`. Build output is `dist/`, and `ap
 
 Characters use authored, evidence-grounded dialogue when no LLM key is configured. An optional OpenAI-compatible provider can be configured with the LLM environment variables; it is not needed to finish the game.
 
-The legacy Cloudflare Worker/D1 adapter and scripts remain available for event hosting.
+Vercel is the only deployment target: `api/index.js` runs the Hono app on the Node 22 runtime, and `vercel.json` serves the built `dist/`.
 
 ## Classroom event
 

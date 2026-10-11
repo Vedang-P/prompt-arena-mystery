@@ -7,7 +7,6 @@ const SceneEnvironment=lazy(()=>import('./Scene.jsx').then(({RoomEnvironment,Roo
 import { useSettings } from './Settings.jsx';
 import { SceneLoading, WorldBoundary,SceneReady } from './WorldBoundary.jsx';
 import { placeCast, roomWideShot, captureShot } from './SceneStaging.js';
-export const BACKDROPS = {};
 const CLOSE={close_parth:'parth',close_mother:'mother',close_officer:'officer'};
 function ShotCamera({roomId,shot,cast,speaker,paused,cinematicPhase}) {
   const timer=useRef(0),last=useRef('');

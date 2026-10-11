@@ -11,11 +11,9 @@ import {
   AccuseModal,
   DialogueOverlay,
   EndingCard,
-  Login,
   Notebook,
   Notice,
   PuzzleModal,
-  StoryOverlay,
 } from './Panels.jsx';
 import {
   accuse,
@@ -59,9 +57,10 @@ export default function App() {
   const [evidence, setEvidence] = useState(null);
   const { sound, update } = useSettings();
   useEffect(() => {
-    const key = (e) => { if (e.key === 'Escape') { setSettingsOpen(false); setChaptersOpen(false); setLeaderboardOpen(false); setEvidence(null); setNotebookOpen(false); setPuzzleSpot(null); setActiveChar(null); setExploreOpen(false); } };
+    const key = (e) => { if (e.key === 'Escape') { setSettingsOpen(false); setChaptersOpen(false); setLeaderboardOpen(false); setEvidence(null); setNotebookOpen(false); setPuzzleSpot(null); setActiveChar(null); setExploreOpen(false); setAccuseOpen(false); } };
     window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key);
   }, []);
+  useEffect(() => () => clearTimeout(accuseTimer.current), []);
   const [state, setState] = useState(null);
   const [roomId, setRoomId] = useState(null);
   const [activeChar, setActiveChar] = useState(null);
@@ -85,6 +84,7 @@ export default function App() {
   const [puzzleResult, setPuzzleResult] = useState(null);
   const [puzzleBusy, setPuzzleBusy] = useState(false);
   const [story, setStory] = useState(null);
+  const accuseTimer = useRef(null);
 
   // Dev/testing shortcuts: ?beat=<id> replays the cinematic from that beat, even
   // after the act is complete; ?puzzle=<id> opens that puzzle's modal once on
@@ -518,7 +518,8 @@ export default function App() {
       setAccuseResult({ ...res, payload });
       if (res.correct) {
         setState((s) => ({ ...s, solved: true }));
-        setTimeout(() => {
+        clearTimeout(accuseTimer.current);
+        accuseTimer.current = setTimeout(() => {
           setAccuseOpen(false);
           setWon(payload);
           setPhase('solved');
@@ -748,6 +749,7 @@ export default function App() {
 
       {activeCharacter && (
         <DialogueOverlay
+          key={activeCharacter.id}
           character={activeCharacter}
           subtitle={focusHotspot?.label?.split(',')[1]?.trim() ?? null}
           messages={chats[activeCharacter.id] ?? []}

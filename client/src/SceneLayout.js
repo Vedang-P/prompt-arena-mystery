@@ -57,6 +57,24 @@ export const ROOM_VIEWS={
  tanush_office:{at:[0,1.7,3.8],look:[0,1.3,-1.8],fov:66},
  enakshi_house:{at:[0,1.7,2.8],look:[0,1.25,-1.2],fov:66},
 };
+// Walkable envelope per room: half-width on X, and the Z span the WASD camera
+// may visit (set slightly beyond the shell so the front-view camera stays legal).
+export const ROOM_BOUNDS={
+ gazebo:{x:14,zMin:-12,zMax:10},
+ abandoned_field:{x:16,zMin:-14,zMax:8},
+ concert:{x:12,zMin:-12,zMax:8},
+ workshop:{x:12,zMin:-12,zMax:8},
+ parth_home:{x:7,zMin:-10,zMax:6},
+ police_station:{x:6.5,zMin:-5.5,zMax:5.5},
+ sameer_room:{x:5.5,zMin:-4.5,zMax:4.5},
+ parth_room:{x:5.5,zMin:-4.5,zMax:4.5},
+ cyber_cafe:{x:7,zMin:-6,zMax:6},
+ ngo_hq:{x:9.5,zMin:-7.5,zMax:7.5},
+ ngo_archive:{x:6.5,zMin:-5,zMax:5},
+ hospital:{x:8.5,zMin:-8,zMax:7.5},
+ tanush_office:{x:7,zMin:-5.5,zMax:5.5},
+ enakshi_house:{x:6,zMin:-5,zMax:5},
+};
 export const PARTH_ANCHORS = {
   pr_laptop:[2.8,DESK_TOP+.12,-1.5], pr_password:[2.8,DESK_TOP+.12,-1.5],
   pr_reports:[2.8,DESK_TOP+.08,-1.5], pr_email:[2.8,DESK_TOP+.12,-1.5], pr_coords:[2.8,DESK_TOP+.12,-1.5],

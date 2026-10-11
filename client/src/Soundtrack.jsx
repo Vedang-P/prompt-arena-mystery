@@ -4,7 +4,7 @@ import {ambienceFor,musicFor} from './MusicCues.js';
 export default function Soundtrack({ roomId='gazebo',enabledOverride }) {
   const { sound } = useSettings();
   const enabled=enabledOverride??sound;
-  const [cue,setCue] = useState(musicFor(roomId));
+  const [cue,setCue] = useState(()=>musicFor(roomId));
   const [ambience,setAmbience] = useState(()=>ambienceFor(roomId));
   const tracks = useRef([]), ducked=useRef(false), paused=useRef(false);
   useEffect(() => { setCue(musicFor(roomId));setAmbience(ambienceFor(roomId)); },[roomId]);

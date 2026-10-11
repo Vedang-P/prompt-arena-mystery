@@ -1,9 +1,11 @@
 # The Exchange Walkthrough
 
-Status: v0.1 — the contract the engine is built against. If endpoint names or payload
-shapes change, this document changes with them.
+Status: historical design notes — written against the v0.1 smoke case. The live
+contract is `src/worker.js`; payload shapes and gates are exercised by
+`npm run test:campaign` and `npm run test:event`. Endpoint names below were
+corrected to match the release routes.
 
-This is the full trace of one play session on the smoke case (`case/smoke.yaml`):
+This is the full trace of one play session on a smoke case:
 `TEAM-042`, code `PANDA-7K2`, one shared laptop, three players. Every HTTP call,
 every database touch, the actual LLM prompt, and the failure paths.
 
@@ -32,7 +34,7 @@ POST /api/login
 
 **Response**
 ```
-HTTP/1.1 204  Set-Cookie: pa_session=...
+HTTP/1.1 200  Set-Cookie: pa_session=...   { "team": "TEAM-042" }
 ```
 Wrong code: `401`, nothing else happens.
 
@@ -316,9 +318,8 @@ feeds each team's own screen.
 | Provider error on model A | nothing — ~200ms slower | `llm-failover` |
 | All models down, canonical Q&A matches | a slightly more rehearsed answer | `canonical` |
 | All models down, no match | in-voice deflection keeps the scene alive | `deflect` |
-| Admin kill switch | same as above, game-wide | `deflect` |
 
-The event never stalls, and every degraded reply is tagged in the transcript for the admin.
+The event never stalls, and every degraded reply is tagged in the transcript.
 
 ---
 
@@ -326,12 +327,15 @@ The event never stalls, and every degraded reply is tagged in the transcript for
 
 | Call | When | Type |
 |---|---|---|
-| `POST /api/login` | team enters code | JSON |
+| `POST /api/login` | team enters code (requires `ALLOW_CODE_LOGIN`) | JSON |
+| `POST /api/guest` | solo preview sign-in (not in event mode) | JSON |
+| `POST /api/practice` | chapter select starts a practice save | JSON |
 | `GET /api/state` | load / reload / refresh | JSON |
+| `POST /api/act/complete` | act gate satisfied, cinematic finished | JSON |
 | `POST /api/clues/:id/discover` | clicking a prop | JSON |
+| `POST /api/puzzles/:id/solve` | answering a puzzle | JSON |
 | `GET /api/characters/:id/history` | reopening a chat | JSON |
 | `POST /api/interrogate` | asking a question | **SSE stream** |
-| `POST /api/hint` | hint button | JSON |
-| `POST /api/accuse` | final accusation | JSON |
+| `POST /api/accuse` | final accusation (not in event mode) | JSON |
 | `GET /api/leaderboard` | projector + team screens | JSON |
-| `POST /api/admin/*` | pause / broadcast / kill switch | JSON |
+| `GET /api/auth/google`, `/api/auth/google/callback`, `/api/auth/logout` | Google sign-in and sign-out | redirect |
