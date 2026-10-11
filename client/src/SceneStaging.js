@@ -56,7 +56,7 @@ export function placeCast(sceneId,cast) {
   return people.map((c,i)=>{
     const base={...c,pose:c.pose??'idle',at:c.at??[(i-.5)*1.8,1],rot:c.rot??0,y:.003,footLift:0};
     if(sceneId==='gazebo')return base.pose==='sit'
-      ? {...base,at:[c.character==='sameer'?-.54:.54,.99],rot:0,...seatContact(c.character,PARK.seatY,PARK.deckY)}
+      ? {...base,at:[PARK.seat[0]+(c.character==='sameer'?-.5:.5),PARK.seat[1]],rot:0,...seatContact(c.character,PARK.seatY,PARK.deckY)}
       : {...base,at:people.length===1?PARK.waiting:[i?1.15:-1.15,.15],y:PARK.deckY+.003};
     if(['sameer_room','parth_room'].includes(sceneId))return base.pose==='sit'
       ? {...base,at:[BEDROOM.chair[0],BEDROOM.chair[2]],rot:Math.PI/2,...seatContact(c.character,DESK_SEAT,0)}
@@ -86,11 +86,14 @@ export function wideShot(cast,aspect=16/9) {
 
 export function roomWideShot(roomId,cast,aspect=16/9) {
   const shot=wideShot(cast,aspect);
-  // The prologue's actors sit inside the gazebo; include the roof and posts in
-  // the establishing frame instead of solving the shot from the actors alone.
+  // The prologue's actors sit inside the gazebo; frame the structure itself —
+  // roof and posts included — at every aspect, with the cast inside the shot.
   if(roomId==='gazebo'){
-    shot.center[1]=1.5;
-    const distance=Math.max(shot.at[2]-shot.center[2],7.8,1.14+2.15/(Math.tan(39*Math.PI/360)*Math.max(.25,aspect)*.86));
+    // Distance calibrated so the roof clears the frame at thin portrait
+    // aspects (the previous fit assumed the cast sat at the front edge).
+    shot.center[0]=.1;shot.center[1]=1.5;shot.center[2]=-.2;
+    const distance=Math.max(7.8,11.9*Math.pow(.75/Math.max(.25,aspect),.67));
+    shot.at[0]=.35;
     shot.at[2]=shot.center[2]+distance;
     shot.at[1]=shot.center[1]+distance*.16;
   }

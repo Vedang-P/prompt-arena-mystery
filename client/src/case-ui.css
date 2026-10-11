@@ -1,0 +1,162 @@
+/* Unified case-panel UI.
+   Everything interactive (interview, evidence, accusation, settings, chapters,
+   leaderboard, entry, toasts, in-game HUD) shares the notebook's design
+   language: dark slate panels, brass accents, Inter, one button family.
+   Loaded after investigation.css so the notebook primitives are the baseline. */
+
+/* ---------- shared panel pieces ---------- */
+.case-reading-scroll{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:22px 30px}
+.case-reading-text{margin:0;font-size:15px;line-height:1.8;color:#dbe3d8;white-space:pre-line}
+.case-reading-scroll .case-image{margin:18px 0 0}
+.case-reading-scroll .case-image img{display:block;max-width:100%;max-height:48vh;margin:0 auto;border:1px solid #425252;border-radius:8px;background:#0c161b}
+.case-form{display:flex;flex-direction:column;flex:1;min-height:0}
+.case-field{display:block;margin:0 0 18px}
+.case-field .case-answer-label{display:block;font-size:11px;letter-spacing:.08em;color:#bdc9c3;margin-bottom:8px;text-transform:uppercase}
+.case-field select,.case-field textarea{width:100%;background:#14252d;border:1px solid #3e5358;border-radius:5px;padding:12px 13px;color:#d5dfd6;font-size:13px;line-height:1.6;resize:vertical;font-family:inherit}
+.case-field select:focus-visible,.case-field textarea:focus-visible,.interview-ask input:focus-visible{outline:2px solid #d4b67c;outline-offset:2px}
+.case-note{margin:0;padding:12px 30px;font-size:12px;line-height:1.6;color:#9dafb0;background:#101c22;border-top:1px solid #334348;flex:none}
+.case-note.error{color:#f0a892}
+.case-text-button{background:none;border:0;color:#b7c7dc;font-size:12px;padding:4px 2px;cursor:pointer;font-family:inherit}
+.case-text-button:hover{color:#e8d5aa}
+.case-text-button:disabled{opacity:.45;cursor:default}
+.case-chip{display:inline-flex;align-items:center;border:1px solid #3e5358;border-radius:999px;background:#1b2d34;color:#c7d2cd;font-size:11px;line-height:1.4;padding:7px 12px;cursor:pointer;font-family:inherit}
+.case-chip:hover{border-color:#d4b67c;color:#e8d5aa}
+.case-chip:disabled{opacity:.45;cursor:default}
+.evidence-panel,.accusation-panel,.settings-panel{width:min(640px,100%)}
+.chapter-panel{width:min(860px,100%)}
+.leaderboard-panel{width:min(920px,100%)}
+
+/* ---------- interview (character dialogue) ---------- */
+.interview-panel{width:min(780px,100%);height:min(800px,calc(100dvh - 48px))}
+.interview-transcript{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:22px 30px;display:flex;flex-direction:column;gap:14px;background:#101c22}
+.interview-empty{color:#7f9296;font-style:italic;text-align:center;margin:auto;font-size:14px}
+.interview-turn{max-width:86%;padding:13px 16px;border-radius:10px;border:1px solid #2f4147;background:#17262c}
+.interview-turn.npc{align-self:flex-start;border-left:2px solid #d4b67c}
+.interview-turn.player{align-self:flex-end;background:#d4b67c14;border:1px solid #d4b67c4d;max-width:78%}
+.interview-speaker{display:block;font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:#d4b67c;margin-bottom:6px}
+.interview-text{margin:0;font-size:14px;line-height:1.7;color:#e6ecdf;white-space:pre-line}
+.interview-typing{display:flex;gap:5px;margin:2px 0;padding:4px 0}
+.interview-typing i{width:6px;height:6px;border-radius:50%;background:#93a8ac;animation:interview-dot 1.2s infinite}
+.interview-typing i:nth-child(2){animation-delay:.15s}
+.interview-typing i:nth-child(3){animation-delay:.3s}
+@keyframes interview-dot{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+.interview-prompts{padding:12px 30px 14px;border-top:1px solid #334348;background:#142127;flex:none}
+.interview-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px;max-height:96px;overflow:auto}
+.interview-foot{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.interview-utilities{display:flex;align-items:center;gap:14px;flex:none}
+.interview-ask{display:flex;align-items:center;gap:10px;flex:1;min-width:260px}
+.interview-ask input{flex:1;min-width:0;background:#14252d;border:1px solid #3e5358;border-radius:5px;padding:12px 14px;color:#e6ecdf;font-size:14px;font-family:inherit}
+.interview-ask input::placeholder{color:#7f9296}
+
+/* ---------- accusation ---------- */
+.accusation-body{padding-bottom:8px}
+.accusation-body .case-feedback{margin-top:6px}
+
+/* ---------- settings / chapters ---------- */
+.case-panel .settings-row{display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid #334348;padding:15px 0;font-size:14px;color:#e6ecdf}
+.case-panel .settings-row select{background:#14252d;border:1px solid #3e5358;border-radius:5px;color:#d5dfd6;padding:9px 10px;font-size:12px;font-family:inherit}
+.case-panel .settings-row input[type=checkbox]{width:18px;height:18px;accent-color:#d4b67c}
+.case-panel .controls-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0;font-size:14px;color:#c7d2cd}
+.case-panel .controls-grid b{font-size:11px;color:#93a8ac;text-align:right;font-weight:500}
+.case-panel .case-muted{margin:14px 0 0}
+.case-panel .case-muted a{color:#d4b67c}
+.chapter-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:2px 0}
+.chapter-grid .chapter-tile{display:flex;align-items:center;gap:16px;text-align:left;padding:16px;background:#1b2d34;border:1px solid #3e5358;border-radius:6px;color:#d9e0d9;font-family:inherit;cursor:pointer}
+.chapter-grid .chapter-tile:hover{background:#2b3f45;border-color:#d4b67c}
+.chapter-grid .chapter-tile .chapter-number{font:22px/1 Georgia,serif;color:#b89c65}
+.chapter-grid .chapter-tile small{display:block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#8fa4a8;margin-bottom:4px}
+.chapter-grid .chapter-tile strong{font-size:16px;font-weight:500}
+.chapter-grid .chapter-tile>span:last-child{margin-left:auto;color:#93a8ac}
+
+/* ---------- leaderboard ---------- */
+.leaderboard-scroll{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:6px 30px 18px}
+.leaderboard-panel table{border-collapse:collapse;width:100%;font-size:13px;text-align:left}
+.leaderboard-panel thead th{position:sticky;top:0;background:#142127;color:#a8b3b6;font-size:10px;text-transform:uppercase;letter-spacing:.07em;padding:14px 10px;font-weight:500;text-align:left}
+.leaderboard-panel td,.leaderboard-panel tbody th{padding:13px 10px;border-top:1px solid #2b3a40;color:#d9e0d9;font-weight:400}
+.leaderboard-panel tbody th{text-align:left;font-weight:500}
+.leaderboard-panel .your-team{background:#d4b67c12}
+.leaderboard-panel .count,.leaderboard-panel .timer{font-variant-numeric:tabular-nums}
+.leaderboard-panel tbody th small{margin-left:8px;color:#d4b67c;font-size:10px}
+.leaderboard-panel .case-muted{padding:14px 0}
+
+/* ---------- title-card entry + shared backdrop ---------- */
+.modal-backdrop{z-index:170;background:#061014d9;backdrop-filter:blur(8px)}
+.entry-card{background:#142127;border:1px solid #425252;border-radius:12px;box-shadow:0 30px 120px #0009;color:#eeeade;padding:32px}
+.entry-card h2{font-size:30px;font-weight:500;letter-spacing:-.035em;color:#f3efdf;margin:8px 0 14px}
+.entry-card p{color:#a7b7b7;font-size:13px;line-height:1.7}
+.entry-card label{color:#bdc9c3;font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:7px}
+.entry-card input{background:#14252d;border:1px solid #3e5358;border-radius:5px;padding:13px 14px;color:#e6ecdf;font-size:14px}
+.entry-card input::placeholder{color:#7f9296}
+
+/* ---------- toast (evidence updates during play) ---------- */
+.toast{background:#142127;border:1px solid #425252;border-radius:12px;box-shadow:0 24px 80px #0009;color:#eeeade;padding:18px 20px}
+.toast-kicker{color:#d4b67c;font-size:10px;letter-spacing:.12em;text-transform:uppercase}
+.toast-title{color:#f3efdf;font-size:19px;font-weight:500}
+.toast-body{color:#a7b7b7;font-size:13px;line-height:1.7}
+.toast-facts li{color:#c7d2cd;font-size:12.5px}
+.toast-page{border-radius:6px;border:1px solid #425252}
+
+/* ---------- ending ---------- */
+.ending-screen{background:radial-gradient(ellipse at 50% 0%, #1b2b32, #060d14 65%)}
+.ending-card{background:#142127;border:1px solid #425252;border-radius:12px;box-shadow:0 30px 120px #0009;color:#eeeade}
+.ending-kicker{color:#d4b67c;font-size:10px;letter-spacing:.12em;text-transform:uppercase}
+.ending-title{font-family:Inter,sans-serif;font-weight:500;letter-spacing:-.04em}
+.ending-ornament{color:#d4b67c}
+.ending-body p{color:#c7d2cd}
+.ending-stat b{color:#f3efdf}
+.ending-team{color:#9dafb0}
+
+/* ---------- in-game HUD alignment ---------- */
+.quiet-button{border:0;background:none;color:#c7d2cd;font-size:11px;letter-spacing:.02em;padding:8px 10px;border-radius:4px;font-family:inherit}
+.quiet-button:hover{color:#e8d5aa;background:#ffffff0a}
+.release-hud .location-name{color:#f3efdf}
+.release-hud .location-kicker{color:#d4b67c}
+.release-hud .hud-objective{color:#a9b8b6}
+.room-tabs{background:#101c22e6;border:1px solid #425252;border-radius:8px;overflow:hidden}
+.room-tabs .tab{background:none;border:0;border-right:1px solid #2b3a40;color:#c7d2cd;font-family:inherit}
+.room-tabs .tab:hover{color:#e8d5aa;background:#ffffff08}
+.room-tabs .tab.active{background:#d4b67c;color:#162126;font-weight:500}
+.notebook-toggle{background:#101c22e6;border:1px solid #425252;border-radius:8px;color:#d9e0d9;font-family:inherit}
+.notebook-toggle:hover{border-color:#d4b67c;color:#e8d5aa}
+.notebook-toggle .notebook-icon{color:#d4b67c}
+.explore-toggle{background:#101c22e6;border:1px solid #425252;border-radius:6px;color:#d9e0d9;font-family:inherit}
+.explore-toggle:hover{border-color:#d4b67c;color:#e8d5aa}
+.explore-panel{background:#101c22f2;border:1px solid #425252;border-radius:10px;color:#d9e0d9}
+.explore-panel .eyebrow{color:#d4b67c}
+.explore-panel h2{color:#f3efdf;font-weight:500}
+.explore-panel button{background:#1b2d34;border:1px solid #3e5358;border-radius:6px;color:#d9e0d9;font-family:inherit}
+.explore-panel button:hover{background:#2b3f45;border-color:#d4b67c}
+.investigation-count{color:#a9b8b6}
+.investigation-count b{color:#e8d5aa;font-weight:500}
+.camera-hint{color:#8fa4a8}
+.chapter-progress span{color:#657a80;border-color:#3b4d52}
+.chapter-progress span.done{color:#a9b8b6;border-color:#5b7378}
+.chapter-progress span.current{color:#d4b67c;border-color:#d4b67c}
+.next-chapter{background:#d4b67c;color:#162126;border:1px solid #d4b67c;border-radius:6px;font-family:inherit}
+.next-chapter:hover{background:#e8d5aa}
+.scene-caption{color:#c9d5d5}
+.pause-label{background:#101c22e6;border:1px solid #425252;border-radius:8px;color:#e8d5aa}
+
+/* ---------- cinematics ---------- */
+.subtitle-card{background:#101c22e6;border:1px solid #425252;border-radius:10px}
+.subtitle-card .cinema-speaker{color:#d4b67c}
+.subtitle-card p{color:#eef1e6}
+.scene-caption small{color:#93a8ac}
+
+/* ---------- mobile ---------- */
+@media(max-width:760px){
+  .interview-panel,.evidence-panel,.accusation-panel,.settings-panel{width:100%}
+  .interview-transcript{padding:16px 18px}
+  .interview-prompts{padding:10px 18px 12px}
+  .interview-ask{min-width:0;flex-wrap:wrap}
+  .interview-ask input{flex:1 1 100%}
+  .interview-utilities{gap:10px}
+  .case-reading-scroll{padding:18px}
+  .leaderboard-scroll{padding:4px 18px 14px}
+  .chapter-grid{grid-template-columns:1fr}
+  .case-note{padding:10px 18px}
+}
+@media(max-width:480px){
+  .interview-ask .case-button{flex:1}
+  .interview-foot{gap:8px}
+}

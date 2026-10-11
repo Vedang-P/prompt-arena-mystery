@@ -22,3 +22,4 @@ createRoot(document.getElementById('root')).render(
 import './event.css';
 import './scene-fixes.css';
 import './investigation.css';
+import './case-ui.css';

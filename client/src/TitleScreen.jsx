@@ -1,6 +1,7 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useRef, useState } from 'react';
 const Cinema=lazy(()=>import('./Cinema3D.jsx'));
 import { useSettings } from './Settings.jsx';
+import { useCaseDialog } from './InvestigationUI.jsx';
 import LogoutButton from './LogoutButton.jsx';
 import MuteButton from './MuteButton.jsx';
 const TITLE_CAST=[{character:'sameer',at:[-.54,.99],pose:'sit'},{character:'parth',at:[.54,.99],pose:'sit'}];
@@ -27,15 +28,43 @@ export default function TitleScreen({config,state,busy,error,onGuest,onResume,on
 }
 
 export function ChapterSelect({ acts, onSelect, onClose, busy, practice, onCampaign }) {
-  return <div className="modal-backdrop" onClick={onClose}><section className="chapter-card" role="dialog" aria-modal="true" aria-label="Chapter selection" onClick={(e) => e.stopPropagation()}>
-    <div className="chapter-head"><div><p className="eyebrow">Your case, your pace</p><h2>Choose a chapter</h2></div><button className="quiet-button" onClick={onClose}>Close ×</button></div>
-    <p className="settings-note">Each chapter starts a separate practice save with the earlier evidence already collected. Your campaign save stays intact.</p>
-    <div className="chapter-grid">{acts.map((act, i) => <button key={act.id} onClick={() => onSelect(act.id)} disabled={busy}><span className="chapter-number">{String(i).padStart(2, '0')}</span><span><small>{act.type === 'cinematic' ? 'Opening cinematic' : `${act.rooms?.length ?? 1} locations`}</small><strong>{act.title}</strong></span><span>↗</span></button>)}</div>
-    {practice && <button className="btn brass" onClick={onCampaign} disabled={busy}>Return to campaign save</button>}
-  </section></div>;
+  const panelRef=useRef(null);
+  useCaseDialog(panelRef,onClose);
+  return <div className="case-overlay" onClick={(e)=>{if(e.target===e.currentTarget)onClose();}}>
+    <section className="case-panel chapter-panel" ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Chapter selection">
+      <header className="case-panel-head">
+        <div><p className="case-eyebrow">Your case, your pace</p><h2>Choose a chapter</h2><p className="case-header-note">Each chapter starts a separate practice save with the earlier evidence already collected. Your campaign save stays intact.</p></div>
+        <button className="case-close" onClick={onClose} aria-label="Close chapter selection">×</button>
+      </header>
+      <div className="case-reading-scroll">
+        <div className="chapter-grid">{acts.map((act, i) => <button key={act.id} className="chapter-tile" onClick={() => onSelect(act.id)} disabled={busy}><span className="chapter-number">{String(i).padStart(2, '0')}</span><span><small>{act.type === 'cinematic' ? 'Opening cinematic' : `${act.rooms?.length ?? 1} locations`}</small><strong>{act.title}</strong></span><span>↗</span></button>)}</div>
+      </div>
+      <footer className="case-panel-foot">
+        <p>{practice ? 'Practice save active' : 'Campaign save active'}</p>
+        <div className="case-footer-actions">
+          {practice && <button className="case-button" onClick={onCampaign} disabled={busy}>Return to campaign save</button>}
+          <button className="case-button primary" onClick={onClose}>Back to the case →</button>
+        </div>
+      </footer>
+    </section>
+  </div>;
 }
 
 export function EvidenceCard({ clue, onClose }) {
+  const panelRef=useRef(null);
+  useCaseDialog(panelRef,onClose);
   if (!clue) return null;
-  return <div className="modal-backdrop" onClick={onClose}><article className="evidence-card" role="dialog" aria-modal="true" aria-label={clue.name} onClick={(e) => e.stopPropagation()}><p className="eyebrow">Exhibit logged · saved to notebook</p><h2>{clue.name}</h2><p className="evidence-description">{clue.description}</p>{clue.page && <img src={clue.page} alt={clue.name} />}<button className="btn brass" onClick={onClose}>Return to the room</button></article></div>;
+  return <div className="case-overlay" onClick={(e)=>{if(e.target===e.currentTarget)onClose();}}>
+    <section className="case-panel evidence-panel" ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={clue.name}>
+      <header className="case-panel-head">
+        <div><p className="case-eyebrow">Exhibit logged · saved to notebook</p><h2>{clue.name}</h2></div>
+        <button className="case-close" onClick={onClose} aria-label="Close evidence">×</button>
+      </header>
+      <div className="case-reading-scroll">
+        <p className="case-reading-text">{clue.description}</p>
+        {clue.page && <figure className="case-image"><img src={clue.page} alt={clue.name} /></figure>}
+      </div>
+      <footer className="case-panel-foot"><p>Filed in the case notebook</p><button className="case-button primary" onClick={onClose}>Return to the room →</button></footer>
+    </section>
+  </div>;
 }

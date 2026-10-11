@@ -3,6 +3,7 @@ import CaseJournal from './CaseJournal.jsx';
 import PuzzleWorkbench from './PuzzleWorkbench.jsx';
 import LogoutButton from './LogoutButton.jsx';
 import { useSettings } from './Settings.jsx';
+import { useCaseDialog } from './InvestigationUI.jsx';
 import { speakCharacter,stopCharacterSpeech } from './CharacterSpeech.js';
 
 
@@ -18,6 +19,8 @@ export function DialogueOverlay({
 }) {
   const [text, setText] = useState('');
   const logRef = useRef(null);
+  const panelRef = useRef(null);
+  const inputRef = useRef(null);
   const busyRef = useRef(false);
   const { narration } = useSettings();
   const initialCount = useRef(messages.length);
@@ -27,6 +30,8 @@ export function DialogueOverlay({
   const [listening,setListening] = useState(false);
   const [speechError,setSpeechError] = useState(null);
   const Recognition=window.SpeechRecognition??window.webkitSpeechRecognition;
+  useCaseDialog(panelRef, onClose);
+  useEffect(()=>{inputRef.current?.focus({preventScroll:true});},[]);
   useEffect(()=>{
     if(typing){heardTurn.current=true;stopCharacterSpeech();return;}
     if(!heardTurn.current||!narration||messages.length<=initialCount.current)return;
@@ -85,64 +90,74 @@ export function DialogueOverlay({
       beginsTurn: m.role === 'npc' && (!prev || prev.role === 'player'),
     });
   });
+  const lastReply = !typing && messages.at(-1)?.role === 'npc' && messages.at(-1)?.content ? messages.at(-1).content : null;
+  const questions = [...new Set(character.questions ?? [])];
 
   return (
-    <div className="dialogue">
-      <div className="bubble-column" ref={logRef}>
-        {messages.length === 0 && (
-          <p className="stage-direction">— They look at you, waiting. —</p>
-        )}
-        {turns.map((t) =>
-          t.role === 'player' ? (
-            <div key={t.key} className="turn player">
-              <p className="line player">{t.content}</p>
-            </div>
-          ) : (
-            <div key={t.key} className="turn npc">
-              {t.beginsTurn && <div className="speaker">{character.name}</div>}
-              {t.pending ? (
-                <p className="line npc typing">
-                  <i />
-                  <i />
-                  <i />
-                </p>
-              ) : (
-                <p className="line npc">{t.content}</p>
-              )}
-            </div>
-          )
-        )}
-      </div>
+    <div className="case-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <section className="case-panel interview-panel" ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={`Interview with ${character.name}`}>
+        <header className="case-panel-head">
+          <div>
+            <p className="case-eyebrow">Prompt Arena / Interview</p>
+            <h2>{character.name}</h2>
+            {subtitle && <p className="case-header-note">{subtitle}</p>}
+          </div>
+          <button className="case-close" onClick={onClose} aria-label="Leave conversation">×</button>
+        </header>
 
-      <div className="suggested-questions">{(character.questions ?? []).map((q) => <button key={q} disabled={typing} onClick={() => setText(q)}>{q}</button>)}</div>
-      {error && <p className="dialogue-error">{error}</p>}
-      {speechError && <p className="dialogue-error">{speechError}</p>}
-      {!typing&&messages.at(-1)?.role==='npc'&&messages.at(-1)?.content&&<button type="button" className="quiet-button replay-reply" onClick={()=>{setSpeechError(null);speakCharacter(character.id,messages.at(-1).content,setSpeechError);}}>Replay reply</button>}
-
-      <form className="ask-bar" onSubmit={send}>
-        {Recognition && <button type="button" className="dictate-button" disabled={typing||disabled} onClick={dictate}>{listening?'Stop mic':'Speak'}</button>}
-        <div className="ask-field">
-          <input
-            autoFocus
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder={disabled ? 'The case is closed.' : 'Ask your question…'}
-            disabled={disabled}
-            spellCheck={false}
-          />
+        <div className="interview-transcript" ref={logRef}>
+          {turns.length === 0 && (
+            <p className="interview-empty">They look at you, waiting.</p>
+          )}
+          {turns.map((t) =>
+            t.role === 'player' ? (
+              <div key={t.key} className="interview-turn player">
+                <p className="interview-text">{t.content}</p>
+              </div>
+            ) : (
+              <div key={t.key} className="interview-turn npc">
+                {t.beginsTurn && <span className="interview-speaker">{character.name}</span>}
+                {t.pending ? (
+                  <p className="interview-typing"><i /><i /><i /></p>
+                ) : (
+                  <p className="interview-text">{t.content}</p>
+                )}
+              </div>
+            )
+          )}
         </div>
-        <button className="ask-submit" type="submit" disabled={typing || disabled || !text.trim()}>
-          Ask
-        </button>
-      </form>
 
-      <div className="name-card">
-        <span className="name-card-name">{character.name}</span>
-        {subtitle && <span className="name-card-role">{subtitle}</span>}
-        <button className="leave-btn" onClick={onClose}>
-          Leave conversation
-        </button>
-      </div>
+        {questions.length > 0 && (
+          <div className="interview-prompts">
+            <span className="case-section-label">Suggested questions</span>
+            <div className="interview-chips">
+              {questions.map((q, i) => <button key={`${i}-${q}`} type="button" className="case-chip" disabled={typing} onClick={() => { setText(q); inputRef.current?.focus(); }}>{q}</button>)}
+            </div>
+          </div>
+        )}
+
+        {(error || speechError) && <p className="case-note error" role="alert">{error || speechError}</p>}
+
+        <footer className="case-panel-foot interview-foot">
+          <div className="interview-utilities">
+            {lastReply && <button type="button" className="case-text-button" onClick={() => { setSpeechError(null); speakCharacter(character.id, lastReply, setSpeechError); }}>Replay reply ↺</button>}
+            {Recognition && <button type="button" className="case-text-button" disabled={typing || disabled} onClick={dictate}>{listening ? 'Stop mic' : 'Speak'}</button>}
+          </div>
+          <form className="interview-ask" onSubmit={send}>
+            <input
+              ref={inputRef}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder={disabled ? 'The case is closed.' : 'Ask your question…'}
+              disabled={disabled}
+              spellCheck={false}
+            />
+            <button className="case-button primary" type="submit" disabled={typing || disabled || !text.trim()}>
+              {typing ? 'Listening…' : 'Ask →'}
+            </button>
+          </form>
+        </footer>
+      </section>
     </div>
   );
 }
@@ -154,6 +169,8 @@ export function AccuseModal({ state, onClose, onSubmit, result, busy }) {
   const [culprit, setCulprit] = useState(state.characters[0]?.id ?? '');
   const [method, setMethod] = useState('');
   const [motive, setMotive] = useState('');
+  const panelRef = useRef(null);
+  useCaseDialog(panelRef, onClose);
   const clueLabels = {};
   for (const room of state.rooms) {
     for (const h of room.hotspots) {
@@ -161,86 +178,95 @@ export function AccuseModal({ state, onClose, onSubmit, result, busy }) {
     }
   }
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <form
-        className="indictment"
-        onClick={(e) => e.stopPropagation()}
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (method.trim() && motive.trim()) onSubmit({ culprit, method, motive });
-        }}
-      >
-        <header className="indictment-head">
-          <div className="indictment-ornament">◆ ◆ ◆</div>
-          <h3 className="indictment-title">The Final Accusation</h3>
-          <p className="indictment-sub">Judge and jury want your conclusion, not your phrasing.</p>
+    <div className="case-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <section className="case-panel accusation-panel" ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="The final accusation">
+        <header className="case-panel-head">
+          <div>
+            <p className="case-eyebrow">The final accusation</p>
+            <h2>Name the culprit</h2>
+            <p className="case-header-note">Judge and jury want your conclusion, not your phrasing.</p>
+          </div>
+          <button className="case-close" onClick={onClose} aria-label="Close accusation">×</button>
         </header>
 
-        <label className="field">
-          <span className="field-label">Who did it?</span>
-          <select value={culprit} onChange={(e) => setCulprit(e.target.value)}>
-            {state.characters.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <form
+          className="case-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (method.trim() && motive.trim()) onSubmit({ culprit, method, motive });
+          }}
+        >
+          <div className="case-reading-scroll accusation-body">
+            <label className="case-field">
+              <span className="case-answer-label">Who did it?</span>
+              <select value={culprit} onChange={(e) => setCulprit(e.target.value)}>
+                {state.characters.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-        <label className="field">
-          <span className="field-label">How was it done?</span>
-          <textarea
-            rows={3}
-            value={method}
-            onChange={(e) => setMethod(e.target.value)}
-            placeholder="Describe the method in your own words…"
-          />
-        </label>
+            <label className="case-field">
+              <span className="case-answer-label">How was it done?</span>
+              <textarea
+                rows={3}
+                value={method}
+                onChange={(e) => setMethod(e.target.value)}
+                placeholder="Describe the method in your own words…"
+              />
+            </label>
 
-        <label className="field">
-          <span className="field-label">Why?</span>
-          <textarea
-            rows={3}
-            value={motive}
-            onChange={(e) => setMotive(e.target.value)}
-            placeholder="Describe the motive…"
-          />
-        </label>
+            <label className="case-field">
+              <span className="case-answer-label">Why?</span>
+              <textarea
+                rows={3}
+                value={motive}
+                onChange={(e) => setMotive(e.target.value)}
+                placeholder="Describe the motive…"
+              />
+            </label>
 
-        {result && (
-          <div className={`verdict ${result.correct ? 'good' : 'bad'}`}>
-            {result.stage === 'evidence' && (
-              <p>
-                Not enough evidence. The chief wants:{' '}
-                {result.missing.map((id) => clueLabels[id] ?? id).join(', ')}
-              </p>
-            )}
-            {result.stage === 'culprit' && <p>That's not who did it. Go back to the case.</p>}
-            {result.stage === 'conclusion' && (
-              <p>
-                Your story doesn't hold up.
-                {result.checks && (
-                  <>
-                    {' '}
-                    Method: {result.checks.method ? 'sound' : 'not convincing'}. Motive:{' '}
-                    {result.checks.motive ? 'sound' : 'not convincing'}.
-                  </>
+            {result && (
+              <div className={`case-feedback ${result.correct ? 'complete' : 'retry'}`} role="status">
+                {result.stage === 'evidence' && (
+                  <p>
+                    Not enough evidence. The chief wants:{' '}
+                    {result.missing.map((id) => clueLabels[id] ?? id).join(', ')}
+                  </p>
                 )}
-              </p>
+                {result.stage === 'culprit' && <p>That's not who did it. Go back to the case.</p>}
+                {result.stage === 'conclusion' && (
+                  <p>
+                    Your story doesn't hold up.
+                    {result.checks && (
+                      <>
+                        {' '}
+                        Method: {result.checks.method ? 'sound' : 'not convincing'}. Motive:{' '}
+                        {result.checks.motive ? 'sound' : 'not convincing'}.
+                      </>
+                    )}
+                  </p>
+                )}
+                {result.correct && <p>The case is closed.</p>}
+              </div>
             )}
-            {result.correct && <p>The case is closed.</p>}
           </div>
-        )}
 
-        <div className="modal-actions">
-          <button type="button" className="btn on-paper" onClick={onClose}>
-            Keep digging
-          </button>
-          <button className="btn wine" type="submit" disabled={busy}>
-            {busy ? 'The chief is reading…' : 'Accuse'}
-          </button>
-        </div>
-      </form>
+          <footer className="case-panel-foot">
+            <p>Your accusation is final</p>
+            <div className="case-footer-actions">
+              <button type="button" className="case-button" onClick={onClose}>
+                Keep digging
+              </button>
+              <button className="case-button primary" type="submit" disabled={busy}>
+                {busy ? 'The chief is reading…' : 'Accuse →'}
+              </button>
+            </div>
+          </footer>
+        </form>
+      </section>
     </div>
   );
 }

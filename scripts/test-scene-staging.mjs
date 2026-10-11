@@ -116,7 +116,8 @@ assert(Math.abs(stairBounds.min.y)<.002,'The stair foot must meet the ground flo
 assert(Math.abs(HOME_STAIRS.landingY+HOME_STAIRS.landingSize[1]/2-HOME_STAIRS.top)<.002,'Landing must meet the stair top without a step or gap');
 const stairTop=new Box3();stairAsset.scene.traverse(o=>{if(o.isMesh){const p=o.geometry.attributes.position;for(let i=0;i<p.count;i++){const v=new Vector3().fromBufferAttribute(p,i).applyMatrix4(o.matrixWorld);if(v.y>HOME_STAIRS.top-.12)stairTop.expandByPoint(v);}}});
 const landingMin=[HOME_STAIRS.landingCenter[0]-HOME_STAIRS.landingSize[0]/2,HOME_STAIRS.landingCenter[1]-HOME_STAIRS.landingSize[2]/2],landingMax=[HOME_STAIRS.landingCenter[0]+HOME_STAIRS.landingSize[0]/2,HOME_STAIRS.landingCenter[1]+HOME_STAIRS.landingSize[2]/2];
-assert(landingMin[0]<=stairTop.min.x+.01&&landingMax[0]>=stairTop.max.x-.01&&landingMin[1]<=stairTop.min.z+.01&&landingMax[1]>=stairTop.max.z-.01,'The landing must cover the actual stair top face in world X/Z');
+assert(landingMin[0]<=stairTop.min.x+.01&&landingMax[0]>=stairTop.max.x-.01,'The landing must span the stair width');
+assert(Math.abs(landingMax[1]-stairTop.min.z)<.03,'The landing edge must meet the top stair tread without a gap or hidden overlap');
 const upperMin=[HOME_STAIRS.upperCenter[0]-HOME_STAIRS.upperSize[0]/2,HOME_STAIRS.upperCenter[1]-HOME_STAIRS.upperSize[2]/2],upperMax=[HOME_STAIRS.upperCenter[0]+HOME_STAIRS.upperSize[0]/2,HOME_STAIRS.upperCenter[1]+HOME_STAIRS.upperSize[2]/2];
 assert(Math.min(landingMax[0],upperMax[0])-Math.max(landingMin[0],upperMin[0])>.1&&Math.min(landingMax[1],upperMax[1])-Math.max(landingMin[1],upperMin[1])>.1,'The stair landing must overlap the upper hall on both floor axes');
 const backPanels=backWallPanels(13,5.65,HOME_UPPER_DOORWAY),doorLeft=HOME_UPPER_DOORWAY.centerX-HOME_UPPER_DOORWAY.width/2,doorRight=HOME_UPPER_DOORWAY.centerX+HOME_UPPER_DOORWAY.width/2,doorTop=HOME_UPPER_DOORWAY.bottomY+HOME_UPPER_DOORWAY.height;

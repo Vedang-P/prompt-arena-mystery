@@ -782,7 +782,7 @@ function GazeboRoom({room,hot}) {
   return <group>
     <ParkGround />
     <CinemaProp asset="gazebo" position={[0,0,0]} height={3.32}/>
-    <CinemaProp asset="painted_wooden_bench" position={PARK.bench} height={.615} width={1.9}/>
+    <CinemaProp asset="painted_wooden_bench" position={PARK.bench} height={.615} width={1.9} rotation={[0,Math.PI,0]}/>
     <CinemaProp asset="painted_wooden_bench" position={[-3.4,0,2.6]} height={.615} width={1.9} rotation={[0,.5,0]}/>
     <CinemaProp asset="painted_wooden_bench" position={[3.6,0,2.2]} height={.615} width={1.9} rotation={[0,-.7,0]}/>
     {/* These are wall lanterns: the brackets attach to the gazebo's side columns. */}

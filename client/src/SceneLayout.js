@@ -3,11 +3,15 @@
 export const DESK_TOP = .76882;
 export const DESK_SEAT = .49035;
 // Gazebo deck and bench seat measured from the CC0 models in inspect_park.py.
-export const PARK = { deckY:.2198, bench:[0,.2198,1.1], seatY:.6703, waiting:[-1.3,.15] };
+// The gazebo bench sits against the back railing (the entrance stays clear),
+// with the transparent case found beneath it. Seated cast share the seat mark.
+export const PARK = { deckY:.2198, bench:[.1,.2198,-.65], seat:[.1,-.53], seatY:.6703, waiting:[-1.3,.15] };
 export const BEDROOM = { desk:[2.8,0,-1.5], chair:[1.78,0,-1.5], laptop:[2.8,DESK_TOP,-1.5], lamp:[2.8,DESK_TOP,-2.08], shelf:[-3.8,0,-2.85] };
 // Duvet top raycast; the mask clue is fixed to this surface datum.
 export const SAMEER_BED = { center:[-2.8,0,-1.35], surfaceY:.687 };
-export const HOME_STAIRS={top:3.7176,landingY:3.6476,landingCenter:[4.7,-2.5],landingSize:[2.7,.14,2.55],upperCenter:[4.55,-4.2],upperSize:[2.65,.14,2.6]};
+// The landing edge sits exactly at the imported stair's top tread (z=-1.466)
+// so the last riser meets the upper floor instead of vanishing under it.
+export const HOME_STAIRS={top:3.7176,landingY:3.6476,landingCenter:[4.7,-2.741],landingSize:[2.7,.14,2.55],upperCenter:[4.55,-4.2],upperSize:[2.65,.14,2.6]};
 // The measured stair landing reaches the back wall. Keep an unobstructed
 // doorway aligned to it and continue the upper floor into Parth's room.
 export const HOME_UPPER_DOORWAY={centerX:4.55,bottomY:HOME_STAIRS.top,width:1.72,height:1.86};
