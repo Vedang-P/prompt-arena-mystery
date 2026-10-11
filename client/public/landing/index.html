@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prompt Arena: Mystery</title>
+    <meta name="description" content="Prompt Arena: Mystery — a live interrogation whodunit." />
+    <meta name="theme-color" content="#05070f" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2305070f'/%3E%3Cpath d='M16 5l9 11-9 11-9-11z' fill='%238ba6dd'/%3E%3C/svg%3E"
+    />
+    <link rel="preload" as="font" type="font/woff2" href="fonts/cinzel-latin-700-normal.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="fonts/eb-garamond-latin-400-normal.woff2" crossorigin />
+    <link rel="stylesheet" href="landing.css" />
+    <script>
+      /* the cinematic card is only armed when scripting is on, so a no-JS visit
+         still lands on the title screen */
+      document.documentElement.classList.add('js');
+    </script>
+  </head>
+  <body>
+    <div class="art" aria-hidden="true"></div>
+    <div class="veil" aria-hidden="true"></div>
+
+    <!-- INTRO CARD: the name here is who presents the game -->
+    <div class="intro" id="intro" aria-hidden="true">
+      <p class="intro__name">MIST</p>
+      <span class="intro__rule"></span>
+      <p class="intro__presents">Presents</p>
+    </div>
+
+    <div class="topbar">
+      <button class="chip" type="button" id="board-btn" aria-haspopup="dialog">Live leaderboard</button>
+      <a class="chip" href="/api/auth/logout">Log out</a>
+    </div>
+
+    <main class="stage">
+      <h1 class="title">Prompt Arena</h1>
+
+      <nav class="actions" aria-label="Enter the game">
+        <!-- APP LINK: the game sits one level up from this page -->
+        <a class="btn btn--primary" id="enter" href="../">Continue</a>
+      </nav>
+    </main>
+
+    <dialog id="board" aria-labelledby="board-title">
+      <div class="board__head">
+        <h2 id="board-title">
+          <i class="live" aria-hidden="true"></i>
+          Live leaderboard
+        </h2>
+        <button class="board__close" type="button" id="board-close" aria-label="Close leaderboard">&times;</button>
+      </div>
+
+      <p class="board__status" id="board-status" aria-live="polite">Opening the board&hellip;</p>
+
+      <div class="board__scroll">
+        <table class="board">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Team</th>
+              <th scope="col">Solved</th>
+              <th scope="col">Clues</th>
+              <th scope="col">Puzzles</th>
+              <th scope="col">Hints</th>
+            </tr>
+          </thead>
+          <tbody id="board-body"></tbody>
+        </table>
+      </div>
+    </dialog>
+
+    <script src="landing.js" defer></script>
+  </body>
+</html>
