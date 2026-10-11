@@ -490,7 +490,7 @@ for (const act of c.acts ?? []) {
 }
 for (const r of c.solution?.required_clues ?? []) requiredClues.add(r);
 for (const [id, clue] of clueIndex) {
-  if (!(clue.grants ?? []).length && !requiredClues.has(id)) {
+  if (!(clue.grants ?? []).length && !requiredClues.has(id) && !clueGrantedBy.has(id)) {
     warn(`clue "${id}" grants nothing and gates nothing`);
   }
 }

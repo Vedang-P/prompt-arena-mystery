@@ -1,0 +1,10 @@
+# Keep text files LF so generated content (case/main.yaml, src/generated/*) never
+# shows up as modified after a build on Windows.
+*.yaml text eol=lf
+*.yml text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.json text eol=lf
+*.md text eol=lf
