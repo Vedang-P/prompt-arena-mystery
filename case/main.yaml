@@ -1049,6 +1049,10 @@ rooms:
           - -5.15
           - 0
           - 2.1
+        rotation:
+          - 0
+          - 1.5708
+          - 0
   - id: concert
     name: The Concert
     scene: concert
@@ -2284,6 +2288,11 @@ puzzles:
     answers:
       - park
       - the park
+      - gazebo
+      - the gazebo
+      - park gazebo
+      - the park gazebo
+      - the gazebo in the park
     success: The park. The gazebo where he last saw Parth. He pockets the phone and leaves before it gets dark.
     penalty: 0
     fail_message: That's not it. The voice note is still waiting to be completed.

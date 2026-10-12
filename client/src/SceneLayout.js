@@ -9,9 +9,10 @@ export const PARK = { deckY:.2198, bench:[.1,.2198,-.65], seat:[.1,-.53], seatY:
 export const BEDROOM = { desk:[2.8,0,-1.5], chair:[1.78,0,-1.5], laptop:[2.8,DESK_TOP,-1.5], lamp:[2.8,DESK_TOP,-2.08], shelf:[-3.8,0,-2.85] };
 // Duvet top raycast; the mask clue is fixed to this surface datum.
 export const SAMEER_BED = { center:[-2.8,0,-1.35], surfaceY:.687 };
-// The landing edge sits exactly at the imported stair's top tread (z=-1.466)
-// so the last riser meets the upper floor instead of vanishing under it.
-export const HOME_STAIRS={top:3.7176,landingY:3.6476,landingCenter:[4.7,-2.741],landingSize:[2.7,.14,2.55],upperCenter:[4.55,-4.2],upperSize:[2.65,.14,2.6]};
+// Measured from the imported stair: the top walking tread is y=2.800 and its
+// far edge sits at z=-1.59 (the 3.72 m bounds height is the handrail). The
+// landing edge meets that far edge so the last riser opens onto the upper floor.
+export const HOME_STAIRS={top:2.8,landingY:2.73,landingCenter:[4.7,-2.865],landingSize:[2.7,.14,2.55],upperCenter:[4.55,-4.2],upperSize:[2.65,.14,2.6]};
 // The measured stair landing reaches the back wall. Keep an unobstructed
 // doorway aligned to it and continue the upper floor into Parth's room.
 export const HOME_UPPER_DOORWAY={centerX:4.55,bottomY:HOME_STAIRS.top,width:1.72,height:1.86};

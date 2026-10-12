@@ -2,7 +2,10 @@
    Cinematic card, live leaderboard, audio settings the game inherits, and a
    direct hand-off into the game once a team code is accepted. */
 
+import { registerAssetCache } from './registerSW.js';
+
 (() => {
+  registerAssetCache();
   const root = document.documentElement;
   const enter = document.getElementById('enter');
   const settingsStore = 'moon-settings';

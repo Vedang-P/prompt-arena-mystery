@@ -362,6 +362,8 @@ rooms:
         character: ramu
         label: Ramu
         position: [-5.15, 0, 2.1]
+        # Behind the counter, facing it (+x) rather than into the room.
+        rotation: [0, 1.5708, 0]
 
 characters:
   - id: sameer
@@ -703,7 +705,7 @@ puzzles:
       Find this place before it gets dark,
       The end comes closer in the …"
       The voice note ends like a puzzle waiting to be completed. Where is he sending him?
-    answers: [park, the park]
+    answers: [park, the park, gazebo, the gazebo, park gazebo, the park gazebo, the gazebo in the park]
     success: "The park. The gazebo where he last saw Parth. He pockets the phone and leaves before it gets dark."
     penalty: 0
     fail_message: "That's not it. The voice note is still waiting to be completed."

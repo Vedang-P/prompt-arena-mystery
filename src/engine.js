@@ -385,6 +385,7 @@ export function publicCase(progress = null) {
           type: h.type,
           label: h.label,
           position: h.position,
+          rotation: h.rotation ?? null,
           requires: h.requires ?? null,
           act: h.act ?? null,
         };

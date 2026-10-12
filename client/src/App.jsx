@@ -699,6 +699,7 @@ export default function App() {
       <header className="hud-top release-hud">
         <div className="location"><p className="location-kicker">{currentAct?.kicker} · {currentAct?.title}{state.practice ? ' · Practice' : ''}</p><h1 className="location-name">{room.name}</h1><p className="hud-objective">{currentAct?.objective}</p></div>
         <div className="release-tools">
+          <span className="penalty-counter" title="Case penalties">{state.penalties ?? 0} {(state.penalties ?? 0) === 1 ? 'penalty' : 'penalties'}</span>
           <button className="quiet-button" onClick={() => update({ sound: !sound })} aria-label={sound ? 'Mute sound' : 'Enable sound'}>{sound ? 'Sound on' : 'Sound off'}</button>
           <button className="quiet-button" onClick={() => setSettingsOpen(true)}>Settings</button>
           {!authConfig?.eventMode && <button className="quiet-button" onClick={() => setChaptersOpen(true)}>Chapters</button>}
@@ -710,15 +711,29 @@ export default function App() {
       </header>
       <div className="chapter-progress" aria-label="Campaign progress">{state.acts.map((a, i) => <span key={a.id} className={a.id === state.act ? 'current' : i < state.acts.findIndex((x) => x.id === state.act) ? 'done' : ''} title={a.title}>{i}</span>)}</div>
       {state.canAdvance?.ok && <button className="next-chapter" onClick={advanceAct} disabled={actBusy || !!story}>{actBusy ? 'Saving…' : currentAct.id === 'act8' ? 'Finish the case →' : 'Continue to next act →'}</button>}
-      <div className="investigation-count"><b>{state.discovered.length}</b> exhibits <span>·</span> <b>{state.solvedPuzzles.length}</b> puzzles <span>·</span> {state.penalties} penalties</div>
-      {!activeChar && <><button className="explore-toggle" onClick={() => setExploreOpen((o) => !o)}>{exploreOpen ? 'Close explore ×' : 'Explore this room ↗'}</button>
-      {exploreOpen && <aside className="explore-panel" aria-label="Room interactions"><p className="eyebrow">In this room</p><h2>{room.name}</h2><p>Inspect an object or follow a lead.</p>
-        {(displayRooms.find((r) => r.id === roomId)?.hotspots ?? []).map((h) => {
-          const done = h.type === 'clue' ? state.discovered.includes(h.clue) : state.solvedPuzzles.includes(h.puzzle);
-          return <button key={h.id} onClick={() => { if(h.type === 'clue') findClue(h); else if(h.type === 'puzzle') openPuzzle(h); else if(h.type === 'character') openCharacter(h); else travel(h); }}><span className={'interaction-icon ' + h.type}>{done ? '✓' : h.type === 'clue' ? '◇' : h.type === 'character' ? '◉' : h.type === 'travel' ? '↗' : '⌘'}</span><span>{h.label}<small>{done ? 'Logged · inspect again' : h.type === 'clue' ? 'Evidence' : h.type === 'puzzle' ? 'Investigate' : h.type === 'character' ? 'Talk' : 'Travel'}</small></span></button>;
-        })}
-        <p className="explore-hint">New leads appear as you collect evidence. Your notebook keeps every exhibit.</p>
-      </aside>}</>}
+      {!activeChar && <>
+        {!exploreOpen && <button className="explore-toggle" onClick={() => setExploreOpen(true)}>Explore this room ↗</button>}
+        {exploreOpen && <aside className="explore-panel" aria-label="Room interactions">
+          <header className="explore-head">
+            <div>
+              <p className="case-eyebrow">In this room</p>
+              <h2>{room.name}</h2>
+              <p className="case-muted">Inspect an object or follow a lead.</p>
+            </div>
+            <button className="case-close" onClick={() => setExploreOpen(false)} aria-label="Close explore">×</button>
+          </header>
+          <div className="explore-list">
+            {(displayRooms.find((r) => r.id === roomId)?.hotspots ?? []).map((h) => {
+              const done = h.type === 'clue' ? state.discovered.includes(h.clue) : state.solvedPuzzles.includes(h.puzzle);
+              return <button key={h.id} className="explore-item" onClick={() => { if(h.type === 'clue') findClue(h); else if(h.type === 'puzzle') openPuzzle(h); else if(h.type === 'character') openCharacter(h); else travel(h); }}>
+                <span className={'interaction-icon ' + h.type}>{done ? '✓' : h.type === 'clue' ? '◇' : h.type === 'character' ? '◉' : h.type === 'travel' ? '↗' : '⌘'}</span>
+                <span className="explore-item-text"><strong>{h.label}</strong><small>{done ? 'Logged · inspect again' : h.type === 'clue' ? 'Evidence' : h.type === 'puzzle' ? 'Investigate' : h.type === 'character' ? 'Talk' : 'Travel'}</small></span>
+              </button>;
+            })}
+          </div>
+          <footer className="explore-foot"><p className="case-muted">New leads appear as you collect evidence. Your notebook keeps every exhibit.</p></footer>
+        </aside>}
+      </>}
       <div className="camera-hint">Drag to look · Scroll to zoom · WASD to move</div>
 
       <button

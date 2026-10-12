@@ -211,7 +211,7 @@ function Character({ label, clip = 'idle', position = [0, 0, 0], rotation = [0, 
       <meshBasicMaterial transparent opacity={0} depthWrite={false} />
     </mesh>
     {showLabel && <Html position={[0, 2.1 + labelOffsetY, 0]} center zIndexRange={[30, 0]}>
-      <button className="hotspot" style={labelChip({ x: position[0], hover })} onClick={onClick}>{clampLabel(label)}</button>
+      <button className="hotspot" style={labelStyle({ hover })} onClick={onClick}>{clampLabel(label)}</button>
     </Html>}
   </group>;
 }
@@ -423,7 +423,7 @@ function HotspotMarkers({ room, hot }) {
     const anchors=room.id==='parth_room'?PARTH_ANCHORS:DETAIL_ANCHORS[room.id]??{};
     const characters=(room.hotspots??[]).filter(h=>h.type==='character');
     for(const h of room.hotspots??[]){if(h.type==='character')continue;const position=anchors[h.id]??hotspotPosition(h,0);const key=position[0]+':'+position[2];if(!groups.has(key))groups.set(key,{position,hotspots:[]});groups.get(key).hotspots.push(h);}
-    return <>{characters.map(h=>{const officer=room.id==='police_station'&&h.character==='officer';return <CharacterHotspot key={h.id} hotspot={h} position={officer?[POLICE.officer[0],DESK_SEAT-.4915,POLICE.officer[1]]:hotspotPosition(h)} hot={hot} pose={officer?'sit':'idle'} rotation={[0,0,0]}/>;})}{[...groups.entries()].map(([key,group])=><AnchoredHotspot key={key} {...group} hot={hot} avoidLabelOverlap={room.id==='abandoned_field'&&group.hotspots.some(h=>h.id==='af_backpack')}/>)}</>;
+    return <>{characters.map(h=>{const officer=room.id==='police_station'&&h.character==='officer';return <CharacterHotspot key={h.id} hotspot={h} position={officer?[POLICE.officer[0],DESK_SEAT-.4915,POLICE.officer[1]]:hotspotPosition(h)} hot={hot} pose={officer?'sit':'idle'} rotation={h.rotation??[0,0,0]}/>;})}{[...groups.entries()].map(([key,group])=><AnchoredHotspot key={key} {...group} hot={hot} avoidLabelOverlap={room.id==='abandoned_field'&&group.hotspots.some(h=>h.id==='af_backpack')}/>)}</>;
   }
 }
 
@@ -800,6 +800,9 @@ function GazeboRoom({room,hot}) {
 }
 
 function HomeRoom({room,hot}) {
+ // The mezzanine walls run from the stair landing surface to the hall ceiling.
+ const bedroomWallCenter=(HOME_STAIRS.top+HOME_BEDROOM.ceilingY)/2;
+ const bedroomWallHeight=HOME_BEDROOM.ceilingY-HOME_STAIRS.top;
  return <group>
   <Shell width={13} depth={11} height={5.65} tint="#bcaa91" painted backOpening={HOME_UPPER_DOORWAY}/>
   <Floor width={13} depth={11} repeat={[6,5]} color="#dcc9ae"/>
@@ -822,7 +825,7 @@ function HomeRoom({room,hot}) {
   <DetailProp asset="wall_clock" position={[.6,2.35,-5.42]}/>
   <Window position={[-6.44,1.9,1.1]} rotation={[0,Math.PI/2,0]} width={2.2} height={1.8} moon={false}/>
   <DetailProp asset="curtains" position={[-6.35,.45,1.1]} rotation={[0,Math.PI/2,0]} height={2.55}/>
-  {/* The imported stair's measured 3.72 m rise meets a continuous upper landing. */}
+  {/* The imported stair's measured 2.8 m top tread meets a continuous landing. */}
   <DetailProp asset="stairs" position={[4.7,0,.65]} rotation={[0,Math.PI/2,0]}/>
   <mesh position={[HOME_STAIRS.landingCenter[0],HOME_STAIRS.landingY,HOME_STAIRS.landingCenter[1]]} receiveShadow castShadow><boxGeometry args={HOME_STAIRS.landingSize}/><meshStandardMaterial color="#ac8e68" roughness={.8}/></mesh>
   {/* The hall meets a real aperture in the rear wall, with a bedroom beyond. */}
@@ -832,9 +835,9 @@ function HomeRoom({room,hot}) {
   <mesh position={[HOME_STAIRS.upperCenter[0],HOME_STAIRS.landingY,HOME_STAIRS.upperCenter[1]]} receiveShadow><boxGeometry args={HOME_STAIRS.upperSize}/><meshStandardMaterial color="#ac8e68"/></mesh>
   {/* One continuous upper floor crosses the threshold into the bedroom. */}
   <mesh position={[HOME_BEDROOM.centerX,HOME_STAIRS.landingY,HOME_BEDROOM.centerZ]} receiveShadow><boxGeometry args={[HOME_BEDROOM.width,.14,HOME_BEDROOM.depth]}/><meshStandardMaterial color="#ac8e68" roughness={.8}/></mesh>
-  <mesh position={[HOME_BEDROOM.centerX,4.6,HOME_BEDROOM.centerZ-HOME_BEDROOM.depth/2+.08]} receiveShadow><boxGeometry args={[HOME_BEDROOM.width,1.9,.16]}/><meshStandardMaterial color="#bcaa91"/></mesh>
-  <mesh position={[HOME_BEDROOM.centerX-HOME_BEDROOM.width/2+.08,4.6,HOME_BEDROOM.centerZ]} receiveShadow><boxGeometry args={[.16,1.9,HOME_BEDROOM.depth-.15]}/><meshStandardMaterial color="#bcaa91"/></mesh>
-  <mesh position={[HOME_BEDROOM.centerX+HOME_BEDROOM.width/2-.08,4.6,HOME_BEDROOM.centerZ]} receiveShadow><boxGeometry args={[.16,1.9,HOME_BEDROOM.depth-.15]}/><meshStandardMaterial color="#bcaa91"/></mesh>
+  <mesh position={[HOME_BEDROOM.centerX,bedroomWallCenter,HOME_BEDROOM.centerZ-HOME_BEDROOM.depth/2+.08]} receiveShadow><boxGeometry args={[HOME_BEDROOM.width,bedroomWallHeight,.16]}/><meshStandardMaterial color="#bcaa91"/></mesh>
+  <mesh position={[HOME_BEDROOM.centerX-HOME_BEDROOM.width/2+.08,bedroomWallCenter,HOME_BEDROOM.centerZ]} receiveShadow><boxGeometry args={[.16,bedroomWallHeight,HOME_BEDROOM.depth-.15]}/><meshStandardMaterial color="#bcaa91"/></mesh>
+  <mesh position={[HOME_BEDROOM.centerX+HOME_BEDROOM.width/2-.08,bedroomWallCenter,HOME_BEDROOM.centerZ]} receiveShadow><boxGeometry args={[.16,bedroomWallHeight,HOME_BEDROOM.depth-.15]}/><meshStandardMaterial color="#bcaa91"/></mesh>
   <mesh position={[HOME_BEDROOM.centerX,HOME_BEDROOM.ceilingY,HOME_BEDROOM.centerZ]} rotation-x={Math.PI/2}><planeGeometry args={[HOME_BEDROOM.width,HOME_BEDROOM.depth]}/><meshStandardMaterial color="#c5bda9" roughness={1}/></mesh>
   <Bed position={HOME_BEDROOM.bed}/>
   <ShelfContents position={HOME_BEDROOM.shelf}/>
@@ -992,9 +995,11 @@ function CyberCafeRoom({room,hot,paused=false}) {
   <DetailProp asset="wooden_bowl_01" position={[-3.9,1.1275,2]} scale={.8}/>
   <DetailProp asset="cup" position={[-3.9,1.1275,3.05]} scale={1.1}/>
   <DetailProp asset="dining_table" position={[2.2,0,3.6]} height={.74}/>
-  <DetailProp asset="wooden_bowl_01" position={[2.2,.74,3.6]} scale={.72}/>
-  <DetailProp asset="cup" position={[1.74,.74,3.38]} scale={.8}/>
-  {[1.05,3.35].map(x=><DetailProp key={x} asset="plastic_monobloc_chair_01" position={[x,0,3.62]} rotation={[0,x<2?Math.PI/2:-Math.PI/2,0]}/>)}
+  <DetailProp asset="wooden_bowl_01" position={[2.2,.74,3.52]} scale={.72}/>
+  <DetailProp asset="cup" position={[2.45,.74,3.86]} scale={.8}/>
+  {/* Two monobloc chairs face each other across the table's long sides. */}
+  <DetailProp asset="plastic_monobloc_chair_01" position={[2.2,0,2.65]} rotation={[0,0,0]}/>
+  <DetailProp asset="plastic_monobloc_chair_01" position={[2.2,0,4.55]} rotation={[0,Math.PI,0]}/>
   <WallSign position={[3.2,2.35,5.42]} width={1.2} height={.42} title="CAFÉ SEATING" lines={['PLEASE TAKE A TABLE']}/>
   <DetailProp asset="metal_office_desk" position={[4.7,0,-2.3]} rotation={[0,Math.PI/2,0]}/>
   <DetailProp asset="monitor" position={[4.2,DESK_TOP,-2.48]}/>

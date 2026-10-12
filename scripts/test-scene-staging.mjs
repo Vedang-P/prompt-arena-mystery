@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
-import {AnimationMixer,Box3,PerspectiveCamera,Vector3} from 'three';
+import {AnimationMixer,Box3,PerspectiveCamera,Raycaster,Vector3} from 'three';
 import {caseData} from '../src/case.js';
 import {locationFor,storyCast,placeCast,wideShot,roomWideShot,captureShot,cinematicPhaseFor} from '../client/src/SceneStaging.js';
 import {createFootContact} from '../client/src/FootContact.js';
@@ -111,8 +111,10 @@ assert(Math.abs(fanBox.max.y)<.003&&fanBox.min.y>-.6,'Fan is not mounted downwar
 const stairAsset=await loadGeometry('client/public/assets/detail/stairs.glb');
 stairAsset.scene.rotation.y=Math.PI/2;stairAsset.scene.position.set(4.7,0,.65);stairAsset.scene.updateMatrixWorld(true);
 const stairBounds=new Box3().setFromObject(stairAsset.scene,true);
-assert(Math.abs(stairBounds.max.y-HOME_STAIRS.top)<.01,'Upper landing datum must follow the imported stair top');
 assert(Math.abs(stairBounds.min.y)<.002,'The stair foot must meet the ground floor');
+assert(stairBounds.max.y>HOME_STAIRS.top+.7&&stairBounds.max.y<HOME_STAIRS.top+1.1,'The datum must sit one guard-rail height below the stair bounds top (the rail, not the tread)');
+const stairTopHit=new Raycaster(new Vector3(4.7,20,-1.45),new Vector3(0,-1,0)).intersectObject(stairAsset.scene,true)[0];
+assert(stairTopHit&&Math.abs(stairTopHit.point.y-HOME_STAIRS.top)<.02,'Upper landing datum must follow the imported stair top tread, not its handrail');
 assert(Math.abs(HOME_STAIRS.landingY+HOME_STAIRS.landingSize[1]/2-HOME_STAIRS.top)<.002,'Landing must meet the stair top without a step or gap');
 const stairTop=new Box3();stairAsset.scene.traverse(o=>{if(o.isMesh){const p=o.geometry.attributes.position;for(let i=0;i<p.count;i++){const v=new Vector3().fromBufferAttribute(p,i).applyMatrix4(o.matrixWorld);if(v.y>HOME_STAIRS.top-.12)stairTop.expandByPoint(v);}}});
 const landingMin=[HOME_STAIRS.landingCenter[0]-HOME_STAIRS.landingSize[0]/2,HOME_STAIRS.landingCenter[1]-HOME_STAIRS.landingSize[2]/2],landingMax=[HOME_STAIRS.landingCenter[0]+HOME_STAIRS.landingSize[0]/2,HOME_STAIRS.landingCenter[1]+HOME_STAIRS.landingSize[2]/2];

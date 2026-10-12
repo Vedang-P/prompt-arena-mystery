@@ -92,15 +92,16 @@ export function Cable({points,color='#20272b',radius=.009}){
 }
 
 export function ComputerStation({position=[0,0,0],number=1,deskY=.7875,rotation=[0,0,0],deskTint}){
- return <group position={position} rotation={rotation}>
-  <DetailProp asset="metal_office_desk" tint={deskTint}/>
-  <DetailProp asset="monitor" position={[-.18,deskY,-.2]}/>
-  <DetailProp asset="keyboard" position={[-.2,deskY,.25]}/>
-  <DetailProp asset="mouse" position={[.42,deskY,.22]}/>
-  <DetailProp asset="office_chair" position={[0,0,1.05]} rotation={[0,Math.PI,0]} height={1.168*.49035/.618}/>
-  <WallSign position={[-.18,deskY+.33,-.12]} width={.39} height={.23} title={`RAMU / ${String(number).padStart(2,'0')}`} lines={['INTERNET • PRINT • SCAN']} background={number%2?'#17343c':'#293c34'} ink="#9ebfb6"/>
-  <Cable points={[[-.18,deskY+.12,-.35],[-.18,deskY-.07,-.48],[.6,.18,-.45],[.7,.05,-.45]]}/>
- </group>;
+  return <group position={position} rotation={rotation}>
+   <DetailProp asset="metal_office_desk" tint={deskTint}/>
+   <DetailProp asset="monitor" position={[-.18,deskY,-.2]}/>
+   <DetailProp asset="keyboard" position={[-.2,deskY,.25]}/>
+   <DetailProp asset="mouse" position={[.42,deskY,.22]}/>
+   {/* Chair tucked into the knee-hole, back to the room, facing the desk. */}
+   <DetailProp asset="office_chair" position={[0,0,.62]} rotation={[0,Math.PI,0]} height={1.168*.49035/.618}/>
+   <WallSign position={[0,.53,.485]} width={.39} height={.23} title={`RAMU / ${String(number).padStart(2,'0')}`} lines={['INTERNET • PRINT • SCAN']} background={number%2?'#17343c':'#293c34'} ink="#9ebfb6"/>
+   <Cable points={[[-.18,deskY+.12,-.35],[-.18,deskY-.07,-.48],[.6,.18,-.45],[.7,.05,-.45]]}/>
+  </group>;
 }
 
 export function ShelfContents({position=[0,0,0],rotation=[0,0,0]}){
