@@ -2,9 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import CaseJournal from './CaseJournal.jsx';
 import PuzzleWorkbench from './PuzzleWorkbench.jsx';
 import LogoutButton from './LogoutButton.jsx';
-import { useSettings } from './Settings.jsx';
 import { useCaseDialog } from './InvestigationUI.jsx';
-import { speakCharacter,stopCharacterSpeech } from './CharacterSpeech.js';
 
 
 export function DialogueOverlay({
@@ -22,36 +20,8 @@ export function DialogueOverlay({
   const panelRef = useRef(null);
   const inputRef = useRef(null);
   const busyRef = useRef(false);
-  const { narration } = useSettings();
-  const initialCount = useRef(messages.length);
-  const spoken = useRef('');
-  const heardTurn = useRef(false);
-  const recognition = useRef(null);
-  const [listening,setListening] = useState(false);
-  const [speechError,setSpeechError] = useState(null);
-  const Recognition=window.SpeechRecognition??window.webkitSpeechRecognition;
   useCaseDialog(panelRef, onClose);
   useEffect(()=>{inputRef.current?.focus({preventScroll:true});},[]);
-  useEffect(()=>{
-    if(typing){heardTurn.current=true;stopCharacterSpeech();return;}
-    if(!heardTurn.current||!narration||messages.length<=initialCount.current)return;
-    const last=messages.at(-1);const key=`${messages.length}:${last?.content}`;
-    if(last?.role!=='npc'||!last.content||spoken.current===key)return;
-    spoken.current=key;
-    setSpeechError(null);
-    return speakCharacter(character.id,last.content,setSpeechError);
-  },[messages,typing,narration,character.id]);
-  useEffect(()=>()=>{recognition.current?.abort();stopCharacterSpeech();},[]);
-  const dictate=()=>{
-    if(listening){recognition.current?.stop();return;}
-    if(!Recognition)return;
-    stopCharacterSpeech();
-    const r=new Recognition();recognition.current=r;r.lang='en-IN';r.interimResults=false;r.continuous=false;
-    r.onstart=()=>{setListening(true);setSpeechError(null);};r.onend=()=>setListening(false);
-    r.onresult=e=>setText(e.results?.[0]?.[0]?.transcript ?? '');
-    r.onerror=e=>{setListening(false);setSpeechError(e.error==='not-allowed'?'Microphone permission is off. You can type your question.':'Speech could not be heard. Try again or type your question.');};
-    try{r.start();}catch{setListening(false);}
-  };
 
   useEffect(() => {
     const el = logRef.current;
@@ -90,7 +60,6 @@ export function DialogueOverlay({
       beginsTurn: m.role === 'npc' && (!prev || prev.role === 'player'),
     });
   });
-  const lastReply = !typing && messages.at(-1)?.role === 'npc' && messages.at(-1)?.content ? messages.at(-1).content : null;
   const questions = [...new Set(character.questions ?? [])];
 
   return (
@@ -136,13 +105,9 @@ export function DialogueOverlay({
           </div>
         )}
 
-        {(error || speechError) && <p className="case-note error" role="alert">{error || speechError}</p>}
+        {error && <p className="case-note error" role="alert">{error}</p>}
 
         <footer className="case-panel-foot interview-foot">
-          <div className="interview-utilities">
-            {lastReply && <button type="button" className="case-text-button" onClick={() => { setSpeechError(null); speakCharacter(character.id, lastReply, setSpeechError); }}>Replay reply ↺</button>}
-            {Recognition && <button type="button" className="case-text-button" disabled={typing || disabled} onClick={dictate}>{listening ? 'Stop mic' : 'Speak'}</button>}
-          </div>
           <form className="interview-ask" onSubmit={send}>
             <input
               ref={inputRef}

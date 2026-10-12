@@ -1,5 +1,5 @@
 /* Prompt Arena asset cache.
-   Static game assets (models, textures, HDRs, voice, music, fonts) are kept in
+   Static game assets (models, textures, HDRs, music, fonts) are kept in
    a build-versioned Cache Storage bucket so room switches and repeat visits
    never re-download them. The version comes from the registration URL, so each
    deployment starts a fresh cache and old buckets are deleted on activation.

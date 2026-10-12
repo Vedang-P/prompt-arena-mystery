@@ -32,7 +32,7 @@ import { registerAssetCache } from './registerSW.js';
   }
 
   /* ---------- settings the game shares ---------- */
-  const defaults = () => ({ quality: window.innerWidth < 700 ? 'low' : 'medium', sound: false, narration: false });
+  const defaults = () => ({ quality: window.innerWidth < 700 ? 'low' : 'medium', sound: false });
   const readSettings = () => {
     try {
       return { ...defaults(), ...JSON.parse(localStorage.getItem(settingsStore) || '{}') };
@@ -47,11 +47,10 @@ import { registerAssetCache } from './registerSW.js';
     } catch {}
     return next;
   };
-  const isMuted = (settings) => !settings.sound && !settings.narration;
+  const isMuted = (settings) => !settings.sound;
 
   const muteBtn = document.getElementById('mute-btn');
   const soundBox = document.getElementById('set-sound');
-  const narrationBox = document.getElementById('set-narration');
   const qualityBox = document.getElementById('set-quality');
 
   const paintAudio = () => {
@@ -60,35 +59,29 @@ import { registerAssetCache } from './registerSW.js';
     muteBtn.textContent = muted ? 'Unmute audio' : 'Mute audio';
     muteBtn.setAttribute('aria-pressed', String(muted));
     soundBox.checked = !!settings.sound;
-    narrationBox.checked = !!settings.narration;
     qualityBox.value = settings.quality;
   };
 
   muteBtn.addEventListener('click', () => {
     const settings = readSettings();
     if (isMuted(settings)) {
-      let previous = { sound: true, narration: true };
+      let previous = { sound: true };
       try {
         const raw = localStorage.getItem(muteStash);
         if (raw) previous = { ...previous, ...JSON.parse(raw) };
       } catch {}
-      writeSettings({ sound: !!previous.sound, narration: !!previous.narration });
+      writeSettings({ sound: !!previous.sound });
     } else {
       try {
-        localStorage.setItem(muteStash, JSON.stringify({ sound: settings.sound, narration: settings.narration }));
+        localStorage.setItem(muteStash, JSON.stringify({ sound: settings.sound }));
       } catch {}
-      window.speechSynthesis?.cancel();
-      writeSettings({ sound: false, narration: false });
+      writeSettings({ sound: false });
     }
     paintAudio();
   });
 
   soundBox.addEventListener('change', () => {
     writeSettings({ sound: soundBox.checked });
-    paintAudio();
-  });
-  narrationBox.addEventListener('change', () => {
-    writeSettings({ narration: narrationBox.checked });
     paintAudio();
   });
   qualityBox.addEventListener('change', () => {

@@ -7,13 +7,13 @@ import MuteButton from './MuteButton.jsx';
 const TITLE_CAST=[{character:'sameer',at:[-.54,.99],pose:'sit'},{character:'parth',at:[.54,.99],pose:'sit'}];
 export default function TitleScreen({config,state,busy,error,onGuest,onResume,onDevLogin,onSettings,onLeaderboard}) {
   const [entry,setEntry]=useState(false),[code,setCode]=useState('');
-  const {sound,narration,update}=useSettings();
-  // Entering the arena arms the soundtrack and voices — but never un-silences a player
+  const {sound,update}=useSettings();
+  // Entering the arena arms the soundtrack — but never un-silences a player
   // who pressed Mute (that toggle leaves a stash behind).
   const armAudio=()=>{
     let silenced=false;
-    try{ silenced=!sound&&!narration&&!!localStorage.getItem('moon-settings-before-mute'); }catch{}
-    if(!silenced) update({sound:true,narration:true});
+    try{ silenced=!sound&&!!localStorage.getItem('moon-settings-before-mute'); }catch{}
+    if(!silenced) update({sound:true});
   };
   const enter=()=>{armAudio();if(state)onResume();else setEntry(true);};
   const codeLogin=!!(config?.devLogin||config?.eventMode);

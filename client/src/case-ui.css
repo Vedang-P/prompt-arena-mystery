@@ -43,7 +43,6 @@
 .interview-prompts{padding:12px 30px 14px;border-top:1px solid #334348;background:#142127;flex:none}
 .interview-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px;max-height:96px;overflow:auto}
 .interview-foot{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
-.interview-utilities{display:flex;align-items:center;gap:14px;flex:none}
 .interview-ask{display:flex;align-items:center;gap:10px;flex:1;min-width:260px}
 .interview-ask input{flex:1;min-width:0;background:#14252d;border:1px solid #3e5358;border-radius:5px;padding:12px 14px;color:#e6ecdf;font-size:14px;font-family:inherit}
 .interview-ask input::placeholder{color:#7f9296}
@@ -182,7 +181,6 @@
   .interview-prompts{padding:10px 18px 12px}
   .interview-ask{min-width:0;flex-wrap:wrap}
   .interview-ask input{flex:1 1 100%}
-  .interview-utilities{gap:10px}
   .case-reading-scroll{padding:18px}
   .leaderboard-scroll{padding:4px 18px 14px}
   .chapter-grid{grid-template-columns:1fr}

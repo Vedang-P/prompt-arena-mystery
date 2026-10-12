@@ -8,9 +8,9 @@
 | --- | --- |
 | Story | 9 acts — an opening prologue and eight playable chapters |
 | Locations | 14 fully modelled rooms and outdoor sets |
-| Cast | 9 animated characters with recorded voices |
+| Cast | 9 animated characters |
 | Content | 54 clues, 48 puzzles, 37 unlockable facts, 2 endings |
-| Audio | 227 recorded lines (Kokoro-82M), 3 music cues, ambient beds |
+| Audio | 3 music cues, ambient beds, a diegetic cafe radio |
 | Runtime | React 19 + Vite + three.js; Hono on Node 22; Postgres (SQLite in local development) |
 
 ---
@@ -39,7 +39,7 @@ A code accepted on the title card posts to `/api/login` and hands off to `/play/
 | Close a panel | `Esc` |
 | Pause a cinematic | `Space` or the on-screen controls |
 
-Cinematics ship with recorded character and narrator voices, subtitles, and pause / continue / skip / mute controls. Graphics settings cover mobile and slower classroom devices. The header carries **Live leaderboard**, **Audio & settings**, and **Log out**.
+Cinematics are subtitled, with pause / continue / skip / mute controls. Graphics settings cover mobile and slower classroom devices. The header carries **Live leaderboard**, **Audio & settings**, and **Log out**.
 
 Outside event mode, **Chapter select** creates an independent practice save with the earlier prerequisites prepared; it never touches the campaign. **Return to campaign** restores the original save.
 
@@ -67,9 +67,9 @@ src/case.js             Indexes the compiled case; src/generated/ is build outpu
 lib/vercel-env.js       Runtime env + storage selection
 lib/db-postgres.js      Postgres adapter (translates the worker’s SQLite-isms)
 case/parts/*.yaml       Authored story fragments — edit these, never case/main.yaml
-scripts/                Case build, tests, asset prep, speech and screenshot tooling
+scripts/                Case build, tests, asset prep and screenshot tooling
 client/src/             React app: scenes, cinematics, panels, audio
-client/public/assets/   Models, textures, voice MP3s, fonts, music
+client/public/assets/   Models, textures, fonts, music
 vercel.json             Build command and function configuration
 ```
 
@@ -88,7 +88,6 @@ vercel.json             Build command and function configuration
 | `npm run test:event` | 70 concurrent team sessions, event gates and timers |
 | `npm run test:assets` | GLB integrity, draw budgets, surface contacts |
 | `npm run test:scenes` | Actor/camera staging against measured geometry |
-| `npm run test:voices` | Recording coverage, durations and hash verification |
 | `npm run test:deployment` | Hosted smoke walk (`-- https://your-deployment`) |
 | `npm run shot` | Puppeteer screenshots of the running game (`shots/`) |
 | `npm run gen:team` | Hash team codes for seeding |
@@ -97,11 +96,11 @@ vercel.json             Build command and function configuration
 
 ```sh
 npm run test:engine && npm run test:campaign && npm run test:event
-npm run test:assets && npm run test:scenes && npm run test:voices
+npm run test:assets && npm run test:scenes
 npm run build
 ```
 
-The engine tests cover rule enforcement. Campaign integration walks every act and puzzle, checks prerequisite gates, both endings, all nine practice starts, wrong-answer continuation, and campaign/practice save isolation. The scene and voice suites decode the actual shipped GLBs and MP3s, so asset changes cannot silently drift from the staging code.
+The engine tests cover rule enforcement. Campaign integration walks every act and puzzle, checks prerequisite gates, both endings, all nine practice starts, wrong-answer continuation, and campaign/practice save isolation. The scene suite decodes the actual shipped GLBs, so asset changes cannot silently drift from the staging code.
 
 In development, `http://127.0.0.1:5173/play/?review=scenes` opens a review browser for all 14 environments and the cinematic arrangements; it never writes progress and is omitted from production.
 
@@ -111,20 +110,9 @@ In development, `http://127.0.0.1:5173/play/?review=scenes` opens a review brows
 
 Edit `case/parts/*.yaml`; `npm run build:case` merges and validates the story into `case/main.yaml` and compiles `src/generated/case.js`. Hidden answers, grants and ending text remain in the server case — the client only ever receives what a team has unlocked.
 
-All nine characters are licensed Microsoft Rocketbox textured rigs with retargeted breathing and seated animation. Environments use finished CC0 Poly Haven and Innerscene models, with a published CC0 astronomy kit and retained Kenney rugs. Blender’s Python API prepares the existing source models; no new character geometry is generated. All acts and authored replies use locally recorded Kokoro-82M voices; Kevin MacLeod music ships as static MP3s.
+All nine characters are licensed Microsoft Rocketbox textured rigs with retargeted breathing and seated animation. Environments use finished CC0 Poly Haven and Innerscene models, with a published CC0 astronomy kit and retained Kenney rugs. Blender’s Python API prepares the existing source models; no new character geometry is generated. Kevin MacLeod music ships as static MP3s.
 
 Source URLs, licenses, provenance and modifications are catalogued in `client/public/assets/ASSETS.md`, with player-facing credits at `/credits.html`.
-
-Voice regeneration (optional — the 227 recordings are already bundled) needs Python, ffmpeg and the pinned ONNX tools:
-
-```sh
-python -m pip install --target .asset-cache/kokoro-python kokoro-onnx==0.6.1
-node scripts/download-kokoro.mjs
-npm run build:case
-node scripts/prepare-speech.mjs
-python scripts/record-campaign.py
-npm run test:voices
-```
 
 Asset regeneration downloads original sources into ignored `.asset-cache/` folders via `scripts/download-*.mjs`, prepares them in Blender, optimises with `scripts/optimize-scene-assets.mjs`, and re-runs the asset and staging checks. Ordinary builds need none of this.
 
@@ -187,6 +175,6 @@ npm run test:deployment -- https://your-deployment.vercel.app [team-code]
 
 Set `EVENT_MODE=true` and `ALLOW_CODE_LOGIN=true`. `TEAM_CODES` accepts comma-separated `Team name=assigned-code` entries.
 
-In event mode, guest and Google sign-in, practice starts, chapter selection and the accusation shortcut are disabled; only teams that have entered appear on the leaderboard, and elapsed time starts when Act 0 finishes and Act 1 opens. Instructor preview is excluded from rankings. Music, voices and models are bundled static assets, so the campaign needs no network calls beyond the API itself.
+In event mode, guest and Google sign-in, practice starts, chapter selection and the accusation shortcut are disabled; only teams that have entered appear on the leaderboard, and elapsed time starts when Act 0 finishes and Act 1 opens. Instructor preview is excluded from rankings. Music and models are bundled static assets, so the campaign needs no network calls beyond the API itself.
 
 The private roster lives in `event-private/team-codes.csv` (ignored by Git and Vercel); distribute one assigned code per team. Run `npm run test:event` for 70 concurrent local sessions and gate/timer checks, then rehearse on the actual classroom network before the event.
