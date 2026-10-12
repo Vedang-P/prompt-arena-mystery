@@ -7,6 +7,7 @@ import {seatContact} from './SceneStaging.js';
 import Actor from './Actor.jsx';
 import { useSettings } from './Settings.jsx';
 import { SceneLoading, SceneWatchdog, WorldBoundary, WorldStopped, SceneReady } from './WorldBoundary.jsx';
+import PerformanceGuard from './PerformanceGuard.jsx';
 import { useCallback, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import {
@@ -510,17 +511,21 @@ function Floor({ width, depth, repeat = [7, 5], color = '#b09070', tiled=false }
       ? [`${ASSETS}/env/tiles_Diffuse.jpg`, `${ASSETS}/env/tiles_nor_gl.jpg`]
       : [`${ASSETS}/env/parquet_diff_1k.jpg`]
   );
+  // Anisotropic filtering is one of the cheapest fill-rate savings on weak
+  // GPUs, so the preset scales it instead of always paying for 8x.
+  const { quality } = useSettings();
+  const anisotropy = quality === 'high' ? 8 : quality === 'medium' ? 4 : 1;
   const textures = useMemo(
     () =>
       sources.map((source) => {
         const texture = source.clone();
         texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
         texture.repeat.set(repeat[0], repeat[1]);
-        texture.anisotropy = 8;
+        texture.anisotropy = anisotropy;
         texture.needsUpdate = true;
         return texture;
       }),
-    [sources, repeat[0], repeat[1]]
+    [sources, repeat[0], repeat[1], anisotropy]
   );
   useEffect(() => () => textures.forEach((texture) => texture.dispose()), [textures]);
   const [map, normal] = textures;
@@ -1544,9 +1549,12 @@ export default function Scene({
 
   const { quality } = useSettings();
   return (
-    <WorldBoundary key={room.id}>
+    <WorldBoundary resetKey={room.id}>
       {sceneStopped ? <WorldStopped reason={sceneStopped} /> : (
-      <Canvas shadows={quality !== 'low' ? 'percentage' : false} dpr={[1, quality === 'high' ? 1.65 : 1]} camera={{ position: view.at, fov: view.fov }}>
+      <Canvas shadows={quality !== 'low' ? 'percentage' : false}
+        dpr={quality === 'high' ? [1, 1.65] : quality === 'medium' ? [1, 1] : [0.6, 0.8]}
+        gl={{ antialias: quality !== 'low', powerPreference: 'high-performance' }}
+        camera={{ position: view.at, fov: view.fov }}>
         <color attach="background" args={[bg]} />
         <fog attach="fog" args={room.id==='abandoned_field'?[bg,12,50]:isOutdoor ? [bg, 25, 65] : [bg, 22, 42]} />
         <Suspense fallback={<SceneLoading />}>
@@ -1561,6 +1569,7 @@ export default function Scene({
           <SceneReady onReady={onReady} onMetrics={onMetrics}/>
         </Suspense>
         <SceneWatchdog onStopped={setSceneStopped} />
+        <PerformanceGuard />
         {quality === 'high' && <EffectComposer multisampling={2}>
           <Bloom intensity={0.18} luminanceThreshold={0.85} mipmapBlur />
           <Vignette offset={0.3} darkness={room.id==='abandoned_field'?.16:.35} />

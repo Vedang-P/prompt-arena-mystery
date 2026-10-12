@@ -1,18 +1,47 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { useCaseDialog } from './InvestigationUI.jsx';
-const SettingsContext = createContext({ quality: 'medium', sound: false, narration: false });
+const SettingsContext = createContext({ quality: 'medium', sound: false, narration: false, autoTune: true });
 const read = () => {
   try { return JSON.parse(localStorage.getItem('moon-settings') || '{}'); } catch { return {}; }
 };
+
+// Integrated GPUs, tiny machines and low-memory laptops cannot hold the
+// balanced preset; they start on low instead of stuttering through it. The
+// renderer string is the most reliable signal available to the browser.
+const WEAK_GPU = /(hd|uhd) graphics|intel\(r\) gma|mali-|adreno [1-5]\d\d|powervr|swiftshader|llvmpipe|software rasterizer|basic render/i;
+
+function detectQuality() {
+  try {
+    if (window.innerWidth < 700) return 'low';
+    const cores = navigator.hardwareConcurrency;
+    const memory = navigator.deviceMemory;
+    if ((cores && cores <= 4) || (memory && memory <= 4)) return 'low';
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl');
+    if (!gl) return 'low';
+    const info = gl.getExtension('WEBGL_debug_renderer_info');
+    const gpu = info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL) ?? '') : '';
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    if (gpu && WEAK_GPU.test(gpu)) return 'low';
+  } catch {}
+  return 'medium';
+}
+
+const initialSettings = () => {
+  const stored = read();
+  const base = { quality: stored.quality ? 'medium' : detectQuality(), sound: false, narration: false, autoTune: true };
+  return { ...base, ...stored };
+};
+
 export function SettingsProvider({ children }) {
-  const [settings, setSettings] = useState(() => ({ quality: window.innerWidth < 700 ? 'low' : 'medium', sound: false, narration: false, ...read() }));
+  const [settings, setSettings] = useState(initialSettings);
   useEffect(() => { try { localStorage.setItem('moon-settings', JSON.stringify(settings)); } catch {} }, [settings]);
   return <SettingsContext.Provider value={{ ...settings, update: (value) => setSettings((s) => ({ ...s, ...value })) }}>{children}</SettingsContext.Provider>;
 }
 export const useSettings = () => useContext(SettingsContext);
 
 export function SettingsPanel({ onClose }) {
-  const { quality, sound, narration, update } = useSettings();
+  const { quality, sound, narration, autoTune, update } = useSettings();
   const panelRef = useRef(null);
   useCaseDialog(panelRef, onClose);
   return <div className="case-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -22,9 +51,10 @@ export function SettingsPanel({ onClose }) {
         <button className="case-close" onClick={onClose} aria-label="Close settings">×</button>
       </header>
       <div className="case-reading-scroll">
-        <label className="settings-row">Graphics<select value={quality} onChange={(e) => update({ quality: e.target.value })}>
+        <label className="settings-row">Graphics<select value={quality} onChange={(e) => update({ quality: e.target.value, autoTune: false })}>
           <option value="low">Low · battery friendly</option><option value="medium">Balanced</option><option value="high">High · shadows & bloom</option>
         </select></label>
+        {autoTune && <p className="case-muted">Graphics adjust automatically if this device cannot hold the frame rate.</p>}
         <label className="settings-row">Ambient soundtrack<input type="checkbox" checked={sound} onChange={(e) => update({ sound: e.target.checked })} /></label>
         <label className="settings-row">Narrator & character voices<input type="checkbox" checked={narration} onChange={(e) => update({ narration: e.target.checked })} /></label>
         <p className="case-muted">Every act and authored character reply uses bundled Kokoro neural recordings. Subtitles are always on. No voice service or model download is needed while playing.</p>

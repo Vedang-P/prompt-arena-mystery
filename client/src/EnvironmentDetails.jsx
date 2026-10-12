@@ -2,6 +2,7 @@ import {useEffect,useLayoutEffect,useMemo,useRef} from 'react';
 import {useGLTF,useTexture} from '@react-three/drei';
 import {Box3,Vector3,RepeatWrapping,SRGBColorSpace,CanvasTexture,CatmullRomCurve3} from 'three';
 import {scatterInstanceMatrix} from './InstanceTransform.js';
+import {useSettings} from './Settings.jsx';
 
 // Original licensed meshes. Centre/ground each selected modular part independently.
 export function DetailProp({asset,part,position=[0,0,0],rotation=[0,0,0],scale=1,height,tint,alphaMap,castShadow=true,receiveShadow=true}){
@@ -65,7 +66,9 @@ export function FencePanel(props){const alpha=useTexture('/assets/detail/fence-a
 
 export function TerrainSurface({material='aerial_grass_rock',width=48,depth=48,position=[0,0,0],repeat=[12,12],color='#c0bfaf',trail=false}){
  const source=useTexture(['diff','normal','rough'].map(n=>`/assets/detail/${material}-${n}.jpg`));
- const textures=useMemo(()=>source.map((s,i)=>{const t=s.clone();t.wrapS=t.wrapT=RepeatWrapping;t.repeat.set(...repeat);t.anisotropy=8;if(i===0)t.colorSpace=SRGBColorSpace;return t;}),[source,repeat[0],repeat[1]]);
+ const {quality}=useSettings();
+ const anisotropy=quality==='high'?8:quality==='medium'?4:1;
+ const textures=useMemo(()=>source.map((s,i)=>{const t=s.clone();t.wrapS=t.wrapT=RepeatWrapping;t.repeat.set(...repeat);t.anisotropy=anisotropy;if(i===0)t.colorSpace=SRGBColorSpace;return t;}),[source,repeat[0],repeat[1],anisotropy]);
  useEffect(()=>()=>textures.forEach(t=>t.dispose()),[textures]);
  const mask=useMemo(()=>{if(!trail)return null;const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');const grad=g.createLinearGradient(0,0,256,0);grad.addColorStop(0,'black');grad.addColorStop(.2,'white');grad.addColorStop(.8,'white');grad.addColorStop(1,'black');g.fillStyle=grad;g.fillRect(0,0,256,256);const t=new CanvasTexture(c);return t;},[trail]);
  useEffect(()=>()=>mask?.dispose(),[mask]);
