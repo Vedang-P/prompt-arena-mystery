@@ -127,6 +127,11 @@
 .notebook-toggle .notebook-icon{color:#d4b67c}
 .camera-hint{position:absolute;left:26px;bottom:78px;z-index:1;color:#8fa4a8}
 
+/* Deploy reminder for tabs left open across a release. */
+.update-chip{position:fixed;left:50%;bottom:88px;transform:translateX(-50%);z-index:60;background:#d4b67c;border:1px solid #d4b67c;border-radius:999px;padding:10px 18px;color:#162126;font:600 12px Inter,sans-serif;cursor:pointer;box-shadow:0 14px 44px #0009}
+.update-chip:hover{background:#e8d5aa}
+@media(max-width:700px){.update-chip{bottom:142px}}
+
 /* Explore panel in the same case-panel language. */
 .explore-panel{position:absolute;left:24px;top:auto;bottom:96px;z-index:42;width:min(340px,calc(100vw - 48px));max-height:min(560px,calc(100dvh - 220px));display:flex;flex-direction:column;padding:0;background:#101c22f2;border:1px solid #425252;border-radius:12px;box-shadow:0 30px 100px #0008;backdrop-filter:blur(10px);overflow:hidden}
 .explore-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:18px 20px 14px;border-bottom:1px solid #334348;background:#17262c;flex:none}

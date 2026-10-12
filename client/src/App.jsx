@@ -84,6 +84,7 @@ export default function App() {
   const [puzzleResult, setPuzzleResult] = useState(null);
   const [puzzleBusy, setPuzzleBusy] = useState(false);
   const [story, setStory] = useState(null);
+  const [staleBuild, setStaleBuild] = useState(false);
   const accuseTimer = useRef(null);
 
   // Dev/testing shortcuts: ?beat=<id> replays the cinematic from that beat, even
@@ -274,6 +275,31 @@ export default function App() {
     const timer = setTimeout(() => setNotice(null), 8000);
     return () => clearTimeout(timer);
   }, [notice]);
+
+  // An open tab keeps running its old bundle after a deploy; compare the
+  // running build with the server's and offer a refresh instead of letting
+  // players judge fixes they have not actually received.
+  useEffect(() => {
+    let alive = true;
+    let timer = null;
+    const check = async () => {
+      try {
+        const res = await fetch('/api/health', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (alive && data.build && !String(__BUILD__).includes(data.build)) setStaleBuild(true);
+      } catch {}
+    };
+    check();
+    timer = setInterval(check, 5 * 60 * 1000);
+    const onVisible = () => { if (!document.hidden) check(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, []);
 
   // Keep the active room inside the current act's tab list.
   useEffect(() => {
@@ -735,6 +761,12 @@ export default function App() {
         </aside>}
       </>}
       <div className="camera-hint">Drag to look · Scroll to zoom · WASD to move</div>
+
+      {staleBuild && (
+        <button className="update-chip" onClick={() => window.location.reload()}>
+          New build ready — refresh ↺
+        </button>
+      )}
 
       <button
         className={`notebook-toggle ${notebookOpen ? 'open' : ''}`}

@@ -40,6 +40,9 @@ app.get('/api/health', (c) =>
     ok: true,
     service: 'prompt-arena-mystery',
     version: '1.1.6',
+    // Short commit of the running deployment: the client compares it with its
+    // baked-in build and offers a refresh when an open tab has gone stale.
+    build: String(globalThis.process?.env?.VERCEL_GIT_COMMIT_SHA ?? '').slice(0, 7) || null,
     // Booleans only — never values. Tells an operator at a glance which knobs this
     // deployment actually has wired up.
     env: {
