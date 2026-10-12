@@ -39,7 +39,7 @@ app.get('/api/health', (c) =>
   c.json({
     ok: true,
     service: 'prompt-arena-mystery',
-    version: '1.1.6',
+    version: '1.1.7',
     // Short commit of the running deployment: the client compares it with its
     // baked-in build and offers a refresh when an open tab has gone stale.
     build: String(globalThis.process?.env?.VERCEL_GIT_COMMIT_SHA ?? '').slice(0, 7) || null,
