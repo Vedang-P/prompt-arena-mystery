@@ -97,7 +97,6 @@ export default function CafeRadio({ active = false }) {
   const { sound } = useSettings();
   const element = useRef(null);
   const graph = useRef(null);
-  const ducked = useRef(false);
   const distance = useRef(FAR_M);
   const playing = active && sound;
 
@@ -115,7 +114,7 @@ export default function CafeRadio({ active = false }) {
     const setGain = () => {
       const t = Math.min(1, Math.max(0, (distance.current - NEAR_M) / (FAR_M - NEAR_M)));
       const byDistance = NEAR_GAIN + (FAR_GAIN - NEAR_GAIN) * t;
-      const target = playing && !current.paused ? byDistance * (ducked.current ? 0.5 : 1) : 0;
+      const target = playing && !current.paused ? byDistance : 0;
       out.gain.setTargetAtTime(target, context.currentTime, 0.18);
     };
     const onListener = (e) => {
@@ -124,14 +123,12 @@ export default function CafeRadio({ active = false }) {
       distance.current = Math.hypot(dx, dz);
       setGain();
     };
-    const onSpeech = (e) => { ducked.current = !!e.detail?.active; setGain(); };
     const onCue = (e) => { current.paused = !!e.detail?.paused; setGain(); };
     const resume = () => {
       if (context.state === 'suspended') context.resume().catch(() => {});
       if (playing && audio.paused) audio.play().catch(() => {});
     };
     window.addEventListener('arena-listener', onListener);
-    window.addEventListener('arena-speech', onSpeech);
     window.addEventListener('arena-cue', onCue);
     window.addEventListener('pointerdown', resume);
     let timer = null;
@@ -155,7 +152,6 @@ export default function CafeRadio({ active = false }) {
     return () => {
       if (timer) clearInterval(timer);
       window.removeEventListener('arena-listener', onListener);
-      window.removeEventListener('arena-speech', onSpeech);
       window.removeEventListener('arena-cue', onCue);
       window.removeEventListener('pointerdown', resume);
     };

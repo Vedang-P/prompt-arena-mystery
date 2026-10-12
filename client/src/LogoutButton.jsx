@@ -7,7 +7,6 @@ export default function LogoutButton({ disabled = false, className = 'quiet-butt
       }
       localStorage.removeItem('moon-mode');
     } catch {}
-    window.speechSynthesis?.cancel();
     window.location.replace('/api/auth/logout');
   };
   return <button type="button" className={className} onClick={logout} disabled={disabled}>Log out</button>;

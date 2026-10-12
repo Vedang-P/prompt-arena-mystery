@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { useCaseDialog } from './InvestigationUI.jsx';
-const SettingsContext = createContext({ quality: 'medium', sound: false, narration: false, autoTune: true });
+const SettingsContext = createContext({ quality: 'medium', sound: false, autoTune: true });
 const read = () => {
   try { return JSON.parse(localStorage.getItem('moon-settings') || '{}'); } catch { return {}; }
 };
@@ -29,7 +29,7 @@ function detectQuality() {
 
 const initialSettings = () => {
   const stored = read();
-  const base = { quality: stored.quality ? 'medium' : detectQuality(), sound: false, narration: false, autoTune: true };
+  const base = { quality: stored.quality ? 'medium' : detectQuality(), sound: false, autoTune: true };
   return { ...base, ...stored };
 };
 
@@ -41,7 +41,7 @@ export function SettingsProvider({ children }) {
 export const useSettings = () => useContext(SettingsContext);
 
 export function SettingsPanel({ onClose }) {
-  const { quality, sound, narration, autoTune, update } = useSettings();
+  const { quality, sound, autoTune, update } = useSettings();
   const panelRef = useRef(null);
   useCaseDialog(panelRef, onClose);
   return <div className="case-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -56,8 +56,6 @@ export function SettingsPanel({ onClose }) {
         </select></label>
         {autoTune && <p className="case-muted">Graphics adjust automatically if this device cannot hold the frame rate.</p>}
         <label className="settings-row">Ambient soundtrack<input type="checkbox" checked={sound} onChange={(e) => update({ sound: e.target.checked })} /></label>
-        <label className="settings-row">Narrator & character voices<input type="checkbox" checked={narration} onChange={(e) => update({ narration: e.target.checked })} /></label>
-        <p className="case-muted">Every act and authored character reply uses bundled Kokoro neural recordings. Subtitles are always on. No voice service or model download is needed while playing.</p>
         <div className="controls-grid"><span>Look around</span><b>Drag / one finger</b><span>Move the camera</span><b>W A S D / arrow keys</b><span>Zoom</span><b>Scroll / pinch</b><span>Inspect an object</span><b>Click its marker</b><span>Close a panel</span><b>Esc</b></div>
         <p className="case-muted">Progress saves after each discovery and answer. Rooms also have an accessible “Explore” list.</p>
         <p className="case-muted"><a href="/credits.html" target="_blank" rel="noreferrer">Cast, music &amp; asset credits ↗</a></p>

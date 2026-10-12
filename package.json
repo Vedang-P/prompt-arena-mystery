@@ -13,7 +13,6 @@
     "validate:case": "node scripts/build-case.mjs --check",
     "test:engine": "node scripts/run-engine-tests.mjs",
     "test:scenes": "node scripts/measure-actors.mjs && node scripts/test-scene-staging.mjs",
-    "test:voices": "node scripts/prepare-speech.mjs && node scripts/test-voice-catalog.mjs",
     "test:assets": "node scripts/test-environment-assets.mjs",
     "test:campaign": "npm run build:case && node scripts/test-campaign.mjs",
     "test:event": "npm run build:case && node scripts/test-event.mjs",

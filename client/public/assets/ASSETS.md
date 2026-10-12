@@ -101,7 +101,7 @@ https://creativecommons.org/licenses/by/3.0/
 https://incompetech.com/music/royalty-free/
 
 Files transcoded to browser MP3s. Cue names: dusk, search, unknown.
-Playback crossfades and ducks beneath speech; no music was generated.
+Playback crossfades between cues; no music was generated.
 
 Cafe radio: audio/ambience/cafe-radio.mp3 is a user-supplied retro Hindi
 song collection ("Chura Liya Hai Tumne Jo Humein", "Tumse Pyar Kitna",
@@ -119,31 +119,11 @@ Jonathan Shaw (InspectorJ), CC BY 3.0.
 https://opengameart.org/content/wind-loop
 https://freesound.org/people/InspectorJ/sounds/376415/
 Only the abandoned field uses these outdoor layers; they fade with the room,
-duck under dialogue, respect the shared sound toggle and pause with cinematics.
+respect the shared sound toggle and pause with cinematics.
 
 Cafe chatter: audio/ambience/cafe-chatter.mp3, "Canteen/Cafeteria — 10 Minute
 Indian Ambience (People Talking)" from the No Copyright Sound Effects series,
 user-supplied. It plays under the cafe radio as the room's talking/street bed.
-
-## Campaign speech
-
-227 unique authored lines recorded locally with Kokoro-82M v1.0, Apache 2.0.
-https://huggingface.co/hexgrad/Kokoro-82M
-https://github.com/hexgrad/kokoro
-ONNX CPU inference via kokoro-onnx 0.6.1, MIT.
-https://github.com/thewh1teagle/kokoro-onnx
-Licenses: licenses/Kokoro-Apache-2.0.txt and licenses/Kokoro-ONNX-MIT.txt.
-Narrator bm_george; Sameer am_puck; Parth am_fenrir; mother bf_emma;
-officer am_onyx; unknown am_echo; Veer am_liam; Tanush bm_lewis;
-leader am_michael; Enakshi af_bella. Stock voices, no voice cloning.
-All Act 0 cues, every Act 1–8 opening/closing and finite authored dialogue
-are covered. Recordings normalized to -18 LUFS / -2 dBTP and encoded as
-24 kHz mono 80 kbps MP3. Mouth envelopes sampled at 20 Hz after encoding.
-Content hashes in filenames prevent old cached speech from being replayed.
-Em/en dashes and ellipses are normalized into spoken pauses while the original
-subtitles are retained. Speech hashes invalidate obsolete takes after changes.
-The ONNX model and voice tensors are build tools, never shipped to clients.
-Rebuild with scripts/prepare-speech.mjs and scripts/record-campaign.py.
 
 ## Font
 

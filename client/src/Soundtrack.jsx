@@ -8,13 +8,12 @@ export default function Soundtrack({ roomId='gazebo',enabledOverride,radio=false
   const radioHere=radio&&roomId==='cyber_cafe';
   const [cue,setCue] = useState(()=>musicFor(roomId));
   const [ambience,setAmbience] = useState(()=>ambienceFor(roomId));
-  const tracks = useRef([]), ducked=useRef(false), paused=useRef(false);
+  const tracks = useRef([]), paused=useRef(false);
   useEffect(() => { setCue(musicFor(roomId));setAmbience(ambienceFor(roomId)); },[roomId]);
   useEffect(() => {
     const cinematic=e=>{setCue(e.detail.cue);if(e.detail.ambience!==undefined)setAmbience(e.detail.ambience);paused.current=e.detail.paused;};
-    const speech=e=>{ducked.current=e.detail.active;};
-    window.addEventListener('arena-cue',cinematic); window.addEventListener('arena-speech',speech);
-    return()=>{window.removeEventListener('arena-cue',cinematic);window.removeEventListener('arena-speech',speech);};
+    window.addEventListener('arena-cue',cinematic);
+    return()=>window.removeEventListener('arena-cue',cinematic);
   },[]);
   useEffect(() => {
     if(!enabled){tracks.current.forEach(t=>t.audio.pause());tracks.current=[];return;}
@@ -45,7 +44,7 @@ export default function Soundtrack({ roomId='gazebo',enabledOverride,radio=false
       tracks.current=tracks.current.filter(t=>{
         // The cafe's diegetic radio carries that room; the score steps back.
         const idle=(t.gain??.18)*(t.kind==='music'&&radioHere?.35:1);
-        const target=t.target&&enabled&&!paused.current?(ducked.current?(t.kind==='music'?.065:t.gain*.55):idle):0;
+        const target=t.target&&enabled&&!paused.current?idle:0;
         t.audio.volume+=(target-t.audio.volume)*.12;
         if(paused.current)t.audio.pause();else if(t.target&&enabled&&t.audio.paused&&!t.audio.error)t.audio.play().catch(()=>{});
         if(!t.target&&t.audio.volume<.001){t.audio.pause();return false;}return true;
