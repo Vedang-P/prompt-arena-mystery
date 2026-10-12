@@ -23,7 +23,7 @@ Choose **Enter** on the title card, then open your case with the team code suppl
 
 | Route | What it is |
 | --- | --- |
-| `/` | The title card — a cinematic “MIST presents” intro, the wordmark over the gazebo art, a team-code dialog, the live leaderboard, and audio settings the game inherits (`client/index.html`, `client/src/site.js`) |
+| `/` | The title card — a cinematic “KERNEL presents” intro, the wordmark over the gazebo art, a team-code dialog, the live leaderboard, and audio settings the game inherits (`client/index.html`, `client/src/site.js`) |
 | `/play/` | The game — its own 3D title screen, sign-in, then the acts (`client/play/index.html`, `client/src/App.jsx`) |
 
 A code accepted on the title card posts to `/api/login` and hands off to `/play/?resume=1`, which drops straight into the team’s current act — Act 0’s cinematic for a new team — instead of the menu.
