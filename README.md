@@ -91,6 +91,7 @@ vercel.json             Build command and function configuration
 | `npm run test:deployment` | Hosted smoke walk (`-- https://your-deployment`) |
 | `npm run shot` | Puppeteer screenshots of the running game (`shots/`) |
 | `npm run gen:team` | Hash team codes for seeding |
+| `npm run gen:portraits` | Re-render the interview portraits from the cast rigs (needs `dev:game` running) |
 
 ### Testing
 
