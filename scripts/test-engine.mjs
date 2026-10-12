@@ -183,15 +183,16 @@ test('choice puzzles accept the option text or its letter, not wrong options', (
   assert.deepEqual(wrong.solvedPuzzles, []);
 });
 
-test('email puzzles accept any well-formed address and reject the rest', () => {
+test('email puzzles accept any address-looking value and reject the rest', () => {
   const good = solvePuzzle([], [], 'p_contact', ' sameer@example.com ');
   assert.equal(good.correct, true);
   assert.ok(good.solvedPuzzles.includes('p_contact'));
+  // A fictional address without a TLD is still a fictional address.
+  const short = solvePuzzle([], [], 'p_contact', 'a@b');
+  assert.equal(short.correct, true);
   const noAt = solvePuzzle([], [], 'p_contact', 'not-an-email');
   assert.equal(noAt.correct, false);
   assert.deepEqual(noAt.solvedPuzzles, []);
-  const noDot = solvePuzzle([], [], 'p_contact', 'a@b');
-  assert.equal(noDot.correct, false);
 });
 
 test('option_endings ends the run and marks the puzzle solved', () => {

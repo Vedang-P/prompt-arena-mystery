@@ -38,7 +38,7 @@ function ShotCamera({roomId,shot,cast,speaker,paused,cinematicPhase}) {
 export default function Cinema({sceneId='gazebo',shot='wide',cast=[],speaker,ending=false,paused=false,onReady,actId,cinematicPhase}) {
   const {quality}=useSettings();
   const people=useMemo(()=>placeCast(sceneId,cast),[cast,sceneId]);
-  const cinematicNight=sceneId==='concert'&&['capture','departure'].includes(cinematicPhase);
+  const cinematicNight=['concert','ngo_hq'].includes(sceneId)&&['capture','departure'].includes(cinematicPhase);
   const backdrop=cinematicNight?'#26394e':'#10171c';
   const [stopped,setStopped]=useState(null);
   useEffect(()=>{setStopped(null);},[sceneId,cinematicPhase]);

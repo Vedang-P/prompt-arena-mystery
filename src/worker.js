@@ -349,6 +349,25 @@ app.post('/api/login', async (c) => {
 
 // ---------- game state ----------
 
+// Reopen the case from Act 0. The run keeps its start time (the event clock
+// never stops) and takes a fixed penalty so a restart cannot beat a clean run.
+const RESTART_PENALTY = 10;
+
+app.post('/api/restart', async (c) => {
+  const auth = await requireTeam(c);
+  if (!auth) return c.json({ error: 'unauthorized' }, 401);
+  const penalties = Number(auth.progress.penalties ?? 0) + RESTART_PENALTY;
+  await c.env.DB.prepare(
+    "UPDATE progress SET act = 'act0', discovered = '[]', solved_puzzles = '[]', penalties = ?, hints_used = 0, accusation = NULL, ending = NULL, solved = 0, solved_at = NULL WHERE team_id = ?"
+  )
+    .bind(penalties, auth.teamId)
+    .run();
+  await c.env.DB.prepare('INSERT INTO events(team_id, type, detail) VALUES (?,?,?)')
+    .bind(auth.teamId, 'restart', JSON.stringify({ penalty: RESTART_PENALTY }))
+    .run();
+  return c.json({ ok: true, penalties });
+});
+
 app.get('/api/state', async (c) => {
   if (!sessionSecretFor(c)) return misconfigured(c);
   const auth = await requireTeam(c);

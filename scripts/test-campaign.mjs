@@ -36,7 +36,7 @@ let state = await call('/api/state');
 assert.equal(state.act, 'act0');
 assert.equal(state.acts.length, 9);
 assert.equal(state.rooms.length, 14);
-assert.equal(state.puzzles.length, 46);
+assert.equal(state.puzzles.length, 48);
 assert(state.puzzles.every((p) => !('answers' in p) && !('grants' in p)));
 assert(state.endings.every((e) => !('body' in e)));
 await call('/api/puzzles/p_floor/solve', { answer: '3' }, 403);
@@ -78,9 +78,10 @@ for (const act of caseData.acts.slice(1)) {
 state = await call('/api/state');
 assert.equal(state.ending.id, 'ending_main');
 assert.match(state.ending.body, /now disappear/i);
-assert.equal(state.solvedPuzzles.length, 46);
+// 47 of 48: the café route skips p_cd_watch, which only exists on the laptop path.
+assert.equal(state.solvedPuzzles.length, 47);
 assert.equal(state.penalties, 0);
-assert.equal(state.score, state.discovered.length + 46);
+assert.equal(state.score, state.discovered.length + 47);
 const campaignSave = JSON.stringify(state);
 for (const act of caseData.acts) {
   mode = 'campaign';
@@ -110,15 +111,20 @@ mode = 'campaign';
 const preserved = await call('/api/state');
 assert.equal(preserved.team, JSON.parse(campaignSave).team);
 assert.equal(preserved.ending.id, 'ending_main');
-assert.equal(preserved.solvedPuzzles.length, 46);
+assert.equal(preserved.solvedPuzzles.length, 47);
 console.log('PASS both endings, practice isolation, durable reload, score, and leaderboard');
-// Wrong choices that deliberately continue must still leave a completable path.
+// The laptop path must not skip the cyber cafe: it fries the laptop and the
+// footage only arrives once the CD is played at Ramu's.
 await call('/api/guest', {});
 await call('/api/practice', { act: 'act2' }); mode = 'practice';
 await call('/api/puzzles/p_voicenote2/solve', { answer: 'park' });
 await call('/api/clues/c_cd/discover', {});
 const wrong = await call('/api/puzzles/p_cd_mode/solve', { answer: 'Use my laptop' });
-assert(!wrong.correct); assert(wrong.penalty > 0); assert(wrong.solvedPuzzles.includes('p_cd_mode')); assert(wrong.discovered.includes('c_footage'));
-console.log('PASS penalized choice preserves progress and grants the next lead');
+assert(!wrong.correct); assert(wrong.penalty > 0);
+assert(wrong.discovered.includes('c_laptop_fried'), 'the fried laptop must be recorded');
+assert(!wrong.discovered.includes('c_footage'), 'the laptop path must not grant the videos');
+const watch = await call('/api/puzzles/p_cd_watch/solve', { answer: 'Insert the CD' });
+assert(watch.correct && watch.discovered.includes('c_footage'), 'the cyber cafe must deliver the videos');
+console.log('PASS the laptop path forces the cyber cafe before the videos');
 console.log('Campaign integration checks passed.');
 process.exit(0);

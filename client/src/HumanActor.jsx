@@ -25,11 +25,17 @@ export default function HumanActor({ character, pose = 'idle', focused = false, 
     action?.reset().fadeIn(.3).play();
     return () => action?.fadeOut(.3);
   }, [actions, pose]);
+  // 'lie' rests the rig on its back, head towards -x, so a patient can lie in
+  // a bed without a bespoke animation clip.
+  useEffect(() => {
+    if (pose === 'lie') model.rotation.set(-Math.PI/2, 0, Math.PI/2);
+    else model.rotation.set(0, 0, 0);
+  }, [model, pose]);
   useEffect(()=>{for(const action of Object.values(actions))action?.setEffectiveTimeScale(paused?0:1);},[actions,paused]);
   useEffect(() => { onMeasure?.(1.78); }, [onMeasure]);
   const at = useMemo(() => new Vector3(), []);
   useFrame(({ camera, clock }, dt) => {
-    contact(pose==='sit'?footLift:0);
+    if (pose !== 'lie') contact(pose==='sit'?footLift:0);
     if(holdingMask&&rightHand&&heldMask.current&&root.current){
       rightHand.updateWorldMatrix(true,false);
       const worldPosition=rightHand.getWorldPosition(new Vector3());

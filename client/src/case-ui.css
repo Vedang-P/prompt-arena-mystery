@@ -127,6 +127,17 @@
 .notebook-toggle .notebook-icon{color:#d4b67c}
 .camera-hint{position:absolute;left:26px;bottom:78px;z-index:1;color:#8fa4a8}
 
+/* Puzzle feedback: unmistakable correct / wrong states. */
+.case-feedback.complete{border-color:#5e9c7f;background:#7bad9516;color:#d7e8da}
+.case-feedback.complete .case-eyebrow{color:#8fd0a8}
+.case-feedback.retry{border-color:#b06a52;background:#c96b4a14;color:#f0d0c2}
+.case-feedback.retry .case-eyebrow{color:#e79b7e}
+
+/* Restart flow + gated room tabs. */
+.restart-panel{width:min(560px,100%)}
+.solved-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+.room-tabs .tab:disabled{opacity:.4;cursor:not-allowed}
+
 /* Scene recovery panel actions. */
 .world-fallback-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px}
 

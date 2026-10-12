@@ -275,6 +275,30 @@ export function PuzzleModal(props) {
   return <PuzzleWorkbench {...props} />;
 }
 
+export function RestartConfirm({ onClose, onConfirm, busy }) {
+  const panelRef = useRef(null);
+  useCaseDialog(panelRef, onClose);
+  return <div className="case-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <section className="case-panel restart-panel" ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Restart the case">
+      <header className="case-panel-head">
+        <div><p className="case-eyebrow">Reopen the case</p><h2>Start again from Act 0?</h2></div>
+        <button className="case-close" onClick={onClose} aria-label="Close restart dialog">×</button>
+      </header>
+      <div className="case-reading-scroll">
+        <p className="case-reading-text">Everything collected so far is cleared — evidence, resolved leads, the accusation — and the story begins again at the prologue.</p>
+        <p className="case-reading-text">A restart adds <strong>10 penalties</strong> to your score, and the event clock keeps running. The notebook cannot be recovered.</p>
+      </div>
+      <footer className="case-panel-foot">
+        <p>This cannot be undone</p>
+        <div className="case-footer-actions">
+          <button className="case-button" onClick={onClose}>Keep my progress</button>
+          <button className="case-button primary" onClick={onConfirm} disabled={busy}>{busy ? 'Reopening…' : 'Restart from Act 0 ↺'}</button>
+        </div>
+      </footer>
+    </section>
+  </div>;
+}
+
 const ENDING_FALLBACK = {
   ending_main: [
     'The game has ended. Sameer can leave. Before it restarts, he can go back to his life.',
@@ -286,7 +310,7 @@ const ENDING_FALLBACK = {
   ],
 };
 
-export function EndingCard({ ending, score, penalties, team, title, onReplay }) {
+export function EndingCard({ ending, score, penalties, team, title, onReplay, onRestart }) {
   if (!ending) return null;
   const fallback = ENDING_FALLBACK[ending.id] ?? ['The case goes cold.'];
   const paragraphs = String(ending.body ?? '')
@@ -324,9 +348,14 @@ export function EndingCard({ ending, score, penalties, team, title, onReplay }) 
         <p className="ending-team">
           {title} — Team {team}
         </p>
+        {onRestart && (
+          <button className="btn brass" onClick={onRestart}>
+            Restart the case ↺
+          </button>
+        )}
         {onReplay && (
           <button className="btn ghost" onClick={onReplay}>
-            Replay the case
+            Back to the title
           </button>
         )}
         <LogoutButton className="btn ghost"/>

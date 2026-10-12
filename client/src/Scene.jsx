@@ -804,10 +804,12 @@ function GazeboRoom({room,hot}) {
   </group>;
 }
 
-function HomeRoom({room,hot}) {
+function HomeRoom({room,hot,actId}) {
  // The mezzanine walls run from the stair landing surface to the hall ceiling.
  const bedroomWallCenter=(HOME_STAIRS.top+HOME_BEDROOM.ceilingY)/2;
  const bedroomWallHeight=HOME_BEDROOM.ceilingY-HOME_STAIRS.top;
+ // The missing-person poster only exists once Parth is actually missing.
+ const parthMissing=actId!=='act0';
  return <group>
   <Shell width={13} depth={11} height={5.65} tint="#bcaa91" painted backOpening={HOME_UPPER_DOORWAY}/>
   <Floor width={13} depth={11} repeat={[6,5]} color="#dcc9ae"/>
@@ -815,8 +817,8 @@ function HomeRoom({room,hot}) {
   <DetailProp asset="modern_arm_chair_01" position={[-2.5,0,-1.3]} rotation={[0,.28,0]}/>
   <Prop model="rugRectangle.glb" position={[-3.3,.003,.6]} scale={3.1} tint="#647171"/>
   <DetailProp asset="modern_coffee_table_01" position={[-2.8,.015,.9]} rotation={[0,Math.PI/2,0]}/>
-  <DetailProp asset="binder_notebook" position={[-2.8,.405,.9]} scale={.65}/>
-  <DetailProp asset="cup" position={[-2.25,.405,.88]}/>
+  <DetailProp asset="binder_notebook" position={[-2.8,.39,.9]} scale={.65}/>
+  <DetailProp asset="cup" position={[-2.25,.39,.88]}/>
   <DetailProp asset="side_table_01" position={[-4.5,0,-1.55]}/>
   <DetailProp asset="desk_lamp_arm_01" position={[-4.5,.55066,-1.55]} scale={.65}/>
   <pointLight position={[-4.3,1.05,-1.45]} color="#ffce94" intensity={5} distance={6}/>
@@ -825,7 +827,7 @@ function HomeRoom({room,hot}) {
   <DetailProp asset="metal_office_desk" position={[2.55,0,-2.6]}/>
   <DetailProp asset="portable_cassette_player" position={[2.7,.7875,-2.6]} scale={1.2}/>
   <DetailProp asset="book_encyclopedia_set_01" position={[2,.7875,-2.65]} scale={.7}/>
-  <Picture src={`${ASSETS}/pictures/evidence_gone_poster.jpg`} position={[-1.35,1.75,-5.42]} width={.72} height={1.05}/>
+  {parthMissing && <Picture src={`${ASSETS}/pictures/evidence_gone_poster.jpg`} position={[-1.35,1.75,-5.42]} width={.72} height={1.05}/>}
   <WallSign position={[-4.45,2.85,-5.42]} title="OUR FAMILY" lines={['A home full of memories']} width={1.8} height={.5}/>
   <DetailProp asset="wall_clock" position={[.6,2.35,-5.42]}/>
   <Window position={[-6.44,1.9,1.1]} rotation={[0,Math.PI/2,0]} width={2.2} height={1.8} moon={false}/>
@@ -847,7 +849,7 @@ function HomeRoom({room,hot}) {
   <Bed position={HOME_BEDROOM.bed}/>
   <ShelfContents position={HOME_BEDROOM.shelf}/>
   <DetailProp asset="bedside_cabinet" height={.67} position={HOME_BEDROOM.nightstand}/>
-  <DetailProp asset="desk_lamp_arm_01" position={[HOME_BEDROOM.nightstand[0],HOME_BEDROOM.nightstand[1]+.55,HOME_BEDROOM.nightstand[2]]} scale={.62}/>
+  <DetailProp asset="desk_lamp_arm_01" position={[HOME_BEDROOM.nightstand[0],HOME_BEDROOM.nightstand[1]+.67,HOME_BEDROOM.nightstand[2]]} scale={.62}/>
   <DetailProp asset="cardboard_box_01" position={HOME_BEDROOM.box} scale={.7}/>
   <WallSign position={[5.9,4.8,-5.42]} title="PARTH" width={.72} height={.23}/>
   <pointLight position={[5.25,5,-7.1]} color="#ffd8a9" intensity={12} distance={7}/>
@@ -937,8 +939,8 @@ function ParthRoomScene({ room, hot, paused=false }) {
     <DetailProp asset="binder_notebook" position={[-3.42,1.285,-2.65]} scale={.6}/>
   <DetailProp asset="portable_cassette_player" position={[-.8,.73038,-1.5]} scale={.9}/>
   <DetailProp asset="bedside_cabinet" position={[-.92,0,.76]} height={.67}/>
-  <DetailProp asset="desk_lamp_arm_01" position={[-.92,.55066,.76]} scale={.62}/>
-  <DetailProp asset="book_encyclopedia_set_01" position={[-.92,.55066,1.08]} scale={.6}/>
+  <DetailProp asset="desk_lamp_arm_01" position={[-.92,.67,.76]} scale={.62}/>
+  <DetailProp asset="book_encyclopedia_set_01" position={[-2.0,.687,-.9]} scale={.6}/>
   <DetailProp asset="pencil_cup" position={[3.55,DESK_TOP,-1.98]} scale={.85}/>
   <DetailProp asset="star_chart" position={[1.95,DESK_TOP,-1.98]} scale={.62}/>
   <DetailProp asset="cardboard_box_01" position={[-4.2,0,-.6]} scale={.78}/>
@@ -1079,8 +1081,9 @@ function EmergencyBeacon({position}) {
   return <group position={position}>{[[redBulb,redLight,'#d83932',-.2],[blueBulb,blueLight,'#3983d8',.2]].map(([bulb,light,color,x])=><group key={color} position={[x,0,0]}><mesh ref={bulb}><boxGeometry args={[.26,.11,.13]}/><meshStandardMaterial color={color} emissive={color} emissiveIntensity={.2}/></mesh><pointLight ref={light} color={color} intensity={.2} distance={5}/></group>)}</group>;
 }
 
-function ConcertCaptureRoom({phase='capture'}) {
+function ConcertCaptureRoom({room,phase='capture'}) {
   const departing=phase==='departure';
+  const yardName=room?.id==='ngo_hq'?'PERIGEE / SERVICE YARD':'APOGEE / SERVICE YARD';
   return <group>
     <NightSky/>
     <TerrainSurface material="brown_mud_leaves_01" width={34} depth={28} position={[0,.002,-2]} repeat={[12,8]} color="#777168"/>
@@ -1096,7 +1099,7 @@ function ConcertCaptureRoom({phase='capture'}) {
     <DetailProp asset="hospital_bed" position={[3.3,0,-.6]} rotation={[0,-.22,0]}/>
     <DetailProp asset="medical_cart" position={[5.1,0,-2.8]} rotation={[0,-.2,0]}/>
     {[-8,-6,-4,-2,0,2,4,6,8].map(x=><FencePanel key={x} position={[x,0,-8.5]}/>)}
-    <WallSign position={[-5.6,1.6,-8.42]} width={2.5} height={.62} title="APOGEE / SERVICE YARD" lines={['STAFF & VEHICLES ONLY']} background="#1e2b30"/>
+    <WallSign position={[-5.6,1.6,-8.42]} width={2.5} height={.62} title={yardName} lines={['STAFF & VEHICLES ONLY']} background="#1e2b30"/>
     <DetailProp asset="metal_trash_can" position={[5.45,0,1.05]}/>
     <DetailProp asset="metal_trash_can" position={[7.05,0,1.9]} rotation={[0,-.3,0]}/>
     <DetailProp asset="cardboard_box_01" position={[4.55,0,.7]} scale={.8}/>
@@ -1398,17 +1401,20 @@ const ROOM_KITS = {
 };
 
 // The campaign and every cinematic share the same fully modelled environments.
+// The service-yard capture plays behind the NGO headquarters, not the venue.
+const CAPTURE_ROOMS = new Set(['concert', 'ngo_hq']);
 export function RoomEnvironment({ roomId, room = null, hot = null, paused=false,storyAct,cinematicPhase }) {
-  const Kit = roomId==='concert'&&['capture','departure'].includes(cinematicPhase)?ConcertCaptureRoom:(ROOM_KITS[roomId] ?? SameerRoomScene);
+  const Kit = CAPTURE_ROOMS.has(roomId)&&['capture','departure'].includes(cinematicPhase)?ConcertCaptureRoom:(ROOM_KITS[roomId] ?? SameerRoomScene);
   const empty = { id: roomId, hotspots: [] };
   return <Kit room={room ?? empty} hot={hot ?? { state: { discovered: [] }, solvedPuzzles: [] }} paused={paused} actId={storyAct??hot?.state?.act} phase={cinematicPhase}/>;
 }
 export function RoomLighting({ roomId, quality = 'high',cinematicPhase }) {
-  const outdoor = OUTDOOR_ROOMS.has(roomId);
+  const cinematicNight=CAPTURE_ROOMS.has(roomId)&&['capture','departure'].includes(cinematicPhase);
+  // The capture yard is an outdoor set even when the room id is an interior.
+  const outdoor = OUTDOOR_ROOMS.has(roomId) || cinematicNight;
   const gazebo=roomId==='gazebo';
   const night=outdoor&&roomId!=='gazebo';
   const field=roomId==='abandoned_field';
-  const cinematicNight=roomId==='concert'&&['capture','departure'].includes(cinematicPhase);
   const finalHospital=roomId==='hospital'&&String(cinematicPhase??'').startsWith('ending_');
   return <>
     <Environment files={gazebo?"/assets/cinema/park_sunrise_1k.hdr":outdoor ? "/assets/cinema/park_bench_1k.hdr" : "/assets/env/ballroom_2k.hdr"} ground={gazebo?{height:2,radius:70,scale:120}:undefined} background={outdoor&&roomId!=='abandoned_field'&&!cinematicNight} backgroundBlurriness={.02} backgroundIntensity={finalHospital ? .06 : gazebo ? .35 : night ? .045 : .8} environmentIntensity={finalHospital ? .19 : gazebo ? .56 : field ? .68 : night ? .3 : outdoor ? .85 : .62} />
@@ -1436,6 +1442,18 @@ function CameraRig({ focusInfo,view }) {
     } else {
       desiredPosition.current.set(...view.at);
       desiredLook.current.set(...view.look);
+    }
+    // The controls clamp the orbit's polar angle and distance on every update.
+    // A destination outside that envelope (Parth's House sets the camera below
+    // its target, past maxPolarAngle) can never be reached: the lerp falls
+    // short of the arrival tolerance forever and the rig fights every input, so
+    // the room looks frozen. Snap the destination to the closest legal orbit.
+    if (controls) {
+      const offset = desiredPosition.current.clone().sub(desiredLook.current);
+      const orbit = new THREE.Spherical().setFromVector3(offset);
+      orbit.phi = THREE.MathUtils.clamp(orbit.phi, controls.minPolarAngle, controls.maxPolarAngle);
+      orbit.radius = THREE.MathUtils.clamp(orbit.radius, controls.minDistance, controls.maxDistance);
+      desiredPosition.current.copy(desiredLook.current).add(offset.setFromSpherical(orbit));
     }
     transitioning.current = true;
     if (controls) controls.enabled = !focusInfo;

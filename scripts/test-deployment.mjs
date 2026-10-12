@@ -42,7 +42,7 @@ try {
 let state = await call('/api/state');
 assert.equal(state.acts.length, 9);
 assert.equal(state.rooms.length, 14);
-assert.equal(state.puzzles.length, 46);
+assert.equal(state.puzzles.length, 48);
 await call('/api/puzzles/p_floor/solve', { answer: '3' }, 403);
 await call('/api/act/complete', { act: 'act0' });
 for (const act of caseData.acts.slice(1)) {

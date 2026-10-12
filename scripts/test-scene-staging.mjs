@@ -16,13 +16,13 @@ for(const act of caseData.acts){
 const measurements=JSON.parse(await fs.readFile('.asset-cache/actor-measurements.json','utf8'));
 const act2=caseData.acts.find(act=>act.id==='act2'),act3=caseData.acts.find(act=>act.id==='act3'),act4=caseData.acts.find(act=>act.id==='act4'),act7=caseData.acts.find(act=>act.id==='act7'),act8=caseData.acts.find(act=>act.id==='act8');
 assert.equal(locationFor(act2,'intro',1),'cyber_cafe','The café scene must accompany the café narration');
-assert.equal(locationFor(act3,'outro',0),'concert','The capture must begin at the concert service yard');
-assert.equal(locationFor(act3,'outro',1),'concert','The departure shot must remain at the concert service yard');
+assert.equal(locationFor(act3,'outro',0),'ngo_hq','The capture must begin at the NGO headquarters service yard');
+assert.equal(locationFor(act3,'outro',1),'ngo_hq','The departure shot must remain at the NGO headquarters service yard');
 const discoveryCast=placeCast('hospital',storyCast(act4,'outro','hospital',0));
 const parthDiscovery=discoveryCast.find(c=>c.character==='parth');
 assert(parthDiscovery,'Act 4 discovery must show Parth in the ward');
-assert.equal(parthDiscovery.pose,'sit','Parth must be upright and visibly alive during the discovery');
-assert(Math.abs(parthDiscovery.y+0.4903-.84002)<.002,'Parth must sit on the measured hospital mattress surface');
+assert.equal(parthDiscovery.pose,'lie','Parth must lie on the mattress during the discovery');
+assert(Math.abs(parthDiscovery.y-.15-.84002)<.002,'Parth must rest on the measured hospital mattress surface');
 assert(discoveryCast.find(c=>c.character==='sameer'),'Sameer must be present for the reunion');
 const maskCastBefore=storyCast(act8,'intro','hospital',4),maskCastAfter=storyCast(act8,'intro','hospital',5);
 assert(!maskCastBefore.find(c=>c.character==='sameer').wearingMask,'Sameer must not wear the mask before the leader puts it on him');
@@ -45,7 +45,7 @@ assert(maskPickup.holdingMask,'Sameer must pick up the mask when the closing nar
 const maskHotspot=caseData.rooms.find(r=>r.id==='sameer_room').hotspots.find(h=>h.id==='sameer_room_a7_mask');
 assert.deepEqual(maskHotspot.position,[-2.8,.705,-1.35],'The Act 7 mask clue must be positioned on Sameer’s bed');
 assert.deepEqual(DETAIL_ANCHORS.sameer_room.sameer_room_a7_mask,[SAMEER_BED.center[0],SAMEER_BED.surfaceY+.018,SAMEER_BED.center[2]],'The mask marker must share its measured bed surface anchor');
-const captureCast=placeCast('concert',storyCast(act3,'outro','concert'));
+const captureCast=placeCast('ngo_hq',storyCast(act3,'outro','ngo_hq'));
 const sameerCapture=captureCast.find(c=>c.character==='sameer');
 assert(sameerCapture,'Sameer must be present in the capture scene');
 assert(Math.hypot(sameerCapture.at[0]-5.45,sameerCapture.at[1]-1.05)>1.8,'Sameer must remain visible beside, not behind, the trash cans');

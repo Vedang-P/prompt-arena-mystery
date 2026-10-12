@@ -91,3 +91,6 @@ export async function interrogate(character, text, { onDelta, onReset, onDone, r
 }
 
 export const startPractice = (act) => request('/api/practice', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ act }) }).then(json);
+
+// Reopens the case from Act 0 with a penalty; the event clock keeps running.
+export const restartRun = () => request('/api/restart', { method: 'POST' }).then(json);

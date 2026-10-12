@@ -8,9 +8,10 @@ export function seatContact(character,seatY,floorY){
 }
 export function locationFor(act, kind, index) {
   const scenes = {
-    act1:{intro:['parth_home','parth_home','parth_home','parth_home','parth_room'],outro:['parth_room']},
-    act2:{intro:['sameer_room','cyber_cafe','sameer_room','sameer_room'],outro:['sameer_room']},
-    act3:{intro:['concert'],outro:['concert','concert','sameer_room']},
+    act1:{intro:['parth_home','parth_home','parth_home','parth_home','parth_room'],outro:['parth_home','parth_home']},
+    act2:{intro:['sameer_room','cyber_cafe','sameer_room','sameer_room'],outro:['sameer_room','sameer_room','sameer_room']},
+    // The story's capture happens behind the NGO headquarters, not the venue.
+    act3:{intro:['concert'],outro:['ngo_hq','ngo_hq','sameer_room']},
     act4:{intro:['sameer_room','hospital'],outro:['hospital']},
     act5:{intro:['hospital','hospital','tanush_office'],outro:['sameer_room']},
     act6:{intro:['sameer_room'],outro:['police_station','sameer_room']},
@@ -20,7 +21,7 @@ export function locationFor(act, kind, index) {
   return scenes?.[Math.min(index,scenes.length-1)] ?? act.entry_room;
 }
 export function cinematicPhaseFor(act,kind,sceneId,index) {
-  if(act.id==='act3'&&kind==='outro'&&sceneId==='concert')return index===0?'capture':'departure';
+  if(act.id==='act3'&&kind==='outro'&&sceneId==='ngo_hq')return index===0?'capture':'departure';
   if(act.id==='act6'&&kind==='outro'&&sceneId==='sameer_room')return 'mask_reveal';
   if(act.id==='act7'&&kind==='intro'&&sceneId==='sameer_room')return 'mask_reveal';
   if(act.id==='act7'&&kind==='outro'&&sceneId==='sameer_room')return index===0?'mask_reveal':'mask_taken';
@@ -35,14 +36,14 @@ export function storyCast(act,kind,sceneId,index=0) {
     const position=index<2?[0,-4.8]:index===4?[0,2.4]:[1.1,.8];
     return [{character:'sameer',at:position,rot:index<2?Math.PI:index<4?Math.PI/2:0,pose:index===4?'fall':'idle',rotationX:index===4?Math.PI/2:index===0?-.12:0}];
   }
-  const capture=act.id==='act3'&&kind==='outro'&&sceneId==='concert';
+  const capture=act.id==='act3'&&kind==='outro'&&sceneId==='ngo_hq';
   const discovery=act.id==='act4'&&kind==='outro'&&sceneId==='hospital';
   const companion=discovery?'parth':sceneId==='parth_home'?'mother':sceneId==='cyber_cafe'?'ramu':sceneId==='police_station'?'officer':sceneId==='tanush_office'?'tanush':act.id==='act8'?'leader':capture?null:(act.id==='act7'&&kind==='intro')||sceneId==='concert'?'veer':null;
   return ['sameer',...(companion?[companion]:[])].map((character,i)=>({
     character,
-    at:capture?[4,3]:discovery?(character==='parth'?[HOSPITAL_BED.center[0],HOSPITAL_BED.center[2]]:[-2.75,-1.1]):[companion?(i-.5)*1.8:0,1],
-    rot:capture?-.7:discovery?(character==='parth'?Math.PI/2:-Math.PI/2):i?-.2:.2,
-    pose:discovery&&character==='parth'?'sit':sceneId==='sameer_room'&&character==='sameer'?'sit':'idle',
+    at:capture?[4,3]:discovery?(character==='parth'?[HOSPITAL_BED.center[0]+.89,HOSPITAL_BED.center[2]]:[-2.75,-1.1]):[companion?(i-.5)*1.8:0,1],
+    rot:capture?-.7:discovery?(character==='parth'?0:-Math.PI/2):i?-.2:.2,
+    pose:discovery&&character==='parth'?'lie':sceneId==='sameer_room'&&character==='sameer'?'sit':'idle',
     wearingMask:act.id==='act8'&&kind==='intro'&&(character==='leader'||(character==='sameer'&&index>=5)),
     holdingMask:act.id==='act7'&&kind==='outro'&&character==='sameer'&&index>=1,
   }));
@@ -64,8 +65,11 @@ export function placeCast(sceneId,cast) {
     if(sceneId==='police_station')return c.character==='officer'
       ? {...base,at:POLICE.officer,pose:'sit',rot:0,...seatContact(c.character,DESK_SEAT,0)}
       : {...base,at:POLICE[c.character]??[1.5,1],rot:Math.PI};
-    if(sceneId==='hospital'&&c.character==='parth'&&base.pose==='sit')
-      return {...base,at:[HOSPITAL_BED.center[0],HOSPITAL_BED.center[2]],rot:Math.PI/2,...seatContact('parth',HOSPITAL_BED.mattressY,0)};
+    // The patient lies on his back along the bed: the rig is rotated in
+    // HumanActor, so the group origin (his feet) sits at the bed's +x end and
+    // the group is raised so his back rests on the mattress.
+    if(sceneId==='hospital'&&c.character==='parth'&&base.pose==='lie')
+      return {...base,at:[HOSPITAL_BED.center[0]+.89,HOSPITAL_BED.center[2]],rot:0,y:HOSPITAL_BED.mattressY+.15,footLift:0};
     if(sceneId==='cyber_cafe')return c.character==='ramu'
       ? {...base,at:[-5.15,2.1],rot:.1}
       : {...base,at:[-3.15,3.4],rot:-2.1};

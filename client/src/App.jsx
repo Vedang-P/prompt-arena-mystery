@@ -14,6 +14,7 @@ import {
   Notebook,
   Notice,
   PuzzleModal,
+  RestartConfirm,
 } from './Panels.jsx';
 import {
   accuse,
@@ -24,6 +25,7 @@ import {
   getHistory,
   getState,
   interrogate,
+  restartRun,
   solvePuzzle,
   startGuest,
   startPractice,
@@ -85,6 +87,7 @@ export default function App() {
   const [puzzleBusy, setPuzzleBusy] = useState(false);
   const [story, setStory] = useState(null);
   const [staleBuild, setStaleBuild] = useState(false);
+  const [restartOpen, setRestartOpen] = useState(false);
   const accuseTimer = useRef(null);
 
   // Dev/testing shortcuts: ?beat=<id> replays the cinematic from that beat, even
@@ -108,6 +111,16 @@ export default function App() {
       : state.rooms.map((r) => r.id);
     return ids.map((id) => state.rooms.find((r) => r.id === id)).filter(Boolean);
   }, [state, currentAct]);
+
+  // Room tabs must not bypass the story: a room opens only when it is the
+  // act's entry room, has been visited, or a visible travel hotspot leads there
+  // with its requirements met.
+  const [visitedRooms, setVisitedRooms] = useState(() => new Set());
+  useEffect(() => { setVisitedRooms(new Set()); }, [currentAct?.id]);
+  useEffect(() => {
+    if (!roomId) return;
+    setVisitedRooms((prev) => (prev.has(roomId) ? prev : new Set(prev).add(roomId)));
+  }, [roomId]);
 
   const characterNames = useMemo(
     () => Object.fromEntries((state?.characters ?? []).map((c) => [c.id, c.name])),
@@ -154,6 +167,30 @@ export default function App() {
   }, [state]);
 
   const displayState = useMemo(() => ({ ...state, rooms: displayRooms }), [state, displayRooms]);
+
+  // Room tabs must not bypass the story: a room opens only when it is the
+  // act's entry room, has been visited, or a visible travel hotspot leads there
+  // with its requirements met.
+  const reachableRooms = useMemo(() => {
+    if (!state) return new Set();
+    const reachable = new Set();
+    if (currentAct?.entry_room) reachable.add(currentAct.entry_room);
+    for (const id of visitedRooms) reachable.add(id);
+    let grew = true;
+    while (grew) {
+      grew = false;
+      for (const r of displayRooms) {
+        if (!reachable.has(r.id)) continue;
+        for (const h of r.hotspots ?? []) {
+          if (h.type !== 'travel' || !h.to || reachable.has(h.to)) continue;
+          if (!actRooms.some((room) => room.id === h.to)) continue;
+          reachable.add(h.to);
+          grew = true;
+        }
+      }
+    }
+    return reachable;
+  }, [state, currentAct, visitedRooms, displayRooms, actRooms]);
 
   useEffect(() => {
     if (currentAct?.entry_room) setRoomId(currentAct.entry_room);
@@ -607,14 +644,38 @@ export default function App() {
   };
   const travel = (target) => {
     const to = typeof target === 'string' ? target : target?.to;
-    if (actRooms.some((r) => r.id === to)) { setRoomId(to); setEvidence(null); setPuzzleSpot(null); setActiveChar(null); }
+    if (actRooms.some((r) => r.id === to)) {
+      if (!reachableRooms.has(to)) {
+        setNotice({ title: 'No way in yet', body: 'Follow the leads in this room before heading there.' });
+        return;
+      }
+      setRoomId(to); setEvidence(null); setPuzzleSpot(null); setActiveChar(null);
+    }
     else if (state.canAdvance?.ok) advanceAct();
     else setNotice({ title: 'Finish this chapter first', body: currentAct.objective });
+  };
+
+  const restartCase = async () => {
+    if (loginBusy) return;
+    setRestartOpen(false);
+    setLoginBusy(true);
+    try {
+      await restartRun();
+      clearIntros(); setStory(null); setRoomId(null); setChats({}); setEvidence(null);
+      setActiveChar(null); setPuzzleSpot(null); setWon(null); setAccuseResult(null); setPhase('game');
+      await loadGame('game');
+      setNotice({ kicker: 'Case reopened', title: 'A fresh start', body: 'Ten penalties added. The clock has not stopped.' });
+    } catch {
+      setNotice({ title: 'Could not restart', body: 'Please try again.' });
+    } finally {
+      setLoginBusy(false);
+    }
   };
   const overlays = <>
     {leaderboardOpen && <Leaderboard team={state?.team} onClose={()=>setLeaderboardOpen(false)} />}
     {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
     {chaptersOpen && <ChapterSelect acts={state?.acts ?? []} onSelect={beginPractice} onClose={() => setChaptersOpen(false)} busy={loginBusy} practice={state?.practice} onCampaign={returnCampaign} />}
+    {restartOpen && <RestartConfirm onClose={() => setRestartOpen(false)} onConfirm={restartCase} busy={loginBusy} />}
   </>;
   const audio = <Soundtrack roomId={roomId ?? 'gazebo'} radio={!story} />;
 
@@ -661,6 +722,7 @@ export default function App() {
         team={state.team}
         title={state.title}
         onReplay={() => setPhase('menu')}
+        onRestart={() => setRestartOpen(true)}
       />{overlays}</div>
     );
   }
@@ -683,7 +745,12 @@ export default function App() {
             </div>
           )}
           <p className="login-hint">The leaderboard is watching you.</p>
+          <div className="solved-actions">
+            <button className="btn brass" onClick={() => setRestartOpen(true)}>Restart the case ↺</button>
+            <button className="btn ghost" onClick={() => setPhase('menu')}>Back to the title</button>
+          </div>
         </div>
+        {overlays}
       </div>
     );
   }
@@ -782,15 +849,20 @@ export default function App() {
 
       {!activeChar && (
         <footer className="room-tabs">
-          {actRooms.map((r) => (
-            <button
-              key={r.id}
-              className={`tab ${r.id === roomId ? 'active' : ''}`}
-              onClick={() => travel(r.id)}
-            >
-              {r.name}
-            </button>
-          ))}
+          {actRooms.map((r) => {
+            const open = reachableRooms.has(r.id);
+            return (
+              <button
+                key={r.id}
+                className={`tab ${r.id === roomId ? 'active' : ''}`}
+                onClick={() => travel(r.id)}
+                disabled={!open}
+                title={open ? r.name : `${r.name} — no way in yet`}
+              >
+                {r.name}
+              </button>
+            );
+          })}
         </footer>
       )}
 

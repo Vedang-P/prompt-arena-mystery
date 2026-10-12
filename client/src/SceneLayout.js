@@ -51,7 +51,7 @@ export const ROOM_VIEWS={
  abandoned_field:{at:[-2.9,2.25,4.9],look:[-.8,.9,-1.4],fov:68},
  concert:{at:[0,1.85,5.7],look:[0,1.5,-3],fov:62},
  workshop:{at:[0,1.8,5.2],look:[0,1.1,-2.2],fov:64},
- parth_home:{at:[1.55,2.1,5.05],look:[1.45,2.25,-1.45],fov:94},
+ parth_home:{at:[1.55,2.4,5.05],look:[1.45,2.25,-1.45],fov:94},
  police_station:{at:[.3,1.7,3.5],look:[0,1.3,-1.8],fov:64},
  sameer_room:{at:[.2,2.05,3.55],look:[0,1.25,-1.45],fov:88},
  parth_room:{at:[.2,2.05,3.55],look:[0,1.25,-1.45],fov:88},

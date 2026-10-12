@@ -9,7 +9,7 @@
 | Story | 9 acts — an opening prologue and eight playable chapters |
 | Locations | 14 fully modelled rooms and outdoor sets |
 | Cast | 9 animated characters with recorded voices |
-| Content | 54 clues, 46 puzzles, 37 unlockable facts, 2 endings |
+| Content | 54 clues, 48 puzzles, 37 unlockable facts, 2 endings |
 | Audio | 227 recorded lines (Kokoro-82M), 3 music cues, ambient beds |
 | Runtime | React 19 + Vite + three.js; Hono on Node 22; Postgres (SQLite in local development) |
 

@@ -182,8 +182,8 @@ acts:
     kicker: "Act I"
     title: "The Room"
     entry_room: parth_room
-    rooms: [parth_room]
-    objective: "Search Parth's room. Find what he was hiding."
+    rooms: [parth_room, abandoned_field, cyber_cafe, parth_home]
+    objective: "Search Parth's room, follow the coordinates to the field, and find out who Vihaan is."
     intro:
       - { speaker: narrator, text: "Sameer goes to Parth's home. He meets Parth's mother — she looks as if she hasn't slept at all since the day her son went missing. She still smiles at him, with a lot of effort." }
       - { speaker: sameer, text: "I would like to go to Parth's room, aunty." }
@@ -191,21 +191,20 @@ acts:
       - { speaker: mother, text: "Please don't disturb anything in his room. Parth may have a hard time finding stuff once he comes back." }
       - { speaker: narrator, text: "Sameer runs up the stairs." }
     outro:
-      - { speaker: narrator, text: "He puts the coordinates into Boogle Maps. It leads to an abandoned field — not that far from Parth's home." }
-      - { speaker: sameer, text: "Looks a lot like a ground one would get kidnapped at." }
-      - { speaker: narrator, text: "Thankfully, our lovely protagonist had never attended stranger danger sessions. So he went there." }
+      - { speaker: narrator, text: "He looked through every video of Parth and Vihaan but found nothing else. With a resigned look he bid farewell to Parth's mother and left." }
+      - { speaker: sameer, text: "I'll find you, man. I promise." }
     complete:
-      puzzles: [p_laptop]
+      puzzles: [p_morse, p_laptop, p_email, p_cassette, p_drums]
 
   - id: act2
     type: interactive
     kicker: "Act II"
     title: "Full Moon"
     entry_room: sameer_room
-    rooms: [sameer_room, gazebo, abandoned_field, cyber_cafe, parth_home]
-    objective: "Chase the leads — the abandoned car, the mixtape, the videos — and find out who Vihaan is."
+    rooms: [sameer_room, gazebo, cyber_cafe]
+    objective: "Chase the leads — the park CD, the videos, and the man behind the voice."
     intro:
-      - { speaker: narrator, text: "Parth had a whole life Sameer is only now finding out, one abandoned car's mixtape at a time. To ignore the sickening feeling, he goes to the store to find something to eat." }
+      - { speaker: narrator, text: "He felt sick — Parth had a whole life he was only finding out about, one abandoned car's mixtape at a time. At the store, someone from a non-profit pushed a pamphlet into his hands: a worldwide NGO fostering scientific temper, an astronomy event in a few days, and a huge workshop in Nigeria behind it." }
       - { speaker: narrator, text: "He reaches Ramu's Dosa Corner — Parth loved the place for some reason. Nostalgic, he orders Parth's usual." }
       - { speaker: narrator, text: "He stumbles back home, the dosa weighing his stomach and the bag weighing his back, and crashes on his bed." }
       - { speaker: narrator, text: "When he wakes, the phone reads 11:30 am. There is a new voice note from Parth." }
@@ -214,7 +213,7 @@ acts:
       - { speaker: sameer, text: "This is either the lead of my life or the most expensive dead end ever." }
       - { speaker: narrator, text: "His head throbs — the usual marker to stop using his head for the day. He falls asleep." }
     complete:
-      puzzles: [p_ticket]
+      puzzles: [p_voicenote2, p_dosa, p_ticket]
 
 rooms:
   - id: gazebo
@@ -281,6 +280,20 @@ rooms:
         puzzle: p_ticket
         label: "Veer's show — tickets"
         position: [0.0, 0.8, -0.8]
+      - id: sr_to_gazebo
+        act: act2
+        type: travel
+        to: gazebo
+        label: "Head to the park gazebo"
+        position: [-3.4, 0.3, 2.4]
+        requires: { puzzles: [p_voicenote2] }
+      - id: sr_to_cafe
+        act: act2
+        type: travel
+        to: cyber_cafe
+        label: "Ramu's cyber cafe down the road"
+        position: [3.4, 0.3, 2.6]
+        requires: { clues: [c_cd] }
 
   - id: parth_room
     name: "Parth's Room"
@@ -302,10 +315,11 @@ rooms:
         label: "Folder: missing people"
         position: [2.4, 0.75, -2.0]
       - id: pr_email
-        type: clue
-        clue: c_email
-        label: "Sent mail"
+        type: puzzle
+        puzzle: p_email
+        label: "Mail the folder to himself"
         position: [-1.2, 0.75, -2.4]
+        requires: { clues: [c_reports] }
       - id: pr_coords
         type: clue
         clue: c_coords
@@ -342,12 +356,19 @@ rooms:
         clue: c_backpack
         label: "Black backpack on the seat"
         position: [1.4, 0.6, -1.2]
+      - id: af_to_cafe
+        type: travel
+        to: cyber_cafe
+        label: "Take the cassettes to Ramu's cyber cafe"
+        position: [-3.2, 0.3, 1.6]
+        requires: { clues: [c_backpack] }
 
   - id: cyber_cafe
     name: "Ramu's Cyber Cafe"
     scene: cyber_cafe
     hotspots:
       - id: cc_dosa
+        act: act2
         type: puzzle
         puzzle: p_dosa
         label: "Ramu's Dosa Corner — Parth's usual"
@@ -357,6 +378,19 @@ rooms:
         puzzle: p_cassette
         label: "Cassette player"
         position: [0.6, 0.7, -1.0]
+      - id: cc_cd_watch
+        act: act2
+        type: puzzle
+        puzzle: p_cd_watch
+        label: "Play the spiral CD"
+        position: [4.7, 0.9, -2.2]
+        requires: { clues: [c_laptop_fried] }
+      - id: cc_to_home
+        type: travel
+        to: parth_home
+        label: "Go to Parth's home"
+        position: [-4.6, 0.3, 3.4]
+        requires: { clues: [c_mixtape] }
       - id: cc_ramu
         type: character
         character: ramu
@@ -595,7 +629,7 @@ clues:
     grants: [officer_fullmoon]
   - id: c_email
     name: "Email to himself"
-    description: "He mails the contents of the folder to his own inbox, attachments and all. If anyone ever reads his sent items, he's finished."
+    description: "Sent to his own inbox: \"Fwd: missing-person reports — keep this safe. — S\", the whole folder attached. If anyone ever reads his sent items, he's finished."
     requires: [c_reports]
     grants: []
   - id: c_coords
@@ -667,6 +701,15 @@ puzzles:
     penalty: 0
     fail_message: "The password field shakes. Wrong. Again."
 
+  - id: p_email
+    kind: email
+    prompt: "The folder of reports and posters sits open on the laptop. If he is going to keep digging, he needs his own copy — somewhere only he can open. He opens his mail and types his own address."
+    answers: []
+    success: "Sent. The folder lands in his own inbox, attachments and all — \"Fwd: missing-person reports, keep this safe.\" If anyone ever reads his sent items, he's finished."
+    grants: [c_email]
+    requires: { clues: [c_reports] }
+    penalty: 0
+
   - id: p_cassette
     kind: choice
     prompt: "The cassette player whirs to life, waiting. One of Parth's cassettes is already in his hand."
@@ -716,12 +759,23 @@ puzzles:
     options: ["Use my laptop", "Use the cyber cafe"]
     answers: ["Use the cyber cafe"]
     success: "He goes to the cyber cafe in a rudimentary disguise, sends a quick prayer, and inserts the CD. The desktop survives. Most of the videos are dark — drums, candles, someone's mouth opened wide — but one frame will not leave him: putrid, disfigured flesh. He prays it wasn't human."
-    fail_message: "The laptop instantly short-circuits. He swears and yanks the CD out. The service man says the motherboard is fried — and charges him an absurd amount for holding and tilting it. Sameer could have done that himself."
+    fail_message: "The laptop instantly short-circuits. He swears and yanks the CD out. The service man says the motherboard is fried — and charges him an absurd amount for holding and tilting it. The CD survived. He will have to play it at Ramu's."
     fail_grants: [c_laptop_fried]
     grants: [c_footage]
     requires: { clues: [c_cd] }
     penalty: 1
     continue_on_fail: true
+
+  - id: p_cd_watch
+    kind: choice
+    prompt: "The fried laptop is at the service centre, but the spiral CD survived. Ramu's cyber cafe has a machine old enough to trust. Insert it?"
+    options: ["Insert the CD", "Leave it"]
+    answers: ["Insert the CD"]
+    success: "The desktop survives, and the CD drive opens. Dark footage, lit only by candles: people playing drums, someone's mouth opened wide — and in the middle of the blur, putrid, disfigured flesh with blood oozing from the wounds. He prays it wasn't human."
+    fail_message: "He can't walk away now. The CD goes in."
+    grants: [c_footage]
+    requires: { clues: [c_laptop_fried] }
+    penalty: 0
 
   - id: p_ticket
     kind: choice
@@ -729,11 +783,10 @@ puzzles:
     options: ["Normal ticket", "Backstage ticket"]
     answers: ["Normal ticket"]
     success: "Sameer buys the normal ticket. He really doesn't want to do this — he doesn't want to involve more people into this than required."
-    fail_message: "Holy hell, the backstage ticket is daylight robbery. He clicks back and gets the normal one. His head is starting to hurt."
+    fail_message: "The backstage ticket is daylight robbery — fifty percent more for a man with barely a million followers? He clicks back. The normal ticket is the one."
     grants: [c_ticket]
     requires: { clues: [c_veer_profile] }
     penalty: 1
-    continue_on_fail: true
 
 canonical_qa:
   - character: mother
@@ -748,15 +801,6 @@ canonical_qa:
   - character: officer
     q: "missing cases full moon"
     a: "Every full moon someone goes missing. We file the reports, and then... nothing. Don't quote me on that."
-  - character: ramu
-    q: "what did parth usually order"
-    a: "Masala dosa and filter coffee. Same table, nearly every time. Some habits stick."
-  - character: ramu
-    q: "have you seen parth lately"
-    a: "Not since he stopped by the other day. He was quiet, but he paid and left like usual. I don't know where he went after that."
-  - character: ramu
-    q: "what was parth like"
-    a: "A good customer, a better friend to Sameer. They used to sit at that table and talk until I had to remind them we were closing."
   - character: ramu
     q: "what did parth usually order"
     a: "Masala dosa and filter coffee. Same table, nearly every time. Some habits stick."

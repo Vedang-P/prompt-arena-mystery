@@ -300,9 +300,7 @@ puzzles:
     fail_message: "Veer catches a glimpse of him running — he starts yelling. This was the wrong decision; he had to go quickly before the rest of those freaks were alerted. He found the exit just in time to escape."
     success: "Too risky. Veer enters the room and goes for the desk — shoot, he left the system on, he should have run. Veer rummaged through it, but thankfully Sameer had closed all the tabs. Veer looked around and then left. Sameer ran towards the nearest exit, hid near the trash cans, and peeked through."
     penalty: 1
-    continue_on_fail: true
     grants: [c_ambulance]
-    fail_grants: [c_ambulance]
   - id: p_delve
     kind: choice
     prompt: "The captured man is struggling, frantically calling for help; two people — maybe nurses — tie him up, and the ambulance leaves talking about taking him to some hospital. Should he delve deeper into this NGO?"
@@ -322,7 +320,6 @@ puzzles:
   - id: p_security_pin
     kind: text
     prompt: "He turns left and finds what he thinks is a security room. The control panel is locked, and a note is taped to it: \"vykpmng vykpmng nkvvng ____\". The panel wants the missing word."
-    hint: "The panel reads: vykpmng vykpmng nkvvng ____ . Every letter is shifted two ahead — move them back."
     answers: ["uvct", "star"]
     success: "Each letter is shifted two places ahead: vykpmng becomes twinkle, nkvvng becomes little, uvct becomes star. Twinkle twinkle little star. The panel unlocks — he can check out other rooms of the hospital without travelling."
     penalty: 0
@@ -337,9 +334,9 @@ puzzles:
     grants: [c_parth_alive]
   - id: p_tablet
     kind: code
-    prompt: "There was a tablet under these folders. It was unfortunately password protected — a 4 digit numeric passcode. What could he put down?"
-    hint: "A 4-digit passcode. The archived records stopped on 16-07-2020; the higher ups seem to love that date."
-    answers: ["1607"]
+    prompt: "There was a tablet under these folders. It was unfortunately password protected — a 4 digit numeric passcode. The archived records stopped on 16-07-2020; the higher ups seem to love that date. What could he put down?"
+    hint: "The records stopped on 16-07-2020 — day and month, four digits."
+    answers: ["1607", "16-07-2020", "16/07/2020", "16072020", "16 07"]
     success: "1607 — the day the records stopped. The tablet unlocks in his hands; this is the Big Bad's own device."
     penalty: 0
   - id: p_handbook

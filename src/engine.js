@@ -97,7 +97,9 @@ export function discover(discoveredValue, clueId) {
   return { ok: true, clue: publicClue(clueId), discovered: [...after], newlyUnlocked };
 }
 
-const EMAIL_ANSWER = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+// A fictional address only needs to look like one; a missing TLD must not
+// block the story ("sameer@mail" is fine).
+const EMAIL_ANSWER = /^[^@\s]+@[^@\s]+$/;
 
 /** Lowercase, strip punctuation (spaces, "@" and "." survive), collapse whitespace. */
 export function normalizeAnswer(text) {
@@ -213,7 +215,9 @@ export function solvePuzzle(puzzlesValue, discoveredValue, puzzleId, answer) {
 
   const penalty = Number.isFinite(puzzle.penalty) ? puzzle.penalty : 0;
   if (puzzle.continue_on_fail) {
-    const grantIds = [...(puzzle.grants ?? []), ...(puzzle.fail_grants ?? [])];
+    // A wrong answer that the story continues through may still grant its own
+    // fail-only clue, but never the success grants — that would skip the plot.
+    const grantIds = [...(puzzle.fail_grants ?? [])];
     return settle(false, penalty, puzzle.fail_message ?? null, grantIds);
   }
   return settle(false, penalty, puzzle.fail_message ?? null, [], { markSolved: false });
