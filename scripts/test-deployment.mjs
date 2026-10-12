@@ -76,7 +76,7 @@ for (const act of caseData.acts.slice(1)) {
   console.log(`PASS deployed ${act.id}: all required evidence and puzzles, durable save`);
 }
 const finished = await call('/api/state');
-assert.equal(finished.solvedPuzzles.length, 46);
+assert.equal(finished.solvedPuzzles.length, 47);
 assert.equal(finished.penalties, 0);
 assert(finished.ending?.body);
 if (!health.env?.eventMode) {
