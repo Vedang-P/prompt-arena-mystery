@@ -488,8 +488,16 @@ puzzles:
     prompt: "He knew this voice — where had he heard it before? It was at the tip of his tongue."
     answers:
       - "ngo headquarters"
+      - "the ngo headquarters"
       - "the headquarters"
+      - "headquarters"
+      - "ngo hq"
+      - "hq"
+      - "the hq"
       - "the ngo"
+      - "perigee headquarters"
+      - "the perigee headquarters"
+      - "the perigee foundation"
     success: "This was the voice he heard in the headquarters. This was the man that had ordered the torture of the missing man."
     requires: { clues: [c_ritual2] }
 
