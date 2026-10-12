@@ -1,6 +1,7 @@
-import { Component,useRef } from 'react';
+import { Component,useEffect,useRef } from 'react';
 import { Html } from '@react-three/drei';
-import {useFrame} from '@react-three/fiber';
+import {useFrame,useThree} from '@react-three/fiber';
+
 export function SceneReady({onReady,onMetrics}){
   const callback=useRef(onReady),elapsed=useRef(0),done=useRef(false);callback.current=onReady;
   const sample=useRef([]);
@@ -10,6 +11,58 @@ export function SceneReady({onReady,onMetrics}){
   });
   return null;
 }
+
+// Watches the render loop: if WebGL loses its context or frames stop arriving
+// while the tab is visible, the scene is dead and the caller shows a recovery
+// panel instead of a silent black canvas.
+export function SceneWatchdog({ onStopped, timeoutMs = 4000 }) {
+  const { gl } = useThree();
+  const last = useRef(performance.now());
+  useFrame(() => { last.current = performance.now(); });
+  useEffect(() => {
+    const canvas = gl.domElement;
+    let stopped = false;
+    const stop = (reason) => { if (!stopped) { stopped = true; onStopped(reason); } };
+    const onLost = (event) => { event.preventDefault(); stop('webgl_lost'); };
+    const onVisible = () => { last.current = performance.now(); };
+    canvas.addEventListener('webglcontextlost', onLost);
+    document.addEventListener('visibilitychange', onVisible);
+    const timer = setInterval(() => {
+      if (document.hidden) { last.current = performance.now(); return; }
+      if (performance.now() - last.current > timeoutMs) stop('no_frames');
+    }, 1000);
+    return () => {
+      clearInterval(timer);
+      canvas.removeEventListener('webglcontextlost', onLost);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [gl, onStopped, timeoutMs]);
+  return null;
+}
+
+// Recovery panel: a plain reload fixes a lost context; clearing the service
+// worker cache also fixes a tab stuck on a corrupted cached bundle.
+export function WorldStopped({ reason }) {
+  const clearAndReload = async () => {
+    try { if ('caches' in window) for (const key of await caches.keys()) await caches.delete(key); } catch {}
+    try {
+      const registrations = await navigator.serviceWorker?.getRegistrations?.();
+      for (const registration of registrations ?? []) await registration.unregister();
+    } catch {}
+    window.location.reload();
+  };
+  return (
+    <div className="world-fallback">
+      <p>The 3D view stopped{reason === 'webgl_lost' ? ' — the graphics context was lost' : ''}.</p>
+      <p>Your case is saved. Reload to bring the scene back.</p>
+      <div className="world-fallback-actions">
+        <button className="btn ghost" onClick={() => window.location.reload()}>Reload scene</button>
+        <button className="btn ghost" onClick={clearAndReload}>Clear cache &amp; reload</button>
+      </div>
+    </div>
+  );
+}
+
 export function SceneLoading() {
   return <Html center><div className="world-loading"><span className="loading-moon" /><p>Opening the scene</p></div></Html>;
 }

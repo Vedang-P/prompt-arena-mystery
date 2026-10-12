@@ -6,7 +6,7 @@ import DemonMask from './DemonMask.jsx';
 import {seatContact} from './SceneStaging.js';
 import Actor from './Actor.jsx';
 import { useSettings } from './Settings.jsx';
-import { SceneLoading, WorldBoundary,SceneReady } from './WorldBoundary.jsx';
+import { SceneLoading, SceneWatchdog, WorldBoundary, WorldStopped, SceneReady } from './WorldBoundary.jsx';
 import { useCallback, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import {
@@ -1536,12 +1536,16 @@ export default function Scene({
     [state, focus, measure, onCharacter, onClue, onPuzzle, onTravel, solvedPuzzles]
   );
 
+  const [sceneStopped, setSceneStopped] = useState(null);
+  useEffect(() => { setSceneStopped(null); }, [room.id]);
+
   const bounds = ROOM_BOUNDS[room.id] ?? { x: 6.5, zMin: -5.5, zMax: 9 };
   const bg = room.id==='abandoned_field' ? '#26394e' : isOutdoor ? '#05070d' : '#080604';
 
   const { quality } = useSettings();
   return (
     <WorldBoundary key={room.id}>
+      {sceneStopped ? <WorldStopped reason={sceneStopped} /> : (
       <Canvas shadows={quality !== 'low' ? 'percentage' : false} dpr={[1, quality === 'high' ? 1.65 : 1]} camera={{ position: view.at, fov: view.fov }}>
         <color attach="background" args={[bg]} />
         <fog attach="fog" args={room.id==='abandoned_field'?[bg,12,50]:isOutdoor ? [bg, 25, 65] : [bg, 22, 42]} />
@@ -1556,11 +1560,13 @@ export default function Scene({
           <ListenerPosition />
           <SceneReady onReady={onReady} onMetrics={onMetrics}/>
         </Suspense>
+        <SceneWatchdog onStopped={setSceneStopped} />
         {quality === 'high' && <EffectComposer multisampling={2}>
           <Bloom intensity={0.18} luminanceThreshold={0.85} mipmapBlur />
           <Vignette offset={0.3} darkness={room.id==='abandoned_field'?.16:.35} />
         </EffectComposer>}
       </Canvas>
+      )}
     </WorldBoundary>
   );
 }

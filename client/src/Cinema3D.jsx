@@ -1,11 +1,11 @@
-import { lazy, Suspense, useMemo, useRef } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import { Vector3 } from 'three';
 import Actor from './Actor.jsx';
 const SceneEnvironment=lazy(()=>import('./Scene.jsx').then(({RoomEnvironment,RoomLighting})=>({default:({roomId,quality,cinematicPhase,paused,actId})=><><RoomLighting roomId={roomId} quality={quality} cinematicPhase={cinematicPhase}/><RoomEnvironment roomId={roomId} paused={paused} storyAct={actId} cinematicPhase={cinematicPhase}/></>})));
 import { useSettings } from './Settings.jsx';
-import { SceneLoading, WorldBoundary,SceneReady } from './WorldBoundary.jsx';
+import { SceneLoading, SceneWatchdog, WorldBoundary, WorldStopped, SceneReady } from './WorldBoundary.jsx';
 import { placeCast, roomWideShot, captureShot } from './SceneStaging.js';
 const CLOSE={close_parth:'parth',close_mother:'mother',close_officer:'officer'};
 function ShotCamera({roomId,shot,cast,speaker,paused,cinematicPhase}) {
@@ -39,7 +39,9 @@ export default function Cinema({sceneId='gazebo',shot='wide',cast=[],speaker,end
   const people=useMemo(()=>placeCast(sceneId,cast),[cast,sceneId]);
   const cinematicNight=sceneId==='concert'&&['capture','departure'].includes(cinematicPhase);
   const backdrop=cinematicNight?'#26394e':'#10171c';
-  return <WorldBoundary key={`${sceneId}:${cinematicPhase??'default'}`}><Canvas shadows={quality!=='low'?'percentage':false} dpr={[1,quality==='high'?1.5:1]} camera={{position:[0,2.15,6.2],fov:39}}>
+  const [stopped,setStopped]=useState(null);
+  useEffect(()=>{setStopped(null);},[sceneId,cinematicPhase]);
+  return <WorldBoundary key={`${sceneId}:${cinematicPhase??'default'}`}>{stopped?<WorldStopped reason={stopped}/>:<Canvas shadows={quality!=='low'?'percentage':false} dpr={[1,quality==='high'?1.5:1]} camera={{position:[0,2.15,6.2],fov:39}}>
     <color attach="background" args={[sceneId==='abandoned_field'||cinematicNight?'#26394e':'#10171c']}/><fog attach="fog" args={[sceneId==='gazebo'?'#9bafa5':backdrop,28,85]}/>
     <Suspense fallback={<SceneLoading/>}>
       <SceneEnvironment roomId={sceneId} quality={quality} cinematicPhase={cinematicPhase} paused={paused} actId={actId}/>
@@ -47,8 +49,9 @@ export default function Cinema({sceneId='gazebo',shot='wide',cast=[],speaker,end
       {people.map(c=><group key={c.character} position={[c.at[0],c.y,c.at[1]]} rotation={[c.rotationX??0,c.rot??0,0]}><Actor character={c.character} pose={c.pose} footLift={c.footLift} paused={paused} speaking={c.character===speaker} wearingMask={c.wearingMask} holdingMask={c.holdingMask}/></group>)}
       <SceneReady key={`${sceneId}:${cinematicPhase??'default'}`} onReady={onReady}/>
     </Suspense>
+    <SceneWatchdog onStopped={setStopped}/>
     <ShotCamera roomId={sceneId} shot={shot} cast={people} speaker={speaker} paused={paused} cinematicPhase={cinematicPhase}/>
     {quality==='high'&&<EffectComposer multisampling={0}><Bloom intensity={.12} luminanceThreshold={1} mipmapBlur/><Vignette offset={.22} darkness={.35}/></EffectComposer>}
-  </Canvas></WorldBoundary>;
+  </Canvas>}</WorldBoundary>;
 }
 
