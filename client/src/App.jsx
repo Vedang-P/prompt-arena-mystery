@@ -871,6 +871,8 @@ export default function App() {
           key={activeCharacter.id}
           character={activeCharacter}
           subtitle={focusHotspot?.label?.split(',')[1]?.trim() ?? null}
+          location={room.name}
+          area={currentAct ? `${currentAct.kicker} · ${currentAct.title}` : null}
           messages={chats[activeCharacter.id] ?? []}
           typing={typing}
           onAsk={ask}

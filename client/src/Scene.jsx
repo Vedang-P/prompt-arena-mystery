@@ -1515,11 +1515,12 @@ export default function Scene({
     if (!focus || !focusPosition) return null;
     const height = room.id==='police_station'&&focus.character==='officer'?1.5:heights[focus.character] || 1.9;
     return {
-      look: [focusPosition[0], focusPosition[1] + height * 0.82, focusPosition[2]],
+      // Chest-up close-up: the interview HUD frames the speaker like a portrait.
+      look: [focusPosition[0], focusPosition[1] + height * 0.84, focusPosition[2]],
       camera: [
         focusPosition[0] + height * 0.03,
-        focusPosition[1] + height * 0.84,
-        focusPosition[2] + height * 1.05,
+        focusPosition[1] + height * 0.86,
+        focusPosition[2] + height * 0.62,
       ],
     };
   }, [focus, focusPosition, heights,room.id]);

@@ -8,6 +8,8 @@ import { useCaseDialog } from './InvestigationUI.jsx';
 export function DialogueOverlay({
   character,
   subtitle,
+  location,
+  area,
   messages,
   typing,
   onAsk,
@@ -61,69 +63,65 @@ export function DialogueOverlay({
     });
   });
   const questions = [...new Set(character.questions ?? [])];
+  const speakers = {
+    npc: { id: character.id, name: character.name },
+    player: { id: 'sameer', name: 'Sameer' },
+  };
 
+  // The interview plays over the live close-up the scene already frames, so this
+  // is a transparent HUD: only its controls take pointer events.
   return (
-    <div className="case-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <section className="case-panel interview-panel" ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={`Interview with ${character.name}`}>
-        <header className="case-panel-head">
-          <div>
-            <p className="case-eyebrow">Prompt Arena / Interview</p>
-            <h2>{character.name}</h2>
-            {subtitle && <p className="case-header-note">{subtitle}</p>}
-          </div>
-          <button className="case-close" onClick={onClose} aria-label="Leave conversation">×</button>
-        </header>
+    <section className="talk-hud" ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={`Interview with ${character.name}`}>
+      <header className="talk-location">
+        <h2>{location}</h2>
+        {area && <p>{area}</p>}
+      </header>
+      <button className="talk-leave" onClick={onClose} aria-label="Leave conversation" title="Leave conversation">
+        <svg viewBox="0 0 64 40" aria-hidden="true"><path d="M2 13h34V3l26 17-26 17V27H2z" /></svg>
+      </button>
 
-        <div className="interview-transcript" ref={logRef}>
-          {turns.length === 0 && (
-            <p className="interview-empty">They look at you, waiting.</p>
-          )}
-          {turns.map((t) =>
-            t.role === 'player' ? (
-              <div key={t.key} className="interview-turn player">
-                <p className="interview-text">{t.content}</p>
+      <div className="talk-log" ref={logRef} aria-live="polite">
+        {turns.length === 0 && <p className="talk-empty">They look at you, waiting.</p>}
+        {turns.map((t) => {
+          const who = speakers[t.role];
+          return (
+            <div key={t.key} className={`talk-line ${t.role}`}>
+              <img className="talk-portrait" src={`/assets/portraits/${who.id}.webp`} alt="" onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }} />
+              <div className="talk-bubble">
+                <span className="talk-speaker">{who.name}</span>
+                {t.pending ? <p className="talk-typing"><i /><i /><i /></p> : <p className="talk-text">{t.content}</p>}
               </div>
-            ) : (
-              <div key={t.key} className="interview-turn npc">
-                {t.beginsTurn && <span className="interview-speaker">{character.name}</span>}
-                {t.pending ? (
-                  <p className="interview-typing"><i /><i /><i /></p>
-                ) : (
-                  <p className="interview-text">{t.content}</p>
-                )}
-              </div>
-            )
-          )}
-        </div>
-
-        {questions.length > 0 && (
-          <div className="interview-prompts">
-            <span className="case-section-label">Suggested questions</span>
-            <div className="interview-chips">
-              {questions.map((q, i) => <button key={`${i}-${q}`} type="button" className="case-chip" disabled={typing} onClick={() => { setText(q); inputRef.current?.focus(); }}>{q}</button>)}
             </div>
+          );
+        })}
+      </div>
+
+      <div className="talk-name">
+        <h3>{character.name}</h3>
+        {subtitle && <p>{subtitle}</p>}
+      </div>
+
+      <div className="talk-input">
+        {questions.length > 0 && (
+          <div className="talk-chips" aria-label="Suggested questions">
+            {questions.map((q, i) => <button key={`${i}-${q}`} type="button" disabled={typing} onClick={() => { setText(q); inputRef.current?.focus(); }}>{q}</button>)}
           </div>
         )}
-
-        {error && <p className="case-note error" role="alert">{error}</p>}
-
-        <footer className="case-panel-foot interview-foot">
-          <form className="interview-ask" onSubmit={send}>
-            <input
-              ref={inputRef}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder={disabled ? 'The case is closed.' : 'Ask your question…'}
-              disabled={disabled}
-              spellCheck={false}
-            />
-            <button className="case-button primary" type="submit" disabled={typing || disabled || !text.trim()}>
-              {typing ? 'Listening…' : 'Ask →'}
-            </button>
-          </form>
-        </footer>
-      </section>
-    </div>
+        {error && <p className="talk-error" role="alert">{error}</p>}
+        <form className="talk-ask" onSubmit={send}>
+          <input
+            ref={inputRef}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={disabled ? 'The case is closed.' : 'Type here…'}
+            aria-label={`Ask ${character.name}`}
+            disabled={disabled}
+            spellCheck={false}
+          />
+          <button type="submit" disabled={typing || disabled || !text.trim()}>{typing ? '…' : 'OK'}</button>
+        </form>
+      </div>
+    </section>
   );
 }
 
