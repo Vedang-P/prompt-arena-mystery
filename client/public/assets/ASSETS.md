@@ -121,6 +121,10 @@ https://freesound.org/people/InspectorJ/sounds/376415/
 Only the abandoned field uses these outdoor layers; they fade with the room,
 duck under dialogue, respect the shared sound toggle and pause with cinematics.
 
+Cafe chatter: audio/ambience/cafe-chatter.mp3, "Canteen/Cafeteria — 10 Minute
+Indian Ambience (People Talking)" from the No Copyright Sound Effects series,
+user-supplied. It plays under the cafe radio as the room's talking/street bed.
+
 ## Campaign speech
 
 227 unique authored lines recorded locally with Kokoro-82M v1.0, Apache 2.0.

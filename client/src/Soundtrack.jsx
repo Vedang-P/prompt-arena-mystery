@@ -38,6 +38,9 @@ export default function Soundtrack({ roomId='gazebo',enabledOverride,radio=false
     return()=>{window.removeEventListener('pointerdown',play);active.forEach(t=>{t.target=false;});};
   },[enabled,ambience]);
   useEffect(() => {
+    if(import.meta.env.DEV)window.__paAmbience=()=>tracks.current.map(t=>({kind:t.kind,target:t.target,volume:Number(t.audio.volume.toFixed(4)),paused:t.audio.paused,src:t.audio.src.split('/').pop()}));
+  },[]);
+  useEffect(() => {
     const interval=setInterval(()=>{
       tracks.current=tracks.current.filter(t=>{
         // The cafe's diegetic radio carries that room; the score steps back.

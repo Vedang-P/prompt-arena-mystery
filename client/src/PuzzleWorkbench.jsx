@@ -17,6 +17,12 @@ export default function PuzzleWorkbench({ puzzle, team, solved, penalties = 0, o
   const change = value => { setAnswer(value); try { sessionStorage.setItem(draftKey, value); } catch {} };
   const submit = e => { e.preventDefault(); if (!busy && !settled && answer.trim()) { setLast(answer); onSolve(answer.trim()); } };
   const wrong = result && !result.correct && !result.alreadySolved;
+  // A rejected answer must never read like a solved one: without an authored
+  // fail message, say plainly that the answer did not hold.
+  const feedbackMessage = result?.message
+    || (wrong
+      ? 'Not quite. Re-read the evidence and try a different answer.'
+      : puzzle.solvedHint || 'This clue is resolved. Your discoveries are saved in the notebook.');
   const grants = (result?.grants ?? []).map(id => clueLabels[id] ?? id);
   const collapse = () => { setExpanded(false); requestAnimationFrame(() => imageButton.current?.focus()); };
   return <div className="case-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
@@ -30,7 +36,7 @@ export default function PuzzleWorkbench({ puzzle, team, solved, penalties = 0, o
             {relatedClues.map(clue => <details className="case-reference" key={clue.id}><summary>From your notebook · {clue.name}</summary><p>{clue.description}</p></details>)}
             {!settled && puzzle.hint && <div className="case-hint"><button className="case-text-button" aria-expanded={hintOpen} onClick={() => setHintOpen(v => !v)}>{hintOpen ? 'Hide hint −' : 'Need a hint? +'}</button>{hintOpen && <p>{puzzle.hint}</p>}</div>}
             <div className={`case-feedback ${wrong ? 'retry' : 'complete'}`} role="status" aria-live="polite">
-              {(result || settled) && <><p className="case-eyebrow">{wrong ? settled ? 'Outcome recorded' : 'Try another approach' : 'Lead resolved'}</p><p>{result?.message || puzzle.solvedHint || 'This clue is resolved. Your discoveries are saved in the notebook.'}</p>{result?.penalty > 0 && <small>+{result.penalty} {result.penalty === 1 ? 'penalty' : 'penalties'} added to your case.</small>}{grants.length > 0 && <div className="case-grants"><span>Added to notebook</span>{grants.map(label => <strong key={label}>{label}</strong>)}</div>}</>}
+              {(result || settled) && <><p className="case-eyebrow">{wrong ? settled ? 'Outcome recorded' : 'Try another approach' : 'Lead resolved'}</p><p>{feedbackMessage}</p>{result?.penalty > 0 && <small>+{result.penalty} {result.penalty === 1 ? 'penalty' : 'penalties'} added to your case.</small>}{grants.length > 0 && <div className="case-grants"><span>Added to notebook</span>{grants.map(label => <strong key={label}>{label}</strong>)}</div>}</>}
             </div>
             {!settled && <form id="case-puzzle-answer" className="case-answer-form" onSubmit={submit} aria-busy={busy}>
               {puzzle.kind === 'choice' ? <fieldset><legend>Choose your response</legend>{(puzzle.options ?? []).map((option, index) => <label key={option} className={`case-choice ${answer === option ? 'selected' : ''}`}><input type="radio" name="puzzle-choice" value={option} checked={answer === option} onChange={() => change(option)} disabled={busy} /><span className="choice-letter">{String.fromCharCode(65 + index)}</span><span>{option}</span></label>)}</fieldset> : <label className="case-answer-label" htmlFor="case-answer">{puzzle.kind === 'code' ? 'Access code' : puzzle.kind === 'email' ? 'Email address' : 'Your answer'}<input id="case-answer" type={puzzle.kind === 'email' ? 'email' : 'text'} value={answer} onChange={e => change(e.target.value)} placeholder={puzzle.kind === 'email' ? 'detective@example.com' : puzzle.kind === 'code' ? 'Enter the code' : 'Write your answer'} autoComplete="off" spellCheck={false} disabled={busy} aria-invalid={!!wrong && answer === last} /></label>}

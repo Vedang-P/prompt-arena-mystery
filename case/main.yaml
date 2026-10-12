@@ -2534,6 +2534,7 @@ puzzles:
       - the email
       - sending the files to himself
     success: The email — the financial files he sent to himself. That is how they found him. Cats play with rats before swallowing them, and the cult has been playing with him all along.
+    fail_message: That's not it. Whatever exposed him was something he sent out himself, that night.
     penalty: 0
     requires:
       puzzles:

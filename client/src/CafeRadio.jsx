@@ -7,9 +7,9 @@ import { useSettings } from './Settings.jsx';
 // under dialogue. It is silent in every other room and respects Mute.
 const SPEAKER = { x: -3.9, z: 2.0 };
 const NEAR_M = 1.8;
-const FAR_M = 7.5;
-const NEAR_GAIN = 0.3;
-const FAR_GAIN = 0.1;
+const FAR_M = 9;
+const NEAR_GAIN = 0.075;
+const FAR_GAIN = 0.025;
 
 function roomImpulse(context) {
   const seconds = 1.15;
@@ -27,7 +27,7 @@ function roomImpulse(context) {
 
 function softClip(context) {
   const shaper = context.createWaveShaper();
-  const drive = 1.7;
+  const drive = 2.2;
   const curve = new Float32Array(1024);
   for (let i = 0; i < curve.length; i += 1) {
     const x = (i / (curve.length - 1)) * 2 - 1;
@@ -56,28 +56,34 @@ export default function CafeRadio({ active = false }) {
     const source = context.createMediaElementSource(audio);
     const bassCut = context.createBiquadFilter();
     bassCut.type = 'lowshelf';
-    bassCut.frequency.value = 140;
-    bassCut.gain.value = -7;
+    bassCut.frequency.value = 160;
+    bassCut.gain.value = -6;
     const speaker = context.createBiquadFilter();
     speaker.type = 'lowpass';
-    speaker.frequency.value = 2800;
-    speaker.Q.value = 0.6;
+    speaker.frequency.value = 1900;
+    speaker.Q.value = 0.7;
+    const honk = context.createBiquadFilter();
+    honk.type = 'peaking';
+    honk.frequency.value = 800;
+    honk.Q.value = 1;
+    honk.gain.value = 3.5;
     const trebleCut = context.createBiquadFilter();
     trebleCut.type = 'highshelf';
-    trebleCut.frequency.value = 3200;
-    trebleCut.gain.value = -11;
+    trebleCut.frequency.value = 2600;
+    trebleCut.gain.value = -13;
     const clip = softClip(context);
     const dry = context.createGain();
     dry.gain.value = 1;
     const wet = context.createGain();
-    wet.gain.value = 0.22;
+    wet.gain.value = 0.3;
     const room = context.createConvolver();
     room.buffer = roomImpulse(context);
     const out = context.createGain();
     out.gain.value = 0;
     source.connect(bassCut);
     bassCut.connect(speaker);
-    speaker.connect(trebleCut);
+    speaker.connect(honk);
+    honk.connect(trebleCut);
     trebleCut.connect(clip);
     clip.connect(dry);
     dry.connect(out);

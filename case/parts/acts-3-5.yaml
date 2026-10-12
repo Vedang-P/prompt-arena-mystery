@@ -379,5 +379,6 @@ puzzles:
     prompt: "Just as he is about to go to sleep, a notification arrives — another voice note, in a different modified voice, this time mocking. What could have exposed his investigation of the cult?"
     answers: ["email", "the email", "sending the files to himself"]
     success: "The email — the financial files he sent to himself. That is how they found him. Cats play with rats before swallowing them, and the cult has been playing with him all along."
+    fail_message: "That's not it. Whatever exposed him was something he sent out himself, that night."
     penalty: 0
     requires: { puzzles: [p_connection] }
