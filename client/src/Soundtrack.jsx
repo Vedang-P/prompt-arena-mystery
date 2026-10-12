@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSettings } from './Settings.jsx';
 import {ambienceFor,musicFor} from './MusicCues.js';
-export default function Soundtrack({ roomId='gazebo',enabledOverride }) {
+import CafeRadio from './CafeRadio.jsx';
+export default function Soundtrack({ roomId='gazebo',enabledOverride,radio=false }) {
   const { sound } = useSettings();
   const enabled=enabledOverride??sound;
+  const radioHere=radio&&roomId==='cyber_cafe';
   const [cue,setCue] = useState(()=>musicFor(roomId));
   const [ambience,setAmbience] = useState(()=>ambienceFor(roomId));
   const tracks = useRef([]), ducked=useRef(false), paused=useRef(false);
@@ -38,13 +40,15 @@ export default function Soundtrack({ roomId='gazebo',enabledOverride }) {
   useEffect(() => {
     const interval=setInterval(()=>{
       tracks.current=tracks.current.filter(t=>{
-        const target=t.target&&enabled&&!paused.current?(ducked.current?(t.kind==='music'?.065:t.gain*.55):(t.gain??.18)):0;
+        // The cafe's diegetic radio carries that room; the score steps back.
+        const idle=(t.gain??.18)*(t.kind==='music'&&radioHere?.35:1);
+        const target=t.target&&enabled&&!paused.current?(ducked.current?(t.kind==='music'?.065:t.gain*.55):idle):0;
         t.audio.volume+=(target-t.audio.volume)*.12;
         if(paused.current)t.audio.pause();else if(t.target&&enabled&&t.audio.paused&&!t.audio.error)t.audio.play().catch(()=>{});
         if(!t.target&&t.audio.volume<.001){t.audio.pause();return false;}return true;
       });
     },70);
     return()=>{clearInterval(interval);tracks.current.forEach(t=>t.audio.pause());tracks.current=[];};
-  },[enabled]);
-  return null;
+  },[enabled,radioHere]);
+  return <CafeRadio active={radioHere} />;
 }

@@ -1001,15 +1001,19 @@ function CyberCafeRoom({room,hot,paused=false}) {
   <DetailProp asset="plastic_monobloc_chair_01" position={[2.2,0,2.65]} rotation={[0,0,0]}/>
   <DetailProp asset="plastic_monobloc_chair_01" position={[2.2,0,4.55]} rotation={[0,Math.PI,0]}/>
   <WallSign position={[3.2,2.35,5.42]} width={1.2} height={.42} title="CAFÉ SEATING" lines={['PLEASE TAKE A TABLE']}/>
-  <DetailProp asset="metal_office_desk" position={[4.7,0,-2.3]} rotation={[0,Math.PI/2,0]}/>
-  <DetailProp asset="monitor" position={[4.2,DESK_TOP,-2.48]}/>
-  <DetailProp asset="keyboard" position={[4.24,DESK_TOP,-2.05]}/>
-  <DetailProp asset="mouse" position={[4.69,DESK_TOP,-2.05]}/>
-  <DetailProp asset="office_chair" position={[4.7,0,-1.2]} rotation={[0,Math.PI,0]}/>
-  <DetailProp asset="printer" position={[4.7,.7875,-2.6]}/>
-  <DetailProp asset="router" position={[4.7,.7875,-1.6]}/>
-  <DetailProp asset="portable_cassette_player" position={[4.7,.7875,-3.1]} scale={1.4}/>
-  <DetailProp asset="binder_notebook" position={[4.7,.7875,-2.1]} scale={.65}/>
+  {/* Manager's workstation: the desk opens towards the room (-x) so the chair
+      tucks into the knee-hole; every item is placed in the desk's own frame. */}
+  <group position={[4.7,0,-2.3]} rotation={[0,-Math.PI/2,0]}>
+    <DetailProp asset="metal_office_desk"/>
+    <DetailProp asset="monitor" position={[-.35,.7875,-.18]}/>
+    <DetailProp asset="keyboard" position={[-.35,.7875,.18]}/>
+    <DetailProp asset="mouse" position={[-.05,.7875,.2]}/>
+    <DetailProp asset="printer" position={[.62,.7875,-.24]}/>
+    <DetailProp asset="router" position={[.08,.7875,-.34]}/>
+    <DetailProp asset="portable_cassette_player" position={[-.8,.7875,0]} scale={1.4}/>
+    <DetailProp asset="binder_notebook" position={[.1,.7875,.02]} scale={.65}/>
+    <DetailProp asset="office_chair" position={[0,0,.78]} rotation={[0,Math.PI,0]} height={1.168*.49035/.618}/>
+  </group>
   <ShelfContents position={[5.65,0,1.3]} rotation={[0,-Math.PI/2,0]}/>
   <DetailProp asset="cardboard_box_01" position={[5.5,0,3.2]}/>
   <DetailProp asset="cardboard_box_01" position={[5.5,.342,3.2]} scale={.8}/>
@@ -1022,7 +1026,8 @@ function CyberCafeRoom({room,hot,paused=false}) {
   <Fluorescent position={[0,3.2,-3.8]}/><Fluorescent position={[0,3.2,1.7]}/>
   <Window position={[-6.44,1.8,-1.2]} rotation={[0,Math.PI/2,0]} width={2.2} height={1.6} moon={false}/>
   <DetailProp asset="potted_plant_02" position={[-5.5,0,4.3]} height={1.1}/>
-  <Cable points={[[5.9,.1,-4.8],[5.9,.1,-1.6],[4.7,.68,-1.6],[4.7,.85,-1.6]]}/>
+  {/* The phone line leaves the wall jack, crosses the floor and climbs to the router. */}
+  <Cable points={[[6.42,.85,-1.9],[6.42,.12,-1.9],[5.6,.055,-2.0],[5.2,.055,-2.1],[5.16,.5,-2.2],[5.04,.9,-2.22]]}/>
   <pointLight position={[0,2.25,-1.7]} color="#f1d8b8" intensity={5} distance={12}/>
   <pointLight position={[-4,2.1,2]} color="#ffd09a" intensity={7} distance={6}/>
   <pointLight position={[2.3,2.2,2.7]} color="#ffc47d" intensity={4} distance={6}/>
@@ -1548,6 +1553,7 @@ export default function Scene({
             minPolarAngle={0.35} maxPolarAngle={Math.PI / 2.02} />
           <CameraRig key={room.id} focusInfo={focusInfo} view={view} />
           <ExploreKeys disabled={!!focus} bounds={bounds} />
+          <ListenerPosition />
           <SceneReady onReady={onReady} onMetrics={onMetrics}/>
         </Suspense>
         {quality === 'high' && <EffectComposer multisampling={2}>
@@ -1557,6 +1563,20 @@ export default function Scene({
       </Canvas>
     </WorldBoundary>
   );
+}
+
+// Publishes the camera's ground position so diegetic audio (the cafe radio)
+// can fade with the player's distance from its speaker.
+function ListenerPosition() {
+  const { camera } = useThree();
+  const elapsed = useRef(0);
+  useFrame((_, delta) => {
+    elapsed.current += Math.min(delta, 0.05);
+    if (elapsed.current < 0.25) return;
+    elapsed.current = 0;
+    window.dispatchEvent(new CustomEvent('arena-listener', { detail: { x: camera.position.x, z: camera.position.z } }));
+  });
+  return null;
 }
 
 function ExploreKeys({ disabled, bounds }) {

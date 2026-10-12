@@ -103,6 +103,13 @@ https://incompetech.com/music/royalty-free/
 Files transcoded to browser MP3s. Cue names: dusk, search, unknown.
 Playback crossfades and ducks beneath speech; no music was generated.
 
+Cafe radio: audio/ambience/cafe-radio.mp3 is a user-supplied retro Hindi
+song collection ("Chura Liya Hai Tumne Jo Humein", "Tumse Pyar Kitna",
+evergreen Hindi songs), 40 minutes, played on loop in Ramu's Cyber Cafe at a
+background level with a low-pass/soft-clip/distance chain so it reads as a
+distant shop speaker. Rights remain with the original creators and rights
+holders; included here for the project owner's use.
+
 ## Environmental audio
 
 Crickets: Ted Kerr / Wolfgang_, CC0, loopable 11.45-second night recording.

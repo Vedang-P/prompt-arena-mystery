@@ -13,8 +13,8 @@ case/teams-printable.txt
 *.log
 shots/
 
-# raw source art (no redistribution, large)
-assets/
+# raw source art (root-level only, no redistribution, large)
+/assets/
 .vercel
 .asset-cache/
 event-private/

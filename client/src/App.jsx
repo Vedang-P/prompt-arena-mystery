@@ -590,7 +590,7 @@ export default function App() {
     {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
     {chaptersOpen && <ChapterSelect acts={state?.acts ?? []} onSelect={beginPractice} onClose={() => setChaptersOpen(false)} busy={loginBusy} practice={state?.practice} onCampaign={returnCampaign} />}
   </>;
-  const audio = <Soundtrack roomId={roomId ?? 'gazebo'} />;
+  const audio = <Soundtrack roomId={roomId ?? 'gazebo'} radio={!story} />;
 
   if (phase === 'loading') {
     return (
