@@ -665,6 +665,17 @@ app.post('/api/fullscreen/return', async (c) => {
   const { auth, error } = await requireActiveTeam(c, { settle: false });
   if (error) return error;
   const settlement = await settlePendingExit(c.env, auth.row);
+  // A disqualifying return carries the full record so the player's screen can
+  // explain exactly what happened without a second round trip.
+  let reason = null;
+  let disqualifiedAt = null;
+  if (settlement.disqualified) {
+    const dq = await c.env.DB.prepare('SELECT disqualify_reason, disqualified_at FROM teams WHERE id = ?')
+      .bind(auth.teamId)
+      .first();
+    reason = dq?.disqualify_reason ?? DISQUALIFY_REASON;
+    disqualifiedAt = toIso(dq?.disqualified_at);
+  }
   return c.json({
     ok: settlement.resolved !== 'strike',
     late: settlement.resolved === 'strike',
@@ -675,6 +686,9 @@ app.post('/api/fullscreen/return', async (c) => {
     graceMs: exitGraceMs(c.env),
     windowMs: exitWindowMs(c.env),
     disqualified: settlement.disqualified,
+    team: auth.teamName,
+    reason,
+    disqualifiedAt,
   });
 });
 
@@ -698,7 +712,9 @@ app.post('/api/heartbeat', async (c) => {
   await c.env.DB.prepare('UPDATE teams SET last_seen_at = ? WHERE id = ?')
     .bind(new Date().toISOString(), auth.teamId)
     .run();
-  return c.json({ ok: true, strikes: auth.strikes });
+  // The ping also carries the live announcement so an invigilator's broadcast
+  // reaches every playing team within one heartbeat, not on their next action.
+  return c.json({ ok: true, strikes: auth.strikes, announcement: await activeAnnouncement(c.env) });
 });
 
 // What every player sees right now, if the invigilator has posted something.
@@ -1414,7 +1430,9 @@ app.get('/api/admin/teams/:id', async (c) => {
 });
 
 const csvCell = (value) => {
-  const text = value === null || value === undefined ? '' : String(value);
+  let text = value === null || value === undefined ? '' : String(value);
+  // Team names are player-controlled; neutralise spreadsheet formula injection.
+  if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 };
 

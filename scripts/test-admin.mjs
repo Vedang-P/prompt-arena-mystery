@@ -137,6 +137,10 @@ assert.equal(alpha.strikes, 3);
 assert.equal(alpha.disqualifyReason, 'left_fullscreen');
 assert.equal(overview.stats.disqualified, 1);
 assert((await request('/api/fullscreen/exit', alphaCookie, { kind: 'fullscreen' })).status === 403);
+// Every game route is closed to a disqualified team, not just /api/state.
+assert.equal((await request('/api/clues/c_diary/discover', alphaCookie, {})).status, 403);
+assert.equal((await request('/api/puzzles/p_morse/solve', alphaCookie, { answer: 'x' })).status, 403);
+assert.equal((await request('/api/interrogate', alphaCookie, { character: 'parth', text: 'hello' })).status, 403);
 
 // ---- requalification ----
 const requalify = await (await request(`/api/admin/teams/${alphaRow.id}/requalify`, adminCookie, { resetStrikes: true })).json();
@@ -146,6 +150,17 @@ const back = await (await request('/api/state', alphaCookie)).json();
 assert.equal(back.strikes, 0);
 leaderboard = await (await request('/api/leaderboard')).json();
 assert(leaderboard.teams.some((t) => t.name === 'Alpha'));
+
+// Two racing returns must never double-count one exit.
+await pending(new Date(Date.now() - 30_000).toISOString());
+const [cr1, cr2] = await Promise.all([
+  request('/api/fullscreen/return', alphaCookie, undefined, 'POST').then((r) => r.json()),
+  request('/api/fullscreen/return', alphaCookie, undefined, 'POST').then((r) => r.json()),
+]);
+assert(Math.max(cr1.strikes ?? 0, cr2.strikes ?? 0) <= 1, 'a racing return counts at most one strike');
+const afterRace = await (await request('/api/state', alphaCookie)).json();
+assert.equal(afterRace.strikes, 1, 'exactly one strike recorded after the race');
+await request(`/api/admin/teams/${alphaRow.id}/requalify`, adminCookie, { resetStrikes: true });
 
 // ---- exemptions are never struck ----
 const charlieCookie = await loginTeam('CHARLIE-3');
@@ -204,6 +219,11 @@ assert.equal(ann.announcement.text, 'Ten minutes remaining.');
 assert.equal(ann.announcement.level, 'warning');
 const stateWithAnn = await (await request('/api/state', alphaCookie)).json();
 assert.equal(stateWithAnn.announcement.text, 'Ten minutes remaining.');
+// The heartbeat carries the announcement too, so playing teams receive a
+// broadcast within one ping instead of on their next game action.
+const hbAnn = await (await request('/api/heartbeat', alphaCookie, undefined, 'POST')).json();
+assert.equal(hbAnn.announcement.text, 'Ten minutes remaining.');
+assert.equal(hbAnn.announcement.level, 'warning');
 await request('/api/admin/announce', adminCookie, { text: '', level: 'info' });
 const cleared = await (await request('/api/announcement')).json();
 assert.equal(cleared.announcement, null);
@@ -236,6 +256,22 @@ assert(csv.includes('team,status,kind'));
 assert(csv.includes('Alpha Prime'));
 assert(csv.includes('DISQUALIFIED') === false, 'Alpha is requalified');
 assert((await request('/api/admin/export', null)).status === 401);
+
+// Player-controlled names must not become live spreadsheet formulas.
+await request(`/api/admin/teams/${alphaRow.id}/rename`, adminCookie, { name: '=SUM(A1)' });
+const csvInjection = await (await request('/api/admin/export', adminCookie)).text();
+assert(csvInjection.includes("'=SUM(A1)"), 'spreadsheet formulas are neutralised in the export');
+await request(`/api/admin/teams/${alphaRow.id}/rename`, adminCookie, { name: 'Alpha Prime' });
+
+// ---- input validation ----
+assert.equal((await request('/api/admin/teams/99999/requalify', adminCookie, {})).status, 404);
+assert.equal((await request('/api/admin/teams/99999/rename', adminCookie, { name: 'x' })).status, 404);
+assert.equal((await request('/api/admin/teams/99999/delete', adminCookie, {})).status, 404);
+assert.equal((await request(`/api/admin/teams/${alphaRow.id}/stage`, adminCookie, { act: 'act99' })).status, 400);
+assert.equal((await request(`/api/admin/teams/${alphaRow.id}/rename`, adminCookie, { name: '   ' })).status, 400);
+assert.equal((await request('/api/admin/teams', adminCookie, { name: '   ' })).status, 400);
+const capped = await (await request(`/api/admin/teams/${alphaRow.id}/strikes`, adminCookie, { strikes: 999 })).json();
+assert.equal(capped.strikes, 99, 'strike input is clamped');
 
 // ---- requalify-all ----
 await request(`/api/admin/teams/${alphaRow.id}/disqualify`, adminCookie, { reason: 'test batch' });

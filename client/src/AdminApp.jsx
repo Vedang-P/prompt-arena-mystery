@@ -144,6 +144,7 @@ function AdminLogin({ onSignedIn }) {
   return (
     <div className="admin-login">
       <form className="admin-login-card" onSubmit={submit}>
+        <span className="admin-mark admin-login-mark" aria-hidden="true">◒</span>
         <p className="admin-eyebrow">Prompt Arena · Event Control</p>
         <h1>Control Room</h1>
         <p className="admin-login-note">
@@ -180,6 +181,8 @@ function Dashboard({ session, onLoggedOut }) {
   const [refreshTick, setRefreshTick] = useState(0);
   const [now, setNow] = useState(Date.now());
   const [createOpen, setCreateOpen] = useState(false);
+  // The insights rail opens by default only when the table still has room.
+  const [insightsOpen, setInsightsOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1560);
 
   const refresh = useCallback(async () => {
     try {
@@ -246,7 +249,6 @@ function Dashboard({ session, onLoggedOut }) {
 
   const teams = data?.teams ?? [];
   const stats = data?.stats;
-  const config = data?.config;
   const disqualified = teams.filter((t) => t.disqualified);
 
   const visible = useMemo(() => {
@@ -288,8 +290,10 @@ function Dashboard({ session, onLoggedOut }) {
       await post('/api/admin/announce', { text, level });
       setToast({ kind: 'ok', text: text ? 'Announcement posted to every team.' : 'Announcement cleared.' });
       await refresh();
+      return true;
     } catch {
       setToast({ kind: 'error', text: 'Could not post the announcement.' });
+      return false;
     }
   };
 
@@ -308,18 +312,14 @@ function Dashboard({ session, onLoggedOut }) {
     <div className="admin">
       <header className="admin-header">
         <div className="admin-brand">
-          <p className="admin-eyebrow">Prompt Arena · Event Control</p>
-          <h1>Control Room</h1>
-        </div>
-        <div className="admin-chips">
-          <span className={`admin-chip ${connected ? 'ok' : 'bad'}`}>{connected ? '● Live' : '● Reconnecting'}</span>
-          {config?.eventMode != null && <span className="admin-chip">Event mode {config.eventMode ? 'on' : 'off'}</span>}
-          <span className="admin-chip">Fullscreen {config?.fullscreen ? `enforced · ${Math.round((config.graceMs ?? 10000) / 1000)}s grace` : 'off'}</span>
-          <span className="admin-chip">{config?.maxStrikes ?? 3} strikes = DQ</span>
-          {config?.llm && <span className="admin-chip">AI suspects live</span>}
+          <span className="admin-mark" aria-hidden="true">◒</span>
+          <div>
+            <p className="admin-eyebrow">Prompt Arena · Event Control</p>
+            <h1>Control Room</h1>
+          </div>
         </div>
         <div className="admin-header-actions">
-          <button className="admin-button" onClick={refresh}>Refresh ↺</button>
+          <button className="admin-button" onClick={refresh} title="Fetch the latest state now">Refresh</button>
           <a className="admin-button" href="/api/admin/export">Export CSV</a>
           <button
             className="admin-button danger-ghost"
@@ -333,24 +333,23 @@ function Dashboard({ session, onLoggedOut }) {
         </div>
       </header>
 
+      {!connected && (
+        <div className="admin-offline" role="status">
+          Connection interrupted — retrying automatically. The board may be a few seconds stale.
+        </div>
+      )}
+
       {!data && <p className="admin-note">Loading the live board…</p>}
 
       {data && (
         <>
-          <section className="admin-stats">
-            <StatCard label="Teams" value={stats.teams} hint={`${stats.guestsPractice} preview saves`} />
-            <StatCard label="Online now" value={stats.online} hint="seen in the last 45s" tone="ok" />
-            <StatCard label="In play" value={stats.inPlay} hint={`${stats.notStarted} not started`} />
-            <StatCard label="Solved" value={stats.solved} hint="case closed" />
-            <StatCard label="Strike warnings" value={stats.warned} hint={`${stats.pendingExits} out right now`} tone={stats.warned ? 'warn' : undefined} />
-            <StatCard label="Disqualified" value={stats.disqualified} hint={`${stats.exempt} exempt`} tone={stats.disqualified ? 'bad' : undefined} />
-          </section>
-
           {disqualified.length > 0 && (
             <section className="admin-dq">
               <div className="admin-dq-head">
                 <div>
-                  <h2>Disqualified teams</h2>
+                  <h2>
+                    <span className="admin-dq-dot" /> {disqualified.length} disqualified {disqualified.length === 1 ? 'team' : 'teams'}
+                  </h2>
                   <p>Clearing a team returns it to play immediately, at the exact stage it left.</p>
                 </div>
                 <button
@@ -380,8 +379,8 @@ function Dashboard({ session, onLoggedOut }) {
                       </span>
                     </div>
                     <div className="admin-dq-when">
-                      <span>{fmtDateTime(t.disqualifiedAt)}</span>
-                      <small>{t.strikes} strikes</small>
+                      <span title={t.disqualifiedAt ? fmtDateTime(t.disqualifiedAt) : ''}>{fmtAgo(t.disqualifiedAt, now)}</span>
+                      <small>{t.strikes} strikes · {fmtDateTime(t.disqualifiedAt)}</small>
                     </div>
                     <div className="admin-dq-actions">
                       <button className="admin-button primary" disabled={busyAction} onClick={() => runAction(t.id, 'requalify', { resetStrikes: true }, null, `${t.name} is back in play with a clean sheet.`)}>
@@ -398,7 +397,16 @@ function Dashboard({ session, onLoggedOut }) {
             </section>
           )}
 
-          <section className="admin-split">
+          <section className="admin-stats">
+            <StatCard label="Teams" value={stats.teams} hint={`${stats.guestsPractice} preview saves`} />
+            <StatCard label="Online now" value={stats.online} hint="seen in the last 45s" tone="ok" />
+            <StatCard label="In play" value={stats.inPlay} hint={`${stats.notStarted} not started`} />
+            <StatCard label="Solved" value={stats.solved} hint="case closed" />
+            <StatCard label="Strike warnings" value={stats.warned} hint={`${stats.pendingExits} out right now`} tone={stats.warned ? 'warn' : undefined} />
+            <StatCard label="Disqualified" value={stats.disqualified} hint={`${stats.exempt} exempt`} tone={stats.disqualified ? 'bad' : undefined} />
+          </section>
+
+          <section className={`admin-split ${insightsOpen ? '' : 'solo'}`}>
             <div className="admin-main">
               <AnnounceComposer current={data.announcement} onPost={announce} />
 
@@ -431,6 +439,13 @@ function Dashboard({ session, onLoggedOut }) {
                       <option value="name">Sort: name</option>
                     </select>
                     <button className="admin-button" onClick={() => setCreateOpen((o) => !o)}>{createOpen ? 'Close' : '+ Team'}</button>
+                    <button
+                      className={`admin-button ${insightsOpen ? 'selected' : ''}`}
+                      onClick={() => setInsightsOpen((o) => !o)}
+                      title="Act distribution and live activity"
+                    >
+                      Insights
+                    </button>
                   </div>
 
                   {createOpen && (
@@ -449,8 +464,8 @@ function Dashboard({ session, onLoggedOut }) {
                           <th className="num">Puzzles</th>
                           <th className="num">Penalties</th>
                           <th className="num">Strikes</th>
-                          <th>Last seen</th>
-                          <th />
+                          <th className="seen-cell">Seen</th>
+                          <th className="actions-cell" />
                         </tr>
                       </thead>
                       <tbody>
@@ -480,12 +495,12 @@ function Dashboard({ session, onLoggedOut }) {
                               )}
                             </td>
                             <td>
-                              <span className="stage-title">{t.actTitle ?? t.act}</span>
-                              <small>{t.actEnteredAt ? `in stage ${fmtAgo(t.actEnteredAt, now)}` : '—'}</small>
+                              <span className="stage-title" title={t.actTitle ?? t.act}>{t.actTitle ?? t.act}</span>
+                              <small>{t.actEnteredAt ? `entered ${fmtAgo(t.actEnteredAt, now)}` : '—'}</small>
                             </td>
                             <td>
-                              <span className="stage-title">{t.lastPassedTitle ?? '—'}</span>
-                              <small>{t.lastPassedAt ? `passed ${fmtTime(t.lastPassedAt)} · ${fmtAgo(t.lastPassedAt, now)}` : 'nothing yet'}</small>
+                              <span className="stage-title" title={t.lastPassedTitle ?? ''}>{t.lastPassedTitle ?? '—'}</span>
+                              <small title={t.lastPassedAt ? fmtDateTime(t.lastPassedAt) : ''}>{t.lastPassedAt ? `passed ${fmtAgo(t.lastPassedAt, now)}` : 'nothing yet'}</small>
                             </td>
                             <td className="num">
                               {t.discovered}
@@ -497,22 +512,25 @@ function Dashboard({ session, onLoggedOut }) {
                             </td>
                             <td className={`num ${t.penalties > 0 ? 'bad-text' : ''}`}>{t.penalties}</td>
                             <td className={`num ${t.strikes > 0 ? 'warn-text' : ''}`}>{t.strikes}/{t.maxStrikes}</td>
-                            <td title={t.lastSeenAt ? fmtDateTime(t.lastSeenAt) : ''}>{fmtAgo(t.lastSeenAt, now)}</td>
-                            <td className="row-actions">
-                              <button className="admin-button quiet" onClick={() => setSelected(t.id)}>Manage</button>
-                              {t.disqualified ? (
-                                <button className="admin-button" disabled={busyAction} onClick={() => runAction(t.id, 'requalify', { resetStrikes: true }, null, `${t.name} requalified.`)}>
-                                  Requalify
-                                </button>
-                              ) : (
-                                <button
-                                  className="admin-button quiet"
-                                  disabled={busyAction}
-                                  onClick={() => runAction(t.id, 'disqualify', { reason: 'admin_decision' }, `Disqualify ${t.name}?`, `${t.name} disqualified.`)}
-                                >
-                                  DQ
-                                </button>
-                              )}
+                            <td className="seen-cell" title={t.lastSeenAt ? fmtDateTime(t.lastSeenAt) : ''}>{fmtAgo(t.lastSeenAt, now)}</td>
+                            <td className="actions-cell">
+                              <div className="row-actions">
+                                <button className="admin-button quiet" onClick={() => setSelected(t.id)}>Manage</button>
+                                {t.disqualified ? (
+                                  <button className="admin-button" disabled={busyAction} onClick={() => runAction(t.id, 'requalify', { resetStrikes: true }, null, `${t.name} requalified.`)}>
+                                    Requalify
+                                  </button>
+                                ) : (
+                                  <button
+                                    className="admin-button quiet dq-quick"
+                                    disabled={busyAction}
+                                    title={`Disqualify ${t.name}`}
+                                    onClick={() => runAction(t.id, 'disqualify', { reason: 'admin_decision' }, `Disqualify ${t.name}?`, `${t.name} disqualified.`)}
+                                  >
+                                    DQ
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -555,6 +573,7 @@ function Dashboard({ session, onLoggedOut }) {
               )}
             </div>
 
+            {insightsOpen && (
             <aside className="admin-side">
               <section className="admin-panel">
                 <h3>Act distribution</h3>
@@ -574,19 +593,23 @@ function Dashboard({ session, onLoggedOut }) {
               <section className="admin-panel">
                 <h3>Live activity</h3>
                 <ul className="admin-feed">
-                  {(data.recentEvents ?? []).slice(0, 22).map((ev) => (
-                    <li key={ev.id}>
-                      <span className={`feed-dot ${ev.type === 'exit_strike' || ev.type === 'disqualified' ? 'bad' : ev.type === 'exit' ? 'warn' : 'ok'}`} />
-                      <div>
-                        <strong>{ev.team ?? 'Unknown team'}</strong>
-                        <span>{EVENT_LABELS[ev.type] ?? ev.type}{eventDetailText(ev) ? ` · ${eventDetailText(ev)}` : ''}</span>
-                        <small>{fmtAgo(ev.at, now)}</small>
-                      </div>
-                    </li>
-                  ))}
+                  {(data.recentEvents ?? []).slice(0, 22).map((ev) => {
+                    const tone = ev.type === 'exit_strike' || ev.type === 'disqualified' ? 'bad' : ev.type === 'exit' ? 'warn' : 'ok';
+                    return (
+                      <li key={ev.id}>
+                        <span className={`feed-avatar ${tone}`}>{(ev.team ?? '?').trim().slice(0, 1).toUpperCase()}</span>
+                        <div>
+                          <strong>{ev.team ?? 'Unknown team'}</strong>
+                          <span>{EVENT_LABELS[ev.type] ?? ev.type}{eventDetailText(ev) ? ` · ${eventDetailText(ev)}` : ''}</span>
+                          <small>{fmtAgo(ev.at, now)}</small>
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               </section>
             </aside>
+            )}
           </section>
         </>
       )}
@@ -599,8 +622,6 @@ function Dashboard({ session, onLoggedOut }) {
           busyAction={busyAction}
           onClose={() => setSelected(null)}
           runAction={runAction}
-          onRefresh={refresh}
-          setToast={setToast}
         />
       )}
 
@@ -626,34 +647,34 @@ function AnnounceComposer({ current, onPost }) {
   const send = async (event) => {
     event.preventDefault();
     setBusy(true);
-    await onPost(text.trim(), level);
+    const ok = await onPost(text.trim(), level);
     setBusy(false);
-    setText('');
+    if (ok !== false) setText('');
   };
   return (
     <section className="admin-announce">
-      <form onSubmit={send}>
-        <span className="admin-eyebrow">{current ? 'Announcement live' : 'Broadcast to every team'}</span>
-        {current && (
-          <p className="admin-announce-current">
-            <span className={`pill ${current.level === 'urgent' ? 'bad' : current.level === 'warning' ? 'warn' : ''}`}>{current.level}</span>
-            {current.text}
-          </p>
+      <div className="admin-announce-head">
+        <span className="admin-eyebrow">Broadcast</span>
+        {current ? (
+          <span className={`pill ${current.level === 'urgent' ? 'bad' : current.level === 'warning' ? 'warn' : 'ok'}`}>{current.level} · live</span>
+        ) : (
+          <span className="admin-announce-hint">Appears on every team&rsquo;s screen within seconds</span>
         )}
-        <div className="admin-announce-controls">
-          <input value={text} maxLength={300} placeholder="Message shown on every team's screen…" onChange={(e) => setText(e.target.value)} />
-          <select value={level} onChange={(e) => setLevel(e.target.value)}>
-            <option value="info">Info</option>
-            <option value="warning">Warning</option>
-            <option value="urgent">Urgent</option>
-          </select>
-          <button className="admin-button primary" disabled={busy || !text.trim()}>{current ? 'Replace' : 'Post'}</button>
-          {current && (
-            <button type="button" className="admin-button" disabled={busy} onClick={() => onPost('', 'info')}>
-              Clear
-            </button>
-          )}
-        </div>
+      </div>
+      {current && <p className="admin-announce-current">{current.text}</p>}
+      <form className="admin-announce-controls" onSubmit={send}>
+        <input value={text} maxLength={300} placeholder="Message shown on every team's screen…" onChange={(e) => setText(e.target.value)} />
+        <select value={level} onChange={(e) => setLevel(e.target.value)}>
+          <option value="info">Info</option>
+          <option value="warning">Warning</option>
+          <option value="urgent">Urgent</option>
+        </select>
+        <button className="admin-button primary" disabled={busy || !text.trim()}>{current ? 'Replace' : 'Post'}</button>
+        {current && (
+          <button type="button" className="admin-button" disabled={busy} onClick={() => onPost('', 'info')}>
+            Clear
+          </button>
+        )}
       </form>
     </section>
   );
@@ -679,7 +700,7 @@ function CreateTeamForm({ onCreate }) {
   );
 }
 
-function TeamDrawer({ teamId, now, version, busyAction, onClose, runAction, onRefresh, setToast }) {
+function TeamDrawer({ teamId, now, version, busyAction, onClose, runAction }) {
   const [detail, setDetail] = useState(null);
   const [error, setError] = useState(false);
   const [rename, setRename] = useState('');
@@ -690,7 +711,6 @@ function TeamDrawer({ teamId, now, version, busyAction, onClose, runAction, onRe
   const [resetPenalty, setResetPenalty] = useState('0');
   const [stage, setStage] = useState('');
   const [showAllEvents, setShowAllEvents] = useState(false);
-  const [saving, setSaving] = useState(null);
   const renameRef = useRef(false);
 
   useEffect(() => {
@@ -710,6 +730,15 @@ function TeamDrawer({ teamId, now, version, busyAction, onClose, runAction, onRe
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [teamId, version]);
+
+  // Escape closes the drawer, like every other panel in the game.
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   const team = detail?.team;
   const events = detail?.events ?? [];
@@ -742,7 +771,8 @@ function TeamDrawer({ teamId, now, version, busyAction, onClose, runAction, onRe
                 </h2>
                 <p className="admin-drawer-sub">
                   {team.actTitle ?? team.act}
-                  {team.actEnteredAt ? ` · stayed ${fmtAgo(team.actEnteredAt, now).replace(' ago', '')}` : ''}
+                  {team.actEnteredAt ? ` · entered ${fmtAgo(team.actEnteredAt, now)}` : ''}
+                  {team.pendingExit ? ' · currently outside fullscreen' : ''}
                 </p>
               </div>
               <button className="admin-close" onClick={onClose} aria-label="Close">×</button>
@@ -796,11 +826,11 @@ function TeamDrawer({ teamId, now, version, busyAction, onClose, runAction, onRe
                   </label>
                 </div>
                 <div className="admin-action-row">
-                  <input placeholder="Reason shown on their screen…" value={dqReason} onChange={(e) => setDqReason(e.target.value)} maxLength={200} />
+                  <input placeholder="Reason (optional)…" value={dqReason} onChange={(e) => setDqReason(e.target.value)} maxLength={200} />
                   <button
                     className="admin-button danger"
                     disabled={!!busyAction}
-                    onClick={() => act('disqualify', { reason: dqReason || undefined }, `Disqualify ${team.name}?`, 'Team disqualified.')}
+                    onClick={() => act('disqualify', { reason: dqReason || undefined }, `Disqualify ${team.name}?`, 'Team disqualified.', () => setDqReason(''))}
                   >
                     Disqualify now
                   </button>
@@ -830,7 +860,7 @@ function TeamDrawer({ teamId, now, version, busyAction, onClose, runAction, onRe
                     Adjust penalties
                     <span className="admin-inline">
                       <input type="number" value={penaltyDelta} onChange={(e) => setPenaltyDelta(e.target.value)} placeholder="e.g. 5 or -5" />
-                      <button className="admin-button" disabled={!!busyAction || !penaltyDelta} onClick={() => act('penalties', { delta: Number(penaltyDelta) || 0 }, null, 'Penalties adjusted.')}>
+                      <button className="admin-button" disabled={!!busyAction || !penaltyDelta} onClick={() => act('penalties', { delta: Number(penaltyDelta) || 0 }, null, 'Penalties adjusted.', () => setPenaltyDelta(''))}>
                         Apply
                       </button>
                     </span>
@@ -851,7 +881,7 @@ function TeamDrawer({ teamId, now, version, busyAction, onClose, runAction, onRe
                   <label>
                     Danger zone
                     <span className="admin-inline">
-                      <button className="admin-button danger" disabled={!!busyAction} onClick={() => act('delete', {}, `Permanently delete ${team.name}, its progress, chat and events?\n\nThis cannot be undone.`, 'Team deleted.')}>
+                      <button className="admin-button danger" disabled={!!busyAction} onClick={() => act('delete', {}, `Permanently delete ${team.name}, its progress, chat and events?\n\nThis cannot be undone.`, 'Team deleted.', () => onClose())}>
                         Delete team
                       </button>
                     </span>

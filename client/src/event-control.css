@@ -27,7 +27,7 @@
 .dq-facts dd{margin:0;font-size:20px;font-variant-numeric:tabular-nums;color:#f0d7ce}
 .dq-help{font-size:13px;line-height:1.8;color:#aeb6ba;margin:0 0 26px}
 
-.announce-bar{position:fixed;top:0;left:0;right:0;z-index:520;display:flex;align-items:center;gap:14px;padding:10px 46px 10px 18px;font-size:13px;line-height:1.5;color:#0e1418;background:#d4b67c;box-shadow:0 6px 24px #0006}
+.announce-bar{position:fixed;top:0;left:0;right:0;z-index:700;display:flex;align-items:center;gap:14px;padding:10px 46px 10px 18px;font-size:13px;line-height:1.5;color:#0e1418;background:#d4b67c;box-shadow:0 6px 24px #0006}
 .announce-bar strong{font-size:10px;letter-spacing:.16em;text-transform:uppercase;white-space:nowrap}
 .announce-bar span{flex:1}
 .announce-bar button{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:0;font-size:20px;color:#0e1418;cursor:pointer;line-height:1}

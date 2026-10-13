@@ -309,14 +309,23 @@ export default function App() {
       if (document.hidden) return;
       try {
         const res = await heartbeat();
-        if (alive && res?.strikes != null) {
-          setState((s) => (s && s.strikes !== res.strikes ? { ...s, strikes: res.strikes } : s));
-        }
+        if (!alive || !res) return;
+        setState((s) => {
+          if (!s) return s;
+          const strikesChanged = res.strikes != null && s.strikes !== res.strikes;
+          const nextAnn = res.announcement ?? null;
+          const annChanged =
+            (s.announcement?.id ?? null) !== (nextAnn?.id ?? null) ||
+            (s.announcement?.text ?? '') !== (nextAnn?.text ?? '') ||
+            (s.announcement?.level ?? null) !== (nextAnn?.level ?? null);
+          if (!strikesChanged && !annChanged) return s;
+          return { ...s, strikes: res.strikes ?? s.strikes, announcement: nextAnn };
+        });
       } catch (e) {
         if (alive && e.status === 403 && e.data?.error === 'disqualified') handleDisqualified(e.data);
       }
     };
-    const timer = setInterval(ping, 20000);
+    const timer = setInterval(ping, 15000);
     ping();
     return () => { alive = false; clearInterval(timer); };
   }, [state?.team, phase]);
@@ -802,6 +811,7 @@ export default function App() {
   if (phase === 'solved') {
     return (
       <div className="center-screen">
+        {announcement}
         <div className="login-card certificate">
           <p className="login-kicker">The case is closed</p>
           <h1 className="login-title">Solved</h1>

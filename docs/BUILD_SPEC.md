@@ -137,7 +137,7 @@ Each room's `scene` equals its id.
 sameer, parth, mother, officer, veer, enakshi, tanush, leader (plus pseudos narrator/voice
 allowed in lines). Character hotspots: mother (parth_home, act2), veer (concert act3,
 sameer_room act7), officer (police_station act6). Give mother/officer/veer small fact sets
-gated by clues (e.g. mother: c_videos; officer: c_reports; veer: c_apogee) so the legacy
+gated by clues (e.g. mother: c_vihaan; officer: c_reports; veer: c_apogee) so the legacy
 interrogation system stays grounded. `canonical_qa` entries for the scripted dialogue.
 
 ### Clues → placement/grant
@@ -145,15 +145,16 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 | --- | --- | --- | --- |
 | c_diary | parth_room bookcase hotspot | — | leather diary, gold moon engraving |
 | c_morse | grant of p_morse | — | the decoded line "OC1808 in laptop" |
-| c_laptop_locked | parth_room laptop hotspot | — | hint on screen |
+| c_laptop_locked | parth_room laptop hotspot | — | wrong guess, then the diary hint is on screen |
 | c_laptop | grant of p_laptop | — | laptop open, folders visible |
 | c_reports | parth_room laptop hotspot #2 | c_laptop | missing reports + gone poster + full-moon calendar |
 | c_email | parth_room laptop hotspot #3 | c_reports | email to himself (this is what exposes him in act5) |
-| c_coords | parth_room laptop hotspot #3 | c_reports | map coordinates -> the field |
+| c_coords | parth_room laptop hotspot #3 | c_email | map coordinates -> the field |
 | c_sedan | abandoned_field sedan hotspot | — | plate KA01OC1808 |
 | c_backpack | abandoned_field backpack hotspot | c_sedan | cassettes |
 | c_mixtape | grant of p_cassette | — | chanting, drums, scream |
-| c_videos | parth_home albums hotspot | c_mixtape | young Parth & Vihaan, drums |
+| c_vihaan | cyber_cafe phone hotspot | c_mixtape | plate lookup -> owner Vihaan |
+| c_videos | parth_home albums hotspot | c_vihaan | young Parth & Vihaan, drums |
 | c_cd | gazebo under-gazebo hotspot | p_voicenote2 | copper spiral CD |
 | c_laptop_fried | fail_grants of p_cd_mode | — | motherboard fried |
 | c_footage | grant of p_cd_mode (both paths) | — | dark ritual video, disfigured flesh |
@@ -201,7 +202,7 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 ### Puzzles → answer keys (player-facing prompt is authored by W1–W3)
 | id | kind | answer(s) | penalty | behavior |
 | --- | --- | --- | --- | --- |
-| p_morse | text | oc1808 | 0 | requires c_diary; grants c_morse; evidence diary_morse + decoder |
+| p_morse | text | oc1808 | 0 | requires c_diary + c_laptop_locked; grants c_morse; evidence diary_morse + decoder |
 | p_laptop | code | oc1808 | 0 | requires c_morse; grants c_laptop |
 | p_cassette | choice | Play it | 0 | options [Play it, Put it back]; requires c_backpack; grants c_mixtape |
 | p_drums | text | cassette, the cassette, mixtape | 0 | requires c_videos |
