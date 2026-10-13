@@ -7,6 +7,7 @@ import Soundtrack from './Soundtrack.jsx';
 import Leaderboard from './Leaderboard.jsx';
 const ActDirector = lazy(() => import('./ActDirector.jsx'));
 import LogoutButton from './LogoutButton.jsx';
+import FullscreenGate, { DisqualifiedScreen, tryEnterFullscreen } from './FullscreenGate.jsx';
 import {
   AccuseModal,
   DialogueOverlay,
@@ -24,6 +25,7 @@ import {
   getAuthConfig,
   getHistory,
   getState,
+  heartbeat,
   interrogate,
   restartRun,
   solvePuzzle,
@@ -87,6 +89,8 @@ export default function App() {
   const [story, setStory] = useState(null);
   const [staleBuild, setStaleBuild] = useState(false);
   const [restartOpen, setRestartOpen] = useState(false);
+  const [dqInfo, setDqInfo] = useState(null);
+  const [dismissedAnn, setDismissedAnn] = useState(null);
   const accuseTimer = useRef(null);
 
   // Dev/testing shortcuts: ?beat=<id> replays the cinematic from that beat, even
@@ -256,6 +260,7 @@ export default function App() {
         data = await getState();
       }
       setState(data);
+      setDqInfo(null);
       const act = data.acts?.find((a) => a.id === data.act);
       const actRoomIds = act?.rooms?.length ? act.rooms : data.rooms.map((r) => r.id);
       const entry =
@@ -267,7 +272,10 @@ export default function App() {
       setPhase(destination === 'menu' ? 'menu' : data.solved ? 'solved' : 'game');
       return true;
     } catch (e) {
-      if (e.status === 401) setPhase('login');
+      if (e.status === 403 && e.data?.error === 'disqualified') {
+        setDqInfo(e.data);
+        setPhase('disqualified');
+      } else if (e.status === 401) setPhase('login');
       else { setLoginError('The case server is unavailable. Try again in a moment.'); setPhase('login'); }
       return false;
     }
@@ -283,6 +291,32 @@ export default function App() {
       // Keep the optimistic view; the next explicit load will reconcile.
     }
   };
+
+  const handleDisqualified = (info) => {
+    setDqInfo(info ?? {});
+    setPhase('disqualified');
+  };
+
+  // Presence + enforcement ping while the team is in play. It also notices an
+  // admin-side disqualification (or a requalification) without a reload.
+  useEffect(() => {
+    if (!state || phase !== 'game') return;
+    let alive = true;
+    const ping = async () => {
+      if (document.hidden) return;
+      try {
+        const res = await heartbeat();
+        if (alive && res?.strikes != null) {
+          setState((s) => (s && s.strikes !== res.strikes ? { ...s, strikes: res.strikes } : s));
+        }
+      } catch (e) {
+        if (alive && e.status === 403 && e.data?.error === 'disqualified') handleDisqualified(e.data);
+      }
+    };
+    const timer = setInterval(ping, 20000);
+    ping();
+    return () => { alive = false; clearInterval(timer); };
+  }, [state?.team, phase]);
 
   useEffect(() => {
     // The cinematic title card is the only landing page: /play/ never shows a menu when a
@@ -459,6 +493,7 @@ export default function App() {
   };
 
   const handleDevLogin = async (code) => {
+    if (authConfig?.fullscreen) tryEnterFullscreen();
     setLoginBusy(true);
     setLoginError(null);
     try {
@@ -678,11 +713,46 @@ export default function App() {
   </>;
   const audio = <Soundtrack roomId={roomId ?? 'gazebo'} radio={!story} />;
 
+  // Fullscreen enforcement is active whenever the deployment enforces it and
+  // this team is a real event entry (practice saves and exempt teams step out).
+  const fsGate = authConfig?.fullscreen && state && !state.practice && !state.exempt ? (
+    <FullscreenGate
+      enabled
+      graceMs={state.graceMs ?? authConfig.graceMs ?? 10000}
+      maxStrikes={state.maxStrikes ?? authConfig.maxStrikes ?? 3}
+      strikes={state.strikes ?? 0}
+      onStrike={(res) => {
+        if (res?.strikes != null) setState((s) => (s ? { ...s, strikes: res.strikes } : s));
+      }}
+      onDisqualified={handleDisqualified}
+    />
+  ) : null;
+
+  const announcement = state?.announcement && dismissedAnn !== state.announcement.id ? (
+    <div className={`announce-bar ${state.announcement.level ?? 'info'}`} role="status">
+      <strong>{state.announcement.level === 'urgent' ? 'Invigilator' : state.announcement.level === 'warning' ? 'Notice' : 'Event desk'}</strong>
+      <span>{state.announcement.text}</span>
+      <button onClick={() => setDismissedAnn(state.announcement.id)} aria-label="Dismiss announcement">×</button>
+    </div>
+  ) : null;
+
   if (phase === 'loading') {
     return (
       <div className="center-screen">
         <p className="loader">Setting the scene…</p>
       </div>
+    );
+  }
+
+  if (phase === 'disqualified') {
+    return (
+      <DisqualifiedScreen
+        info={dqInfo}
+        onRequalified={() => {
+          setDqInfo(null);
+          loadGame('game');
+        }}
+      />
     );
   }
 
@@ -714,7 +784,7 @@ export default function App() {
 
   if (ending) {
     return (
-      <div>{audio}<EndingCard
+      <div>{audio}{announcement}<EndingCard
         ending={ending}
         score={score}
         penalties={state.penalties ?? 0}
@@ -722,7 +792,7 @@ export default function App() {
         title={state.title}
         onReplay={() => setPhase('menu')}
         onRestart={() => setRestartOpen(true)}
-      />{overlays}</div>
+      />{overlays}{fsGate}</div>
     );
   }
 
@@ -750,6 +820,7 @@ export default function App() {
           </div>
         </div>
         {overlays}
+        {fsGate}
       </div>
     );
   }
@@ -757,7 +828,7 @@ export default function App() {
   if (currentAct?.type === 'cinematic') {
     const next = nextActFor(currentAct);
     return (
-      <>{audio}{overlays}<ActDirector
+      <>{audio}{announcement}{overlays}<ActDirector
         key={currentAct.id}
         act={currentAct}
         characters={state.characters}
@@ -767,13 +838,13 @@ export default function App() {
         nextActKicker={next?.kicker}
         nextActTitle={next?.title}
         endLabel={next ? (next.type === 'cinematic' ? 'Continue' : 'Enter') : undefined}
-      /></>
+      />{fsGate}</>
     );
   }
 
   return (
     <div className={`app ${activeChar ? 'talking' : ''}`}>
-      {audio}{overlays}
+      {audio}{announcement}{overlays}{fsGate}
       <div className="scene-layer">
         {!story && <Scene
           state={displayState}
@@ -792,6 +863,7 @@ export default function App() {
         <div className="location"><p className="location-kicker">{currentAct?.kicker} · {currentAct?.title}{state.practice ? ' · Practice' : ''}</p><h1 className="location-name">{room.name}</h1><p className="hud-objective">{currentAct?.objective}</p></div>
         <div className="release-tools">
           <span className="penalty-counter" title="Case penalties">{state.penalties ?? 0} {(state.penalties ?? 0) === 1 ? 'penalty' : 'penalties'}</span>
+          {(state.strikes ?? 0) > 0 && <span className="penalty-counter strike-counter" title="Three exits without returning inside the grace window disqualify the team">{state.strikes}/{state.maxStrikes ?? 3} exit strikes</span>}
           <button className="quiet-button" onClick={() => setSettingsOpen(true)}>Settings</button>
           {!authConfig?.eventMode && <button className="quiet-button" onClick={() => setChaptersOpen(true)}>Chapters</button>}
           <button className="quiet-button" onClick={()=>setLeaderboardOpen(true)}>Live leaderboard</button>

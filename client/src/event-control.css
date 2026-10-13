@@ -1,0 +1,36 @@
+/* Event control: fullscreen gate, disqualification screen, announcements. */
+
+.fs-gate{position:fixed;inset:0;z-index:600;display:flex;align-items:center;justify-content:center;background:#050a0ee8;backdrop-filter:blur(14px);padding:24px}
+.fs-gate-card{width:min(560px,calc(100vw - 48px));background:#182329;border:1px solid #45565c;border-radius:12px;padding:38px 40px;text-align:center;color:#f3efe4;box-shadow:0 40px 120px #000a}
+.fs-gate-kicker{font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:#d4b67c;margin:0 0 14px}
+.fs-gate-card h2{font-size:30px;font-weight:500;letter-spacing:-.03em;margin:0 0 16px;color:#f6f1e2}
+.fs-gate-body{font-size:14px;line-height:1.75;color:#b6c2c4;margin:0 0 22px}
+.fs-gate-track{height:6px;border-radius:3px;background:#0d171d;overflow:hidden;margin:0 auto 24px;width:min(360px,80%)}
+.fs-gate-track span{display:block;height:100%;background:linear-gradient(90deg,#d4b67c,#e8cf9c);transition:width .2s linear}
+.fs-gate-track span.expired{background:#c65a4a}
+.fs-gate-button{display:inline-block;background:#d4b67c;border:1px solid #d4b67c;color:#131d23;font-size:14px;font-weight:600;padding:15px 30px;border-radius:5px;cursor:pointer}
+.fs-gate-button:hover{background:#e2c78e}
+.fs-gate-strikes{margin:22px 0 0;font-size:12px;color:#9fb0b4}
+.fs-gate-strikes strong{color:#e0c58b}
+.fs-gate-skip{display:block;margin:18px auto 0;background:none;border:0;color:#7d9298;font-size:11px;text-decoration:underline;cursor:pointer}
+.fs-strike-toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%);z-index:610;background:#2b1d16;border:1px solid #c65a4a;color:#f2d9cf;font-size:13px;line-height:1.6;padding:14px 22px;border-radius:8px;box-shadow:0 18px 60px #0008;max-width:min(560px,90vw);text-align:center}
+
+.dq-screen{background:radial-gradient(ellipse at 50% 20%,#2a1512 0%,#0b0d0e 62%)}
+.dq-card{width:min(620px,calc(100vw - 48px));background:#181b20;border:1px solid #5d3a34;border-radius:12px;padding:44px;text-align:center;color:#f3ece7;box-shadow:0 40px 120px #000b}
+.dq-kicker{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#d98b76;margin:0 0 14px}
+.dq-card h1{font-size:42px;font-weight:500;letter-spacing:-.04em;margin:0 0 14px;color:#f4e9e4}
+.dq-team{font-size:15px;color:#e7d9d3;margin:0 0 10px}
+.dq-reason{font-size:14px;line-height:1.75;color:#c9a99f;margin:0 0 26px}
+.dq-facts{display:flex;gap:34px;justify-content:center;margin:0 0 26px;padding:0}
+.dq-facts div{text-align:center}
+.dq-facts dt{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#9b817a;margin-bottom:6px}
+.dq-facts dd{margin:0;font-size:20px;font-variant-numeric:tabular-nums;color:#f0d7ce}
+.dq-help{font-size:13px;line-height:1.8;color:#aeb6ba;margin:0 0 26px}
+
+.announce-bar{position:fixed;top:0;left:0;right:0;z-index:520;display:flex;align-items:center;gap:14px;padding:10px 46px 10px 18px;font-size:13px;line-height:1.5;color:#0e1418;background:#d4b67c;box-shadow:0 6px 24px #0006}
+.announce-bar strong{font-size:10px;letter-spacing:.16em;text-transform:uppercase;white-space:nowrap}
+.announce-bar span{flex:1}
+.announce-bar button{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:0;font-size:20px;color:#0e1418;cursor:pointer;line-height:1}
+.announce-bar.warning{background:#e0a83c}
+.announce-bar.urgent{background:#d2604c;color:#fff}
+.strike-counter{color:#e89b8a!important;border-color:#7a4038!important}

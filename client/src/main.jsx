@@ -29,3 +29,4 @@ import './event.css';
 import './scene-fixes.css';
 import './investigation.css';
 import './case-ui.css';
+import './event-control.css';

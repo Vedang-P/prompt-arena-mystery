@@ -94,3 +94,19 @@ export const startPractice = (act) => request('/api/practice', { method: 'POST',
 
 // Reopens the case from Act 0 with a penalty; the event clock keeps running.
 export const restartRun = () => request('/api/restart', { method: 'POST' }).then(json);
+
+// Fullscreen enforcement: every leave/return is reported; the server owns the
+// grace window and the strike count.
+export const fullscreenExit = (kind) =>
+  request('/api/fullscreen/exit', {
+    method: 'POST',
+    timeout: 10000,
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ kind }),
+  }).then(json);
+
+export const fullscreenReturn = () => request('/api/fullscreen/return', { method: 'POST', timeout: 10000 }).then(json);
+
+export const fullscreenUnsupported = () => request('/api/fullscreen/unsupported', { method: 'POST', timeout: 10000 }).then(json);
+
+export const heartbeat = () => request('/api/heartbeat', { method: 'POST', timeout: 10000 }).then(json);

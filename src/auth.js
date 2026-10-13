@@ -28,9 +28,9 @@ export async function hashCode(code, pepper) {
 
 const SESSION_HOURS = 30 * 24;
 
-export async function createSession(teamId, secret = 'dev-secret') {
+export async function createSession(teamId, secret = 'dev-secret', hours = SESSION_HOURS) {
   const payload = b64url(
-    enc.encode(JSON.stringify({ t: teamId, exp: Date.now() + SESSION_HOURS * 3600 * 1000 }))
+    enc.encode(JSON.stringify({ t: teamId, exp: Date.now() + hours * 3600 * 1000 }))
   );
   return `${payload}.${await hmac(secret, payload)}`;
 }
