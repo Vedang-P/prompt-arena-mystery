@@ -1,0 +1,176 @@
+{
+  "/assets/signs/door_operating_theatre.jpg": {
+    "sha256": "fc8963b2101dad862d7353eabf67ca239b30654d2fa31a644fda57d3ff2063d9",
+    "w": 1536,
+    "h": 381,
+    "aspect": 4.0315
+  },
+  "/assets/signs/door_private_office.jpg": {
+    "sha256": "39ed1d0c67042ee3fb11320b863de22b2e2b08e259b7ae6c31d54c84fbbcd216",
+    "w": 1536,
+    "h": 381,
+    "aspect": 4.0315
+  },
+  "/assets/signs/door_private.jpg": {
+    "sha256": "3f9ba3e44c97c7445463d5f8fa5fdff222e4eff7ca1aadd0f0962c3b1a170b53",
+    "w": 1536,
+    "h": 381,
+    "aspect": 4.0315
+  },
+  "/assets/signs/door_service_access.jpg": {
+    "sha256": "a9688bb504b21cfb97771679e74ff54f87d42257e4b88ede47517383b83bf9cd",
+    "w": 1536,
+    "h": 381,
+    "aspect": 4.0315
+  },
+  "/assets/signs/duty.jpg": {
+    "sha256": "899040739e30f10aeb5027ecb3c849cc39a6bd973cc578ded49560e47d8eb646",
+    "w": 1536,
+    "h": 838,
+    "aspect": 1.8329
+  },
+  "/assets/signs/noticeboard.jpg": {
+    "sha256": "69e94de889f7bf30d1c31600880bab74460a2405f8f2acc18163f88e5b8f4828",
+    "w": 1408,
+    "h": 1024,
+    "aspect": 1.375
+  },
+  "/assets/signs/perigee_emblem.jpg": {
+    "sha256": "019c4b081ff5a29dac0b58599c1a279dda97054f77bb490fcbe15335c47544a8",
+    "w": 1440,
+    "h": 1080,
+    "aspect": 1.3333
+  },
+  "/assets/signs/police.jpg": {
+    "sha256": "aa8e712af509829766843a3eaceff18ab981f4941089dc9c79ea592ab5b14aa5",
+    "w": 1536,
+    "h": 498,
+    "aspect": 3.0843
+  },
+  "/assets/signs/sign_backstage.jpg": {
+    "sha256": "e4bc54f407ab468498994402088b0b002c82767d99098f77723b91945de815c8",
+    "w": 1536,
+    "h": 576,
+    "aspect": 2.6667
+  },
+  "/assets/signs/sign_cafe_seating.jpg": {
+    "sha256": "2a60430efaf4af5dae4c2415e58d9c02efef2bbf9bcb951b8f8ca791a29f005a",
+    "w": 1536,
+    "h": 538,
+    "aspect": 2.855
+  },
+  "/assets/signs/sign_cyber_cafe.jpg": {
+    "sha256": "516fa90b82318b92688bcb461362ed008dfcf8e342959f65f073e07415d67bbc",
+    "w": 1536,
+    "h": 349,
+    "aspect": 4.4011
+  },
+  "/assets/signs/sign_dosa_batter.jpg": {
+    "sha256": "96b739c99de2dde6a20c08924c01bc27318d4903dd2473bf6f2eaf7ab652f50d",
+    "w": 1536,
+    "h": 575,
+    "aspect": 2.6713
+  },
+  "/assets/signs/sign_dosa_menu.jpg": {
+    "sha256": "5d32560ff79052ad7017951031595867f1d62b33b97a24f67e8ca183284d2cdc",
+    "w": 1536,
+    "h": 806,
+    "aspect": 1.9057
+  },
+  "/assets/signs/sign_house_rules.jpg": {
+    "sha256": "c2bd5081a0d52be79cb0ec3535ca2120d1adc9b13468290474a5f8f808160d0e",
+    "w": 1536,
+    "h": 768,
+    "aspect": 2
+  },
+  "/assets/signs/sign_loading_bay.jpg": {
+    "sha256": "f3f089ffd5fce98aa70d23c1434d3ae15f4e989424941c5a5bd0ca5fd594230c",
+    "w": 1536,
+    "h": 505,
+    "aspect": 3.0416
+  },
+  "/assets/signs/sign_member_registration.jpg": {
+    "sha256": "37e6e31f441806f877b327c9fafc66cb82a0069c2519fc79cf8a44ba1b965fdf",
+    "w": 1536,
+    "h": 668,
+    "aspect": 2.2994
+  },
+  "/assets/signs/sign_membership.jpg": {
+    "sha256": "a18b017ba6616219a2b06e726a00e1500a58418fe75ab5a772c79ac08dc3dd41",
+    "w": 1536,
+    "h": 805,
+    "aspect": 1.9081
+  },
+  "/assets/signs/sign_parth.jpg": {
+    "sha256": "2bcb06284bb56c2f95469303eec0f0ab8896e119e94e04dbee420cbfbb377076",
+    "w": 1392,
+    "h": 445,
+    "aspect": 3.1281
+  },
+  "/assets/signs/sign_perigee_foundation.jpg": {
+    "sha256": "188840f80b20ab2c4afadd15b58734fe6cf61c3062b1ff03a70725788274199a",
+    "w": 1536,
+    "h": 347,
+    "aspect": 4.4265
+  },
+  "/assets/signs/sign_perigee_higher.jpg": {
+    "sha256": "6522cbc7a63cc21a348a889ec90f226ae4cec8fab22b4612a061b3630194eb4f",
+    "w": 1536,
+    "h": 603,
+    "aspect": 2.5473
+  },
+  "/assets/signs/sign_programmes.jpg": {
+    "sha256": "16aefd404aa87282225f89d1837fad739ddda63a96c738589b55e0678565e325",
+    "w": 1536,
+    "h": 805,
+    "aspect": 1.9081
+  },
+  "/assets/signs/sign_ramu_plaque_01.jpg": {
+    "sha256": "cddef87e7eb1dd24d9b585b1f0daa3ad90a7714f713cd1d412c501e8e0ed8c60",
+    "w": 1536,
+    "h": 906,
+    "aspect": 1.6954
+  },
+  "/assets/signs/sign_ramu_plaque_02.jpg": {
+    "sha256": "f19d9e910976f6e05bbf15de22101c0ebd9f61e9660422c0a75108bee3de9341",
+    "w": 1536,
+    "h": 906,
+    "aspect": 1.6954
+  },
+  "/assets/signs/sign_ramu_plaque_03.jpg": {
+    "sha256": "eae93058bce2b697fa2e615a0891668a373c69e7b76511db7adc5e8ebdd51b08",
+    "w": 1536,
+    "h": 906,
+    "aspect": 1.6954
+  },
+  "/assets/signs/sign_service_yard.jpg": {
+    "sha256": "559c7eab8920538f014a14ce02e5491b3dbd2d9382e08e9d6197387d7e4e70ad",
+    "w": 1536,
+    "h": 657,
+    "aspect": 2.3379
+  },
+  "/assets/signs/sign_shashdhar_ems.jpg": {
+    "sha256": "548fbd07728b235d7cc7fde382634a69f6c313352aa64144efa256e14ba877dc",
+    "w": 1536,
+    "h": 394,
+    "aspect": 3.8985
+  },
+  "/assets/signs/sign_stay_curious.jpg": {
+    "sha256": "43fc75dfaf4a2415eb11c3d76faee76db7e9784be0524623d0947d683428f211",
+    "w": 1024,
+    "h": 1414,
+    "aspect": 0.7242
+  },
+  "/assets/signs/sign_this_week.jpg": {
+    "sha256": "e7855c905ce28f294363cab836df8baeea5e634b836655ca3b3a6843669c6f3a",
+    "w": 1254,
+    "h": 1254,
+    "aspect": 1
+  },
+  "/assets/signs/sign_ward03_corridor.jpg": {
+    "sha256": "8d0559a0b53a9cf1fa448bdca4f84125cc48d8caab7fdae23cb653c97614a6ca",
+    "w": 1536,
+    "h": 469,
+    "aspect": 3.2751
+  }
+}
