@@ -324,6 +324,39 @@ const parseJsonLoose = (value) => {
   }
 };
 
+/**
+ * One human-readable line per event type, shared by the admin log board, the
+ * per-team timeline and the CSV exports, so every surface tells the same story.
+ */
+function eventSummary(type, detail) {
+  const d = detail ?? {};
+  const seconds = (ms) => (Math.max(0, Number(ms) || 0) / 1000).toFixed(1);
+  switch (type) {
+    case 'login': return d.method === 'google' ? 'Signed in with Google' : 'Signed in with a team code';
+    case 'act_complete': return `Completed ${d.act ?? 'an act'}${d.next ? ` → ${d.next}` : ''}${d.ending ? ` · ending ${d.ending}` : ''}`;
+    case 'clue_found': return `Found evidence: ${d.name ?? d.clue ?? 'unknown'}`;
+    case 'puzzle_solve': return `${d.puzzle ?? 'Puzzle'} — ${d.correct ? 'correct' : 'wrong'}${d.penalty ? ` · +${d.penalty} penalties` : ''}${d.alreadySolved ? ' · repeat' : ''}`;
+    case 'accusation': return `Accused ${d.culprit ?? 'someone'} — ${d.correct ? 'correct' : 'rejected'}${d.judge ? ` (${d.judge})` : ''}`;
+    case 'restart': return `Restarted the run (+${d.penalty ?? 0} penalties)`;
+    case 'exit': return `Left fullscreen (${d.kind ?? 'fullscreen'})`;
+    case 'exit_return': return `Returned after ${seconds(d.elapsedMs)}s — no strike`;
+    case 'exit_strike': return `Late return after ${Math.round((Number(d.elapsedMs) || 0) / 1000)}s — strike ${d.strikes}`;
+    case 'disqualified': return `Disqualified — ${d.reason ?? 'no reason given'}`;
+    case 'requalified': return `Requalified${d.resetStrikes ? ' · strikes reset' : ' · strikes kept'}`;
+    case 'admin_penalties': return `Penalties ${Number(d.delta) >= 0 ? '+' : ''}${d.delta ?? 0} → ${d.penalties}`;
+    case 'admin_stage': return `Moved to ${d.act}`;
+    case 'admin_strikes': return `Strikes ${d.from} → ${d.to}`;
+    case 'admin_reset': return `Run reset${d.penalty ? ` (+${d.penalty} penalties)` : ''}`;
+    case 'exempted': return 'Exempted from automatic disqualification';
+    case 'unexempted': return 'Exemption removed';
+    case 'fullscreen_unsupported': return 'Browser cannot enter fullscreen';
+    case 'guest_start': return 'Guest preview started';
+    case 'practice_start': return `Practice save started at ${d.act ?? 'act0'}`;
+    case 'team_created': return 'Team created by an invigilator';
+    default: return d && Object.keys(d).length ? JSON.stringify(d) : '';
+  }
+}
+
 const parseJudge = (text) => {
   const match = String(text).match(/\{[\s\S]*\}/);
   if (!match) return null;
@@ -418,6 +451,8 @@ app.post('/api/guest', async (c) => {
     .bind(`guest:${id}`).first();
   await c.env.DB.prepare("INSERT INTO progress(team_id, started_at) VALUES (?, datetime('now'))")
     .bind(team.id).run();
+  await c.env.DB.prepare('INSERT INTO events(team_id, type, detail) VALUES (?,?,?)')
+    .bind(team.id, 'guest_start', null).run();
   await setSessionCookie(c, team.id);
   return c.json({ team: name });
 });
@@ -435,6 +470,8 @@ app.post('/api/practice', async (c) => {
   const checkpoint = chapterCheckpoint(act);
   await c.env.DB.prepare("INSERT INTO progress(team_id, started_at, act, discovered, solved_puzzles, flags) VALUES (?, datetime('now'), ?, ?, ?, ?)")
     .bind(team.id, act, JSON.stringify(checkpoint.discovered), JSON.stringify(checkpoint.solvedPuzzles), '{"practice":true}').run();
+  await c.env.DB.prepare('INSERT INTO events(team_id, type, detail) VALUES (?,?,?)')
+    .bind(team.id, 'practice_start', JSON.stringify({ act })).run();
   const practiceSecret = sessionSecretFor(c);
   if (!practiceSecret) return misconfigured(c);
   setCookie(c, 'pa_practice', await createSession(team.id, practiceSecret), {
@@ -1061,6 +1098,8 @@ app.post('/api/accuse', async (c) => {
   await c.env.DB.prepare('UPDATE progress SET accusation = ? WHERE team_id = ?')
     .bind(JSON.stringify({ culprit, method, motive, checks, judge }), auth.teamId)
     .run();
+  await c.env.DB.prepare('INSERT INTO events(team_id, type, detail) VALUES (?,?,?)')
+    .bind(auth.teamId, 'accusation', JSON.stringify({ culprit, correct, judge })).run();
 
   if (correct) {
     await c.env.DB.prepare(
@@ -1286,14 +1325,18 @@ async function adminOverview(env) {
     `SELECT e.id, e.team_id, t.name AS team_name, e.type, e.detail, e.created_at
      FROM events e LEFT JOIN teams t ON t.id = e.team_id
      ORDER BY e.id DESC LIMIT 40`
-  ).all()).results.map((e) => ({
-    id: e.id,
-    teamId: e.team_id,
-    team: e.team_name ?? null,
-    type: e.type,
-    detail: parseJsonLoose(e.detail),
-    at: toIso(e.created_at),
-  }));
+  ).all()).results.map((e) => {
+    const detail = parseJsonLoose(e.detail);
+    return {
+      id: e.id,
+      teamId: e.team_id,
+      team: e.team_name ?? null,
+      type: e.type,
+      detail,
+      summary: eventSummary(e.type, detail),
+      at: toIso(e.created_at),
+    };
+  });
 
   const opponent = shaped.filter((t) => t.kind === 'team');
   const stats = {
@@ -1399,12 +1442,16 @@ app.get('/api/admin/teams/:id', async (c) => {
 
   const events = (await c.env.DB.prepare(
     'SELECT id, type, detail, created_at FROM events WHERE team_id = ? ORDER BY id DESC LIMIT 400'
-  ).bind(id).all()).results.map((e) => ({
-    id: e.id,
-    type: e.type,
-    detail: parseJsonLoose(e.detail),
-    at: toIso(e.created_at),
-  }));
+  ).bind(id).all()).results.map((e) => {
+    const detail = parseJsonLoose(e.detail);
+    return {
+      id: e.id,
+      type: e.type,
+      detail,
+      summary: eventSummary(e.type, detail),
+      at: toIso(e.created_at),
+    };
+  });
 
   const chatCounts = (await c.env.DB.prepare(
     'SELECT character, COUNT(*) AS n FROM messages WHERE team_id = ? GROUP BY character'
@@ -1436,39 +1483,172 @@ const csvCell = (value) => {
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 };
 
+// Shared filter builder for the event log and its CSV twin.
+function eventFilter({ type, teamId, q }) {
+  const where = [];
+  const binds = [];
+  if (type) {
+    where.push('e.type = ?');
+    binds.push(type);
+  }
+  if (teamId) {
+    where.push('e.team_id = ?');
+    binds.push(teamId);
+  }
+  if (q) {
+    where.push('(LOWER(t.name) LIKE LOWER(?) OR LOWER(e.detail) LIKE LOWER(?))');
+    binds.push(`%${q}%`, `%${q}%`);
+  }
+  return { clause: where.length ? `WHERE ${where.join(' AND ')}` : '', binds };
+}
+
+const csvResponse = (c, filename, header, rows) => {
+  const csv = [header, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n');
+  c.header('Content-Type', 'text/csv; charset=utf-8');
+  c.header('Content-Disposition', `attachment; filename="${filename}"`);
+  c.header('Cache-Control', 'no-store');
+  return c.body(csv);
+};
+
+const stampSlug = () => new Date().toISOString().replace(/[:T]/g, '-').slice(0, 16);
+
+// The event log: every team's story, filterable by type, team and free text.
+app.get('/api/admin/log', async (c) => {
+  if (!(await requireAdmin(c))) return adminUnauthorized(c);
+  const limit = Math.min(500, Math.max(1, Number(c.req.query('limit')) || 60));
+  const offset = Math.max(0, Number(c.req.query('offset')) || 0);
+  const type = envString(c.req.query('type')).trim();
+  const q = envString(c.req.query('q')).trim();
+  const teamId = Number(c.req.query('team')) || null;
+  const { clause, binds } = eventFilter({ type, teamId, q });
+
+  const countRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS n FROM events e LEFT JOIN teams t ON t.id = e.team_id ${clause}`
+  )
+    .bind(...binds)
+    .first();
+  const rows = (await c.env.DB.prepare(
+    `SELECT e.id, e.team_id, t.name AS team_name, e.type, e.detail, e.created_at
+     FROM events e LEFT JOIN teams t ON t.id = e.team_id ${clause}
+     ORDER BY e.id DESC LIMIT ? OFFSET ?`
+  )
+    .bind(...binds, limit, offset)
+    .all()).results;
+
+  c.header('Cache-Control', 'no-store');
+  return c.json({
+    total: Number(countRow?.n ?? 0),
+    limit,
+    offset,
+    entries: rows.map((r) => {
+      const detail = parseJsonLoose(r.detail);
+      return {
+        id: r.id,
+        teamId: r.team_id,
+        team: r.team_name ?? null,
+        type: r.type,
+        detail,
+        summary: eventSummary(r.type, detail),
+        at: toIso(r.created_at),
+      };
+    }),
+  });
+});
+
+// Results export: final standings with rank, score and every tracking column.
 app.get('/api/admin/export', async (c) => {
   if (!(await requireAdmin(c))) return adminUnauthorized(c);
   const data = await adminOverview(c.env);
+  const ranked = [...data.teams]
+    .filter((t) => t.kind === 'team')
+    .sort(
+      (a, b) =>
+        Number(b.solved) - Number(a.solved) ||
+        (Date.parse(a.solvedAt) || Infinity) - (Date.parse(b.solvedAt) || Infinity) ||
+        b.discovered + b.solvedPuzzles - (a.discovered + a.solvedPuzzles) ||
+        a.penalties - b.penalties ||
+        a.name.localeCompare(b.name)
+    );
+  const rankById = new Map(ranked.map((t, i) => [t.id, i + 1]));
   const header = [
-    'team', 'status', 'kind', 'current_act', 'current_act_title', 'act_entered_at',
-    'last_passed_act', 'last_passed_title', 'last_passed_at', 'clues', 'puzzles',
+    'rank', 'team', 'status', 'kind', 'current_act', 'current_act_title', 'act_entered_at',
+    'last_passed_act', 'last_passed_title', 'last_passed_at', 'clues', 'puzzles', 'score',
     'penalties', 'hints', 'exit_strikes', 'max_exit_strikes', 'disqualified',
     'disqualified_at', 'disqualify_reason', 'exempt', 'solved', 'solved_at',
     'elapsed_seconds', 'online', 'last_seen_at', 'admin_note',
   ];
   const rows = data.teams.map((t) => [
+    rankById.get(t.id) ?? '',
     t.name,
     t.disqualified ? 'DISQUALIFIED' : t.solved ? 'solved' : t.act === 'act0' ? 'not started' : 'playing',
     t.kind, t.act, t.actTitle, t.actEnteredAt, t.lastPassedAct, t.lastPassedTitle, t.lastPassedAt,
-    t.discovered, t.solvedPuzzles, t.penalties, t.hintsUsed, t.strikes, t.maxStrikes,
+    t.discovered, t.solvedPuzzles, t.discovered + t.solvedPuzzles - t.penalties,
+    t.penalties, t.hintsUsed, t.strikes, t.maxStrikes,
     t.disqualified ? 'yes' : 'no', t.disqualifiedAt, t.disqualifyReason, t.exempt ? 'yes' : 'no',
     t.solved ? 'yes' : 'no', t.solvedAt, t.elapsedSeconds, t.online ? 'yes' : 'no', t.lastSeenAt, t.adminNote,
   ]);
-  const csv = [header, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n');
-  c.header('Content-Type', 'text/csv; charset=utf-8');
-  c.header('Content-Disposition', 'attachment; filename="prompt-arena-teams.csv"');
-  return c.body(csv);
+  return csvResponse(c, `prompt-arena-results-${stampSlug()}.csv`, header, rows);
 });
 
+// Event log CSV: the same filters as the board, so what you see is what you get.
+app.get('/api/admin/export/log', async (c) => {
+  if (!(await requireAdmin(c))) return adminUnauthorized(c);
+  const type = envString(c.req.query('type')).trim();
+  const q = envString(c.req.query('q')).trim();
+  const teamId = Number(c.req.query('team')) || null;
+  const { clause, binds } = eventFilter({ type, teamId, q });
+  const rows = (await c.env.DB.prepare(
+    `SELECT e.id, e.team_id, t.name AS team_name, e.type, e.detail, e.created_at
+     FROM events e LEFT JOIN teams t ON t.id = e.team_id ${clause}
+     ORDER BY e.id DESC LIMIT 10000`
+  )
+    .bind(...binds)
+    .all()).results;
+  const header = ['id', 'at', 'team_id', 'team', 'type', 'summary', 'detail'];
+  const body = rows.map((r) => {
+    const detail = parseJsonLoose(r.detail);
+    return [r.id, toIso(r.created_at), r.team_id, r.team_name, r.type, eventSummary(r.type, detail), detail ? JSON.stringify(detail) : ''];
+  });
+  return csvResponse(c, `prompt-arena-log-${stampSlug()}.csv`, header, body);
+});
+
+// Admin audit: the same filtered board, plus its CSV twin.
 app.get('/api/admin/audit', async (c) => {
   if (!(await requireAdmin(c))) return adminUnauthorized(c);
+  const limit = Math.min(500, Math.max(1, Number(c.req.query('limit')) || 60));
+  const offset = Math.max(0, Number(c.req.query('offset')) || 0);
+  const action = envString(c.req.query('action')).trim();
+  const q = envString(c.req.query('q')).trim();
+  const where = [];
+  const binds = [];
+  if (action) {
+    where.push('a.action = ?');
+    binds.push(action);
+  }
+  if (q) {
+    where.push('(LOWER(t.name) LIKE LOWER(?) OR LOWER(a.action) LIKE LOWER(?) OR LOWER(a.detail) LIKE LOWER(?))');
+    binds.push(`%${q}%`, `%${q}%`, `%${q}%`);
+  }
+  const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+  const countRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS n FROM admin_audit a LEFT JOIN teams t ON t.id = a.team_id ${clause}`
+  )
+    .bind(...binds)
+    .first();
   const rows = (await c.env.DB.prepare(
     `SELECT a.id, a.actor, a.action, a.team_id, t.name AS team_name, a.detail, a.created_at
-     FROM admin_audit a LEFT JOIN teams t ON t.id = a.team_id
-     ORDER BY a.id DESC LIMIT 200`
-  ).all()).results;
+     FROM admin_audit a LEFT JOIN teams t ON t.id = a.team_id ${clause}
+     ORDER BY a.id DESC LIMIT ? OFFSET ?`
+  )
+    .bind(...binds, limit, offset)
+    .all()).results;
+
   c.header('Cache-Control', 'no-store');
   return c.json({
+    total: Number(countRow?.n ?? 0),
+    limit,
+    offset,
     entries: rows.map((r) => ({
       id: r.id,
       actor: r.actor,
@@ -1479,6 +1659,42 @@ app.get('/api/admin/audit', async (c) => {
       at: toIso(r.created_at),
     })),
   });
+});
+
+app.get('/api/admin/export/audit', async (c) => {
+  if (!(await requireAdmin(c))) return adminUnauthorized(c);
+  const rows = (await c.env.DB.prepare(
+    `SELECT a.id, a.actor, a.action, a.team_id, t.name AS team_name, a.detail, a.created_at
+     FROM admin_audit a LEFT JOIN teams t ON t.id = a.team_id
+     ORDER BY a.id DESC LIMIT 10000`
+  ).all()).results;
+  const header = ['id', 'at', 'actor', 'action', 'team_id', 'team', 'detail'];
+  const body = rows.map((r) => {
+    const detail = parseJsonLoose(r.detail);
+    return [r.id, toIso(r.created_at), r.actor, r.action, r.team_id, r.team_name, detail ? JSON.stringify(detail) : ''];
+  });
+  return csvResponse(c, `prompt-arena-admin-log-${stampSlug()}.csv`, header, body);
+});
+
+// One team's full timeline, ready for a dispute review.
+app.get('/api/admin/teams/:id/export', async (c) => {
+  if (!(await requireAdmin(c))) return adminUnauthorized(c);
+  const id = Number(c.req.param('id'));
+  if (!Number.isInteger(id) || id <= 0) return c.json({ error: 'unknown_team' }, 404);
+  const team = await c.env.DB.prepare('SELECT id, name FROM teams WHERE id = ?').bind(id).first();
+  if (!team) return c.json({ error: 'unknown_team' }, 404);
+  const rows = (await c.env.DB.prepare(
+    'SELECT id, type, detail, created_at FROM events WHERE team_id = ? ORDER BY id DESC LIMIT 10000'
+  )
+    .bind(id)
+    .all()).results;
+  const header = ['id', 'at', 'type', 'summary', 'detail'];
+  const body = rows.map((r) => {
+    const detail = parseJsonLoose(r.detail);
+    return [r.id, toIso(r.created_at), r.type, eventSummary(r.type, detail), detail ? JSON.stringify(detail) : ''];
+  });
+  const safeName = String(team.name).replace(/[^a-z0-9_-]+/gi, '-').slice(0, 40) || `team-${id}`;
+  return csvResponse(c, `prompt-arena-${safeName}-timeline-${stampSlug()}.csv`, header, body);
 });
 
 // Create a team with an assigned code (generated when omitted). The plaintext
@@ -1498,6 +1714,8 @@ app.post('/api/admin/teams', async (c) => {
   await ctx.env.DB.prepare('INSERT INTO teams(name, code_hash) VALUES (?, ?)').bind(name, hash).run();
   const team = await ctx.env.DB.prepare('SELECT id FROM teams WHERE code_hash = ?').bind(hash).first();
   await ctx.env.DB.prepare('INSERT OR IGNORE INTO progress(team_id, started_at) VALUES (?, datetime(\'now\'))').bind(team.id).run();
+  await ctx.env.DB.prepare('INSERT INTO events(team_id, type, detail) VALUES (?,?,?)')
+    .bind(team.id, 'team_created', JSON.stringify({ by: 'admin' })).run();
   await audit(ctx.env, 'create_team', team.id, { name });
   return c.json({ ok: true, id: team.id, name, code });
 });

@@ -584,11 +584,56 @@ select {
 .feed-avatar.warn { background: rgba(224, 168, 60, 0.13); color: var(--admin-warn); }
 .feed-avatar.bad { background: rgba(224, 108, 90, 0.15); color: var(--admin-bad); }
 
-/* ---------- audit ---------- */
+/* ---------- logs ---------- */
 
 .admin-audit .admin-table { min-width: 760px; }
 .admin-audit .admin-table-wrap { max-height: none; }
-.audit-detail { color: var(--admin-muted); font-size: 12px; max-width: 340px; overflow-wrap: anywhere; }
+.admin-log-table { min-width: 700px; }
+.audit-detail { color: var(--admin-muted); font-size: 12px; max-width: 420px; overflow-wrap: anywhere; }
+.admin-faint { color: var(--admin-faint); }
+.log-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  border: 1px solid var(--admin-line);
+  color: var(--admin-muted);
+  border-radius: 999px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+.log-type::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #5b6d76; flex: none; }
+.log-type.ok { color: var(--admin-ok); border-color: rgba(111, 194, 134, 0.4); background: rgba(111, 194, 134, 0.06); }
+.log-type.ok::before { background: var(--admin-ok); }
+.log-type.warn { color: var(--admin-warn); border-color: rgba(224, 168, 60, 0.4); background: rgba(224, 168, 60, 0.06); }
+.log-type.warn::before { background: var(--admin-warn); }
+.log-type.bad { color: #f0b3a6; border-color: rgba(224, 108, 90, 0.45); background: rgba(224, 108, 90, 0.08); }
+.log-type.bad::before { background: var(--admin-bad); }
+.admin-log-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 2px 0;
+  color: var(--admin-faint);
+  font-size: 12px;
+}
+.admin-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.admin-panel-head h3 { margin: 0; }
+.admin-link {
+  background: none;
+  border: 0;
+  color: var(--admin-brass);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  padding: 0;
+}
+.admin-link:hover { text-decoration: underline; }
 
 /* ---------- drawer ---------- */
 

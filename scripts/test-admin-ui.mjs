@@ -138,6 +138,23 @@ const annText = await page.$eval('.admin-announce-current', (el) => el.textConte
 assert(annText.includes('Two minutes until the final act.'), 'the board mirrors the live announcement');
 await page.screenshot({ path: path.join(OUT, 'admin-control-room.png') });
 
+// Event log tab: readable entries, filters and a CSV export of what is shown.
+await page.click('.admin-tabs button:nth-child(2)');
+await page.waitForSelector('.admin-log-table tbody tr', { timeout: 20000 });
+const logRows = await page.$$eval('.admin-log-table tbody tr', (rows) => rows.length);
+assert(logRows >= 1, 'event log lists entries');
+const logSummary = await page.$eval('.admin-log-table tbody tr td:last-child', (el) => el.textContent.trim());
+assert(logSummary.length > 0, 'log entries carry a readable summary');
+assert(await page.$('a[href^="/api/admin/export/log"]'), 'event log CSV export link present');
+await page.select('.admin-audit select', 'requalified');
+await page.waitForFunction(
+  () => document.querySelectorAll('.admin-log-table tbody tr').length >= 1 && document.querySelector('.admin-log-foot span')?.textContent.includes('events'),
+  { timeout: 20000 }
+);
+await page.screenshot({ path: path.join(OUT, 'admin-event-log.png') });
+await page.click('.admin-tabs button:nth-child(1)');
+await page.waitForSelector('.admin-table tbody tr', { timeout: 20000 });
+
 // ---- fullscreen gate in the game ----
 // Sign the browser in the same way the title card does, then land in /play/.
 const loginStatus = await page.evaluate(async (code) => {

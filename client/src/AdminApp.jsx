@@ -54,6 +54,7 @@ const EVENT_LABELS = {
   act_complete: 'Act completed',
   clue_found: 'Evidence found',
   puzzle_solve: 'Puzzle attempt',
+  accusation: 'Accusation',
   restart: 'Run restarted',
   exit: 'Left fullscreen',
   exit_return: 'Returned in time',
@@ -67,8 +68,65 @@ const EVENT_LABELS = {
   exempted: 'Enforcement exemption added',
   unexempted: 'Enforcement exemption removed',
   fullscreen_unsupported: 'Fullscreen unsupported here',
+  guest_start: 'Guest preview started',
+  practice_start: 'Practice started',
+  team_created: 'Team created',
   ending: 'Ending reached',
 };
+
+const LOG_TYPES = [
+  ['', 'All events'],
+  ['login', 'Sign-ins'],
+  ['act_complete', 'Acts completed'],
+  ['clue_found', 'Evidence found'],
+  ['puzzle_solve', 'Puzzle attempts'],
+  ['accusation', 'Accusations'],
+  ['restart', 'Restarts'],
+  ['exit', 'Left fullscreen'],
+  ['exit_return', 'Returns in time'],
+  ['exit_strike', 'Late returns'],
+  ['disqualified', 'Disqualifications'],
+  ['requalified', 'Requalifications'],
+  ['exempted', 'Exemptions added'],
+  ['unexempted', 'Exemptions removed'],
+  ['fullscreen_unsupported', 'Fullscreen unsupported'],
+  ['admin_penalties', 'Admin: penalties'],
+  ['admin_stage', 'Admin: stage moves'],
+  ['admin_strikes', 'Admin: strike edits'],
+  ['admin_reset', 'Admin: run resets'],
+  ['practice_start', 'Practice saves'],
+  ['guest_start', 'Guest previews'],
+  ['team_created', 'Teams created'],
+];
+
+const AUDIT_ACTIONS = [
+  ['', 'All actions'],
+  ['admin_login', 'Sign-ins'],
+  ['requalify', 'Requalify'],
+  ['requalify_all', 'Requalify all'],
+  ['disqualify', 'Disqualify'],
+  ['set_strikes', 'Set strikes'],
+  ['exempt', 'Exempt'],
+  ['unexempt', 'Unexempt'],
+  ['penalties', 'Penalties'],
+  ['stage', 'Stage moves'],
+  ['rename', 'Renames'],
+  ['note', 'Notes'],
+  ['reset', 'Run resets'],
+  ['create_team', 'Team creation'],
+  ['delete_team', 'Team deletion'],
+  ['announce', 'Announcements'],
+  ['announce_clear', 'Announcement clears'],
+];
+
+const logTone = (type) =>
+  type === 'exit_strike' || type === 'disqualified'
+    ? 'bad'
+    : type === 'exit' || type === 'restart'
+      ? 'warn'
+      : type === 'exit_return' || type === 'requalified'
+        ? 'ok'
+        : '';
 
 const eventDetailText = (ev) => {
   const d = ev.detail ?? {};
@@ -175,7 +233,6 @@ function Dashboard({ session, onLoggedOut }) {
   const [filter, setFilter] = useState('all');
   const [sort, setSort] = useState('progress');
   const [selected, setSelected] = useState(null);
-  const [audit, setAudit] = useState(null);
   const [toast, setToast] = useState(null);
   const [busyAction, setBusyAction] = useState(null);
   const [refreshTick, setRefreshTick] = useState(0);
@@ -183,6 +240,19 @@ function Dashboard({ session, onLoggedOut }) {
   const [createOpen, setCreateOpen] = useState(false);
   // The insights rail opens by default only when the table still has room.
   const [insightsOpen, setInsightsOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1560);
+  // Event log (every team's story) and admin log (who did what) each have
+  // their own filters, pagination and CSV export.
+  const [log, setLog] = useState({ entries: [], total: 0 });
+  const [logType, setLogType] = useState('');
+  const [logQuery, setLogQuery] = useState('');
+  const [logTeam, setLogTeam] = useState(null);
+  const [logLoading, setLogLoading] = useState(false);
+  const [audit, setAudit] = useState({ entries: [], total: 0 });
+  const [auditQuery, setAuditQuery] = useState('');
+  const [auditAction, setAuditAction] = useState('');
+  const [auditLoading, setAuditLoading] = useState(false);
+  const logEntriesRef = useRef([]);
+  const auditEntriesRef = useRef([]);
 
   const refresh = useCallback(async () => {
     try {
@@ -216,13 +286,71 @@ function Dashboard({ session, onLoggedOut }) {
   }, []);
 
   useEffect(() => {
+    logEntriesRef.current = log.entries;
+  }, [log.entries]);
+  useEffect(() => {
+    auditEntriesRef.current = audit.entries;
+  }, [audit.entries]);
+
+  const loadLog = useCallback(
+    async ({ append = false } = {}) => {
+      setLogLoading(true);
+      const params = new URLSearchParams({ limit: '60' });
+      if (append) params.set('offset', String(logEntriesRef.current.length));
+      if (logType) params.set('type', logType);
+      if (logQuery.trim()) params.set('q', logQuery.trim());
+      if (logTeam) params.set('team', String(logTeam));
+      try {
+        const res = await api(`/api/admin/log?${params}`);
+        setLog((prev) => (append ? { ...res, entries: [...prev.entries, ...res.entries] } : res));
+      } catch {
+        setToast({ kind: 'error', text: 'Could not load the event log.' });
+      } finally {
+        setLogLoading(false);
+      }
+    },
+    [logType, logQuery, logTeam]
+  );
+
+  const loadAudit = useCallback(
+    async ({ append = false } = {}) => {
+      setAuditLoading(true);
+      const params = new URLSearchParams({ limit: '60' });
+      if (append) params.set('offset', String(auditEntriesRef.current.length));
+      if (auditAction) params.set('action', auditAction);
+      if (auditQuery.trim()) params.set('q', auditQuery.trim());
+      try {
+        const res = await api(`/api/admin/audit?${params}`);
+        setAudit((prev) => (append ? { ...res, entries: [...prev.entries, ...res.entries] } : res));
+      } catch {
+        setToast({ kind: 'error', text: 'Could not load the admin log.' });
+      } finally {
+        setAuditLoading(false);
+      }
+    },
+    [auditAction, auditQuery]
+  );
+
+  useEffect(() => {
+    if (tab !== 'log') return;
+    const timer = setTimeout(() => loadLog(), 200);
+    return () => clearTimeout(timer);
+  }, [tab, loadLog]);
+
+  useEffect(() => {
     if (tab !== 'audit') return;
-    let alive = true;
-    api('/api/admin/audit').then((d) => alive && setAudit(d)).catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, [tab, data?.serverTime]);
+    const timer = setTimeout(() => loadAudit(), 200);
+    return () => clearTimeout(timer);
+  }, [tab, loadAudit]);
+
+  const logExportHref = useMemo(() => {
+    const params = new URLSearchParams();
+    if (logType) params.set('type', logType);
+    if (logQuery.trim()) params.set('q', logQuery.trim());
+    if (logTeam) params.set('team', String(logTeam));
+    const qs = params.toString();
+    return `/api/admin/export/log${qs ? `?${qs}` : ''}`;
+  }, [logType, logQuery, logTeam]);
 
   useEffect(() => {
     if (!toast) return;
@@ -320,7 +448,7 @@ function Dashboard({ session, onLoggedOut }) {
         </div>
         <div className="admin-header-actions">
           <button className="admin-button" onClick={refresh} title="Fetch the latest state now">Refresh</button>
-          <a className="admin-button" href="/api/admin/export">Export CSV</a>
+          <a className="admin-button" href="/api/admin/export" title="Final standings with rank and score">Results CSV</a>
           <button
             className="admin-button danger-ghost"
             onClick={async () => {
@@ -412,6 +540,7 @@ function Dashboard({ session, onLoggedOut }) {
 
               <div className="admin-tabs">
                 <button className={tab === 'teams' ? 'active' : ''} onClick={() => setTab('teams')}>Teams</button>
+                <button className={tab === 'log' ? 'active' : ''} onClick={() => setTab('log')}>Event log</button>
                 <button className={tab === 'audit' ? 'active' : ''} onClick={() => setTab('audit')}>Admin log</button>
                 <span className="admin-tab-note">updated {fmtAgo(new Date(data.serverTime).toISOString(), now)}</span>
               </div>
@@ -541,15 +670,89 @@ function Dashboard({ session, onLoggedOut }) {
                 </>
               )}
 
+              {tab === 'log' && (
+                <div className="admin-audit">
+                  <div className="admin-toolbar">
+                    <input className="admin-search" placeholder="Search team or detail…" value={logQuery} onChange={(e) => setLogQuery(e.target.value)} />
+                    <select value={logType} onChange={(e) => setLogType(e.target.value)}>
+                      {LOG_TYPES.map(([value, label]) => (
+                        <option key={value || 'all'} value={value}>{label}</option>
+                      ))}
+                    </select>
+                    {logTeam != null && (
+                      <button className="admin-button selected" onClick={() => setLogTeam(null)} title="Clear the team filter">
+                        {teams.find((t) => t.id === logTeam)?.name ?? `Team ${logTeam}`} ×
+                      </button>
+                    )}
+                    <button className="admin-button" onClick={() => loadLog()} disabled={logLoading}>
+                      {logLoading ? 'Loading…' : 'Reload'}
+                    </button>
+                    <a className="admin-button" href={logExportHref}>Export CSV</a>
+                  </div>
+                  <div className="admin-table-wrap">
+                    <table className="admin-table admin-log-table">
+                      <thead>
+                        <tr>
+                          <th className="seen-cell">When</th>
+                          <th>Team</th>
+                          <th>Event</th>
+                          <th>Details</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {log.entries.map((entry) => (
+                          <tr key={entry.id}>
+                            <td className="seen-cell" title={fmtDateTime(entry.at)}>
+                              {fmtAgo(entry.at, now)}
+                              <small>{fmtTime(entry.at)}</small>
+                            </td>
+                            <td>
+                              {entry.team ? (
+                                <button className="admin-team-link" onClick={() => setLogTeam(entry.teamId)} title="Filter the log by this team">
+                                  {entry.team}
+                                </button>
+                              ) : (
+                                <span className="admin-faint">—</span>
+                              )}
+                            </td>
+                            <td><span className={`log-type ${logTone(entry.type)}`}>{EVENT_LABELS[entry.type] ?? entry.type}</span></td>
+                            <td className="audit-detail">{entry.summary || '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {log.entries.length === 0 && !logLoading && <p className="admin-note">No events match this view.</p>}
+                  </div>
+                  <div className="admin-log-foot">
+                    <span>Showing {log.entries.length} of {log.total} events</span>
+                    {log.entries.length < log.total && (
+                      <button className="admin-button" onClick={() => loadLog({ append: true })} disabled={logLoading}>
+                        {logLoading ? 'Loading…' : 'Load more'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {tab === 'audit' && (
                 <div className="admin-audit">
-                  {!audit && <p className="admin-note">Loading the audit trail…</p>}
-                  {audit && audit.entries.length === 0 && <p className="admin-note">No admin actions recorded yet.</p>}
-                  {audit && audit.entries.length > 0 && (
+                  <div className="admin-toolbar">
+                    <input className="admin-search" placeholder="Search actor, action or team…" value={auditQuery} onChange={(e) => setAuditQuery(e.target.value)} />
+                    <select value={auditAction} onChange={(e) => setAuditAction(e.target.value)}>
+                      {AUDIT_ACTIONS.map(([value, label]) => (
+                        <option key={value || 'all'} value={value}>{label}</option>
+                      ))}
+                    </select>
+                    <button className="admin-button" onClick={() => loadAudit()} disabled={auditLoading}>
+                      {auditLoading ? 'Loading…' : 'Reload'}
+                    </button>
+                    <a className="admin-button" href="/api/admin/export/audit">Export CSV</a>
+                  </div>
+                  <div className="admin-table-wrap">
                     <table className="admin-table">
                       <thead>
                         <tr>
-                          <th>When</th>
+                          <th className="seen-cell">When</th>
                           <th>Actor</th>
                           <th>Action</th>
                           <th>Team</th>
@@ -559,16 +762,34 @@ function Dashboard({ session, onLoggedOut }) {
                       <tbody>
                         {audit.entries.map((entry) => (
                           <tr key={entry.id}>
-                            <td>{fmtDateTime(entry.at)}</td>
+                            <td className="seen-cell" title={fmtDateTime(entry.at)}>
+                              {fmtAgo(entry.at, now)}
+                              <small>{fmtTime(entry.at)}</small>
+                            </td>
                             <td>{entry.actor}</td>
                             <td><span className="pill">{entry.action}</span></td>
-                            <td>{entry.team ?? '—'}</td>
+                            <td>
+                              {entry.team ? (
+                                <button className="admin-team-link" onClick={() => setSelected(entry.teamId)}>{entry.team}</button>
+                              ) : (
+                                <span className="admin-faint">—</span>
+                              )}
+                            </td>
                             <td className="audit-detail">{entry.detail ? JSON.stringify(entry.detail) : ''}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
-                  )}
+                    {audit.entries.length === 0 && !auditLoading && <p className="admin-note">No admin actions match this view.</p>}
+                  </div>
+                  <div className="admin-log-foot">
+                    <span>Showing {audit.entries.length} of {audit.total} actions</span>
+                    {audit.entries.length < audit.total && (
+                      <button className="admin-button" onClick={() => loadAudit({ append: true })} disabled={auditLoading}>
+                        {auditLoading ? 'Loading…' : 'Load more'}
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -591,16 +812,19 @@ function Dashboard({ session, onLoggedOut }) {
                 </div>
               </section>
               <section className="admin-panel">
-                <h3>Live activity</h3>
+                <div className="admin-panel-head">
+                  <h3>Live activity</h3>
+                  <button className="admin-link" onClick={() => setTab('log')}>View all →</button>
+                </div>
                 <ul className="admin-feed">
                   {(data.recentEvents ?? []).slice(0, 22).map((ev) => {
-                    const tone = ev.type === 'exit_strike' || ev.type === 'disqualified' ? 'bad' : ev.type === 'exit' ? 'warn' : 'ok';
+                    const tone = logTone(ev.type) || 'ok';
                     return (
                       <li key={ev.id}>
                         <span className={`feed-avatar ${tone}`}>{(ev.team ?? '?').trim().slice(0, 1).toUpperCase()}</span>
                         <div>
                           <strong>{ev.team ?? 'Unknown team'}</strong>
-                          <span>{EVENT_LABELS[ev.type] ?? ev.type}{eventDetailText(ev) ? ` · ${eventDetailText(ev)}` : ''}</span>
+                          <span>{EVENT_LABELS[ev.type] ?? ev.type}{ev.summary ? ` · ${ev.summary}` : ''}</span>
                           <small>{fmtAgo(ev.at, now)}</small>
                         </div>
                       </li>
@@ -929,14 +1153,17 @@ function TeamDrawer({ teamId, now, version, busyAction, onClose, runAction }) {
               )}
 
               <section className="admin-panel">
-                <h3>Timeline</h3>
+                <div className="admin-panel-head">
+                  <h3>Timeline</h3>
+                  <a className="admin-link" href={`/api/admin/teams/${team.id}/export`}>Export CSV</a>
+                </div>
                 <ul className="admin-timeline">
                   {shown.map((ev) => (
-                    <li key={ev.id} className={ev.type === 'exit_strike' || ev.type === 'disqualified' ? 'bad' : ev.type === 'exit' ? 'warn' : ''}>
+                    <li key={ev.id} className={logTone(ev.type)}>
                       <span className="admin-time">{fmtTime(ev.at)}</span>
                       <div>
                         <strong>{EVENT_LABELS[ev.type] ?? ev.type}</strong>
-                        {eventDetailText(ev) && <span> · {eventDetailText(ev)}</span>}
+                        {(ev.summary || eventDetailText(ev)) && <span> · {ev.summary || eventDetailText(ev)}</span>}
                         <small>{fmtDateTime(ev.at)}</small>
                       </div>
                     </li>

@@ -273,6 +273,54 @@ assert.equal((await request('/api/admin/teams', adminCookie, { name: '   ' })).s
 const capped = await (await request(`/api/admin/teams/${alphaRow.id}/strikes`, adminCookie, { strikes: 999 })).json();
 assert.equal(capped.strikes, 99, 'strike input is clamped');
 
+// ---- event log: filters, pagination, summaries ----
+await request(`/api/admin/teams/${alphaRow.id}/stage`, adminCookie, { act: 'act1' });
+const found = await (await request('/api/clues/c_laptop_locked/discover', alphaCookie, {})).json();
+assert.equal(found.clue.id, 'c_laptop_locked');
+
+const logPage1 = await (await request('/api/admin/log?limit=5', adminCookie)).json();
+assert.equal(logPage1.limit, 5);
+assert(logPage1.entries.length <= 5);
+assert(logPage1.total >= logPage1.entries.length);
+assert(logPage1.entries.every((e) => typeof e.summary === 'string' && e.summary.length > 0));
+const logPage2 = await (await request('/api/admin/log?limit=5&offset=5', adminCookie)).json();
+assert(logPage2.entries.length > 0);
+assert.notEqual(logPage1.entries[0].id, logPage2.entries[0].id);
+
+const filteredLog = await (await request('/api/admin/log?type=clue_found', adminCookie)).json();
+assert(filteredLog.total >= 1);
+assert(filteredLog.entries.every((e) => e.type === 'clue_found'));
+assert(filteredLog.entries.some((e) => e.summary.includes('Locked laptop')));
+
+const teamLog = await (await request(`/api/admin/log?team=${alphaRow.id}`, adminCookie)).json();
+assert(teamLog.entries.length > 0);
+assert(teamLog.entries.every((e) => e.teamId === alphaRow.id));
+const searchLog = await (await request('/api/admin/log?q=Alpha', adminCookie)).json();
+assert(searchLog.entries.some((e) => (e.team ?? '').includes('Alpha')));
+assert.equal((await request('/api/admin/log', null)).status, 401);
+
+// ---- CSV exports: results, event log, admin log, team timeline ----
+const resultsCsv = await (await request('/api/admin/export', adminCookie)).text();
+assert(resultsCsv.startsWith('rank,team,status,kind'));
+assert(resultsCsv.includes('score'));
+assert(resultsCsv.includes('Alpha Prime'));
+
+const logCsv = await (await request('/api/admin/export/log?type=clue_found', adminCookie)).text();
+assert(logCsv.startsWith('id,at,team_id,team,type,summary,detail'));
+assert(logCsv.includes('clue_found'));
+assert(logCsv.includes('Found evidence'));
+
+const auditCsv = await (await request('/api/admin/export/audit', adminCookie)).text();
+assert(auditCsv.startsWith('id,at,actor,action,team_id,team,detail'));
+assert(auditCsv.includes('admin_login'));
+
+const timelineCsv = await (await request(`/api/admin/teams/${alphaRow.id}/export`, adminCookie)).text();
+assert(timelineCsv.startsWith('id,at,type,summary,detail'));
+assert(timelineCsv.includes('admin_stage'));
+assert(timelineCsv.includes('clue_found'));
+assert(timelineCsv.includes('login'));
+assert((await request(`/api/admin/teams/${alphaRow.id}/export`, null)).status === 401);
+
 // ---- requalify-all ----
 await request(`/api/admin/teams/${alphaRow.id}/disqualify`, adminCookie, { reason: 'test batch' });
 await request('/api/admin/requalify-all', adminCookie, {});
