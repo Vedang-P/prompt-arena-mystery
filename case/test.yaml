@@ -100,7 +100,6 @@ puzzles:
   - id: p_ash
     kind: text
     prompt: "What did the butler burn?"
-    hint: "The missing object had a spine."
     answers: [ledger, the ledger]
     success: "The ashes give up the ledger's hiding place."
     grants: [ash]

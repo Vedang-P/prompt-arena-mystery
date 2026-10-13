@@ -36,33 +36,12 @@ clues:
 puzzles:
   - id: p_morse
     prompt: "Decode the groups in Parth's diary, then enter the six-character code. Review the diary entry below; the photograph shows the letter key."
-    hint: "Separate the groups at the slashes. Decode each group with the facing-page key in your notebook. Letters first, then four digits."
     answers: ["OC1808", "OC 1808", "OC1808 in laptop", "OC1808 in the laptop"]
-  - id: p_band_name
-    hint: "The opposite of Perigee: the point in an orbit farthest from Earth."
   - id: p_ascension
     prompt: "The archive terminal asks for the nine-letter motto from the headquarters: A _ C _ N _ I _ N. Beneath it: ‘the soul’s ascent’. What is the password?"
-    hint: "A word for rising upward, or the ascent of a soul. Fill the four missing letters."
   - id: p_drums
-    hint: "Compare the childhood video with the recording you played at the cyber cafe."
     answers: ["cassettes", "in one of the cassettes", "the mixtape"]
   - id: p_knowledge
     requires: { clues: [c_handbook], puzzles: [p_tablet] }
-    hint: "Which document told you what higher-ups receive? It was lying beside the reports."
   - id: p_connection
     requires: { clues: [c_finance] }
-    hint: "Think of the NGO that funds Veer’s band."
-  - id: p_mask_owner
-    hint: "The podium’s most senior member wore the only decorated mask."
-  - id: p_lua
-    hint: "Review the pharmaceutical donor in the financial records and the drug report from Tanush’s office."
-  - id: p_nigeria
-    hint: "The first piece of printed advertising Sameer received mentioned an astronomy workshop there."
-  - id: p_years
-    hint: "Read the office records. The hospital appointment predates the four-year-old NGO by one year."
-  - id: p_rooms
-    hint: "Which room had the locked control panel and the ‘twinkle’ cipher?"
-  - id: p_where
-    hint: "The revelation is painful. The book records a death, rather than a rescue."
-  - id: p_wrong
-    hint: "Think of the consequence of failing a game."

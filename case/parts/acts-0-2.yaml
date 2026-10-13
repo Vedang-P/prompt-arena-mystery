@@ -611,7 +611,7 @@ clues:
     grants: [mother_room]
   - id: c_laptop_locked
     name: "Locked laptop"
-    description: "Parth's laptop sits open in sleep mode, password protected. A hint flickers on the screen: \"Look where my loudest secrets are kept, away from prying eyes, leather bound and stained with ink.\""
+    description: "Parth's laptop sits open in sleep mode, password protected."
     grants: []
   - id: c_morse
     name: "Decoded diary message"
@@ -681,7 +681,6 @@ puzzles:
   - id: p_morse
     kind: text
     prompt: "The diary's last filled page is covered in dots and dashes. The next page holds a decoder — each pattern, one letter. Oh god, he now has to sit and decode it. Why couldn't Parth write it normally?"
-    hint: "Dots and dashes, letter by letter. The first two are round and open."
     evidence: "/assets/pictures/evidence_diary_morse.jpg"
     answers: [oc1808, "oc 1808"]
     success: "Dots and dashes fall into place: O, C, 1, 8, 0, 8. The full line reads \"OC1808 in laptop.\" A very strange thing to encode — but Sameer shelves it for later."
@@ -693,7 +692,6 @@ puzzles:
   - id: p_laptop
     kind: code
     prompt: "The laptop wakes from sleep mode, cursor blinking in the password field. Looks like he needs to guess the password."
-    hint: "Six characters. The message in the diary began with them."
     answers: [oc1808, "oc 1808"]
     success: "He types OC1808 and hits enter. \"Heh, I'm in,\" he mimics, in the worst hacker voice in existence. (Oh god, why is Sameer like this? He wasn't even hacking.)"
     grants: [c_laptop]

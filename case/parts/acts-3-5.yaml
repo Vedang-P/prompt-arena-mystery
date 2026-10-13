@@ -287,7 +287,6 @@ puzzles:
   - id: p_ascension
     kind: code
     prompt: "He glanced at the records around him, then finally tried to switch on the ancient system on the desk. Blue light reflected on his face — it asked for a password."
-    hint: "It is an older system asking for a password. The files around him whisper what these people believe in."
     answers: ["ascension"]
     success: "Blue light reflects on his face; the records open. A folder named \"offeringRecords\" — a bunch of .avi videos, and a text file tracking how much of the physical archive has been moved to digital. It stopped on 16-07-2020."
     penalty: 0
@@ -335,7 +334,6 @@ puzzles:
   - id: p_tablet
     kind: code
     prompt: "There was a tablet under these folders. It was unfortunately password protected — a 4 digit numeric passcode. The archived records stopped on 16-07-2020; the higher ups seem to love that date. What could he put down?"
-    hint: "The records stopped on 16-07-2020 — day and month, four digits."
     answers: ["1607", "16-07-2020", "16/07/2020", "16072020", "16 07"]
     success: "1607 — the day the records stopped. The tablet unlocks in his hands; this is the Big Bad's own device."
     penalty: 0

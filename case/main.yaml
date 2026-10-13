@@ -2050,7 +2050,7 @@ clues:
     page: /assets/pictures/evidence_diary_morse.jpg
   - id: c_laptop_locked
     name: Locked laptop
-    description: "Parth's laptop sits open in sleep mode, password protected. A hint flickers on the screen: \"Look where my loudest secrets are kept, away from prying eyes, leather bound and stained with ink.\""
+    description: Parth's laptop sits open in sleep mode, password protected.
     grants: []
   - id: c_morse
     name: Decoded diary message
@@ -2262,7 +2262,6 @@ puzzles:
   - id: p_morse
     kind: text
     prompt: Decode the groups in Parth's diary, then enter the six-character code. Review the diary entry below; the photograph shows the letter key.
-    hint: Separate the groups at the slashes. Decode each group with the facing-page key in your notebook. Letters first, then four digits.
     evidence: /assets/pictures/evidence_diary_morse.jpg
     answers:
       - oc1808
@@ -2283,7 +2282,6 @@ puzzles:
   - id: p_laptop
     kind: code
     prompt: The laptop wakes from sleep mode, cursor blinking in the password field. Looks like he needs to guess the password.
-    hint: Six characters. The message in the diary began with them.
     answers:
       - oc1808
       - oc 1808
@@ -2338,7 +2336,6 @@ puzzles:
         - c_videos
     penalty: 0
     fail_message: That's not it. The sound is right there, at the edge of his memory.
-    hint: Compare the childhood video with the recording you played at the cyber cafe.
   - id: p_dosa
     kind: choice
     prompt: Ramu's Dosa Corner. Parth's usual is steaming in front of him. Should he eat the dosa?
@@ -2452,7 +2449,6 @@ puzzles:
     penalty: 0
     grants:
       - c_apogee
-    hint: "The opposite of Perigee: the point in an orbit farthest from Earth."
   - id: p_registration
     kind: email
     prompt: Veer sends him the link for member registration. It doesn't ask for much — just an email and an OTP. He joins as a volunteer.
@@ -2480,7 +2476,6 @@ puzzles:
   - id: p_ascension
     kind: code
     prompt: "The archive terminal asks for the nine-letter motto from the headquarters: A _ C _ N _ I _ N. Beneath it: ‘the soul’s ascent’. What is the password?"
-    hint: A word for rising upward, or the ascent of a soul. Fill the four missing letters.
     answers:
       - ascension
     success: Blue light reflects on his face; the records open. A folder named "offeringRecords" — a bunch of .avi videos, and a text file tracking how much of the physical archive has been moved to digital. It stopped on 16-07-2020.
@@ -2546,7 +2541,6 @@ puzzles:
   - id: p_tablet
     kind: code
     prompt: There was a tablet under these folders. It was unfortunately password protected — a 4 digit numeric passcode. The archived records stopped on 16-07-2020; the higher ups seem to love that date. What could he put down?
-    hint: The records stopped on 16-07-2020 — day and month, four digits.
     answers:
       - "1607"
       - 16-07-2020
@@ -2583,7 +2577,6 @@ puzzles:
         - c_handbook
       puzzles:
         - p_tablet
-    hint: Which document told you what higher-ups receive? It was lying beside the reports.
   - id: p_tablet_content
     kind: choice
     prompt: What could be found in the tablet?
@@ -2614,7 +2607,6 @@ puzzles:
     requires:
       clues:
         - c_finance
-    hint: Think of the NGO that funds Veer’s band.
   - id: p_exposed
     kind: text
     prompt: Just as he is about to go to sleep, a notification arrives — another voice note, in a different modified voice, this time mocking. What could have exposed his investigation of the cult?
@@ -2631,7 +2623,6 @@ puzzles:
   - id: p_fullmoon
     kind: text
     prompt: Sameer is reminded of something to do with the full moon seen in the calendar?
-    hint: What happened every time the moon was full?
     answers:
       - missing people
       - people going missing
@@ -2742,7 +2733,6 @@ puzzles:
     requires:
       clues:
         - c_mask
-    hint: The podium’s most senior member wore the only decorated mask.
   - id: p_veer_mask
     kind: text
     prompt: Sameer asks Veer — does this cu-organisation follow people around? Veer asked, "like what?"
@@ -2767,7 +2757,6 @@ puzzles:
     requires:
       puzzles:
         - p_veer_mask
-    hint: Review the pharmaceutical donor in the financial records and the drug report from Tanush’s office.
   - id: p_nigeria
     kind: text
     prompt: Wait, where did he hear about Nigeria again?
@@ -2781,7 +2770,6 @@ puzzles:
     requires:
       clues:
         - c_lua_files
-    hint: The first piece of printed advertising Sameer received mentioned an astronomy workshop there.
   - id: p_continue
     kind: choice
     prompt: Sameer thinks over the last few days. Should he continue with this or give up?
@@ -2844,7 +2832,6 @@ puzzles:
     requires:
       clues:
         - c_office
-    hint: Read the office records. The hospital appointment predates the four-year-old NGO by one year.
   - id: p_rooms
     kind: text
     prompt: He runs with the book to other rooms. Which other room did he visit, other than the leader's or sacrifice room?
@@ -2855,7 +2842,6 @@ puzzles:
     requires:
       puzzles:
         - p_years
-    hint: Which room had the locked control panel and the ‘twinkle’ cipher?
   - id: p_why
     kind: text
     prompt: Why did he start doing all of this?
@@ -2876,7 +2862,6 @@ puzzles:
     requires:
       puzzles:
         - p_why
-    hint: The revelation is painful. The book records a death, rather than a rescue.
   - id: p_wrong
     kind: text
     prompt: Sameer looks at the player. What would have happened if you had given the wrong answer?
@@ -2888,7 +2873,6 @@ puzzles:
     requires:
       puzzles:
         - p_where
-    hint: Think of the consequence of failing a game.
 canonical_qa:
   - character: mother
     q: did you call parth that evening

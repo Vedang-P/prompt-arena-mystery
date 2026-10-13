@@ -3,14 +3,14 @@ import { CaseImage, useCaseDialog } from './InvestigationUI.jsx';
 
 const TYPES = { text: 'Written clue', code: 'Access code', email: 'In-game email', choice: 'Decision' };
 export default function PuzzleWorkbench({ puzzle, team, solved, penalties = 0, onSolve, onClose, busy, result, clueLabels = {}, relatedClues = [] }) {
-  const [answer, setAnswer] = useState(''), [hintOpen, setHintOpen] = useState(false), [expanded, setExpanded] = useState(false), [last, setLast] = useState(null);
+  const [answer, setAnswer] = useState(''), [expanded, setExpanded] = useState(false), [last, setLast] = useState(null);
   const root = useRef(), imageButton = useRef();
   const draftKey = `arena-answer:${team}:${puzzle?.id}`;
   const settled = solved || result?.correct || result?.alreadySolved;
   useCaseDialog(root, () => expanded ? collapse() : onClose());
   useEffect(() => {
     try { setAnswer(sessionStorage.getItem(draftKey) ?? ''); } catch { setAnswer(''); }
-    setHintOpen(false); setExpanded(false); setLast(null);
+    setExpanded(false); setLast(null);
   }, [draftKey]);
   useEffect(() => { if (settled) { try { sessionStorage.removeItem(draftKey); } catch {} } }, [settled, draftKey]);
   if (!puzzle) return null;
@@ -34,7 +34,6 @@ export default function PuzzleWorkbench({ puzzle, team, solved, penalties = 0, o
           <section className="workbench-answer"><div className="case-section-label"><span>{puzzle.evidence ? '02 / Investigate' : 'Your next lead'}</span><span>{settled ? 'Recorded' : 'In progress'}</span></div><p className="case-prompt">{puzzle.prompt}</p>
             {puzzle.kind === 'email' && <p className="case-muted">Use a fictional address. This form belongs to the story and sends no email.</p>}
             {relatedClues.map(clue => <details className="case-reference" key={clue.id}><summary>From your notebook · {clue.name}</summary><p>{clue.description}</p></details>)}
-            {!settled && puzzle.hint && <div className="case-hint"><button className="case-text-button" aria-expanded={hintOpen} onClick={() => setHintOpen(v => !v)}>{hintOpen ? 'Hide hint −' : 'Need a hint? +'}</button>{hintOpen && <p>{puzzle.hint}</p>}</div>}
             <div className={`case-feedback ${wrong ? 'retry' : 'complete'}`} role="status" aria-live="polite">
               {(result || settled) && <><p className="case-eyebrow">{wrong ? (settled ? '✕ Outcome recorded' : '✕ Try another approach') : (result?.alreadySolved ? '✓ Already resolved' : '✓ Correct')}</p><p>{feedbackMessage}</p>{result?.penalty > 0 && <small>+{result.penalty} {result.penalty === 1 ? 'penalty' : 'penalties'} added to your case.</small>}{grants.length > 0 && <div className="case-grants"><span>Added to notebook</span>{grants.map(label => <strong key={label}>{label}</strong>)}</div>}</>}
             </div>

@@ -475,7 +475,6 @@ puzzles:
   - id: p_fullmoon
     kind: text
     prompt: "Sameer is reminded of something to do with the full moon seen in the calendar?"
-    hint: "What happened every time the moon was full?"
     answers:
       - "missing people"
       - "people going missing"

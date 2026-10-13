@@ -118,7 +118,6 @@ export function publicPuzzle(puzzleId) {
     id: puzzle.id,
     kind: puzzle.kind,
     prompt: puzzle.prompt,
-    hint: puzzle.hint ?? null,
     evidence: puzzle.evidence ?? null,
     options: puzzle.options ?? null,
     requires: puzzle.requires ?? null,
@@ -356,11 +355,8 @@ export function characterAvailable(characterId, actId) {
 export function publicCase(progress = null) {
   // With progress supplied, the payload is scoped to what this team may actually
   // render: undiscovered clues keep their identity but lose their text and evidence
-  // image, and hints for puzzles outside the current act never leave the server.
+  // image, so nothing unsolved leaks ahead of its act.
   const discovered = new Set(progress?.discovered ?? []);
-  const solved = new Set(progress?.solvedPuzzles ?? []);
-  const actData = progress?.act ? (caseData.acts ?? []).find((a) => a.id === progress.act) : null;
-  const thisActPuzzles = new Set(actData?.complete?.puzzles ?? []);
   return {
     title: caseData.title,
     subtitle: caseData.subtitle ?? null,
@@ -410,12 +406,7 @@ export function publicCase(progress = null) {
         requires: clue.requires ?? [],
       };
     }),
-    puzzles: (caseData.puzzles ?? []).map((puzzle) => {
-      const pub = publicPuzzle(puzzle.id);
-      if (!pub || !progress) return pub;
-      if (solved.has(puzzle.id) || thisActPuzzles.has(puzzle.id)) return pub;
-      return { ...pub, hint: null };
-    }),
+    puzzles: (caseData.puzzles ?? []).map((puzzle) => publicPuzzle(puzzle.id)),
     endings: (caseData.endings ?? []).map((ending) => ({ id: ending.id, title: ending.title })),
     characters: (caseData.characters ?? []).map((ch) => ({ id: ch.id, name: ch.name,
       questions: (caseData.canonical_qa ?? []).filter((qa) => qa.character === ch.id).map((qa) => qa.q).slice(0, 4) })),

@@ -168,7 +168,7 @@ for (const pz of c.puzzles ?? []) {
     err(`${where}: kind must be text | choice | code | email`);
   }
   if (!isStr(pz.prompt)) err(`${where}: prompt is required`);
-  for (const key of ['hint', 'evidence', 'success', 'fail_message']) {
+  for (const key of ['evidence', 'success', 'fail_message']) {
     if (pz[key] !== undefined && !isStr(pz[key])) err(`${where}: ${key} must be a non-empty string`);
   }
   if (pz.penalty !== undefined && !(Number.isFinite(pz.penalty) && pz.penalty >= 0)) {

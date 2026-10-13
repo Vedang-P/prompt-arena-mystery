@@ -16,9 +16,6 @@
 .case-field select:focus-visible,.case-field textarea:focus-visible{outline:2px solid #d4b67c;outline-offset:2px}
 .case-note{margin:0;padding:12px 30px;font-size:12px;line-height:1.6;color:#9dafb0;background:#101c22;border-top:1px solid #334348;flex:none}
 .case-note.error{color:#f0a892}
-.case-text-button{background:none;border:0;color:#b7c7dc;font-size:12px;padding:4px 2px;cursor:pointer;font-family:inherit}
-.case-text-button:hover{color:#e8d5aa}
-.case-text-button:disabled{opacity:.45;cursor:default}
 .case-chip{display:inline-flex;align-items:center;border:1px solid #3e5358;border-radius:999px;background:#1b2d34;color:#c7d2cd;font-size:11px;line-height:1.4;padding:7px 12px;cursor:pointer;font-family:inherit}
 .case-chip:hover{border-color:#d4b67c;color:#e8d5aa}
 .case-chip:disabled{opacity:.45;cursor:default}

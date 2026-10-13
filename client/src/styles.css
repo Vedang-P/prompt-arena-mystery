@@ -1790,38 +1790,6 @@ h4 {
   filter: sepia(0.18) contrast(1.04);
 }
 
-.puzzle-hint {
-  margin: 0 0 18px;
-}
-
-.puzzle-hint-toggle {
-  appearance: none;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  font-size: 11px;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: var(--brass);
-  border-bottom: 1px dotted var(--brass-soft);
-}
-
-.puzzle-hint-toggle:hover {
-  color: var(--brass-bright);
-}
-
-.puzzle-hint-text {
-  margin: 10px 0 0;
-  padding: 11px 14px;
-  font-style: italic;
-  font-size: 15.5px;
-  line-height: 1.5;
-  color: var(--ink-soft);
-  background: rgba(139, 166, 221, 0.07);
-  border-left: 3px solid var(--brass-soft);
-}
-
 .puzzle-form {
   display: flex;
   align-items: stretch;
