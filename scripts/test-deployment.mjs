@@ -42,7 +42,7 @@ try {
 let state = await call('/api/state');
 assert.equal(state.acts.length, 9);
 assert.equal(state.rooms.length, 14);
-assert.equal(state.puzzles.length, 48);
+assert.equal(state.puzzles.length, 55);
 await call('/api/puzzles/p_floor/solve', { answer: '3' }, 403);
 await call('/api/act/complete', { act: 'act0' });
 for (const act of caseData.acts.slice(1)) {
@@ -76,7 +76,7 @@ for (const act of caseData.acts.slice(1)) {
   console.log(`PASS deployed ${act.id}: all required evidence and puzzles, durable save`);
 }
 const finished = await call('/api/state');
-assert.equal(finished.solvedPuzzles.length, 47);
+assert.equal(finished.solvedPuzzles.length, 54);
 assert.equal(finished.penalties, 0);
 assert(finished.ending?.body);
 if (!health.env?.eventMode) {

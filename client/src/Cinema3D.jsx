@@ -8,16 +8,17 @@ import { useSettings } from './Settings.jsx';
 import { SceneLoading, SceneWatchdog, WorldBoundary, SceneReady } from './WorldBoundary.jsx';
 import PerformanceGuard from './PerformanceGuard.jsx';
 import { placeCast, roomWideShot, captureShot } from './SceneStaging.js';
-import FallbackCinema from './StageFallback.jsx';
-import { webglSupported, resetWebglProbe } from './webgl.js';
+import { createRenderer } from './renderer.js';
 const CLOSE={close_parth:'parth',close_mother:'mother',close_officer:'officer'};
 // Errors thrown inside the canvas root do not reach boundaries outside the
-// Canvas, so the scene tree carries its own boundary; on failure the director
-// is told and the story continues on subtitles over a dark stage.
+// Canvas, so the scene tree carries its own boundary. It retries itself in
+// place: a transient scene error must never cost the player the 3D stage.
 class SceneErrorBoundary extends Component {
   state={failed:false};
   static getDerivedStateFromError(){return{failed:true};}
   componentDidCatch(error){console.error('scene_error',error.message);this.props.onFail?.();}
+  componentDidMount(){this.timer=setInterval(()=>{if(this.state.failed)this.setState({failed:false});},2500);}
+  componentWillUnmount(){clearInterval(this.timer);}
   componentDidUpdate(prevProps){if(this.state.failed&&prevProps.resetKey!==this.props.resetKey)this.setState({failed:false});}
   render(){return this.state.failed?null:this.props.children;}
 }
@@ -52,50 +53,37 @@ export default function Cinema({sceneId='gazebo',shot='wide',cast=[],speaker,end
   const people=useMemo(()=>placeCast(sceneId,cast),[cast,sceneId]);
   const cinematicNight=['concert','ngo_hq'].includes(sceneId)&&['capture','departure'].includes(cinematicPhase);
   const backdrop=cinematicNight?'#26394e':'#10171c';
-  const [stopped,setStopped]=useState(null);
-  const [supported,setSupported]=useState(webglSupported);
-  const [attempt,setAttempt]=useState(0);
-  const [ready,setReady]=useState(false),[failed,setFailed]=useState(false);
-  useEffect(()=>{setStopped(null);setReady(false);setFailed(false);},[sceneId,cinematicPhase]);
-  // A first context request can fail while the GPU process is still coming up;
-  // one delayed re-probe lets the 3D stage take over if it was only transient.
-  useEffect(()=>{
-    if(supported)return;
-    const timer=setTimeout(()=>{resetWebglProbe();if(webglSupported())setSupported(true);},2500);
-    return()=>clearTimeout(timer);
-  },[supported]);
+  const [ready,setReady]=useState(false),[failed,setFailed]=useState(false),[stalled,setStalled]=useState(false);
+  useEffect(()=>{setReady(false);setFailed(false);setStalled(false);},[sceneId,cinematicPhase]);
   const handleReady=()=>{setReady(true);onReady?.();};
   const handleFail=()=>{setFailed(true);onFail?.();};
-  // A machine without 3D graphics — or one that lost its context mid-story —
-  // gets the 2D storyboard stage instead of a dead canvas. The story, the
-  // subtitles and the music never stop, so the case stays playable anywhere.
-  const retry3d=()=>{resetWebglProbe();setStopped(null);setFailed(false);setReady(false);setSupported(webglSupported());setAttempt(a=>a+1);};
-  const resetKey=`${sceneId}:${cinematicPhase??'default'}`;
-  if(!supported||failed||stopped)return <WorldBoundary resetKey={resetKey}>
+  // The renderer factory inside `createRenderer` keeps retrying until the
+  // browser hands over a WebGL2 context — hardware or the software fallback a
+  // device with 3D switched off still provides. The cinema only ever shows the
+  // 3D stage: until frames arrive the loading card explains what is happening,
+  // and a lost context is restored in place instead of downgrading the view.
+  return <WorldBoundary resetKey={`${sceneId}:${cinematicPhase??'default'}`}>
     <div className="cinema-world">
-      <FallbackCinema sceneId={sceneId} shot={shot} cast={people} speaker={speaker} paused={paused} onReady={handleReady}/>
-      {(stopped||failed)&&<div className="fs-notice" role="status"><span>{stopped==='webgl_lost'?'3D graphics stopped — playing the storyboard.':'3D view unavailable — playing the storyboard.'}</span><button className="btn ghost" onClick={retry3d}>Try 3D again</button></div>}
+    <Canvas shadows={quality!=='low'?'percentage':false}
+      dpr={quality==='high'?[1,1.5]:quality==='medium'?[1,1]:[0.6,0.8]}
+      gl={createRenderer}
+      camera={{position:[0,2.15,6.2],fov:39}}>
+      <color attach="background" args={[sceneId==='abandoned_field'||cinematicNight?'#26394e':'#10171c']}/><fog attach="fog" args={[sceneId==='gazebo'?'#9bafa5':backdrop,28,85]}/>
+      <SceneErrorBoundary resetKey={`${sceneId}:${cinematicPhase??'default'}`} onFail={handleFail}>
+        <Suspense fallback={null}>
+          <SceneEnvironment roomId={sceneId} quality={quality} cinematicPhase={cinematicPhase} paused={paused} actId={actId}/>
+          <spotLight position={[0,4,5]} angle={.7} penumbra={1} color="#ffdfbe" intensity={24} distance={13}/>
+          {people.map(c=><group key={c.character} position={[c.at[0],c.y,c.at[1]]} rotation={[c.rotationX??0,c.rot??0,0]}><Actor character={c.character} pose={c.pose} footLift={c.footLift} paused={paused} speaking={c.character===speaker} wearingMask={c.wearingMask} holdingMask={c.holdingMask}/></group>)}
+          <SceneReady key={`${sceneId}:${cinematicPhase??'default'}`} onReady={handleReady}/>
+        </Suspense>
+      </SceneErrorBoundary>
+      <SceneWatchdog onState={(state)=>setStalled(state==='stalled')}/>
+      <PerformanceGuard/>
+      <ShotCamera roomId={sceneId} shot={shot} cast={people} speaker={speaker} paused={paused} cinematicPhase={cinematicPhase}/>
+      {quality==='high'&&<EffectComposer multisampling={0}><Bloom intensity={.12} luminanceThreshold={1} mipmapBlur/><Vignette offset={.22} darkness={.35}/></EffectComposer>}
+    </Canvas>
+    {!ready&&!failed&&<SceneLoading label={stalled?'Still starting 3D graphics':'Opening the scene'}/>}
+    {ready&&stalled&&<SceneLoading label="Restoring 3D graphics"/>}
     </div>
   </WorldBoundary>;
-  // The boundary is reset by key instead of remounted: swapping rooms or beats
-  // must not rebuild the WebGL context and recompile every shader on stage.
-  return <WorldBoundary resetKey={resetKey} onError={handleFail}><div className="cinema-world"><Canvas key={attempt} shadows={quality!=='low'?'percentage':false}
-    dpr={quality==='high'?[1,1.5]:quality==='medium'?[1,1]:[0.6,0.8]}
-    gl={{ antialias: quality !== 'low', powerPreference: 'high-performance' }}
-    camera={{position:[0,2.15,6.2],fov:39}}>
-    <color attach="background" args={[sceneId==='abandoned_field'||cinematicNight?'#26394e':'#10171c']}/><fog attach="fog" args={[sceneId==='gazebo'?'#9bafa5':backdrop,28,85]}/>
-    <SceneErrorBoundary resetKey={`${sceneId}:${cinematicPhase??'default'}`} onFail={handleFail}>
-      <Suspense fallback={null}>
-        <SceneEnvironment roomId={sceneId} quality={quality} cinematicPhase={cinematicPhase} paused={paused} actId={actId}/>
-        <spotLight position={[0,4,5]} angle={.7} penumbra={1} color="#ffdfbe" intensity={24} distance={13}/>
-        {people.map(c=><group key={c.character} position={[c.at[0],c.y,c.at[1]]} rotation={[c.rotationX??0,c.rot??0,0]}><Actor character={c.character} pose={c.pose} footLift={c.footLift} paused={paused} speaking={c.character===speaker} wearingMask={c.wearingMask} holdingMask={c.holdingMask}/></group>)}
-        <SceneReady key={`${sceneId}:${cinematicPhase??'default'}`} onReady={handleReady}/>
-      </Suspense>
-    </SceneErrorBoundary>
-    <SceneWatchdog onStopped={setStopped}/>
-    <PerformanceGuard/>
-    <ShotCamera roomId={sceneId} shot={shot} cast={people} speaker={speaker} paused={paused} cinematicPhase={cinematicPhase}/>
-    {quality==='high'&&<EffectComposer multisampling={0}><Bloom intensity={.12} luminanceThreshold={1} mipmapBlur/><Vignette offset={.22} darkness={.35}/></EffectComposer>}
-  </Canvas>{!ready&&!failed&&<SceneLoading/>}</div></WorldBoundary>;
 }
-

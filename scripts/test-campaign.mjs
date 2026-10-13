@@ -36,7 +36,7 @@ let state = await call('/api/state');
 assert.equal(state.act, 'act0');
 assert.equal(state.acts.length, 9);
 assert.equal(state.rooms.length, 14);
-assert.equal(state.puzzles.length, 48);
+assert.equal(state.puzzles.length, 55);
 assert(state.puzzles.every((p) => !('answers' in p) && !('grants' in p)));
 assert(state.endings.every((e) => !('body' in e)));
 await call('/api/puzzles/p_floor/solve', { answer: '3' }, 403);
@@ -70,7 +70,8 @@ for (const act of caseData.acts.slice(1)) {
     }
   }
   assert(state.canAdvance.ok, `${act.id} blocked: ${JSON.stringify(state.canAdvance)}`);
-  const repeated = await call(`/api/puzzles/${act.complete.puzzles[0]}/solve`, { answer: 'already answered' });
+  const repeatTarget = (act.complete?.puzzles ?? [])[0] ?? state.solvedPuzzles[0];
+  const repeated = await call(`/api/puzzles/${repeatTarget}/solve`, { answer: 'already answered' });
   assert(repeated.alreadySolved);
   await call('/api/act/complete', { act: act.id });
   console.log(`PASS ${act.id}: ${actions} interactions, all completion gates reachable`);
@@ -78,10 +79,10 @@ for (const act of caseData.acts.slice(1)) {
 state = await call('/api/state');
 assert.equal(state.ending.id, 'ending_main');
 assert.match(state.ending.body, /now disappear/i);
-// 47 of 48: the café route skips p_cd_watch, which only exists on the laptop path.
-assert.equal(state.solvedPuzzles.length, 47);
+// 54 of 55: the café route skips p_cd_watch, which only exists on the laptop path.
+assert.equal(state.solvedPuzzles.length, 54);
 assert.equal(state.penalties, 0);
-assert.equal(state.score, state.discovered.length + 47);
+assert.equal(state.score, state.discovered.length + 54);
 const campaignSave = JSON.stringify(state);
 for (const act of caseData.acts) {
   mode = 'campaign';
@@ -111,7 +112,7 @@ mode = 'campaign';
 const preserved = await call('/api/state');
 assert.equal(preserved.team, JSON.parse(campaignSave).team);
 assert.equal(preserved.ending.id, 'ending_main');
-assert.equal(preserved.solvedPuzzles.length, 47);
+assert.equal(preserved.solvedPuzzles.length, 54);
 console.log('PASS both endings, practice isolation, durable reload, score, and leaderboard');
 // The laptop path must not skip the cyber cafe: it fries the laptop and the
 // footage only arrives once the CD is played at Ramu's.

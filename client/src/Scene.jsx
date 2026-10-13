@@ -8,8 +8,7 @@ import Actor from './Actor.jsx';
 import { useSettings } from './Settings.jsx';
 import { SceneLoading, SceneWatchdog, WorldBoundary, SceneReady, AssetBoundary } from './WorldBoundary.jsx';
 import PerformanceGuard from './PerformanceGuard.jsx';
-import { RoomFallback } from './StageFallback.jsx';
-import { webglSupported, resetWebglProbe } from './webgl.js';
+import { createRenderer } from './renderer.js';
 import { useCallback, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import {
@@ -1568,39 +1567,25 @@ export default function Scene({
     [state, focus, measure, onCharacter, onClue, onPuzzle, onTravel, solvedPuzzles]
   );
 
-  const [sceneStopped, setSceneStopped] = useState(null);
+  const [sceneStalled, setSceneStalled] = useState(false);
   const [sceneReady, setSceneReady] = useState(false);
-  const [glSupported, setGlSupported] = useState(webglSupported);
-  const [attempt, setAttempt] = useState(0);
-  useEffect(() => { setSceneStopped(null); setSceneReady(false); }, [room.id]);
-  // A first context request can fail while the GPU process is still coming up;
-  // one delayed re-probe lets the 3D room take over if it was only transient.
-  useEffect(() => {
-    if (glSupported) return;
-    const timer = setTimeout(() => { resetWebglProbe(); if (webglSupported()) setGlSupported(true); }, 2500);
-    return () => clearTimeout(timer);
-  }, [glSupported]);
+  useEffect(() => { setSceneStalled(false); setSceneReady(false); }, [room.id]);
 
   const bounds = ROOM_BOUNDS[room.id] ?? { x: 6.5, zMin: -5.5, zMax: 9 };
   const bg = room.id==='abandoned_field' ? '#26394e' : isOutdoor ? '#05070d' : '#080604';
 
   const { quality } = useSettings();
   const handleReady = () => { setSceneReady(true); onReady?.(); };
-  // Whatever happens to the 3D view — no WebGL at all, a rejected context or a
-  // lost one mid-exploration — the room stays playable on the storyboard stage
-  // with the same hotspots, so the case never dead-ends on a device.
-  const retry3d = () => { resetWebglProbe(); setSceneStopped(null); setSceneReady(false); setGlSupported(webglSupported()); setAttempt((a) => a + 1); };
-  const storyboard = <RoomFallback room={room} roomId={room.id} state={state} solvedPuzzles={solvedPuzzles} onCharacter={onCharacter} onClue={onClue} onPuzzle={onPuzzle} onTravel={onTravel}
-    notice={sceneStopped ? (sceneStopped === 'webgl_lost' ? '3D graphics stopped — playing the storyboard.' : '3D view stalled — playing the storyboard.') : null}
-    onRetry={retry3d} />;
-  if (!glSupported) return storyboard;
+  // The room is always the 3D room. `createRenderer` keeps retrying until the
+  // browser gives it a WebGL2 context — including the software renderer a
+  // machine with hardware acceleration switched off still provides — and a
+  // stalled or lost context shows a restoring card while three.js recovers.
   return (
-    <WorldBoundary resetKey={`${room.id}:${attempt}`} fallback={storyboard}>
-      {sceneStopped ? storyboard : (
+    <WorldBoundary resetKey={room.id}>
       <div className="room-world">
-      <Canvas key={attempt} shadows={quality !== 'low' ? 'percentage' : false}
+      <Canvas shadows={quality !== 'low' ? 'percentage' : false}
         dpr={quality === 'high' ? [1, 1.65] : quality === 'medium' ? [1, 1] : [0.6, 0.8]}
-        gl={{ antialias: quality !== 'low', powerPreference: 'high-performance' }}
+        gl={createRenderer}
         camera={{ position: view.at, fov: view.fov }}>
         <color attach="background" args={[bg]} />
         <fog attach="fog" args={room.id==='abandoned_field'?[bg,12,50]:isOutdoor ? [bg, 25, 65] : [bg, 22, 42]} />
@@ -1615,16 +1600,16 @@ export default function Scene({
           <ListenerPosition />
           <SceneReady onReady={handleReady} onMetrics={onMetrics}/>
         </Suspense>
-        <SceneWatchdog onStopped={setSceneStopped} />
+        <SceneWatchdog onState={(state) => setSceneStalled(state === 'stalled')} />
         <PerformanceGuard />
         {quality === 'high' && <EffectComposer multisampling={2}>
           <Bloom intensity={0.18} luminanceThreshold={0.85} mipmapBlur />
           <Vignette offset={0.3} darkness={room.id==='abandoned_field'?.16:.35} />
         </EffectComposer>}
       </Canvas>
-      {!sceneReady && <SceneLoading />}
+      {!sceneReady && <SceneLoading label={sceneStalled ? 'Still starting 3D graphics' : 'Opening the scene'} />}
+      {sceneReady && sceneStalled && <SceneLoading label="Restoring 3D graphics" />}
       </div>
-      )}
     </WorldBoundary>
   );
 }

@@ -12,100 +12,79 @@ export function SceneReady({onReady,onMetrics}){
   return null;
 }
 
-// Watches the render loop: if WebGL loses its context or frames stop arriving
-// while the tab is visible, the scene is dead and the caller shows a recovery
-// panel instead of a silent black canvas. Slow machines can spend many seconds
-// on their first shader compilation, texture upload and PMREM pass, so the
-// clock only starts once a frame has actually drawn and a stall must survive
-// two consecutive checks before the view is declared dead.
-export function SceneWatchdog({ onStopped, timeoutMs = 10000 }) {
+// Watches the render loop and reports whether the 3D view is live. A lost
+// context is not fatal: three.js restores it, the renderer re-uploads, and the
+// state flips back to `live` when frames arrive again. While frames are missing
+// the caller shows a restoring overlay — the stage itself is never replaced.
+// Slow machines can spend many seconds on their first shader compilation,
+// texture upload and PMREM pass, so the clock only starts once a frame has
+// actually drawn and a stall must survive two consecutive checks.
+export function SceneWatchdog({ onState, timeoutMs = 10000 }) {
   const { gl } = useThree();
   const last = useRef(0);
   const started = useRef(false);
+  const callback = useRef(onState);
+  callback.current = onState;
   useFrame(() => { last.current = performance.now(); started.current = true; });
   useEffect(() => {
     const canvas = gl.domElement;
     const mountedAt = performance.now();
-    let stopped = false;
+    let stalled = false;
     let misses = 0;
-    const stop = (reason) => { if (!stopped) { stopped = true; onStopped(reason); } };
-    const onLost = (event) => { event.preventDefault(); stop('webgl_lost'); };
+    const set = (value) => {
+      if (stalled === value) return;
+      stalled = value;
+      callback.current?.(value ? 'stalled' : 'live');
+    };
+    // Three.js also listens for these events; preventDefault lets the browser
+    // hand the context back after a transient GPU reset.
+    const onLost = (event) => { event.preventDefault(); set(true); };
+    const onRestored = () => { last.current = performance.now(); misses = 0; set(false); };
     const onVisible = () => { last.current = performance.now(); misses = 0; };
     canvas.addEventListener('webglcontextlost', onLost);
+    canvas.addEventListener('webglcontextrestored', onRestored);
     document.addEventListener('visibilitychange', onVisible);
     const timer = setInterval(() => {
       if (document.hidden) { last.current = performance.now(); misses = 0; return; }
       const now = performance.now();
       if (!started.current) {
-        // Never drew a frame: allow a long grace period before calling it dead.
-        if (now - mountedAt > timeoutMs * 3) stop('no_frames');
+        // Never drew a frame yet: allow a long grace period before reporting.
+        if (now - mountedAt > timeoutMs * 3) set(true);
         return;
       }
       if (now - last.current > timeoutMs) {
         misses += 1;
-        if (misses >= 2) stop('no_frames');
+        if (misses >= 2) set(true);
       } else {
         misses = 0;
+        set(false);
       }
     }, 1000);
     return () => {
       clearInterval(timer);
       canvas.removeEventListener('webglcontextlost', onLost);
+      canvas.removeEventListener('webglcontextrestored', onRestored);
       document.removeEventListener('visibilitychange', onVisible);
     };
-  }, [gl, onStopped, timeoutMs]);
+  }, [gl, timeoutMs]);
   return null;
-}
-
-// Recovery panel: a plain reload fixes a lost context; the lowest-graphics
-// option also pins the quality preset down for weak machines before reloading;
-// clearing the service worker cache fixes a tab stuck on a corrupted bundle.
-export function WorldStopped({ reason }) {
-  const clearAndReload = async () => {
-    try { if ('caches' in window) for (const key of await caches.keys()) await caches.delete(key); } catch {}
-    try {
-      const registrations = await navigator.serviceWorker?.getRegistrations?.();
-      for (const registration of registrations ?? []) await registration.unregister();
-    } catch {}
-    window.location.reload();
-  };
-  // Written straight to storage: the reload would otherwise cancel the React
-  // state update before the settings provider persisted it.
-  const reloadLowGraphics = () => {
-    try {
-      const saved = JSON.parse(localStorage.getItem('moon-settings') || '{}');
-      localStorage.setItem('moon-settings', JSON.stringify({ ...saved, quality: 'low', autoTune: false }));
-    } catch {}
-    window.location.reload();
-  };
-  return (
-    <div className="world-fallback">
-      <p>The 3D view stopped{reason === 'webgl_lost' ? ' — the graphics context was lost' : ''}.</p>
-      <p>Your case is saved. Reload to bring the scene back.</p>
-      <div className="world-fallback-actions">
-        <button className="btn ghost" onClick={() => window.location.reload()}>Reload scene</button>
-        <button className="btn ghost" onClick={reloadLowGraphics}>Reload on lowest graphics</button>
-        <button className="btn ghost" onClick={clearAndReload}>Clear cache &amp; reload</button>
-      </div>
-    </div>
-  );
 }
 
 // The loading panel is a DOM overlay pinned to the centre of the stage — never
 // an in-world element, which used to drift around the frame as the camera moved.
 // The bar tracks every asset three.js is fetching, with the percentage shown.
-export function SceneLoading(){
+export function SceneLoading({ label = 'Opening the scene' }){
   const {progress,total}=useProgress();
   const known=total>0;
   const pct=known?Math.max(0,Math.min(100,Math.round(progress))):null;
-  return <div className="scene-loader" role="status" aria-live="polite" aria-label="Loading the scene">
+  return <div className="scene-loader" role="status" aria-live="polite" aria-label={label}>
     <div className="scene-loader-card">
       <span className="loading-moon" aria-hidden="true"/>
-      <p>Opening the scene</p>
+      <p>{label}</p>
       <div className={`scene-loader-track ${pct===null?'indeterminate':''}`}>
         <span style={pct===null?undefined:{width:`${pct}%`}}/>
       </div>
-      <small>{pct===null?'Preparing…':pct>=100?'Setting the stage…':`${pct}%`}</small>
+      <small>{pct===null?'Preparing…':`${pct}%`}</small>
     </div>
   </div>;
 }
@@ -119,23 +98,24 @@ export class AssetBoundary extends Component {
   componentDidCatch(error) { console.warn('asset_error', error.message); }
   render() { return this.state.failed ? (this.props.fallback ?? null) : this.props.children; }
 }
+
+// A scene-tree error is retried in place instead of dead-ending the stage: the
+// boundary resets itself every couple of seconds and the stage relights the
+// moment the retry succeeds. A change of resetKey retries immediately, so the
+// caller can swap rooms or cinematic scenes without remounting the canvas.
 export class WorldBoundary extends Component {
   state = { failed: false };
   static getDerivedStateFromError() { return { failed: true }; }
-  componentDidCatch(error) { console.error('scene_error', error.message); this.props.onError?.(error); }
-  // A change of resetKey retries the boundary in place, so the caller can swap
-  // rooms or cinematic scenes without remounting (and rebuilding) the WebGL
-  // canvas beneath it.
+  componentDidCatch(error) { console.error('scene_error', error.message); }
+  componentDidMount() {
+    this.timer = setInterval(() => { if (this.state.failed) this.setState({ failed: false }); }, 2500);
+  }
+  componentWillUnmount() { clearInterval(this.timer); }
   componentDidUpdate(prevProps) {
     if (this.state.failed && prevProps.resetKey !== this.props.resetKey) this.setState({ failed: false });
   }
   render() {
-    if (this.state.failed) {
-      // A caller can hand over a working alternative (the 2D storyboard stage)
-      // so a failed 3D tree never leaves the player without a scene.
-      if (this.props.fallback !== undefined) return this.props.fallback;
-      return <div className="world-fallback"><p>The scene could not load.</p><p>Your case is saved. You can still use Explore to inspect the room.</p><button className="btn ghost" onClick={() => this.setState({ failed: false })}>Reload scene</button></div>;
-    }
+    if (this.state.failed) return <SceneLoading label="Reconnecting the scene" />;
     return this.props.children;
   }
 }

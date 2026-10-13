@@ -1,5 +1,5 @@
 # W2 — acts 3–5 ("The Concert", "Shashdhar", "The Big Bad").
-# Source: docs/FINAL_SCRIPT.md pages 12–24. Registry: docs/BUILD_SPEC.md.
+# Source: docs/FINAL_STORY.md and docs/FINAL_STORY_WITH_QUESTIONS.md (acts 3–5). Registry: docs/BUILD_SPEC.md.
 # Owns: acts 3/4/5, rooms concert/workshop/ngo_hq/ngo_archive, hospital act4
 # hotspots, tanush_office, enakshi_house, sameer_room act4/act5 hotspots.
 
@@ -17,24 +17,27 @@ acts:
       - { speaker: narrator, text: "As the band closes, the host takes the mic: \"This concert is funded by the Perigee NGO.\" This makes Sameer's ears prick up. He needs to talk to Veer — or Vihaan, whoever this guy is. This may be the only lead he has to his friend." }
       - { speaker: narrator, text: "He looks around as the concert ends and spots a line for people with backstage passes. Now he just needs to go in." }
     outro:
-      - { speaker: narrator, text: "He hides near the trash cans and peeks through. The captured man is struggling, frantically calling for help. Two people — maybe nurses — tie him up and load him into an ambulance." }
-      - { speaker: narrator, text: "The ambulance leaves, talking about taking him to some hospital. Sameer is going to put his life in danger if he delves deeper, but he has to — children are being captured too. He needs to expose them, or bring light to this, or something." }
-      - { speaker: narrator, text: "The next morning, Sameer wakes up with a plan." }
-    complete: { puzzles: [p_delve] }
+      - { speaker: narrator, text: "Holy hell, the design was so cool. Then — a sound from the next room. He quickly closed the door and stayed as silent as possible. The volunteers would have left by now." }
+      - { speaker: narrator, text: "The walls were flimsy. Through them, he heard Veer speak." }
+    complete: { clues: [c_records, c_holy_blade, c_veer_talk] }
 
   - id: act4
     type: interactive
     kicker: "Act IV"
     title: "Shashdhar"
-    entry_room: sameer_room
-    rooms: [sameer_room, hospital]
-    objective: "Find the hospital the man from the ambulance was taken to."
+    entry_room: ngo_archive
+    rooms: [ngo_archive, sameer_room, hospital]
+    objective: "Escape the archive, then find the hospital the man from the ambulance was taken to."
     intro:
-      - { speaker: narrator, text: "He thinks about the hospital the man may be at. If there is torture taking place, it won't be a normal hospital — it would be some sort of abandoned or isolated one. He tries to search for extremely old or isolated hospitals." }
+      - { speaker: narrator, text: "Through the flimsy wall: Veer — \"There were so many enthusiastic buds in the field, they were practically waiting to fall in Nishakara's arms.\"" }
+      - { speaker: narrator, text: "A deep, rumbling laugh answered him: \"Children are usually excited about this. They are pure souls. It is in their nature to call their holy mother.\"" }
+      - { speaker: narrator, text: "A shattering sound — as if a pot had been dropped. Silence for a few seconds; the only sound was Sameer's heartbeat. Then yelling, and screaming. Someone else was in the room, and he had been caught." }
+      - { speaker: narrator, text: "The deep voice: \"What were you trying to find, child?\" A new voice, raspy and squeaky, like nails on a chalkboard: \"I got lost, I wanted to go to the washroom.\" Veer: \"With your phone recording the conversation?\"" }
+      - { speaker: narrator, text: "\"You guys need to be stopped — you stole my child, you arses! I hope your face reflects your mind!\" The interrogator, amused: \"Well, there won't be much change then. I look rather handsome. Veer, why don't you go celebrate with the others. I want to talk to him — he looks like he has a story to tell.\"" }
+      - { speaker: narrator, text: "Veer sputtered, but left. Sameer heard the door swing. He hid under the desk." }
     outro:
       - { speaker: narrator, text: "Parth was alive." }
-      - { speaker: narrator, text: "Sameer wanted to dance, he wanted to scream; he honestly felt a wave of numbness go over him. He was panicking so much — and all for naught. Parth was alive; maybe starving, but still healthy. He wasn't covered with bruises and burns. That was more than enough." }
-    complete: { puzzles: [p_parth_alive] }
+    complete: { clues: [c_plea, c_janitor, c_ritual], puzzles: [p_hide, p_delve, p_hospital, p_security_pin, p_parth_alive] }
 
   - id: act5
     type: interactive
@@ -44,6 +47,7 @@ acts:
     rooms: [tanush_office, enakshi_house, sameer_room]
     objective: "Expose the cult. Gather proof from the Big Bad's office and from Enakshi's house."
     intro:
+      - { speaker: narrator, text: "Holy shit, Parth was alive. Sameer wanted to dance, he wanted to scream; he honestly felt a wave of numbness go over him. He had been panicking so much — and all for naught. Parth was alive; maybe starving, but still healthy. He wasn't covered with bruises and burns. That was more than enough." }
       - { speaker: narrator, text: "He can't act like a fool right now. He has no idea who Parth is against and who he is allied with; one wrong move and it could be his skin being burned." }
       - { speaker: narrator, text: "He hears the security guard coming and picks up the mop. The guard looks at him in disgust: \"How many times have I told you to not come so close to the systems!\" Sameer looks to the ground: \"There were crumbs near the screens.\" The guard looks him over — \"You're Shyam's replacement?\" — \"Huh, yeah, I was hired yesterday. He loved my mopping technique. You know, just swish and flick.\"" }
       - { speaker: narrator, text: "A swish and a flick, and he was outside the door. He wants to go home and sleep, maybe yell at Parth for getting him into this goose chase — then he finds a beautifully decorated room, with plush carpets and mahogany furniture, a stark difference from the sterile corridors of the hospital. This has to be the office of some higher up." }
@@ -65,7 +69,8 @@ rooms:
       - { id: cc_veer_qa2, type: puzzle, puzzle: p_veer_2, label: "Know what they do?", position: [2, 0.9, -0.6], requires: { puzzles: [p_veer_1] } }
       - { id: cc_band_name, type: puzzle, puzzle: p_band_name, label: "The band's name", position: [1, 0.6, 0.2], requires: { puzzles: [p_veer_2] } }
       - { id: cc_registration, type: puzzle, puzzle: p_registration, label: "Member registration link", position: [3, 0.6, -0.8], requires: { puzzles: [p_band_name] } }
-      - { id: cc_fare, type: puzzle, puzzle: p_fare, label: "An auto to the workshop", position: [-1.2, 0, 2.6], requires: { clues: [c_workshop_address] } }
+      - { id: cc_destination, type: puzzle, puzzle: p_destination, label: "Find an auto — where to?", position: [-1.8, 0, 2.8], requires: { clues: [c_workshop_address] } }
+      - { id: cc_fare, type: puzzle, puzzle: p_fare, label: "The fare to the workshop", position: [-1.2, 0, 2.6], requires: { clues: [c_workshop_address], puzzles: [p_destination] } }
       - { id: cc_to_workshop, type: travel, to: workshop, label: "Take the auto to the workshop", position: [-3, 0, 2.4], requires: { puzzles: [p_fare] } }
 
   - id: workshop
@@ -86,11 +91,16 @@ rooms:
     name: "The Archive Room"
     scene: ngo_archive
     hotspots:
-      - { id: na_system, type: puzzle, puzzle: p_ascension, label: "Ancient system on the desk", position: [0, 0.7, -2.8] }
-      - { id: na_blade, type: clue, clue: c_holy_blade, label: "Image file: Holy Blade", position: [-2.4, 0.6, -1.2], requires: { clues: [c_records] } }
-      - { id: na_wall, type: clue, clue: c_veer_talk, label: "Voices through the flimsy wall", position: [-3, 0.9, 0.8], requires: { clues: [c_records] } }
-      - { id: na_hide, type: puzzle, puzzle: p_hide, label: "The door opens", position: [1.6, 0, -0.6], requires: { clues: [c_veer_talk] } }
-      - { id: na_delve, type: puzzle, puzzle: p_delve, label: "The ambulance", position: [2.6, 0.5, 1.6], requires: { clues: [c_ambulance] } }
+      # Act III — the records, the blade, and the first half of the overheard call.
+      - { id: na_system, act: act3, type: puzzle, puzzle: p_ascension, label: "Ancient system on the desk", position: [0, 0.7, -2.8] }
+      - { id: na_playback, act: act3, type: puzzle, puzzle: p_playback, label: "The .avi files", position: [0.9, 0.6, -2.2], requires: { puzzles: [p_ascension] } }
+      - { id: na_blade, act: act3, type: clue, clue: c_holy_blade, label: "Image file: Holy Blade", position: [-2.4, 0.6, -1.2], requires: { clues: [c_records] } }
+      - { id: na_wall, act: act3, type: clue, clue: c_veer_talk, label: "Voices through the flimsy wall", position: [-3, 0.9, 0.8], requires: { clues: [c_records] } }
+      # Act IV — the interrogation next door, then the hide and the escape.
+      - { id: na_plea, act: act4, type: clue, clue: c_plea, label: "A stranger's voice through the wall", position: [-3, 0.9, 0.8], requires: { clues: [c_veer_talk] } }
+      - { id: na_hide, act: act4, type: puzzle, puzzle: p_hide, label: "The door opens", position: [1.6, 0, -0.6], requires: { clues: [c_plea] } }
+      - { id: na_delve, act: act4, type: puzzle, puzzle: p_delve, label: "The ambulance", position: [2.6, 0.5, 1.6], requires: { clues: [c_ambulance] } }
+      - { id: na_to_home, act: act4, type: travel, to: sameer_room, label: "Wake up at home the next morning", position: [-2.4, 0, 2.2], requires: { puzzles: [p_delve] } }
 
   - id: sameer_room
     hotspots:
@@ -209,6 +219,10 @@ clues:
     name: "Nishakara's arms"
     description: "Through the flimsy wall: Veer — \"There were so many enthusiastic buds in the field, they were practically waiting to fall in Nishakara's arms.\" A deep, rumbling laugh: \"Children are usually excited about this, they are pure souls. It is in their nature to call their holy mother.\""
     requires: [c_records]
+  - id: c_plea
+    name: "The parent's plea"
+    description: "A shattering sound — then a raspy, squeaky voice through the wall: \"You guys need to be stopped, you stole my child, you arses! I hope your face reflects your mind!\" The interrogator, amused: \"Well, there won't be much change then. I look rather handsome. Veer, why don't you go celebrate with others.\" Veer sputtered, but left."
+    requires: [c_veer_talk]
   - id: c_ambulance
     name: "Ambulance"
     description: "The captured man is one of the people who went missing during the full moon. Two people — maybe nurses — tie him up and load him into an ambulance that leaves, talking about taking him to some hospital."
@@ -286,15 +300,30 @@ puzzles:
     prompt: "He plans to go to the workshop and finds an auto. \"Where do you want to go, sir?\" — \"Hutting, 3rd cross, DJ Halli.\" — \"300.\""
     options: ["100", "200", "230", "Walk away"]
     answers: ["230"]
-    requires: { clues: [c_workshop_address] }
+    requires: { clues: [c_workshop_address], puzzles: [p_destination] }
     fail_message: "\"Ok sir, find someone else then.\""
     success: "\"The hell — I'll give 100, no more.\" — \"Ok sir, find someone else then.\" Sameer looked around; the auto guy looked at him. Sameer sighed, \"I can't give more than 200.\" — \"230.\" Sameer sighed and got into the auto. After that daylight robbery, he saw the workshop: it was in an open field, kids were running around and volunteers were setting up the instruments for observation."
   - id: p_ascension
     kind: code
     prompt: "He glanced at the records around him, then finally tried to switch on the ancient system on the desk. Blue light reflected on his face — it asked for a password."
     answers: ["ascension"]
-    success: "Blue light reflects on his face; the records open. A folder named \"offeringRecords\" — a bunch of .avi videos, and a text file tracking how much of the physical archive has been moved to digital. It stopped on 16-07-2020."
+    success: "Blue light reflects on his face; the records open. A folder named \"offeringRecords\" — a bunch of .avi videos. Huh, he has never seen this extension before."
+  - id: p_playback
+    kind: choice
+    prompt: "A folder full of .avi videos, an extension he has never seen. Would it even play on his laptop?"
+    options: ["It will play", "It won't play"]
+    answers: ["It won't play"]
+    success: "It won't play. Damn — he would need the cyber cafe again. He doesn't trust the system to not blast loud sound, so he opens a text file instead: instructions to move the records from physical to digital, updates on how much has been moved. It stopped on 16-07-2020."
     grants: [c_records]
+    requires: { puzzles: [p_ascension] }
+    fail_message: "It plays? No — a file like that would never open on his laptop. He'd need the old machines at Ramu's."
+  - id: p_destination
+    kind: text
+    prompt: "He plans to go to the workshop and finds an auto. \"Where do you want to go, sir?\""
+    answers: ["hutting 3rd cross dj halli", "hutting", "3rd cross dj halli", "dj halli"]
+    success: "\"Hutting, 3rd cross, DJ Halli.\" The volunteer's message had the address."
+    requires: { clues: [c_workshop_address] }
+    fail_message: "The driver waits. Sameer digs out the volunteer's message and reads the address again."
   - id: p_hide
     kind: choice
     prompt: "He hid under the desk. The door opened, Veer looked in — Sameer huddled his feet closer to himself. He heard a mutter: \"We really need to get better security.\" Then a scream cut both men off. Veer left the door open, deciding whether to check the room or leave for the scream. Should Sameer take the risk and run?"
@@ -309,10 +338,10 @@ puzzles:
     options: ["Yes", "No"]
     answers: ["Yes"]
     fail_message: "\"No\" sits on his tongue — and he hates himself for even thinking it. There is no way out of this now. He has to go deeper. (One penalty.)"
-    success: "He is going to put his life in danger if he delves deeper, but he has to. The police are nearly incompetent and apparently children are being captured too. He needs to expose them, or bring light to this, or something. He has to."
+    success: "He is going to put his life in danger if he delves deeper, but he has to. The police are nearly incompetent and apparently children are being captured too. He needs to expose them, or bring light to this, or something. He has to. The next morning, Sameer wakes up with a plan."
   - id: p_hospital
     kind: choice
-    prompt: "He tries to search for extremely old or isolated hospitals. Which hospital should he pick?"
+    prompt: "The next morning he wakes with a plan. If there is torture happening, it won't be a normal hospital — it would be some sort of abandoned or isolated one. Which hospital should he pick?"
     options: ["Vyadha Hospital", "Shashdhar Hospital", "BMC Hospital"]
     answers: ["Shashdhar Hospital"]
     fail_message: "The wards of the wrong hospital scroll past — normal, staffed, full of visitors. Nobody would hide a torture room there. He scrolls back to the top and tries again."

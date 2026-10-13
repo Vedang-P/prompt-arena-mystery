@@ -116,12 +116,12 @@ must treat puzzle `requires` as gating; dead-content warnings count puzzle grant
 | act0 | cinematic | The Vanishing | — | — | — |
 | act1 | interactive | The Room | parth_room | parth_room, abandoned_field, cyber_cafe, parth_home | puzzles: [p_morse, p_laptop, p_email, p_cassette, p_drums] |
 | act2 | interactive | Full Moon | sameer_room | sameer_room, gazebo, cyber_cafe | puzzles: [p_voicenote2, p_dosa, p_ticket] |
-| act3 | interactive | The Concert | concert | concert, workshop, ngo_hq, ngo_archive, sameer_room | puzzles: [p_delve] |
-| act4 | interactive | Shashdhar | sameer_room | sameer_room, hospital | puzzles: [p_parth_alive] |
+| act3 | interactive | The Concert | concert | concert, workshop, ngo_hq, ngo_archive, sameer_room | clues: [c_records, c_holy_blade, c_veer_talk] |
+| act4 | interactive | Shashdhar | ngo_archive | ngo_archive, sameer_room, hospital | clues: [c_plea, c_janitor, c_ritual]; puzzles: [p_hide, p_delve, p_hospital, p_security_pin, p_parth_alive] |
 | act5 | interactive | The Big Bad | tanush_office | tanush_office, enakshi_house, sameer_room | puzzles: [p_exposed] |
 | act6 | interactive | Poornima | sameer_room | sameer_room, hospital, police_station | puzzles: [p_police_video] |
-| act7 | interactive | The Mask | sameer_room | sameer_room, hospital, enakshi_house | puzzles: [p_floor] |
-| act8 | interactive | The Revelation | hospital | hospital, tanush_office | puzzles: [p_why, p_where, p_wrong] |
+| act7 | interactive | The Mask | sameer_room | sameer_room, hospital, enakshi_house | puzzles: [p_hand_owner, p_floor] |
+| act8 | interactive | The Revelation | hospital | hospital, tanush_office | clues: [c_office]; puzzles: [p_office, p_found, p_saved] |
 
 Commands: `kicker` "Act 0".."Act VIII". Act 0 keeps its existing scenes/beats (fix text
 per the final script: "Sameer pleaded", mother line, "And then he ran off. Weird.").
@@ -167,9 +167,10 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 | c_workshop_address | grant of p_registration | — | Hutting, 3rd cross, DJ Halli |
 | c_workshop | workshop snacks hotspot | — | open-field workshop, kids |
 | c_hq | ngo_hq hall hotspot | — | the headquarters |
-| c_records | grant of p_ascension | — | offeringRecords folder, .avi files, stopped 16-07-2020 |
+| c_records | grant of p_playback | — | offeringRecords folder, .avi files, stopped 16-07-2020 |
 | c_holy_blade | ngo_archive blade hotspot | c_records | carved box, "Holy Blade" image |
 | c_veer_talk | ngo_archive wall hotspot | c_records | Veer + deep voice: Nishakara's arms |
+| c_plea | ngo_archive wall hotspot (act4) | c_veer_talk | the shatter; the parent: "you stole my child" |
 | c_ambulance | grant of p_hide | — | man from the posters, struggling |
 | c_janitor | hospital backdoor hotspot | — | uniform + mop |
 | c_ritual | hospital theatre hotspot | c_janitor | incense, chanting, torture |
@@ -196,8 +197,8 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 | c_trucks | hospital yard hotspot (act7) | p_continue | cargo into trucks |
 | c_disguise | hospital lone-worker hotspot | c_trucks | knocked out, clothes taken |
 | c_caught | grant of p_floor | — | the hand on his neck |
-| c_veer_death | hospital stage hotspot (act8) | p_spiral | Veer's neck snaps |
-| c_parth2 | hospital stage hotspot #2 (act8) | c_veer_death | Parth's hollow eyes |
+| c_veer_death | hospital stage hotspot (act8) | c_caught | Veer's neck snaps |
+| c_parth2 | hospital stage hotspot #2 (act8) | p_spiral | Parth's hollow eyes |
 | c_office | tanush_office hotspot (act8) | — | plush carpets, mahogany |
 
 ### Puzzles → answer keys (player-facing prompt is authored by W1–W3)
@@ -210,15 +211,19 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 | p_dosa | choice | Eat it | options [Eat it, Skip it]; fail_message "But he bought it ?" |
 | p_voicenote2 | text | park, the park | riddle "Where we would go for a walk…"; grants nothing; gates c_cd |
 | p_cd_mode | choice | Use the cyber cafe | options [Use my laptop, Use the cyber cafe]; continue_on_fail; fail_grants [c_laptop_fried]; grants c_footage |
+| p_cd_watch | choice | Insert the CD | requires c_laptop_fried; grants c_footage (the laptop path's cafe visit) |
+| p_video_noise | text | mixtape, the mixtape, cassette, the cassette | requires c_footage; the video had no sound — fit the noise to the mixtape |
 | p_ticket | choice | Normal ticket | options [Normal ticket, Backstage ticket]; continue_on_fail; grants c_ticket |
 | p_veer_1 | choice | No, but I have donated some money to them | options [Yes, I'm part of it, No, but I have donated some money to them] |
 | p_veer_2 | choice | Foster scientific temper, empowering the youth | options [Foster scientific temper, empowering the youth, Teach astronomy to tourists] |
 | p_band_name | text | apogee | grants c_apogee |
 | p_registration | email | any email | grants c_workshop_address; placeholder "you@example.com" |
-| p_fare | choice | 230 | options [100, 200, 230, Walk away] |
-| p_ascension | code | ascension | grants c_records |
-| p_hide | choice | Stay hidden | options [Run, Stay hidden]; continue_on_fail; grants c_ambulance |
-| p_delve | choice | Yes | options [Yes, No]; retry on No |
+| p_destination | text | hutting 3rd cross dj halli, hutting, 3rd cross dj halli, dj halli | requires c_workshop_address; the auto driver's question |
+| p_fare | choice | 230 | options [100, 200, 230, Walk away]; requires p_destination |
+| p_ascension | code | ascension | the folder opens: .avi files, an extension he has never seen |
+| p_playback | choice | It won't play | options [It will play, It won't play]; requires p_ascension; grants c_records |
+| p_hide | choice | Stay hidden | options [Run, Stay hidden]; continue_on_fail; requires c_plea; grants c_ambulance; act4 |
+| p_delve | choice | Yes | options [Yes, No]; retry on No; act4 |
 | p_hospital | choice | Shashdhar Hospital | options [Vyadha Hospital, Shashdhar Hospital, BMC Hospital]; retry; asked in Sameer's room before the drive, success narrates the disguise |
 | p_security_pin | text | uvct, star | hint 'vykpmng vykpmng nkvvng ____'; success reveals twinkle twinkle little star |
 | p_parth_alive | text | parth | prompt "It couldn't be, could it?"; grants c_parth_alive |
@@ -242,12 +247,16 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 | p_nigeria | text | pamphlet, the pamphlet, ngo pamphlet | requires p_lua; grants c_article |
 | p_continue | choice | Continue | options [Continue, Stop]; option_endings {Stop: ending_cult} |
 | p_floor | text | third floor, 3rd floor, third, 3 | requires c_disguise; grants c_caught |
-| p_refer | text | you, sameer, me | act8 |
-| p_spiral | text | fibonacci, golden spiral, fibonacci spiral | act8 |
-| p_years | text | 5, five, 5 years, five years | act8 |
+| p_hand_owner | text | tanush, the leader, leader | requires p_floor; the hand on his neck |
+| p_refer | text | you, sameer, me | act8; requires c_veer_death |
+| p_spiral | text | fibonacci, golden spiral, fibonacci spiral | act8; requires p_refer |
+| p_office | text | plush carpets and mahogany furniture, plush carpets, mahogany furniture | requires c_office |
+| p_years | text | 5, five, 5 years, five years | requires p_office |
 | p_rooms | text | security room, the security room | act8 |
 | p_why | text | to find parth, find parth | act8; required for complete |
-| p_where | text | dead, parth is dead | act8; required for complete |
+| p_found | text | yes, i did, he did | requires p_why |
+| p_saved | text | no, no he was not, he was not | requires p_found |
+| p_where | text | dead, parth is dead | act8; requires p_saved |
 | p_wrong | text | lose, i would lose, game over | act8; required for complete |
 
 Normalization: lowercase, strip punctuation, collapse whitespace. `email` kind accepts any

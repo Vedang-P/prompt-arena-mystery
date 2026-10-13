@@ -456,39 +456,51 @@ acts:
         text: He looks around as the concert ends and spots a line for people with backstage passes. Now he just needs to go in.
     outro:
       - speaker: narrator
-        text: He hides near the trash cans and peeks through. The captured man is struggling, frantically calling for help. Two people — maybe nurses — tie him up and load him into an ambulance.
+        text: Holy hell, the design was so cool. Then — a sound from the next room. He quickly closed the door and stayed as silent as possible. The volunteers would have left by now.
       - speaker: narrator
-        text: The ambulance leaves, talking about taking him to some hospital. Sameer is going to put his life in danger if he delves deeper, but he has to — children are being captured too. He needs to expose them, or bring light to this, or something.
-      - speaker: narrator
-        text: The next morning, Sameer wakes up with a plan.
+        text: The walls were flimsy. Through them, he heard Veer speak.
     complete:
-      puzzles:
-        - p_delve
+      clues:
+        - c_records
+        - c_holy_blade
+        - c_veer_talk
   - id: act4
     type: interactive
     kicker: Act IV
     title: Shashdhar
-    entry_room: sameer_room
+    entry_room: ngo_archive
     rooms:
+      - ngo_archive
       - sameer_room
       - hospital
-    objective: Find the hospital the man from the ambulance was taken to.
+    objective: Escape the archive, then find the hospital the man from the ambulance was taken to.
     intro:
       - speaker: narrator
-        text: He thinks about the hospital the man may be at. If there is torture taking place, it won't be a normal hospital — it would be some sort of abandoned or isolated one. He tries to search for extremely old or isolated hospitals.
+        text: "Through the flimsy wall: Veer — \"There were so many enthusiastic buds in the field, they were practically waiting to fall in Nishakara's arms.\""
+      - speaker: narrator
+        text: 'A deep, rumbling laugh answered him: "Children are usually excited about this. They are pure souls. It is in their nature to call their holy mother."'
+      - speaker: narrator
+        text: A shattering sound — as if a pot had been dropped. Silence for a few seconds; the only sound was Sameer's heartbeat. Then yelling, and screaming. Someone else was in the room, and he had been caught.
+      - speaker: narrator
+        text: 'The deep voice: "What were you trying to find, child?" A new voice, raspy and squeaky, like nails on a chalkboard: "I got lost, I wanted to go to the washroom." Veer: "With your phone recording the conversation?"'
+      - speaker: narrator
+        text: "\"You guys need to be stopped — you stole my child, you arses! I hope your face reflects your mind!\" The interrogator, amused: \"Well, there won't be much change then. I look rather handsome. Veer, why don't you go celebrate with the others. I want to talk to him — he looks like he has a story to tell.\""
+      - speaker: narrator
+        text: Veer sputtered, but left. Sameer heard the door swing. He hid under the desk.
     outro:
       - speaker: narrator
         text: Parth was alive.
-      - speaker: narrator
-        text: Sameer wanted to dance, he wanted to scream; he honestly felt a wave of numbness go over him. He was panicking so much — and all for naught. Parth was alive; maybe starving, but still healthy. He wasn't covered with bruises and burns. That was more than enough.
     complete:
-      puzzles:
-        - p_parth_alive
-        - p_hospital
-        - p_security_pin
       clues:
+        - c_plea
         - c_janitor
         - c_ritual
+      puzzles:
+        - p_hide
+        - p_delve
+        - p_hospital
+        - p_security_pin
+        - p_parth_alive
   - id: act5
     type: interactive
     kicker: Act V
@@ -500,6 +512,8 @@ acts:
       - sameer_room
     objective: Expose the cult. Gather proof from the Big Bad's office and from Enakshi's house.
     intro:
+      - speaker: narrator
+        text: Holy shit, Parth was alive. Sameer wanted to dance, he wanted to scream; he honestly felt a wave of numbness go over him. He had been panicking so much — and all for naught. Parth was alive; maybe starving, but still healthy. He wasn't covered with bruises and burns. That was more than enough.
       - speaker: narrator
         text: He can't act like a fool right now. He has no idea who Parth is against and who he is allied with; one wrong move and it could be his skin being burned.
       - speaker: narrator
@@ -584,14 +598,23 @@ acts:
         text: Someone walks in hearing distance. Sameer looks at the guy, then back at Veer. He could get something from him right now.
     outro:
       - speaker: narrator
-        text: The volunteers had mentioned a huge workshop today — he needs to stop it. If not to save himself or Parth, then to save the children.
+        text: The leader grabbed the mask from Sameer's bag, put it on him and pushed him into the room. Identical masks turned towards him. He took a seat near the back; the leader closed the door and walked to the podium.
+      - speaker: leader
+        text: I was naive at the start, like we all are. I didn't know nor was taught about our holy mother. She was always protecting us. Forget respecting — the lower monkeys didn't even look at her.
+      - speaker: leader
+        text: I had been at a very low point in my life, taking all sorts of things. I saw her — she cried, asking me why I was destroying myself. What did she do wrong?
       - speaker: narrator
-        text: He thinks of contacting the police. The mask stares at him. He drops his phone and picks up the mask. He needs to do it himself.
+        text: The leader wiped his eyes; the people in front of him wailed. A low-lying fog released. Damn, this man was dramatic.
+      - speaker: leader
+        text: Friends, I had seen divinity. The Moon Goddess had begged me to stop. Who am I but a humble mortal to follow her? I had to share this revelation with everyone I could. People rejected — the worst was when I couldn't share it with the future, our children.
+      - speaker: leader
+        text: Shouldn't they have the right to know their holy mother?
       - speaker: narrator
-        text: He reaches the hospital. Lines of cargo are being put into trucks.
+        text: The crowd roared, then went animalistic — no different from a bunch of dogs barking. The smoke rose higher; the people were nothing more than their masks. Sameer felt numb.
     complete:
       clues: []
       puzzles:
+        - p_hand_owner
         - p_floor
         - p_mask_owner
         - p_veer_mask
@@ -609,45 +632,32 @@ acts:
     objective: The mask is on your face now. See the revelation through to its end.
     intro:
       - speaker: narrator
-        text: He reaches the room where the sacrifice happened the last time. Just as he was about to shuffle into a corner to peek at the proceedings, a hand grabs the back of his neck. Sameer freezes. He doesn't dare turn.
-      - speaker: leader
-        text: My my, I thought you would be smarter than this Sameer.
+        text: Sameer looked around — the noises were too loud. He started yelling nonsense; he couldn't hear himself. It was getting humid. Colours bombarded him, the leader's voice the only thing to focus on. It was as if he was stoking the flame of barbarism in the room.
       - speaker: narrator
-        text: The deep voice chuckled behind him, even though there was no joke. He felt the temperature around him drop, his heartbeat steadily rising. The person didn't remove his hand, he just fixed his grip.
-      - speaker: leader
-        text: What, don't recognise me?
-      - speaker: leader
-        text: What are you doing in such shabby clothes, my boy. This is worse than the time you dressed up as a janitor. You should really try to match the dresscode. I even got you a special ribbon.
-      - speaker: narrator
-        text: The leader grabs the mask from Sameer's bag. He puts it on Sameer and pushes him into the room. Identical masks turn towards him. He takes a seat near the back, the leader closes the door and walks towards the podium.
-      - speaker: leader
-        text: I was naive at the start, like we all are. I didn't know nor was taught about our holy mother. She was always protecting us. Forget respecting — the lower monkeys didn't even look at her.
-      - speaker: leader
-        text: I had been at a very low point in my life, taking all sorts of things. I saw her — she cried, asking me why I was destroying myself. What did she do wrong?
-      - speaker: leader
-        text: Friends, I had seen divinity. The Moon Goddess had begged me to stop. Who am I but a humble mortal to follow her?
+        text: He went towards the podium, towards his thread of sanity. Up front, he saw Veer go to the stage. The leader gestured to him.
     outro:
       - speaker: narrator
         text: He reaches the end of the corridor. He climbs on the window frame. He gazes at the burning room — the leader's face melted, muscle fibers charred.
       - speaker: narrator
-        text: The game has ended. Sameer can leave — before it restarts, he can go back to his life. Sameer closes his eyes, he breathes.
+        text: The entire point of this ordeal was to find Parth, and though he found him, he was unable to save him.
       - speaker: narrator
-        text: His phone pings. What? The story is supposed to end. It's another voice note.
-      - speaker: voice
-        text: now disappear
+        text: Sameer is found back in his room, waking up to a new day. The birds are chirping and the sun is shining. He looks panicked — how did he get here? He was at the hospital, right?
       - speaker: narrator
-        text: He plummets down to the ground.
+        text: "There is a ping on his phone. A new voice note: \"You're not needed anymore. Your work is done. Now disappear.\" Sameer looks at the screen in confusion. The screen goes dark all of a sudden."
     complete:
       clues:
         - c_office
       puzzles:
-        - p_why
-        - p_where
-        - p_wrong
+        - p_office
+        - p_found
+        - p_saved
         - p_refer
         - p_spiral
         - p_years
         - p_rooms
+        - p_why
+        - p_where
+        - p_wrong
 rooms:
   - id: gazebo
     name: The Park Gazebo
@@ -1115,6 +1125,18 @@ rooms:
         requires:
           clues:
             - c_laptop_fried
+      - id: cc_video_noise
+        act: act2
+        type: puzzle
+        puzzle: p_video_noise
+        label: Fit the noise to the video
+        position:
+          - 3.4
+          - 0.7
+          - -2.6
+        requires:
+          clues:
+            - c_footage
       - id: cc_to_home
         act: act1
         type: travel
@@ -1220,10 +1242,21 @@ rooms:
         requires:
           puzzles:
             - p_band_name
+      - id: cc_destination
+        type: puzzle
+        puzzle: p_destination
+        label: Find an auto — where to?
+        position:
+          - -1.8
+          - 0
+          - 2.8
+        requires:
+          clues:
+            - c_workshop_address
       - id: cc_fare
         type: puzzle
         puzzle: p_fare
-        label: An auto to the workshop
+        label: The fare to the workshop
         position:
           - -1.2
           - 0
@@ -1231,6 +1264,8 @@ rooms:
         requires:
           clues:
             - c_workshop_address
+          puzzles:
+            - p_destination
       - id: cc_to_workshop
         type: travel
         to: workshop
@@ -1293,6 +1328,7 @@ rooms:
     scene: ngo_archive
     hotspots:
       - id: na_system
+        act: act3
         type: puzzle
         puzzle: p_ascension
         label: Ancient system on the desk
@@ -1300,7 +1336,20 @@ rooms:
           - 0
           - 0.7
           - -2.8
+      - id: na_playback
+        act: act3
+        type: puzzle
+        puzzle: p_playback
+        label: The .avi files
+        position:
+          - 0.9
+          - 0.6
+          - -2.2
+        requires:
+          puzzles:
+            - p_ascension
       - id: na_blade
+        act: act3
         type: clue
         clue: c_holy_blade
         label: "Image file: Holy Blade"
@@ -1312,6 +1361,7 @@ rooms:
           clues:
             - c_records
       - id: na_wall
+        act: act3
         type: clue
         clue: c_veer_talk
         label: Voices through the flimsy wall
@@ -1322,7 +1372,20 @@ rooms:
         requires:
           clues:
             - c_records
+      - id: na_plea
+        act: act4
+        type: clue
+        clue: c_plea
+        label: A stranger's voice through the wall
+        position:
+          - -3
+          - 0.9
+          - 0.8
+        requires:
+          clues:
+            - c_veer_talk
       - id: na_hide
+        act: act4
         type: puzzle
         puzzle: p_hide
         label: The door opens
@@ -1332,8 +1395,9 @@ rooms:
           - -0.6
         requires:
           clues:
-            - c_veer_talk
+            - c_plea
       - id: na_delve
+        act: act4
         type: puzzle
         puzzle: p_delve
         label: The ambulance
@@ -1344,6 +1408,18 @@ rooms:
         requires:
           clues:
             - c_ambulance
+      - id: na_to_home
+        act: act4
+        type: travel
+        to: sameer_room
+        label: Wake up at home the next morning
+        position:
+          - -2.4
+          - 0
+          - 2.2
+        requires:
+          puzzles:
+            - p_delve
   - id: hospital
     name: Shashdhar Hospital
     scene: hospital
@@ -1507,6 +1583,27 @@ rooms:
           - 2.5
           - 1.1
           - 3.6
+      - id: h7_neck
+        act: act7
+        type: puzzle
+        puzzle: p_hand_owner
+        label: The hand on his neck
+        position:
+          - 1.8
+          - 1.2
+          - 3.2
+      - id: h8_veer_death
+        act: act8
+        type: clue
+        clue: c_veer_death
+        label: Veer on the stage
+        requires:
+          clues:
+            - c_caught
+        position:
+          - 3.6
+          - 1
+          - -3.5
       - id: h8_refer
         act: act8
         type: puzzle
@@ -1525,26 +1622,14 @@ rooms:
           - -2.6
           - 1
           - 3.6
-      - id: h8_veer_death
-        act: act8
-        type: clue
-        clue: c_veer_death
-        label: Veer on the stage
-        requires:
-          puzzles:
-            - p_spiral
-        position:
-          - 3.6
-          - 1
-          - -3.5
       - id: h8_parth2
         act: act8
         type: clue
         clue: c_parth2
         label: Parth outside the door
         requires:
-          clues:
-            - c_veer_death
+          puzzles:
+            - p_spiral
         position:
           - 2.6
           - 1.1
@@ -1634,6 +1719,15 @@ rooms:
           - 3.6
           - 0.9
           - 3.5
+      - id: h8_office
+        act: act8
+        type: puzzle
+        puzzle: p_office
+        label: How did the office look again?
+        position:
+          - 3
+          - 0.9
+          - 3.2
       - id: h8_years
         act: act8
         type: puzzle
@@ -1661,6 +1755,24 @@ rooms:
           - -3.6
           - 1.2
           - 3.5
+      - id: h8_found
+        act: act8
+        type: puzzle
+        puzzle: p_found
+        label: Did you find him?
+        position:
+          - -3
+          - 1
+          - 3.2
+      - id: h8_saved
+        act: act8
+        type: puzzle
+        puzzle: p_saved
+        label: Were you able to save him?
+        position:
+          - -2.6
+          - 0.9
+          - 2.6
       - id: h8_where
         act: act8
         type: puzzle
@@ -2272,6 +2384,11 @@ clues:
     description: "Through the flimsy wall: Veer — \"There were so many enthusiastic buds in the field, they were practically waiting to fall in Nishakara's arms.\" A deep, rumbling laugh: \"Children are usually excited about this, they are pure souls. It is in their nature to call their holy mother.\""
     requires:
       - c_records
+  - id: c_plea
+    name: The parent's plea
+    description: "A shattering sound — then a raspy, squeaky voice through the wall: \"You guys need to be stopped, you stole my child, you arses! I hope your face reflects your mind!\" The interrogator, amused: \"Well, there won't be much change then. I look rather handsome. Veer, why don't you go celebrate with others.\" Veer sputtered, but left."
+    requires:
+      - c_veer_talk
   - id: c_ambulance
     name: Ambulance
     description: The captured man is one of the people who went missing during the full moon. Two people — maybe nurses — tie him up and load him into an ambulance that leaves, talking about taking him to some hospital.
@@ -2509,6 +2626,19 @@ puzzles:
     requires:
       clues:
         - c_laptop_fried
+  - id: p_video_noise
+    kind: text
+    prompt: The video had no sound — drums, a wide-open mouth, the blur. Can he fit this noise anywhere?
+    answers:
+      - mixtape
+      - the mixtape
+      - cassette
+      - the cassette
+    success: The mixtape. The same drums, the same chant — he wondered why they had recorded the video and the audio separately.
+    requires:
+      clues:
+        - c_footage
+    fail_message: No — the sound is right there, at the edge of his memory. It belongs to the mixtape.
   - id: p_ticket
     kind: choice
     prompt: Veer's show, tomorrow. Two kinds of tickets — normal, and backstage at fifty percent more. Is it worth it?
@@ -2572,6 +2702,8 @@ puzzles:
     requires:
       clues:
         - c_workshop_address
+      puzzles:
+        - p_destination
     fail_message: '"Ok sir, find someone else then."'
     success: "\"The hell — I'll give 100, no more.\" — \"Ok sir, find someone else then.\" Sameer looked around; the auto guy looked at him. Sameer sighed, \"I can't give more than 200.\" — \"230.\" Sameer sighed and got into the auto. After that daylight robbery, he saw the workshop: it was in an open field, kids were running around and volunteers were setting up the instruments for observation."
   - id: p_ascension
@@ -2579,9 +2711,35 @@ puzzles:
     prompt: "The archive terminal asks for the nine-letter motto from the headquarters: A _ C _ N _ I _ N. Beneath it: ‘the soul’s ascent’. What is the password?"
     answers:
       - ascension
-    success: Blue light reflects on his face; the records open. A folder named "offeringRecords" — a bunch of .avi videos, and a text file tracking how much of the physical archive has been moved to digital. It stopped on 16-07-2020.
+    success: Blue light reflects on his face; the records open. A folder named "offeringRecords" — a bunch of .avi videos. Huh, he has never seen this extension before.
+  - id: p_playback
+    kind: choice
+    prompt: A folder full of .avi videos, an extension he has never seen. Would it even play on his laptop?
+    options:
+      - It will play
+      - It won't play
+    answers:
+      - It won't play
+    success: "It won't play. Damn — he would need the cyber cafe again. He doesn't trust the system to not blast loud sound, so he opens a text file instead: instructions to move the records from physical to digital, updates on how much has been moved. It stopped on 16-07-2020."
     grants:
       - c_records
+    requires:
+      puzzles:
+        - p_ascension
+    fail_message: It plays? No — a file like that would never open on his laptop. He'd need the old machines at Ramu's.
+  - id: p_destination
+    kind: text
+    prompt: He plans to go to the workshop and finds an auto. "Where do you want to go, sir?"
+    answers:
+      - hutting 3rd cross dj halli
+      - hutting
+      - 3rd cross dj halli
+      - dj halli
+    success: "\"Hutting, 3rd cross, DJ Halli.\" The volunteer's message had the address."
+    requires:
+      clues:
+        - c_workshop_address
+    fail_message: The driver waits. Sameer digs out the volunteer's message and reads the address again.
   - id: p_hide
     kind: choice
     prompt: 'He hid under the desk. The door opened, Veer looked in — Sameer huddled his feet closer to himself. He heard a mutter: "We really need to get better security." Then a scream cut both men off. Veer left the door open, deciding whether to check the room or leave for the scream. Should Sameer take the risk and run?'
@@ -2603,10 +2761,10 @@ puzzles:
     answers:
       - Yes
     fail_message: '"No" sits on his tongue — and he hates himself for even thinking it. There is no way out of this now. He has to go deeper. (One penalty.)'
-    success: He is going to put his life in danger if he delves deeper, but he has to. The police are nearly incompetent and apparently children are being captured too. He needs to expose them, or bring light to this, or something. He has to.
+    success: He is going to put his life in danger if he delves deeper, but he has to. The police are nearly incompetent and apparently children are being captured too. He needs to expose them, or bring light to this, or something. He has to. The next morning, Sameer wakes up with a plan.
   - id: p_hospital
     kind: choice
-    prompt: He tries to search for extremely old or isolated hospitals. Which hospital should he pick?
+    prompt: The next morning he wakes with a plan. If there is torture happening, it won't be a normal hospital — it would be some sort of abandoned or isolated one. Which hospital should he pick?
     options:
       - Vyadha Hospital
       - Shashdhar Hospital
@@ -2866,7 +3024,7 @@ puzzles:
       - Stop
     answers:
       - Continue
-    success: He should continue. He can't let these days go to waste — he could make a big change by just doing a little more.
+    success: He should continue. He can't let these days go to waste — he could make a big change by just doing a little more. The volunteers had mentioned a huge workshop today; he needs to stop it — if not to save himself or Parth, then to save the children. He thinks of contacting the police. The mask stares at him. He drops his phone and picks up the mask. He needs to do it himself.
     option_endings:
       Stop: ending_cult
     requires:
@@ -2886,6 +3044,18 @@ puzzles:
     requires:
       clues:
         - c_disguise
+  - id: p_hand_owner
+    kind: text
+    prompt: Sameer had enough of this. How dare he be mocked after all this — he had some dignity. He turned around. Of course he knew this was a waste of oxygen. It was ____
+    answers:
+      - tanush
+      - the leader
+      - leader
+    success: Tanush. The leader. The man whose office he had walked through — this was all a bloody game to him. "What are you doing in such shabby clothes, my boy," the leader mocked. "This is worse than the time you dressed up as a janitor. You should really try to match the dresscode — I even got you a special ribbon."
+    fail_message: No — the hand on his neck belonged to the man whose office he had already walked through. Tanush.
+    requires:
+      puzzles:
+        - p_floor
   - id: p_refer
     kind: text
     prompt: The leader bellows, "oh special one, did you enjoy this?" Who is he referring to?
@@ -2896,7 +3066,7 @@ puzzles:
     success: You. Sameer doesn't really understand what he just saw — why was Veer just lying there, why wasn't he getting up? The leader was pointing to him.
     requires:
       clues:
-        - c_caught
+        - c_veer_death
   - id: p_spiral
     kind: text
     prompt: He looked at the hand pointing — wrinkled, veins protruding, spirals tattooed around his finger. He had learned about that in maths, hadn't he? What was it called again?
@@ -2908,6 +3078,19 @@ puzzles:
     requires:
       puzzles:
         - p_refer
+  - id: p_office
+    kind: text
+    prompt: The leader drags both boys into the office and Sameer collapses onto the floor. How did the office look again?
+    answers:
+      - plush carpets and mahogany furniture
+      - plush carpets
+      - mahogany furniture
+      - plush carpets and mahogany
+    success: Plush carpets and mahogany furniture — a world apart from the sterile hospital corridors.
+    fail_message: "Not quite — the office was a world apart from the hospital: plush carpets, mahogany furniture."
+    requires:
+      clues:
+        - c_office
   - id: p_years
     kind: text
     prompt: '"In my time this place flourished. Do you know how long I have been here?"'
@@ -2920,6 +3103,8 @@ puzzles:
     requires:
       clues:
         - c_office
+      puzzles:
+        - p_office
   - id: p_rooms
     kind: text
     prompt: He runs with the book to other rooms. Which other room did he visit, other than the leader's or sacrifice room?
@@ -2940,6 +3125,30 @@ puzzles:
     requires:
       puzzles:
         - p_rooms
+  - id: p_found
+    kind: text
+    prompt: The entire point of this ordeal — did he find Parth?
+    answers:
+      - yes
+      - i did
+      - he did
+    success: Yes. He found him.
+    fail_message: Focus. After all of this — yes, he found him.
+    requires:
+      puzzles:
+        - p_why
+  - id: p_saved
+    kind: text
+    prompt: Was he able to save him?
+    answers:
+      - no
+      - no he was not
+      - he was not
+    success: No. He was unable to save him.
+    fail_message: "No — the truth of it: he could not save him."
+    requires:
+      puzzles:
+        - p_found
   - id: p_where
     kind: text
     prompt: Where is Parth?
@@ -2949,7 +3158,7 @@ puzzles:
     success: Dead. Parth's head was banged on the table corner, stained red. He didn't get up.
     requires:
       puzzles:
-        - p_why
+        - p_saved
   - id: p_wrong
     kind: text
     prompt: Sameer looks at the player. What would have happened if you had given the wrong answer?
@@ -3095,4 +3304,4 @@ endings:
     body: You stepped back. The cult steadily grows — it brings everything around it, including the police and local politicians, under its complete control. It spreads like an unstoppable virus. Somewhere out there, Parth is still waiting for a way out that never comes.
   - id: ending_main
     title: Now Disappear
-    body: The hospital burns behind him, the leader's face melted under the flames. Sameer breathes. Parth is gone. It is over — until his phone pings one last time. "now disappear". He plummets down to the ground.
+    body: "Sameer wakes in his room to a new day, the burning hospital already a blur behind him. Then his phone pings one last time: \"You're not needed anymore. Your work is done. Now disappear.\" The screen goes dark."

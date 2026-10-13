@@ -12,19 +12,19 @@ acts:
       puzzles: [p_voicenote2, p_dosa, p_ticket]
   - id: act4
     complete:
-      clues: [c_janitor, c_ritual]
-      puzzles: [p_hospital, p_security_pin, p_parth_alive]
+      clues: [c_plea, c_janitor, c_ritual]
+      puzzles: [p_hide, p_delve, p_hospital, p_security_pin, p_parth_alive]
   - id: act5
     complete:
       clues: [c_drug_report, c_timetable, c_assessments, c_handbook, c_recruits, c_finance, c_voice3]
       puzzles: [p_tablet, p_handbook, p_knowledge, p_tablet_content, p_connection, p_exposed]
   - id: act7
     complete:
-      puzzles: [p_mask_owner, p_veer_mask, p_lua, p_nigeria, p_continue, p_floor]
+      puzzles: [p_mask_owner, p_veer_mask, p_lua, p_nigeria, p_continue, p_hand_owner, p_floor]
   - id: act8
     complete:
       clues: [c_office]
-      puzzles: [p_refer, p_spiral, p_years, p_rooms, p_why, p_where, p_wrong]
+      puzzles: [p_refer, p_spiral, p_office, p_years, p_rooms, p_why, p_found, p_saved, p_where, p_wrong]
 
 clues:
   - id: c_hq
