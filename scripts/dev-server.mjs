@@ -16,4 +16,7 @@ const server = http.createServer((req, res) => {
   vite.middlewares(req, res);
 });
 const port=Number(process.env.PORT||5173);
-server.listen(port, '127.0.0.1', () => console.log(`Game running at http://127.0.0.1:${port}`));
+server.listen(port, '127.0.0.1', () => {
+  console.log(`Game running at http://127.0.0.1:${port}`);
+  console.log(`Control room at http://127.0.0.1:${port}/admin/ (${process.env.ADMIN_USERNAME || 'admin'} / ${process.env.ADMIN_PASSWORD || 'arena-admin'})`);
+});

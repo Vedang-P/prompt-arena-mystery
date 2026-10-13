@@ -34,9 +34,12 @@ const RATE_WINDOW_MS = 60_000;
 const RATE_WINDOW_MAX = 12;
 
 // ---------- event control (fullscreen enforcement) ----------
-// A team that leaves the arena gets graceMs to come back. Only a return that
-// misses the window (plus a network tolerance) counts as a strike; three
-// strikes disqualify, unless the team is exempt or an admin has cleared them.
+// A team that leaves the arena gets a window to come back. The window is the
+// configured grace plus a small network tolerance, and it is the same number
+// every client sees: a return inside it is free, a return after it is a
+// strike. Three strikes disqualify, unless the team is exempt or an admin has
+// cleared them. Verdicts are applied only where they can be reported — the
+// return endpoint — so the player always sees the strike that was recorded.
 const DEFAULT_EXIT_GRACE_MS = 10_000;
 const EXIT_RETURN_TOLERANCE_MS = 2_000;
 const DEFAULT_MAX_EXIT_STRIKES = 3;
@@ -51,6 +54,8 @@ const numEnv = (value, fallback) => {
 };
 
 const exitGraceMs = (env) => numEnv(env.EXIT_GRACE_MS, DEFAULT_EXIT_GRACE_MS);
+// The enforced window, and what every client countdown is measured against.
+const exitWindowMs = (env) => exitGraceMs(env) + EXIT_RETURN_TOLERANCE_MS;
 const maxExitStrikes = (env) => numEnv(env.EXIT_MAX_STRIKES, DEFAULT_MAX_EXIT_STRIKES);
 
 // Fullscreen enforcement follows event rules by default: on for classroom and
@@ -121,11 +126,15 @@ async function settlePendingExit(env, row) {
 
   const startedMs = parseStamp(row.pending_exit_at);
   const elapsedMs = startedMs === null ? Infinity : Date.now() - startedMs;
-  // Fairness: a slow network can delay both reports; only a return clearly
-  // outside the window, plus tolerance, is a strike.
-  const late = !(elapsedMs <= exitGraceMs(env) + EXIT_RETURN_TOLERANCE_MS);
-  const strikes = late ? current.strikes + 1 : current.strikes;
-  const crossesLimit = late && strikes >= maxExitStrikes(env) && !Number(row.exempt ?? 0);
+  // The window already includes the network tolerance, so the verdict is
+  // exactly what the client countdown promised.
+  const late = !(elapsedMs <= exitWindowMs(env));
+  const exempt = Number(row.exempt ?? 0);
+  // Only a late return from a team still in the event counts. Exempt teams and
+  // teams already out keep their count; their pending exit is just cleared.
+  const struck = late && !current.disqualified && !exempt;
+  const strikes = struck ? current.strikes + 1 : current.strikes;
+  const crossesLimit = struck && strikes >= maxExitStrikes(env);
   const nowIso = new Date().toISOString();
 
   const sets = ['pending_exit_at = NULL', 'pending_exit_kind = NULL', 'exit_strikes = ?'];
@@ -141,22 +150,36 @@ async function settlePendingExit(env, row) {
   )
     .bind(...binds, row.id, row.pending_exit_at)
     .run();
-  if (!(Number(claim?.meta?.changes ?? 0) > 0)) return current;
+  if (!(Number(claim?.meta?.changes ?? 0) > 0)) {
+    // Another request settled this exit first (an admin board read, a second
+    // tab). Report what the row actually holds now, never a stale count.
+    const fresh = await env.DB.prepare('SELECT exit_strikes, disqualified FROM teams WHERE id = ?')
+      .bind(row.id)
+      .first();
+    return {
+      strikes: Number(fresh?.exit_strikes ?? current.strikes),
+      disqualified: isDisqualified(fresh ?? row),
+      resolved: null,
+      elapsedMs: null,
+    };
+  }
 
   await env.DB.prepare('INSERT INTO events(team_id, type, detail) VALUES (?,?,?)')
     .bind(
       row.id,
-      late ? 'exit_strike' : 'exit_return',
+      struck ? 'exit_strike' : 'exit_return',
       JSON.stringify({
         elapsedMs: elapsedMs === Infinity ? null : Math.round(elapsedMs),
         strikes,
         graceMs: exitGraceMs(env),
+        windowMs: exitWindowMs(env),
+        late,
         kind: row.pending_exit_kind ?? null,
       })
     )
     .run();
 
-  return { strikes, disqualified, resolved: late ? 'strike' : 'return', elapsedMs: elapsedMs === Infinity ? null : Math.round(elapsedMs) };
+  return { strikes, disqualified, resolved: struck ? 'strike' : 'return', elapsedMs: elapsedMs === Infinity ? null : Math.round(elapsedMs) };
 }
 
 async function touchTeam(env, row) {
@@ -171,7 +194,7 @@ async function touchTeam(env, row) {
   }
 }
 
-async function requireTeam(c) {
+async function requireTeam(c, { settle = true } = {}) {
   const secret = sessionSecretFor(c);
   if (!secret) return null;
   const teamId = await readSession(
@@ -187,12 +210,18 @@ async function requireTeam(c) {
   if (!row) return null;
   if (isTruthy(c.env.EVENT_MODE) && (/^(guest:|practice:|google:)/.test(row.code_hash) || row.name === 'TEAM-042')) return null;
 
-  const settlement = await settlePendingExit(c.env, row);
+  // Most requests settle a stale pending exit lazily (a closed tab should not
+  // escape its strike). The heartbeat and the fullscreen return opt out: a ping
+  // must never consume the verdict the returning player is about to be shown.
+  const settlement = settle
+    ? await settlePendingExit(c.env, row)
+    : { strikes: Number(row.exit_strikes ?? 0), disqualified: isDisqualified(row), resolved: null, elapsedMs: null };
   await touchTeam(c.env, row);
   const progress = { ...row, exit_strikes: settlement.strikes, disqualified: settlement.disqualified ? 1 : 0 };
   return {
     teamId,
     teamName: row.name,
+    row,
     progress,
     strikes: settlement.strikes,
     disqualified: settlement.disqualified,
@@ -208,6 +237,7 @@ function blockedPayload(auth, env) {
     strikes: auth.strikes,
     maxStrikes: maxExitStrikes(env),
     graceMs: exitGraceMs(env),
+    windowMs: exitWindowMs(env),
     disqualifiedAt: toIso(auth.progress.disqualified_at),
     reason: auth.progress.disqualify_reason ?? DISQUALIFY_REASON,
   };
@@ -218,8 +248,8 @@ function blockedPayload(auth, env) {
  * (401 for no session, 403 with the full disqualification record for a
  * blacklisted team, so the client can explain itself instead of guessing).
  */
-async function requireActiveTeam(c) {
-  const auth = await requireTeam(c);
+async function requireActiveTeam(c, options) {
+  const auth = await requireTeam(c, options);
   if (!auth) return { error: c.json({ error: 'unauthorized' }, 401) };
   if (auth.blocked) return { auth, error: c.json(blockedPayload(auth, c.env), 403) };
   return { auth };
@@ -370,6 +400,7 @@ app.get('/api/auth/config', (c) =>
     eventMode: isTruthy(c.env.EVENT_MODE),
     fullscreen: fullscreenEnforced(c.env),
     graceMs: exitGraceMs(c.env),
+    windowMs: exitWindowMs(c.env),
     maxStrikes: maxExitStrikes(c.env),
   })
 );
@@ -568,6 +599,7 @@ app.get('/api/state', async (c) => {
     strikes: auth.strikes,
     maxStrikes: maxExitStrikes(c.env),
     graceMs: exitGraceMs(c.env),
+    windowMs: exitWindowMs(c.env),
     fullscreen: fullscreenEnforced(c.env),
     exempt: !!Number(auth.progress.exempt ?? 0),
     pendingExit: auth.progress.pending_exit_at
@@ -581,9 +613,10 @@ app.get('/api/state', async (c) => {
 // ---------- fullscreen enforcement ----------
 
 // The client reports every time it leaves fullscreen (or the tab goes hidden),
-// and every time it comes back. A return inside the grace window clears the
-// pending exit; a late or missing return is a strike. The server clock is the
-// authority, with a tolerance so slow networks can never cost a team its place.
+// and every time it comes back. A return inside the window clears the pending
+// exit; a late return is a strike, settled and reported by the return endpoint.
+// The server clock is the authority, and the window it enforces is the window
+// every countdown shows.
 app.post('/api/fullscreen/exit', async (c) => {
   const { auth, error } = await requireActiveTeam(c);
   if (error) return error;
@@ -593,6 +626,7 @@ app.post('/api/fullscreen/exit', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const kind = ['fullscreen', 'hidden', 'unload', 'blur'].includes(body.kind) ? body.kind : 'fullscreen';
   const graceMs = exitGraceMs(c.env);
+  const windowMs = exitWindowMs(c.env);
 
   const row = await c.env.DB.prepare('SELECT pending_exit_at FROM teams WHERE id = ?').bind(auth.teamId).first();
   if (!row?.pending_exit_at) {
@@ -603,7 +637,7 @@ app.post('/api/fullscreen/exit', async (c) => {
       .bind(nowIso, kind, auth.teamId)
       .run();
     await c.env.DB.prepare('INSERT INTO events(team_id, type, detail) VALUES (?,?,?)')
-      .bind(auth.teamId, 'exit', JSON.stringify({ kind, graceMs }))
+      .bind(auth.teamId, 'exit', JSON.stringify({ kind, graceMs, windowMs }))
       .run();
   }
 
@@ -614,27 +648,31 @@ app.post('/api/fullscreen/exit', async (c) => {
   return c.json({
     enforced: true,
     graceMs,
-    deadline: new Date(started + graceMs).toISOString(),
+    windowMs,
+    deadline: new Date(started + windowMs).toISOString(),
     strikes: Number(current?.exit_strikes ?? auth.strikes),
     maxStrikes: maxExitStrikes(c.env),
   });
 });
 
-// Coming back: requireActiveTeam already settled the pending exit and applied
-// any strike, so this endpoint only reports the verdict to the client.
+// Coming back: this is where the pending exit is settled, so the verdict the
+// player is shown is always the verdict the server just recorded. Returns 200
+// even for a disqualifying strike — the payload carries the full record, and
+// the client explains it on the disqualification screen.
 app.post('/api/fullscreen/return', async (c) => {
-  const { auth, error } = await requireActiveTeam(c);
+  const { auth, error } = await requireActiveTeam(c, { settle: false });
   if (error) return error;
-  const settlement = auth.settlement ?? { resolved: null, elapsedMs: null };
+  const settlement = await settlePendingExit(c.env, auth.row);
   return c.json({
     ok: settlement.resolved !== 'strike',
     late: settlement.resolved === 'strike',
     applied: settlement.resolved !== null,
     elapsedMs: settlement.elapsedMs,
-    strikes: auth.strikes,
+    strikes: settlement.strikes,
     maxStrikes: maxExitStrikes(c.env),
     graceMs: exitGraceMs(c.env),
-    disqualified: auth.disqualified,
+    windowMs: exitWindowMs(c.env),
+    disqualified: settlement.disqualified,
   });
 });
 
@@ -650,10 +688,10 @@ app.post('/api/fullscreen/unsupported', async (c) => {
 });
 
 // Presence ping while a team is in play: keeps the admin board's online state
-// honest and gives a pending exit a chance to be settled even if the player
-// never clicks back into the game.
+// honest. Verdicts stay with the return endpoint and the admin board so a ping
+// can never consume the strike a returning player should be shown.
 app.post('/api/heartbeat', async (c) => {
-  const { auth, error } = await requireActiveTeam(c);
+  const { auth, error } = await requireActiveTeam(c, { settle: false });
   if (error) return error;
   await c.env.DB.prepare('UPDATE teams SET last_seen_at = ? WHERE id = ?')
     .bind(new Date().toISOString(), auth.teamId)
@@ -1182,7 +1220,7 @@ function shapeTeamRow(row, env, options = {}) {
       ? {
           at: toIso(row.pending_exit_at),
           kind: row.pending_exit_kind ?? 'fullscreen',
-          expiresAt: new Date((parseStamp(row.pending_exit_at) ?? now) + exitGraceMs(env) + EXIT_RETURN_TOLERANCE_MS).toISOString(),
+          expiresAt: new Date((parseStamp(row.pending_exit_at) ?? now) + exitWindowMs(env)).toISOString(),
         }
       : null,
     online: lastSeenMs !== null && now - lastSeenMs <= ONLINE_WINDOW_MS && !row.pending_exit_at && !disqualified,
@@ -1265,11 +1303,13 @@ async function adminOverview(env) {
     stats,
     distribution,
     recentEvents,
+    announcement: await activeAnnouncement(env),
     config: {
       eventMode: isTruthy(env.EVENT_MODE),
       codeLogin: isTruthy(env.ALLOW_CODE_LOGIN),
       fullscreen: fullscreenEnforced(env),
       graceMs: exitGraceMs(env),
+      windowMs: exitWindowMs(env),
       maxStrikes: maxExitStrikes(env),
       llm: !!(env.LLM_API_KEY && env.LLM_BASE_URL && env.LLM_MODEL),
       admin: adminUsername(env),
@@ -1320,6 +1360,7 @@ app.get('/api/admin/session', async (c) => {
     codeLogin: isTruthy(c.env.ALLOW_CODE_LOGIN),
     fullscreen: fullscreenEnforced(c.env),
     graceMs: exitGraceMs(c.env),
+    windowMs: exitWindowMs(c.env),
     maxStrikes: maxExitStrikes(c.env),
     llm: !!(c.env.LLM_API_KEY && c.env.LLM_BASE_URL && c.env.LLM_MODEL),
   });
@@ -1351,13 +1392,22 @@ app.get('/api/admin/teams/:id', async (c) => {
     'SELECT character, COUNT(*) AS n FROM messages WHERE team_id = ? GROUP BY character'
   ).bind(id).all()).results;
 
+  const actHistory = (await c.env.DB.prepare(
+    "SELECT detail, created_at FROM events WHERE team_id = ? AND type = 'act_complete' ORDER BY id ASC"
+  ).bind(id).all()).results.map((ev) => {
+    const parsed = parseJsonLoose(ev.detail) ?? {};
+    return { act: parsed.act ?? null, next: parsed.next ?? null, at: ev.created_at };
+  });
+
   c.header('Cache-Control', 'no-store');
   return c.json({
-    team: shapeTeamRow(row, c.env, { history: [] }),
+    team: shapeTeamRow(row, c.env, { history: actHistory }),
     events,
     chatCounts: chatCounts.map((r) => ({ character: r.character, messages: Number(r.n ?? 0) })),
+    stages: (caseData.acts ?? []).map((a) => ({ id: a.id, title: `${a.kicker ?? a.id} · ${a.title ?? ''}` })),
     maxStrikes: maxExitStrikes(c.env),
     graceMs: exitGraceMs(c.env),
+    windowMs: exitWindowMs(c.env),
   });
 });
 

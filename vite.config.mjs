@@ -29,11 +29,13 @@ export default defineConfig({
   build: {
     outDir: '../dist',
     emptyOutDir: true,
-    // two entry points: the title screen at /, the game itself at /play/
+    // three entry points: the title screen at /, the game at /play/, the
+    // invigilator control room at /admin/
     rollupOptions: {
       input: {
         index: resolve(import.meta.dirname, 'client/index.html'),
         play: resolve(import.meta.dirname, 'client/play/index.html'),
+        admin: resolve(import.meta.dirname, 'client/admin/index.html'),
       },
     },
   },

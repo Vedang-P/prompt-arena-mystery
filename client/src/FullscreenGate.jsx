@@ -39,6 +39,13 @@ export default function FullscreenGate({ enabled, graceMs = 10_000, maxStrikes =
   const pendingRef = useRef(false);
   const live = enabled && supported && !optedOut;
 
+  const reportFailure = useCallback(
+    (err) => {
+      if (err?.status === 403 && err.data?.error === 'disqualified') onDisqualified?.(err.data);
+    },
+    [onDisqualified]
+  );
+
   const exited = useCallback(
     (kind) => {
       if (pendingRef.current) return;
@@ -47,11 +54,17 @@ export default function FullscreenGate({ enabled, graceMs = 10_000, maxStrikes =
       setDeadline(Date.now() + graceMs);
       fullscreenExit(kind)
         .then((res) => {
+          // The server owns the window: adopt its deadline so the countdown
+          // and the strike verdict can never disagree.
+          if (res?.deadline) setDeadline(Date.parse(res.deadline));
+          // An exit can settle an earlier pending one (a reloaded tab), so the
+          // count it reports is always taken.
+          if (res?.strikes != null) onStrike?.(res);
           if (res?.disqualified) onDisqualified?.(res);
         })
-        .catch(() => {});
+        .catch(reportFailure);
     },
-    [graceMs, onDisqualified]
+    [graceMs, onStrike, onDisqualified, reportFailure]
   );
 
   const returned = useCallback(() => {
@@ -65,8 +78,8 @@ export default function FullscreenGate({ enabled, graceMs = 10_000, maxStrikes =
         onStrike?.(res);
         if (res?.disqualified) onDisqualified?.(res);
       })
-      .catch(() => {});
-  }, [onStrike, onDisqualified]);
+      .catch(reportFailure);
+  }, [onStrike, onDisqualified, reportFailure]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -98,7 +111,9 @@ export default function FullscreenGate({ enabled, graceMs = 10_000, maxStrikes =
     document.addEventListener('fullscreenchange', onFullscreenChange);
     document.addEventListener('visibilitychange', onVisibility);
     window.addEventListener('pagehide', onPageHide);
-    if (!document.fullscreenElement) exited('fullscreen');
+    // Note: opening the game outside fullscreen is NOT an exit — the overlay
+    // simply asks the team to enter. The clock only starts once they were in
+    // and then left.
     return () => {
       document.removeEventListener('fullscreenchange', onFullscreenChange);
       document.removeEventListener('visibilitychange', onVisibility);

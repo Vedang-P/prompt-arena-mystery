@@ -86,6 +86,8 @@ vercel.json             Build command and function configuration
 | `npm run test:engine` | Pure rule tests against a fixture case |
 | `npm run test:campaign` | Full campaign walk: every act, puzzle, gate and ending |
 | `npm run test:event` | 70 concurrent team sessions, event gates and timers |
+| `npm run test:admin` | Control room: strikes, disqualification, requalification, CRUD, audit |
+| `npm run test:admin-ui` | Browser smoke of the control room and fullscreen gate (needs `dev:game` running) |
 | `npm run test:assets` | GLB integrity, draw budgets, surface contacts |
 | `npm run test:scenes` | Actor/camera staging against measured geometry |
 | `npm run test:deployment` | Hosted smoke walk (`-- https://your-deployment`) |
@@ -148,6 +150,9 @@ Everything is optional in local development. Production needs the first three.
 | `TEAM_CODES` | `Team name=assigned-code,Another=code,…` seeded on start |
 | `ALLOW_CODE_LOGIN` | Enables `POST /api/login` |
 | `EVENT_MODE` | Classroom rules — see below |
+| `ADMIN_USERNAME` / `ADMIN_PASSWORD` | The `/admin/` control room (required in production) |
+| `FULLSCREEN_ENFORCE` | Force fullscreen enforcement on/off (default: on for event mode / team-code play) |
+| `EXIT_GRACE_MS` / `EXIT_MAX_STRIKES` | Grace window to return before a strike (10000); strikes before disqualification (3) |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google sign-in (optional sign-in method) |
 | `LLM_BASE_URL` / `LLM_API_KEY` / `LLM_MODEL` / `LLM_FALLBACK_MODELS` | Optional live AI suspects |
 
@@ -179,3 +184,30 @@ Set `EVENT_MODE=true` and `ALLOW_CODE_LOGIN=true`. `TEAM_CODES` accepts comma-se
 In event mode, guest and Google sign-in, practice starts, chapter selection and the accusation shortcut are disabled; only teams that have entered appear on the leaderboard, and elapsed time starts when Act 0 finishes and Act 1 opens. Instructor preview is excluded from rankings. Music and models are bundled static assets, so the campaign needs no network calls beyond the API itself.
 
 The private roster lives in `event-private/team-codes.csv` (ignored by Git and Vercel); distribute one assigned code per team. Run `npm run test:event` for 70 concurrent local sessions and gate/timer checks, then rehearse on the actual classroom network before the event.
+
+---
+
+## Control room (`/admin/`)
+
+Every event deployment gets an invigilator console at **`/admin/`** — the game itself never links to it.
+
+| What it shows | What it does |
+| --- | --- |
+| Live board of every team: current act, time in that act, the last act they passed and when, evidence, puzzles, penalties, hints, elapsed clock, presence (active / away / outside) | Search, filters and sorting; CSV export of the full board |
+| A dedicated **Disqualified** panel: who, when, why, and their strike count | One-click requalification — reset the strikes or keep them; "clear all" emergency release; per-team manual disqualification with a reason the team sees |
+| Full control per team in the drawer: rename, invigilator notes, penalties ±, jump to any act, reset the run, set strikes, enforcement exemption, delete | Admin audit log of every action, broadcast announcement bar on every team's screen |
+
+**Fullscreen enforcement.** Event play forces fullscreen on entry and the server owns the rules: every leave (fullscreen lost, tab hidden, page unload) opens a 10-second grace window; returning in time costs nothing, missing it is one strike, and three strikes disqualify the team. A late return from a slow network is absorbed by a built-in tolerance, browsers that cannot do fullscreen report themselves and are never punished, and every team keeps a 12-hour signed admin session.
+
+**Credentials.** `ADMIN_USERNAME` / `ADMIN_PASSWORD` on public deployments. Local development (`npm run dev:game`) falls back to:
+
+```
+username: admin
+password: arena-admin
+```
+
+Public deployments without `ADMIN_PASSWORD` keep the control room locked (login returns `admin_not_configured`). Set it before the event:
+
+```sh
+npx vercel env add ADMIN_PASSWORD production
+```

@@ -16,6 +16,8 @@
     "test:assets": "node scripts/test-environment-assets.mjs",
     "test:campaign": "npm run build:case && node scripts/test-campaign.mjs",
     "test:event": "npm run build:case && node scripts/test-event.mjs",
+    "test:admin": "npm run build:case && node scripts/test-admin.mjs",
+    "test:admin-ui": "node scripts/test-admin-ui.mjs",
     "test:deployment": "npm run build:case && node scripts/test-deployment.mjs",
     "prepare:facade": "node scripts/prepare-factory-facade.mjs",
     "gen:team": "node scripts/make-team.mjs",

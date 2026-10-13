@@ -718,7 +718,7 @@ export default function App() {
   const fsGate = authConfig?.fullscreen && state && !state.practice && !state.exempt ? (
     <FullscreenGate
       enabled
-      graceMs={state.graceMs ?? authConfig.graceMs ?? 10000}
+      graceMs={state.windowMs ?? authConfig.windowMs ?? state.graceMs ?? authConfig.graceMs ?? 10000}
       maxStrikes={state.maxStrikes ?? authConfig.maxStrikes ?? 3}
       strikes={state.strikes ?? 0}
       onStrike={(res) => {
