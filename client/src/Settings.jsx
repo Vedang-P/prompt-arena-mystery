@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { useCaseDialog } from './InvestigationUI.jsx';
-const SettingsContext = createContext({ quality: 'medium', sound: false, autoTune: true });
+const SettingsContext = createContext({ quality: 'medium', sound: true, autoTune: true });
 const read = () => {
   try { return JSON.parse(localStorage.getItem('moon-settings') || '{}'); } catch { return {}; }
 };
@@ -29,7 +29,7 @@ function detectQuality() {
 
 const initialSettings = () => {
   const stored = read();
-  const base = { quality: stored.quality ? 'medium' : detectQuality(), sound: false, autoTune: true };
+  const base = { quality: stored.quality ? 'medium' : detectQuality(), sound: true, autoTune: true };
   return { ...base, ...stored };
 };
 

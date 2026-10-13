@@ -31,7 +31,7 @@ import { registerAssetCache } from './registerSW.js';
   }
 
   /* ---------- settings the game shares ---------- */
-  const defaults = () => ({ quality: window.innerWidth < 700 ? 'low' : 'medium', sound: false });
+  const defaults = () => ({ quality: window.innerWidth < 700 ? 'low' : 'medium', sound: true });
   const readSettings = () => {
     try {
       return { ...defaults(), ...JSON.parse(localStorage.getItem(settingsStore) || '{}') };
