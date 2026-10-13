@@ -62,7 +62,6 @@ export function DialogueOverlay({
       beginsTurn: m.role === 'npc' && (!prev || prev.role === 'player'),
     });
   });
-  const questions = [...new Set(character.questions ?? [])];
   const speakers = {
     npc: { id: character.id, name: character.name },
     player: { id: 'sameer', name: 'Sameer' },
@@ -81,7 +80,6 @@ export function DialogueOverlay({
       </button>
 
       <div className="talk-log" ref={logRef} aria-live="polite">
-        {turns.length === 0 && <p className="talk-empty">They look at you, waiting.</p>}
         {turns.map((t) => {
           const who = speakers[t.role];
           return (
@@ -102,11 +100,6 @@ export function DialogueOverlay({
       </div>
 
       <div className="talk-input">
-        {questions.length > 0 && (
-          <div className="talk-chips" aria-label="Suggested questions">
-            {questions.map((q, i) => <button key={`${i}-${q}`} type="button" disabled={typing} onClick={() => { setText(q); inputRef.current?.focus(); }}>{q}</button>)}
-          </div>
-        )}
         {error && <p className="talk-error" role="alert">{error}</p>}
         <form className="talk-ask" onSubmit={send}>
           <input

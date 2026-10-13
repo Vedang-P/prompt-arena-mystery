@@ -703,8 +703,10 @@ puzzles:
     requires: { puzzles: [p_where] }
 
 canonical_qa:
-  - { character: officer, q: "where did he get it", a: "Archive rooms in the NGO headquarters." }
-  - { character: officer, q: "what is he accused of", a: "The murder of Enakshi. He pleads his innocence, but the story is already out there." }
-  - { character: veer, q: "does the organisation follow people around", a: "I've heard some being tailed around. Usually the aftermath is messy. If something like that is happening, I suggest that you step down — it's not worth it." }
-  - { character: veer, q: "why did you come to my door", a: "I'm hearing from my dad that you apparently got folders full of information. If my name comes in the cult, I swear to god —" }
-  - { character: leader, q: "why did you start all of this", a: "I was naive at the start, like we all are. I didn't know nor was taught about our holy mother. She was always protecting us." }
+  - { character: officer, q: "where did he get it", keywords: [where, get], a: "Archive rooms in the NGO headquarters." }
+  - { character: officer, q: "where did he find it", keywords: [where, find], a: "Archive rooms in the NGO headquarters." }
+  - { character: officer, q: "what is he accused of", keywords: [accused], a: "The murder of Enakshi. He pleads his innocence, but the story is already out there." }
+  - { character: officer, q: "what is he charged with", keywords: [charged], a: "The murder of Enakshi. He pleads his innocence, but the story is already out there." }
+  - { character: veer, q: "does the organisation follow people around", keywords: [organisation, follow], a: "I've heard some being tailed around. Usually the aftermath is messy. If something like that is happening, I suggest that you step down — it's not worth it." }
+  - { character: veer, q: "why did you come to my door", keywords: [come, door], a: "I'm hearing from my dad that you apparently got folders full of information. If my name comes in the cult, I swear to god —" }
+  - { character: leader, q: "why did you start all of this", keywords: [start], a: "I was naive at the start, like we all are. I didn't know nor was taught about our holy mother. She was always protecting us." }

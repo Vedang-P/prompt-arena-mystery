@@ -408,8 +408,7 @@ export function publicCase(progress = null) {
     }),
     puzzles: (caseData.puzzles ?? []).map((puzzle) => publicPuzzle(puzzle.id)),
     endings: (caseData.endings ?? []).map((ending) => ({ id: ending.id, title: ending.title })),
-    characters: (caseData.characters ?? []).map((ch) => ({ id: ch.id, name: ch.name,
-      questions: (caseData.canonical_qa ?? []).filter((qa) => qa.character === ch.id).map((qa) => qa.q).slice(0, 4) })),
+    characters: (caseData.characters ?? []).map((ch) => ({ id: ch.id, name: ch.name })),
   };
 }
 
@@ -481,35 +480,157 @@ const tokenize = (text) =>
     .split(/\s+/)
     .filter((t) => t.length > 1 && !STOPWORDS.has(t));
 
-export function canonicalAnswer(characterId, text) {
-  const entries = (caseData.canonical_qa ?? []).filter((qa) => qa.character === characterId);
-  if (!entries.length) return null;
-  const asked = new Set(tokenize(text));
-  let best = null;
-  let bestScore = 0;
-  for (const entry of entries) {
-    const question = tokenize(entry.q);
-    if (!question.length) continue;
-    const hits = question.filter((t) => asked.has(t)).length;
-    const score = hits / question.length;
-    if (score > bestScore) {
-      bestScore = score;
-      best = entry;
+// ---------- interrogation matching ----------
+// A character reveals an authored answer only when two gates pass:
+//   1. every authored keyword of that answer is present in the question
+//      (typo-tolerant, order-free), and
+//   2. the question is similar enough (>= 70%) to the authored phrasing.
+// Similarity takes the best of two cosines: an order-free fuzzy token cosine
+// (for rephrasing and extra words) and a character-trigram cosine (for typos),
+// so "wher were u tonite" and "tonight, where were you" both land while
+// unrelated questions do not. Everything else gets a cycling deflection.
+export const TALK_THRESHOLD = 0.7;
+
+const TALK_ALIASES = {
+  u: 'you', ur: 'your', r: 'are', y: 'why', im: 'i', plz: 'please', pls: 'please',
+  whats: 'what', wheres: 'where', whos: 'who', dont: 'do', cnt: 'can', cant: 'can',
+  tonite: 'tonight', nite: 'night',
+};
+
+const talkNormalize = (text) =>
+  String(text ?? '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+
+const talkTokens = (text) =>
+  talkNormalize(text).split(' ').filter(Boolean).map((t) => TALK_ALIASES[t] ?? t);
+
+// Damerau-Levenshtein with an early bail once the distance exceeds `cap`.
+function editDistance(a, b, cap) {
+  if (a === b) return 0;
+  if (Math.abs(a.length - b.length) > cap) return cap + 1;
+  let prev2 = null;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const curr = [i];
+    let rowMin = i;
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      let d = Math.min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + cost);
+      if (prev2 && i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        d = Math.min(d, prev2[j - 2] + 1);
+      }
+      curr.push(d);
+      if (d < rowMin) rowMin = d;
     }
+    if (rowMin > cap) return cap + 1;
+    prev2 = prev;
+    prev = curr;
   }
-  return bestScore >= 0.6 ? best.a : null;
+  return prev[b.length];
 }
 
-// A grounded dialogue path remains playable when no remote LLM is configured.
-export function authoredAnswer(characterId, discovered, text) {
-  const asked = new Set(tokenize(text));
-  const known = computeUnlockedFacts(discovered);
-  const facts = (getCharacter(characterId)?.facts ?? []).filter((f) => known.has(f.id) && f.disposition !== 'deflect');
-  const ranked = facts.map((f) => ({ fact: f, hits: tokenize(f.text).filter((t) => asked.has(t)).length }))
-    .sort((a, b) => b.hits - a.hits);
-  const best = ranked[0];
-  if (!best?.hits) return null;
-  return best.fact.disposition === 'deny' ? "That isn't how I remember it. I can't give you that answer." : best.fact.text;
+// A token covers a keyword when the two agree after simple suffix folding
+// (orders/ordered/ordering -> order) or a small typo allowance.
+function talkStems(word) {
+  const out = new Set([word]);
+  const add = (w) => { if (w.length > 2) out.add(w); };
+  if (word.endsWith('ies')) add(`${word.slice(0, -3)}y`);
+  if (word.endsWith('es')) add(word.slice(0, -2));
+  if (word.endsWith('s') && !word.endsWith('ss')) add(word.slice(0, -1));
+  if (word.endsWith('ing')) { add(word.slice(0, -3)); add(`${word.slice(0, -3)}e`); }
+  if (word.endsWith('ed')) { add(word.slice(0, -2)); add(word.slice(0, -1)); }
+  return [...out];
+}
+
+export function talkTokenClose(a, b) {
+  if (!a || !b) return false;
+  for (const x of talkStems(a)) {
+    for (const y of talkStems(b)) {
+      if (x === y) return true;
+      const cap = Math.max(x.length, y.length) <= 5 ? 1 : 2;
+      if (editDistance(x, y, cap) <= cap) return true;
+    }
+  }
+  return false;
+}
+
+/** Every authored keyword (single words or phrases) must appear in the question. */
+export function talkKeywordsPass(entry, text) {
+  const keywords = entry.keywords ?? [];
+  if (!keywords.length) return false;
+  const asked = talkTokens(text);
+  return keywords.every((keyword) => {
+    const parts = talkTokens(keyword);
+    return parts.length > 0 && parts.every((part) => asked.some((token) => talkTokenClose(token, part)));
+  });
+}
+
+function charTrigrams(text) {
+  const s = ` ${talkNormalize(text)} `;
+  const grams = new Map();
+  for (let i = 0; i + 3 <= s.length; i++) {
+    const gram = s.slice(i, i + 3);
+    grams.set(gram, (grams.get(gram) ?? 0) + 1);
+  }
+  return grams;
+}
+
+function cosineMaps(a, b) {
+  let dot = 0;
+  let na = 0;
+  let nb = 0;
+  for (const [gram, n] of a) {
+    na += n * n;
+    const m = b.get(gram);
+    if (m) dot += n * m;
+  }
+  for (const n of b.values()) nb += n * n;
+  return !na || !nb ? 0 : dot / Math.sqrt(na * nb);
+}
+
+function charTrigramCosine(text, ideal) {
+  return cosineMaps(charTrigrams(text), charTrigrams(ideal));
+}
+
+// Words that carry no question intent. They are ignored when measuring how
+// much of the ideal question the player actually asked, so greetings and
+// polite padding ("hey, quick question, can you tell me...") cannot dilute it.
+const TALK_FILLERS = new Set([
+  'a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'been', 'am', 'do', 'did', 'does',
+  'can', 'could', 'would', 'will', 'shall', 'should', 'may', 'might', 'must',
+  'i', 'me', 'my', 'we', 'our', 'you', 'your', 'he', 'she', 'it', 'they', 'them',
+  'to', 'of', 'in', 'on', 'at', 'for', 'with', 'from', 'and', 'or', 'but', 'as',
+  'that', 'this', 'there', 'here', 'so', 'then', 'now', 'just', 'too', 'very',
+  'hey', 'hi', 'hello', 'ok', 'okay', 'well', 'please', 'pls', 'plz', 'thanks',
+  'quick', 'question', 'tell', 'say', 'about', 'wanna', 'want',
+]);
+
+const talkContentTokens = (text) => talkTokens(text).filter((t) => !TALK_FILLERS.has(t));
+
+// Order-free fuzzy token cosine: how much of the ideal question the player's
+// words cover, discounted by how many extra content words they brought along.
+export function talkTokenCosine(text, ideal) {
+  const idealTokens = [...new Set(talkContentTokens(ideal))];
+  const asked = [...new Set(talkContentTokens(text))];
+  if (!idealTokens.length || !asked.length) return 0;
+  const matched = idealTokens.filter((t) => asked.some((token) => talkTokenClose(token, t))).length;
+  return matched / Math.sqrt(idealTokens.length * asked.length);
+}
+
+export function talkSimilarity(text, ideal) {
+  // Max, not a blend: one strong signal is enough. The token cosine forgives
+  // reordering and extra words; the trigram cosine forgives typos.
+  return Math.max(talkTokenCosine(text, ideal), charTrigramCosine(text, ideal));
+}
+
+export function canonicalAnswer(characterId, text) {
+  const entries = (caseData.canonical_qa ?? []).filter((qa) => qa.character === characterId);
+  let best = null;
+  for (const entry of entries) {
+    if (!talkKeywordsPass(entry, text)) continue;
+    const score = talkSimilarity(text, entry.q);
+    if (score >= TALK_THRESHOLD && (!best || score > best.score)) best = { entry, score };
+  }
+  return best?.entry.a ?? null;
 }
 
 const normalizeText = (text) =>

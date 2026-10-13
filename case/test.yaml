@@ -43,6 +43,24 @@ characters:
     deflections:
       - "The butler adjusts his cuffs and says nothing."
       - "The butler inspects a speck of dust on the mantelpiece."
+      - "The butler folds his hands behind his back and waits."
+      - "A clock ticks somewhere in the hall. He does not acknowledge it."
+      - "The butler straightens the cutlery already laid straight."
+      - "\"If sir has no further questions, I have duties.\""
+      - "He studies the carpet as though it might answer for him."
+      - "The butler clears his throat, quietly, and says nothing."
+      - "\"The household does not discuss its private affairs.\""
+      - "He adjusts the curtains by a finger's width."
+      - "\"Perhaps ask the staff below stairs.\""
+      - "The butler inclines his head, which is not an answer."
+      - "He polishes a glass that is already spotless."
+      - "\"I am sure everything will come to light in time.\""
+      - "The butler consults a pocket watch he did not need to consult."
+      - "\"Will there be anything else, sir?\""
+      - "He closes the door to the hallway without being asked."
+      - "The butler murmurs something about the evening's arrangements."
+      - "\"I could not possibly speculate, sir.\""
+      - "He returns a book to its shelf, spine perfectly aligned."
     snubs:
       - "The butler raises one eyebrow. \"Indeed.\""
       - "The butler sighs through his nose. \"Will that be all, sir?\""
@@ -166,4 +184,5 @@ acts:
 canonical_qa:
   - character: butler
     q: "where were you tonight"
+    keywords: [where, tonight]
     a: "In the kitchen, as I said."

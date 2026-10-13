@@ -6,8 +6,6 @@ import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import { streamSSE } from 'hono/streaming';
 import { caseData, getCharacter } from './case.js';
 import {
-  buildMessages,
-  authoredAnswer,
   chapterCheckpoint,
   canAdvanceAct,
   canonicalAnswer,
@@ -904,17 +902,12 @@ app.post('/api/interrogate', async (c) => {
     .bind(now, windowStart, windowCount, auth.teamId)
     .run();
 
-  const discovered = JSON.parse(p.discovered || '[]');
-  const historyRows = await c.env.DB.prepare(
-    'SELECT role, content FROM messages WHERE team_id = ? AND character = ? ORDER BY id DESC LIMIT 12'
+  const previousPlayer = await c.env.DB.prepare(
+    "SELECT content FROM messages WHERE team_id = ? AND character = ? AND role = 'player' ORDER BY id DESC LIMIT 1"
   )
     .bind(auth.teamId, characterId)
-    .all();
-  const history = historyRows.results.reverse();
-  const messages = buildMessages(characterId, discovered, history, text);
-
-  const previousPlayer = [...history].reverse().find((m) => m.role === 'player')?.content ?? '';
-  const repeat = isRepeat(text, previousPlayer);
+    .first();
+  const repeat = isRepeat(text, previousPlayer?.content ?? '');
   const noise = isNoise(text);
   const priorFallbacks = await c.env.DB.prepare(
     "SELECT COUNT(*) AS n FROM messages WHERE team_id = ? AND character = ? AND role = 'npc' AND source IN ('deflect','snub')"
@@ -930,15 +923,18 @@ app.post('/api/interrogate', async (c) => {
       .run();
   }
 
-  const llm = makeLLM(c.env, (event) => console.log(JSON.stringify({ ...event, teamId: auth.teamId })));
+  // The interrogation is deterministic: the authored keywords plus the 70%
+  // similarity gate decide whether a lead is revealed. Any other question
+  // cycles the character's deflection lines instead of leaking information.
+  const canned = !repeat && !noise ? canonicalAnswer(characterId, text) : null;
+  const source = canned ? 'canonical' : repeat ? 'snub' : 'deflect';
+  const final = canned ?? deflection(characterId, (priorFallbacks?.n ?? 0) + 1, repeat);
 
   return streamSSE(c, async (stream) => {
-    let reply = '';
-    let source = llm ? 'llm' : 'unconfigured';
     let clientGone = false;
 
-    // A dropped client connection must not abort the LLM call or the transcript
-    // insert — otherwise the conversation loses the reply entirely.
+    // A dropped client must not lose the stored turn, so write failures are
+    // swallowed and the transcript still records the exchange.
     const send = async (event, data) => {
       if (clientGone) return;
       try {
@@ -949,34 +945,7 @@ app.post('/api/interrogate', async (c) => {
     };
 
     await send('meta', { character: characterId });
-
-    if (llm) {
-      try {
-        for await (const delta of llm.stream(messages, { maxTokens: 220, temperature: 0.7 })) {
-          reply += delta;
-          await send('delta', { text: delta });
-        }
-      } catch (e) {
-        console.log(JSON.stringify({ type: 'llm_failed', character: characterId, detail: String(e?.message ?? e) }));
-      }
-    }
-
-    // A stream that died mid-sentence would otherwise be stored truncated
-    // forever. If the reply does not look finished, replace it wholesale and
-    // tell the client to swap the partial text out.
-    let final = reply.trim();
-    if (!final || !/([.!?…]|["'”’)\]])\s*$/.test(final)) {
-      const canned = !repeat && !noise ? canonicalAnswer(characterId, text) ?? authoredAnswer(characterId, discovered, text) : null;
-      if (canned) {
-        source = 'canonical';
-        final = canned;
-      } else {
-        const snub = repeat || noise;
-        source = snub ? 'snub' : 'deflect';
-        final = deflection(characterId, (priorFallbacks?.n ?? 0) + 1, snub);
-      }
-      await send('reset', { text: final });
-    }
+    await send('reset', { text: final });
 
     await c.env.DB.prepare(
       'INSERT INTO messages(team_id, character, role, content, source) VALUES (?,?,?,?,?)'

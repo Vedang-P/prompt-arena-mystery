@@ -71,6 +71,8 @@ rooms:
         # all hotspot types accept: requires: { clues: [], puzzles: [] }
 
 characters:                    # same as before (persona/goals/facts/deflections/snubs)
+                               # interrogable characters (any type: character hotspot)
+                               # need >= 20 deflections that cycle on wrong questions
 clues:
   - { id, name, description, page?, grants: [fact_id], requires: [clue_id] }
     # page: optional asset path shown in the evidence panel
@@ -93,7 +95,10 @@ puzzles:
     option_endings: { "Stop": ending_cult }   # choice option -> endings id (ends the run)
 endings:
   - { id, title, body }
-canonical_qa: [{ character, q, a }]
+canonical_qa: [{ character, q, keywords: [word], a }]
+  # an answer is revealed only when every keyword appears in the question
+  # (typo-tolerant) AND the question is >= 70% similar to `q`; otherwise the
+  # character replies with a cycling deflection
 ```
 
 Validation (W4 extends `scripts/build-case.mjs`): unique ids; hotspot refs valid; puzzle

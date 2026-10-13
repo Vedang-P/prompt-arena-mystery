@@ -282,6 +282,20 @@ for (const clueId of clueIndex.keys()) {
   if (placed && granted) warn(`clue "${clueId}" is both placed in a hotspot and granted by a puzzle`);
 }
 
+// Every interrogable character needs enough deflection lines to cycle through
+// wrong or nonsensical questions without visibly repeating itself.
+const interrogable = new Set();
+for (const room of c.rooms ?? []) {
+  for (const h of room.hotspots ?? []) {
+    if (h.type === 'character') interrogable.add(h.character);
+  }
+}
+for (const ch of c.characters ?? []) {
+  if (!interrogable.has(ch.id)) continue;
+  const count = ch.deflections?.length ?? 0;
+  if (count < 20) err(`character "${ch.id}" is interrogable and needs at least 20 deflections (has ${count})`);
+}
+
 // ---------- solution ----------
 if (c.solution === undefined) {
   if (!Array.isArray(c.acts) || !c.acts.length) err('solution is required (or provide acts)');
@@ -410,6 +424,9 @@ if (c.acts !== undefined) {
 for (const qa of c.canonical_qa ?? []) {
   if (!charIds.has(qa.character)) err(`canonical_qa: unknown character "${qa.character}"`);
   if (!isStr(qa.q) || !isStr(qa.a)) err('canonical_qa: every entry needs q and a');
+  if (!Array.isArray(qa.keywords) || !qa.keywords.length || !qa.keywords.every(isStr)) {
+    err(`canonical_qa (${qa.character}): every entry needs a non-empty keywords list`);
+  }
 }
 
 // ---------- reachability ----------

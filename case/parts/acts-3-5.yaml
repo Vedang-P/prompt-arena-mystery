@@ -160,12 +160,23 @@ characters:
 canonical_qa:
   - character: veer
     q: "are you part of the perigee ngo"
+    keywords: [perigee, ngo]
     a: "Lol no, the host made a mistake. We donate a good portion of our revenue to them. Why — you're a part of it?"
   - character: veer
     q: "do you know parth"
+    keywords: [know, parth]
+    a: "You're Parth's friend? Oh yeah, Parth came around the day before yesterday. He was super interested in this stuff, he was great with kids."
+  - character: veer
+    q: "have you met parth"
+    keywords: [met, parth]
     a: "You're Parth's friend? Oh yeah, Parth came around the day before yesterday. He was super interested in this stuff, he was great with kids."
   - character: veer
     q: "what is your band name"
+    keywords: [band]
+    a: "Apogee — we got inspired by the NGO's name, but we still wanted to keep our theme of being at the peak, at the highest of all."
+  - character: veer
+    q: "what is your band called"
+    keywords: [band]
     a: "Apogee — we got inspired by the NGO's name, but we still wanted to keep our theme of being at the peak, at the highest of all."
 
 clues:

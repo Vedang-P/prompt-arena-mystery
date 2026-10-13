@@ -1754,6 +1754,26 @@ characters:
     deflections:
       - Parth's mother looks up the stairs with unshed tears.
       - She wipes her hands on her saree and says nothing for a moment.
+      - She folds her hands and looks past you, toward Parth's door.
+      - "\"I've told you everything I know. Please — I can't do this again.\""
+      - A kettle whistles somewhere in the house. She doesn't move to get it.
+      - "\"Ask the police. That's what they're for, isn't it?\""
+      - She straightens a photo frame that was already straight.
+      - "\"He'll walk through that door. You'll see.\""
+      - Her eyes fill, but her voice stays flat. "What else do you want from me?"
+      - She looks at the clock, then at the window, then back at you.
+      - "\"I'm sorry. I don't have the answers you're looking for.\""
+      - She pulls her saree tighter around her shoulders and says nothing.
+      - '"You were his friend. You should know him better than I do."'
+      - She busies herself with the teacups, setting three out by habit.
+      - '"Every knock on that door takes a year off my life."'
+      - She glances at the stairs, as if Parth might come down them.
+      - "\"I can't think straight. Ask me something else. Anything else.\""
+      - The fan hums. She lets it fill the silence for a long moment.
+      - '"People keep telling me to be strong. Strong for what?"'
+      - She presses her palm against her forehead and exhales.
+      - "\"If you find him, you'll tell me first. Promise me.\""
+      - She turns away and starts arranging the shoes by the door.
     snubs:
       - Her voice cracks. "Parth will explain everything when he comes back."
       - She turns to the photo on the wall. "He's coming back."
@@ -1784,6 +1804,25 @@ characters:
     deflections:
       - The officer flips a greasy page and pretends not to hear.
       - The officer takes a slow bite of his masala dosa instead of answering.
+      - Officer Rao taps his pen on the register and keeps reading.
+      - "\"Write it in the complaint book and I'll look at it Monday.\""
+      - He tears a corner off his dosa and chews, unbothered.
+      - '"Bhai, we have forty cases and four constables."'
+      - He flips a page with a greasy thumb.
+      - "\"That's not how an investigation works. Ask me something useful.\""
+      - He points the pen at the queue. Someone behind you clears their throat.
+      - "\"Missing persons, missing persons. Everyone's missing someone.\""
+      - He sighs, long and theatrical, and keeps writing.
+      - '"Do you have evidence? No? Then I have paperwork."'
+      - He stirs his tea with the back of his pen.
+      - "\"Come back with a name, a date, and a document. Then we'll talk.\""
+      - He glances at the wall clock and makes a small note of the time.
+      - "\"Look, I'd love to help. I'd also love to go home.\""
+      - He blows on his tea and takes a noisy sip.
+      - "\"Ask the family. Nine times out of ten it's the family.\""
+      - He slides a blank complaint form across the desk with one finger.
+      - He rummages through a drawer that holds nothing but old pens.
+      - '"Next." He looks past you at the line.'
       - Officer Rao wipes his fingers on a napkin and turns a page of the case file.
       - Officer Rao sighs. "These things take time, bhai."
     snubs:
@@ -1849,6 +1888,25 @@ characters:
     deflections:
       - Veer takes a long sip of water and looks at the stage.
       - Veer chuckles and steers the talk back to the band.
+      - Veer adjusts the strap of his guitar and grins. "Ask the band. I just sing."
+      - "\"Man, backstage stuff is the manager's thing, not mine.\""
+      - He spins a drumstick between his fingers and shrugs.
+      - "\"You should come to the next show. That's where the answers are — in the music.\""
+      - '"Whoa, heavy question. Buy me a drink first."'
+      - He laughs, but it doesn't reach his eyes.
+      - "\"I'm just here to play, bro. Everything else is noise.\""
+      - He waves at someone across the floor and loses interest in the question.
+      - "\"That's above my pay grade, and I don't even get paid.\""
+      - He taps the mic twice, checking something you can't hear.
+      - '"You ask more questions than my label, and they pay me."'
+      - He flips through a setlist that clearly hasn't changed in weeks.
+      - '"I keep my head down and my amps up."'
+      - He signals the sound guy. The monitors go quiet, then loud again.
+      - '"Look, I talked to the cops already. Twice. Ask them."'
+      - He takes a long pull of water and studies the ceiling.
+      - "\"Maybe. Maybe not. That's basically the whole answer.\""
+      - He shrugs and turns back to tuning a string that was already in tune.
+      - "\"You're stressing me out before a show, man.\""
       - Veer laughs and takes another swig of water. "Man, that's a lot of questions for a fan."
       - Veer taps his monitor and shrugs. "I only play music, bro. The NGO people handle the rest."
     snubs:
@@ -2033,6 +2091,25 @@ characters:
     deflections:
       - Ramu glances toward the counter. 'Let me finish this order, then I'll tell you what I remember.'
       - Ramu shakes his head. 'I only know what I saw in my shop.'
+      - Ramu slides a dosa onto a plate and calls out an order.
+      - '"One minute, Sameer. Let me finish this."'
+      - He wipes the counter in circles and shakes his head.
+      - "\"I only know what I see in my shop, and I'm no detective.\""
+      - The griddle sizzles. He turns back to it, leaving the question hanging.
+      - '"Ask the boys who sit at the corner table. They saw more than me."'
+      - '"Tea? No? You look like you need tea."'
+      - He taps the menu board and moves on to the next order.
+      - '"Every day, same questions. I wish I had answers."'
+      - He counts change into a customer's palm before answering.
+      - "\"I don't want trouble in my shop. You understand.\""
+      - He glances at the door as someone new walks in.
+      - "\"You're not eating. Sit down and eat something first.\""
+      - '"Look at me. Do I look like I follow people around?"'
+      - He turns the fan up a notch and wipes his forehead.
+      - '"I told the police the same thing. Ask them what I said."'
+      - He lifts the lid off a pot and lets out a long breath of steam.
+      - "\"Maybe ask his mother. Mothers know things we don't.\""
+      - "\"That's not a question for a dosa man, Sameer.\""
     snubs:
       - Ramu lowers his voice. 'Don't put words in my mouth. I wasn't there.'
       - He turns the stove down. 'If I had seen something important, I'd have told you.'
@@ -2876,48 +2953,121 @@ puzzles:
 canonical_qa:
   - character: mother
     q: did you call parth that evening
+    keywords:
+      - call
+      - parth
     a: I didn't call him. He told me you had left early. Why would he say that?
   - character: mother
     q: who is vihaan
+    keywords:
+      - vihaan
+    a: Vihaan? He was Parth's childhood friend. I have old home videos — the two of them, Vihaan playing the drums.
+  - character: mother
+    q: tell me about vihaan
+    keywords:
+      - vihaan
     a: Vihaan? He was Parth's childhood friend. I have old home videos — the two of them, Vihaan playing the drums.
   - character: officer
     q: can we file a missing report now
+    keywords:
+      - missing
+      - report
     a: Missing cases can only be filed after 48 hours, ma'am. Have you checked his friends' homes?
   - character: officer
     q: missing cases full moon
+    keywords:
+      - full
+      - moon
     a: Every full moon someone goes missing. We file the reports, and then... nothing. Don't quote me on that.
   - character: ramu
     q: what did parth usually order
+    keywords:
+      - parth
+      - order
     a: Masala dosa and filter coffee. Same table, nearly every time. Some habits stick.
   - character: ramu
     q: have you seen parth lately
+    keywords:
+      - seen
+      - parth
     a: Not since he stopped by the other day. He was quiet, but he paid and left like usual. I don't know where he went after that.
   - character: ramu
     q: what was parth like
+    keywords:
+      - parth
+      - like
+    a: A good customer, a better friend to Sameer. They used to sit at that table and talk until I had to remind them we were closing.
+  - character: ramu
+    q: tell me about parth
+    keywords:
+      - parth
     a: A good customer, a better friend to Sameer. They used to sit at that table and talk until I had to remind them we were closing.
   - character: veer
     q: are you part of the perigee ngo
+    keywords:
+      - perigee
+      - ngo
     a: Lol no, the host made a mistake. We donate a good portion of our revenue to them. Why — you're a part of it?
   - character: veer
     q: do you know parth
+    keywords:
+      - know
+      - parth
+    a: You're Parth's friend? Oh yeah, Parth came around the day before yesterday. He was super interested in this stuff, he was great with kids.
+  - character: veer
+    q: have you met parth
+    keywords:
+      - met
+      - parth
     a: You're Parth's friend? Oh yeah, Parth came around the day before yesterday. He was super interested in this stuff, he was great with kids.
   - character: veer
     q: what is your band name
+    keywords:
+      - band
+    a: Apogee — we got inspired by the NGO's name, but we still wanted to keep our theme of being at the peak, at the highest of all.
+  - character: veer
+    q: what is your band called
+    keywords:
+      - band
     a: Apogee — we got inspired by the NGO's name, but we still wanted to keep our theme of being at the peak, at the highest of all.
   - character: officer
     q: where did he get it
+    keywords:
+      - where
+      - get
+    a: Archive rooms in the NGO headquarters.
+  - character: officer
+    q: where did he find it
+    keywords:
+      - where
+      - find
     a: Archive rooms in the NGO headquarters.
   - character: officer
     q: what is he accused of
+    keywords:
+      - accused
+    a: The murder of Enakshi. He pleads his innocence, but the story is already out there.
+  - character: officer
+    q: what is he charged with
+    keywords:
+      - charged
     a: The murder of Enakshi. He pleads his innocence, but the story is already out there.
   - character: veer
     q: does the organisation follow people around
+    keywords:
+      - organisation
+      - follow
     a: I've heard some being tailed around. Usually the aftermath is messy. If something like that is happening, I suggest that you step down — it's not worth it.
   - character: veer
     q: why did you come to my door
+    keywords:
+      - come
+      - door
     a: I'm hearing from my dad that you apparently got folders full of information. If my name comes in the cult, I swear to god —
   - character: leader
     q: why did you start all of this
+    keywords:
+      - start
     a: I was naive at the start, like we all are. I didn't know nor was taught about our holy mother. She was always protecting us.
 title: The Moon's Dark Side
 subtitle: A Prompt Arena Mystery

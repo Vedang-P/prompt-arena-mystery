@@ -43,7 +43,7 @@ console.log('engine — test fixture');
 test('public case leaks no facts, solution, or authoring data', () => {
   const json = JSON.stringify(publicCase());
   for (const leak of [
-    'butler_secret', 'butler_detail', 'persona', 'solution', 'culprit', 'canonical_qa', 'deny',
+    'butler_secret', 'butler_detail', 'persona', 'solution', 'culprit', 'canonical_qa', 'keywords', 'deny',
   ]) {
     assert.ok(!json.includes(leak), `publicCase leaked "${leak}"`);
   }
@@ -85,9 +85,24 @@ test('facts never unlock before their clues', () => {
   assert.ok(!unlocked.some((f) => f.fact === 'butler_detail'));
 });
 
-test('canonical answers match on token overlap', () => {
+test('canonical answers need every keyword present', () => {
   assert.equal(canonicalAnswer('butler', 'so where were you tonight then?'), 'In the kitchen, as I said.');
+  assert.equal(canonicalAnswer('butler', 'where is the ledger'), null);
   assert.equal(canonicalAnswer('butler', 'completely unrelated question'), null);
+});
+
+test('canonical answers forgive typos and rephrasing', () => {
+  assert.equal(canonicalAnswer('butler', 'wher were u tonite?'), 'In the kitchen, as I said.');
+  assert.equal(canonicalAnswer('butler', 'tell me, tonight — where were you?'), 'In the kitchen, as I said.');
+});
+
+test('keywords alone are not enough when the question drifts', () => {
+  assert.equal(canonicalAnswer('butler', 'where were you tonight, in the kitchen, polishing the silver?'), null);
+});
+
+test('interrogable characters carry 20+ deflection lines', () => {
+  const butler = caseData.characters.find((ch) => ch.id === 'butler');
+  assert.ok(butler.deflections.length >= 20, `butler has ${butler.deflections.length}`);
 });
 
 test('deflection returns an authored line, or a generic fallback', () => {
