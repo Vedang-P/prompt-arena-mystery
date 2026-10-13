@@ -8,7 +8,7 @@ export function seatContact(character,seatY,floorY){
 }
 export function locationFor(act, kind, index) {
   const scenes = {
-    act1:{intro:['parth_home','parth_home','parth_home','parth_home','parth_room'],outro:['parth_home','parth_home']},
+    act1:{intro:['parth_home','parth_home','parth_home','parth_home','parth_home','parth_home','parth_room'],outro:['parth_home','parth_home']},
     act2:{intro:['sameer_room','cyber_cafe','sameer_room','sameer_room'],outro:['sameer_room','sameer_room','sameer_room']},
     // The story's capture happens behind the NGO headquarters, not the venue.
     act3:{intro:['concert'],outro:['ngo_hq','ngo_hq','sameer_room']},

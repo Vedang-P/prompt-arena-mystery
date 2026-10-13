@@ -494,7 +494,7 @@ characters:
         disposition: admit
       - id: mother_vihaan
         text: "Vihaan was Parth's childhood friend. There are old home videos of the two of them — Vihaan on the drums."
-        unlock: { requires: [c_videos] }
+        unlock: { requires: [c_vihaan] }
         disposition: admit
 
   - id: officer
@@ -728,10 +728,6 @@ clues:
     name: "Silver sedan"
     description: "A dusty but luxurious silver sedan, parked at the edge of the field. The number plate reads KA01OC1808."
     grants: [officer_plate]
-  - id: c_vihaan
-    name: "The car's owner"
-    description: "A quick look-up on the phone: the silver sedan KA01OC1808 is registered to a Vihaan — the only real name attached to any of this."
-    grants: []
   - id: c_backpack
     name: "Black backpack"
     description: "A black backpack on the seat of the car. Inside: a few cassettes, and nothing else."
@@ -741,11 +737,16 @@ clues:
     name: "The mixtape"
     description: "Faint crackling, then ritualistic chanting, weird drum sounds, and bizarre words in no language Sameer can decipher. A scream — and then nothing."
     grants: []
+  - id: c_vihaan
+    name: "Car owner: Vihaan"
+    description: "Out on the street, he takes his phone out and looks up the plate: KA01OC1808. One name comes back — Vihaan. He hopes this Vihaan is somehow connected to his missing friend, and not some useless side quest."
+    requires: [c_mixtape]
+    grants: [mother_vihaan]
   - id: c_videos
     name: "Home videos: Parth & Vihaan"
     description: "Grainy home videos: a younger Parth and Vihaan. Vihaan is playing the drums. That drum sound — he just heard it."
-    requires: [c_mixtape]
-    grants: [mother_vihaan]
+    requires: [c_vihaan]
+    grants: []
   - id: c_cd
     name: "Copper spiral CD"
     description: "A transparent case holding a CD, laser-etched with a spiral of copper wiring. It was waiting beneath the gazebo."

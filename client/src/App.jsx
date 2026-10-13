@@ -275,6 +275,9 @@ export default function App() {
       if (e.status === 403 && e.data?.error === 'disqualified') {
         setDqInfo(e.data);
         setPhase('disqualified');
+        // Handled, not "no session": the disqualification screen explains the
+        // block, so the boot path must never bounce back to the title card.
+        return 'disqualified';
       } else if (e.status === 401) setPhase('login');
       else { setLoginError('The case server is unavailable. Try again in a moment.'); setPhase('login'); }
       return false;
