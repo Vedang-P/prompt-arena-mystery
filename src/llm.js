@@ -19,9 +19,86 @@ const limiterFor = (base, limit) => {
   return limiter;
 };
 
+// OpenCode Zen free chat-completions models (https://opencode.ai/zen/v1).
+// These all speak POST {base}/chat/completions, which is what this adapter
+// implements. NOTE: muse-spark-1.3-contributor-free is Responses-API only,
+// so it is intentionally NOT listed here.
+export const ZEN_CHAT_BASE = 'https://opencode.ai/zen/v1';
+
+export const CHARACTER_DEFAULT_MODELS = {
+  sameer: 'big-pickle',
+  parth: 'space-bunny-free',
+  mother: 'longcat-2.5-preview-free',
+  officer: 'step-5-preview-free',
+  veer: 'exo-free',
+  enakshi: 'mimo-v2.6-flash-free',
+  tanush: 'mimo-v2.5-free',
+  leader: 'ling-3.1-flash-free',
+  ramu: 'nemotron-3-ultra-free',
+};
+
+const CHARACTER_FALLBACK_MODELS = [
+  'nemotron-3.5-lightning-free',
+  'ling-3.0-flash-fin-free',
+];
+
+const dedupe = (list) =>
+  list.map((m) => (m || '').trim()).filter((m, i, all) => m && all.indexOf(m) === i);
+
+export function resolveLlmBase(env = {}) {
+  const explicit = (env.LLM_BASE_URL || '').replace(/\/+$/, '');
+  if (explicit) return explicit;
+  // Zero-config Zen: if a Zen key is present, default to its chat endpoint.
+  if (env.OPENCODE_API_KEY || env.LLM_API_KEY) return ZEN_CHAT_BASE;
+  return '';
+}
+
+export function resolveLlmKey(env = {}) {
+  return env.LLM_API_KEY || env.OPENCODE_API_KEY || '';
+}
+
+function parseCharacterMap(env = {}) {
+  const raw = (env.LLM_CHARACTER_MODELS || '').trim();
+  if (!raw) return {};
+  try {
+    const obj = JSON.parse(raw);
+    if (obj && typeof obj === 'object') {
+      const out = {};
+      for (const [k, v] of Object.entries(obj)) {
+        if (typeof v === 'string' && v.trim()) out[String(k).toLowerCase()] = v.trim();
+      }
+      return out;
+    }
+  } catch {
+    // fall through to per-var lookup
+  }
+  return {};
+}
+
+// Resolve the model chain for one character:
+// explicit JSON map > LLM_MODEL_<CHARACTER> > built-in Zen default > global chain.
+export function chainForCharacter(env = {}, characterId = '') {
+  const id = String(characterId || '').toLowerCase();
+  const map = parseCharacterMap(env);
+  const perVar = (env[`LLM_MODEL_${id.toUpperCase()}`] || '').trim();
+  const globalChain = dedupe([env.LLM_MODEL, ...(env.LLM_FALLBACK_MODELS || '').split(',')]);
+  const candidates = dedupe([
+    map[id],
+    perVar,
+    CHARACTER_DEFAULT_MODELS[id],
+    ...globalChain,
+    ...CHARACTER_FALLBACK_MODELS,
+  ]);
+  return candidates;
+}
+
+export function modelForCharacter(env = {}, characterId = '') {
+  return chainForCharacter(env, characterId)[0] ?? '';
+}
+
 export function makeLLM(env, onEvent = () => {}) {
-  const base = (env.LLM_BASE_URL || '').replace(/\/+$/, '');
-  const key = env.LLM_API_KEY;
+  const base = resolveLlmBase(env);
+  const key = resolveLlmKey(env);
   const chain = [env.LLM_MODEL, ...(env.LLM_FALLBACK_MODELS || '').split(',')]
     .map((m) => (m || '').trim())
     .filter((m, i, all) => m && all.indexOf(m) === i);
@@ -216,4 +293,19 @@ export function makeLLM(env, onEvent = () => {}) {
   }
 
   return { stream, complete, models: chain };
+}
+
+// Per-character client: same streaming/failover machinery, but the model
+// chain starts with that character's model so 70 concurrent teams each get
+// the right voice. Falls back through global + built-in free models.
+// Returns null when no base URL + key are configured.
+export function makeLLMForCharacter(env = {}, characterId = '', onEvent = () => {}) {
+  const chain = chainForCharacter(env, characterId);
+  if (!chain.length) return null;
+  const scoped = {
+    ...env,
+    LLM_MODEL: chain[0],
+    LLM_FALLBACK_MODELS: chain.slice(1).join(','),
+  };
+  return makeLLM(scoped, onEvent);
 }

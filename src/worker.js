@@ -7,6 +7,7 @@ import { streamSSE } from 'hono/streaming';
 import { caseData, getCharacter } from './case.js';
 import {
   chapterCheckpoint,
+  buildMessages,
   canAdvanceAct,
   canonicalAnswer,
   characterAvailable,
@@ -25,7 +26,7 @@ import {
   unlockedFactList,
   WRONG_ANSWER_PENALTY_CAP,
 } from './engine.js';
-import { makeLLM } from './llm.js';
+import { makeLLM, makeLLMForCharacter, modelForCharacter } from './llm.js';
 import { createSession, hashCode, readSession } from './auth.js';
 
 const app = new Hono();
@@ -99,7 +100,10 @@ app.get('/api/health', (c) =>
       codePepperIsExample: envString(c.env.CODE_PEPPER) === DEV_CODE_PEPPER,
       eventMode: isTruthy(c.env.EVENT_MODE),
       codeLogin: isTruthy(c.env.ALLOW_CODE_LOGIN),
-      llm: Boolean(c.env.LLM_BASE_URL && c.env.LLM_API_KEY && c.env.LLM_MODEL),
+      llm: Boolean(
+        (c.env.LLM_BASE_URL || c.env.OPENCODE_API_KEY) &&
+          (c.env.LLM_API_KEY || c.env.OPENCODE_API_KEY)
+      ),
       adminConfigured: Boolean(c.env.ADMIN_PASSWORD),
       fullscreenEnforced: fullscreenEnforced(c.env),
     },
@@ -1049,12 +1053,16 @@ app.post('/api/interrogate', async (c) => {
       .run();
   }
 
-  // The interrogation is deterministic: the authored keywords plus the 70%
-  // similarity gate decide whether a lead is revealed. Any other question
-  // cycles the character's deflection lines instead of leaking information.
+  // LLM-first: each character speaks through its own OpenCode Zen free
+  // model (see src/llm.js CHARACTER_DEFAULT_MODELS). The system prompt only
+  // contains already-unlocked facts, so the model cannot leak future leads.
+  // Canonical answers + deflections remain the deterministic fallback, so the
+  // game stays fully playable when the upstream is down or rate-limited —
+  // critical for 70 concurrent teams.
   const canned = !repeat && !noise ? canonicalAnswer(characterId, text) : null;
-  const source = canned ? 'canonical' : repeat ? 'snub' : 'deflect';
-  const final = canned ?? deflection(characterId, (priorFallbacks?.n ?? 0) + 1, repeat);
+  const fallbackText =
+    canned ?? deflection(characterId, (priorFallbacks?.n ?? 0) + 1, repeat);
+  const fallbackSource = canned ? 'canonical' : repeat ? 'snub' : 'deflect';
 
   return streamSSE(c, async (stream) => {
     let clientGone = false;
@@ -1071,15 +1079,81 @@ app.post('/api/interrogate', async (c) => {
     };
 
     await send('meta', { character: characterId });
-    await send('reset', { text: final });
 
-    await c.env.DB.prepare(
-      'INSERT INTO messages(team_id, character, role, content, source) VALUES (?,?,?,?,?)'
-    )
-      .bind(auth.teamId, characterId, 'npc', final, source)
-      .run();
+    // Repeats / noise skip the model and use the authored snub directly.
+    // Everything else tries the character's LLM first.
+    let final = fallbackText;
+    let source = fallbackSource;
+    if (!repeat && !noise) {
+      const llm = makeLLMForCharacter(c.env, characterId, () => {});
+      const llmModel = (() => {
+        try {
+          return modelForCharacter(c.env, characterId);
+        } catch {
+          return '';
+        }
+      })();
+      if (llm) {
+        try {
+          const discovered = parseJsonArray(auth.progress.discovered);
+          // node:sqlite and pg both support .all(); use it directly.
+          let history = [];
+          try {
+            const rows = await c.env.DB.prepare(
+              "SELECT role, content FROM messages WHERE team_id = ? AND character = ? ORDER BY id DESC LIMIT 12"
+            )
+              .bind(auth.teamId, characterId)
+              .all();
+            const list = rows?.results ?? rows ?? [];
+            history = [...list].reverse().map((m) => ({
+              role: m.role === 'npc' ? 'npc' : 'player',
+              content: String(m.content ?? '').slice(0, 1000),
+            }));
+          } catch {
+            history = [];
+          }
+          const messages = buildMessages(characterId, discovered, history, text);
+          let acc = '';
+          for await (const delta of llm.stream(messages, { temperature: 0.7, maxTokens: 220 })) {
+            acc += delta;
+            // Cap runaway generations; the prompt already asks for <3 sentences.
+            if (acc.length > 1200) break;
+            await send('delta', { text: delta });
+          }
+          const clean = acc.trim();
+          if (clean) {
+            final = clean.slice(0, 1200);
+            source = 'llm';
+          }
+        } catch {
+          // Fall through to canonical/deflect fallback below.
+          final = fallbackText;
+          source = fallbackSource === 'canonical' ? 'canonical' : 'llm-failover';
+          if (source === 'llm-failover' && canned) {
+            final = canned;
+            source = 'canonical';
+          }
+        }
+      }
+    }
 
-    await send('done', { source });
+    if (source === 'llm') {
+      // Streamed via delta events above; store the full reply now.
+      await c.env.DB.prepare(
+        'INSERT INTO messages(team_id, character, role, content, source) VALUES (?,?,?,?,?)'
+      )
+        .bind(auth.teamId, characterId, 'npc', final, source)
+        .run();
+      await send('done', { source, model: llmModel });
+    } else {
+      await send('reset', { text: final });
+      await c.env.DB.prepare(
+        'INSERT INTO messages(team_id, character, role, content, source) VALUES (?,?,?,?,?)'
+      )
+        .bind(auth.teamId, characterId, 'npc', final, source)
+        .run();
+      await send('done', { source });
+    }
   });
 });
 
