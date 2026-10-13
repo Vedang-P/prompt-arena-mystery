@@ -18,7 +18,7 @@ acts:
           - { character: sameer, at: [-0.7, 0.1], rot: 0.55, pose: sit }
           - { character: parth, at: [0.75, 0.05], rot: -0.55, pose: sit }
         lines:
-          - { speaker: narrator, text: "An eventful day for Sameer and Parth — the beach, the streets, and now the park, as evening settles around the gazebo." }
+          - { speaker: narrator, text: "An eventful day for Sameer and Parth — the streets, then a lazy evening at Parth's home, and now the park, as the light settles around the gazebo." }
           - { speaker: parth, text: "Nothing, man. Just trying to get an internship." }
           - { speaker: sameer, text: "Same. Honestly, today was the first time I didn't think about Jade Street all day." }
       - id: gazebo_talk
@@ -41,7 +41,7 @@ acts:
           - { character: sameer, at: [-0.7, 0.1], rot: 0.55, pose: sit }
           - { character: parth, at: [0.75, 0.05], rot: -0.55, pose: sit }
         lines:
-          - { speaker: narrator, text: "Parth's phone rings. He picks it up and listens — not a word, only a slow glance at Sameer." }
+          - { speaker: narrator, text: "Parth's phone rings. He picks it up and listens — not a word. Sameer notices his friend looks a little disheveled — maybe it's the light." }
           - { speaker: parth, text: "Alright, I gotta go. Mum's calling. Tomorrow — same time?" }
           - { speaker: narrator, text: "And then he ran off. Weird." }
           - { speaker: sameer, text: "Yeah, yeah, dude." }
@@ -98,7 +98,7 @@ acts:
           - { speaker: mother, text: "My son is missing! We can't contact him. His name is Parth." }
           - { speaker: officer, text: "How long has it been since you last saw him, ma'am?" }
           - { speaker: sameer, text: "Somewhere between two and three hours." }
-          - { speaker: officer, text: "Missing cases can only be filed after 48 hours. Have you checked his friends' homes?" }
+          - { speaker: officer, text: "Ma'am, we will try our best to look for him — but don't get your hopes too high. He might be at someone else's home. Have you checked?" }
           - { speaker: mother, text: "Yes. Everywhere we can think of." }
       - id: station_q2
         room: police_station
@@ -378,11 +378,13 @@ rooms:
         label: "Ramu's Dosa Corner — Parth's usual"
         position: [-1.8, 0.6, 0.9]
       - id: cc_cassette
+        act: act1
         type: puzzle
         puzzle: p_cassette
         label: "Cassette player"
         position: [0.6, 0.7, -1.0]
       - id: cc_vihaan
+        act: act1
         type: clue
         clue: c_vihaan
         label: "Look up the car's owner on his phone"
@@ -396,11 +398,18 @@ rooms:
         position: [4.7, 0.9, -2.2]
         requires: { clues: [c_laptop_fried] }
       - id: cc_to_home
+        act: act1
         type: travel
         to: parth_home
         label: "Go to Parth's home"
         position: [-4.6, 0.3, 3.4]
         requires: { clues: [c_vihaan] }
+      - id: cc_to_sameer
+        act: act2
+        type: travel
+        to: sameer_room
+        label: "Head home"
+        position: [-2.0, 0.4, 4.5]
       - id: cc_ramu
         type: character
         character: ramu
@@ -529,7 +538,7 @@ characters:
       - "The officer sighs. \"Write it down and leave it on the desk.\""
     facts:
       - id: officer_rule
-        text: "Missing cases can only be filed 48 hours after the person was last seen. Procedure, ma'am."
+        text: "The officer takes the report with no guarantee — 'He might be at someone else's home. Have you checked?' The station has forty cases and four constables."
         unlock: always
         disposition: admit
       - id: officer_fullmoon
@@ -778,7 +787,6 @@ puzzles:
     success: "Dots and dashes fall into place: O, C, 1, 8, 0, 8. The full line reads \"OC1808 in laptop.\" A very strange thing to encode — but Sameer shelves it for later."
     grants: [c_morse]
     requires: { clues: [c_diary, c_laptop_locked] }
-    penalty: 0
     fail_message: "Sameer squints at the decoder again. That's not it."
 
   - id: p_laptop
@@ -788,17 +796,16 @@ puzzles:
     success: "He types OC1808 and hits enter. \"Heh, I'm in,\" he mimics, in the worst hacker voice in existence. (Oh god, why is Sameer like this? He wasn't even hacking.)"
     grants: [c_laptop]
     requires: { clues: [c_morse] }
-    penalty: 0
     fail_message: "The password field shakes. Wrong. Again."
 
   - id: p_email
     kind: email
     prompt: "The folder of reports and posters sits open on the laptop. If he is going to keep digging, he needs his own copy — somewhere only he can open. He opens his mail and types his own address."
+    evidence: "/assets/pictures/evidence_email.jpg"
     answers: []
     success: "Sent. The folder lands in his own inbox, attachments and all — \"Fwd: missing-person reports, keep this safe.\" If anyone ever reads his sent items, he's finished."
     grants: [c_email]
     requires: { clues: [c_reports] }
-    penalty: 0
 
   - id: p_cassette
     kind: choice
@@ -808,7 +815,6 @@ puzzles:
     success: "The mixtape starts with a faint crackling, then ritualistic chanting, weird drum sounds, bizarre words he can't place in any language. There is a scream — and then nothing. He grabs the bag and runs, the shopkeeper screaming at him to pay for the device."
     grants: [c_mixtape]
     requires: { clues: [c_backpack] }
-    penalty: 0
     fail_message: "Put it back? After the car, after everything? No. He has to hear it."
 
   - id: p_drums
@@ -817,7 +823,6 @@ puzzles:
     answers: [cassette, the cassette, mixtape]
     success: "In one of the cassettes. The same drum sound, from the abandoned car's bag. Remember, Sameer, remember."
     requires: { clues: [c_videos] }
-    penalty: 0
     fail_message: "That's not it. The sound is right there, at the edge of his memory."
 
   - id: p_dosa
@@ -826,7 +831,6 @@ puzzles:
     options: ["Eat it", "Skip it"]
     answers: ["Eat it"]
     success: "He eats it. It tastes like every other evening they ever spent here. The dosa weighs his stomach; the bag weighs his back."
-    penalty: 0
     fail_message: "But he bought it ?"
 
   - id: p_voicenote2
@@ -840,7 +844,6 @@ puzzles:
       The voice note ends like a puzzle waiting to be completed. Where is he sending him?
     answers: [park, the park, gazebo, the gazebo, park gazebo, the park gazebo, the gazebo in the park]
     success: "The park. The gazebo where he last saw Parth. He pockets the phone and leaves before it gets dark."
-    penalty: 0
     fail_message: "That's not it. The voice note is still waiting to be completed."
 
   - id: p_cd_mode
@@ -853,7 +856,6 @@ puzzles:
     fail_grants: [c_laptop_fried]
     grants: [c_footage]
     requires: { clues: [c_cd] }
-    penalty: 1
     continue_on_fail: true
 
   - id: p_cd_watch
@@ -865,7 +867,6 @@ puzzles:
     fail_message: "He can't walk away now. The CD goes in."
     grants: [c_footage]
     requires: { clues: [c_laptop_fried] }
-    penalty: 0
 
   - id: p_ticket
     kind: choice
@@ -876,7 +877,6 @@ puzzles:
     fail_message: "The backstage ticket is daylight robbery — fifty percent more for a man with barely a million followers? He clicks back. The normal ticket is the one."
     grants: [c_ticket]
     requires: { clues: [c_veer_profile] }
-    penalty: 1
 
 canonical_qa:
   - character: mother
@@ -894,7 +894,7 @@ canonical_qa:
   - character: officer
     q: "can we file a missing report now"
     keywords: [missing, report]
-    a: "Missing cases can only be filed after 48 hours, ma'am. Have you checked his friends' homes?"
+    a: "We'll file the case, but I can't give you any guarantee. Have you checked his friends' homes?"
   - character: officer
     q: "missing cases full moon"
     keywords: [full, moon]

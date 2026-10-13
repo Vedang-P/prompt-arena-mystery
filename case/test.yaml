@@ -121,7 +121,6 @@ puzzles:
     answers: [ledger, the ledger]
     success: "The ashes give up the ledger's hiding place."
     grants: [ash]
-    penalty: 2
   - id: p_play
     kind: choice
     prompt: "The cassette player still turns over. What do you do?"
@@ -136,7 +135,6 @@ puzzles:
     answers: ["Stay hidden"]
     success: "You stay put, and the footsteps pass."
     fail_message: "You bolt, and a hand catches your sleeve."
-    penalty: 1
     continue_on_fail: true
     fail_grants: [ash]
     requires: { clues: [mixtape] }

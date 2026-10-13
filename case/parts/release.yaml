@@ -31,11 +31,11 @@ clues:
     description: "Perigee headquarters is enormous for a four-year-old NGO. Veer walks away to take a call. Near the archive door is a nine-letter motto: A _ C _ N _ I _ N — ‘the soul’s ascent’. A note warns: use the motto to open the archived offering records."
   - id: c_diary
     page: "/assets/pictures/evidence_diary_morse.jpg"
-    description: "A leather diary engraved with a moon and stars. Its final page reads: --- / -.-. / .---- / ---.. / ----- / ---.. . On the facing page: O = ---; C = -.-.; 1 = .----; 8 = ---..; 0 = -----. A scribbled arrow points from the code to the laptop."
+    description: "A leather diary engraved with a moon and stars. Its final page reads: --- / -.-. / .---- / ---.. / ----- / ---.. . A scribbled arrow points from the code to the laptop."
 
 puzzles:
   - id: p_morse
-    prompt: "Decode the groups in Parth's diary, then enter the six-character code. Review the diary entry below; the photograph shows the letter key."
+    prompt: "Decode the groups in Parth's diary, then enter the six-character code. Work from the photograph — the translator he used is on the facing page."
     answers: ["OC1808", "OC 1808", "OC1808 in laptop", "OC1808 in the laptop"]
   - id: p_ascension
     prompt: "The archive terminal asks for the nine-letter motto from the headquarters: A _ C _ N _ I _ N. Beneath it: ‘the soul’s ascent’. What is the password?"

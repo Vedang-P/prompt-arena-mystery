@@ -43,6 +43,28 @@ Cinematics are subtitled, with pause / continue / skip / mute controls. Graphics
 
 Outside event mode, **Chapter select** creates an independent practice save with the earlier prerequisites prepared; it never touches the campaign. **Return to campaign** restores the original save.
 
+### Penalties and scoring
+
+Every wrong answer to a puzzle costs a flat **1 penalty**. The same clue charges at most
+**3 times**, so a team stuck on one puzzle can lose at most 3 points there; after that the
+answer is still marked wrong but nothing more is added. Correct answers, repeat submissions
+on an already-solved clue, and empty submissions cost nothing (empty answers are rejected
+before scoring).
+
+- **Score** = evidence logged + puzzles solved − penalties, and appears in the HUD, the
+  notebook, the ending card and `/api/state`.
+- **Reopening the case** from Act 0 costs a flat **10 penalties** in a campaign run. In
+  practice it is free, and either way the event clock keeps running. A restart clears the
+  per-clue wrong-answer counters but keeps the penalties already spent.
+- **Ranking**: solved teams first, by earliest solve; everyone else by score, then fewest
+  penalties. The live board shows penalties, and the admin board can adjust them ±.
+- Authors do not set penalties per puzzle any more — `scripts/build-case.mjs` rejects a
+  `penalty:` field so every wrong answer is worth the same.
+
+The rules are covered end-to-end by `npm run test:penalties` (fee, cap, free correct
+answers, restart cost, practice, and leaderboard order) and unit-tested in
+`npm run test:engine`.
+
 ---
 
 ## Develop
@@ -85,6 +107,7 @@ vercel.json             Build command and function configuration
 | `npm run validate:case` | Validate the compiled case without writing |
 | `npm run test:engine` | Pure rule tests against a fixture case |
 | `npm run test:campaign` | Full campaign walk: every act, puzzle, gate and ending |
+| `npm run test:penalties` | Penalty rules end-to-end: fee, cap, restart cost, practice, leaderboard order |
 | `npm run test:event` | 70 concurrent team sessions, event gates and timers |
 | `npm run test:admin` | Control room: strikes, disqualification, requalification, CRUD, audit |
 | `npm run test:admin-ui` | Browser smoke of the control room and fullscreen gate (needs `dev:game` running) |
@@ -98,12 +121,12 @@ vercel.json             Build command and function configuration
 ### Testing
 
 ```sh
-npm run test:engine && npm run test:campaign && npm run test:event
-npm run test:assets && npm run test:scenes
+npm run test:engine && npm run test:campaign && npm run test:penalties
+npm run test:event && npm run test:assets && npm run test:scenes
 npm run build
 ```
 
-The engine tests cover rule enforcement. Campaign integration walks every act and puzzle, checks prerequisite gates, both endings, all nine practice starts, wrong-answer continuation, and campaign/practice save isolation. The scene suite decodes the actual shipped GLBs, so asset changes cannot silently drift from the staging code.
+The engine tests cover rule enforcement, including the penalty fee and its per-clue cap. Campaign integration walks every act and puzzle, checks prerequisite gates, both endings, all nine practice starts, wrong-answer continuation, and campaign/practice save isolation. The penalty suite drives the API directly: a wrong answer costs 1, the fourth wrong answer on a clue is free, correct answers and solves are free, restarts cost 10 in campaign and nothing in practice (and reset the per-clue counters), and the leaderboard ranks by score before penalties. The scene suite decodes the actual shipped GLBs, so asset changes cannot silently drift from the staging code.
 
 In development, `http://127.0.0.1:5173/play/?review=scenes` opens a review browser for all 14 environments and the cinematic arrangements; it never writes progress and is omitted from production.
 

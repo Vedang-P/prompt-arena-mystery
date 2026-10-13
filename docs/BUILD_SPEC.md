@@ -88,8 +88,9 @@ puzzles:
     success: string            # narrative shown on the correct answer
     grants: [clue_id]          # clues granted when solved correctly
     requires: { clues: [], puzzles: [] }
-    penalty: number            # default 0; penalty added on wrong answer
     fail_message: string?      # shown on wrong answer
+                               # every wrong answer costs a fixed 1 penalty, capped at
+                               # 3 per puzzle; a `penalty:` field is rejected by the compiler
     continue_on_fail: false    # true: wrong answer ALSO marks the puzzle solved
     fail_grants: [clue_id]     # clues granted when continue_on_fail fires
     option_endings: { "Stop": ending_cult }   # choice option -> endings id (ends the run)
@@ -200,54 +201,54 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 | c_office | tanush_office hotspot (act8) | — | plush carpets, mahogany |
 
 ### Puzzles → answer keys (player-facing prompt is authored by W1–W3)
-| id | kind | answer(s) | penalty | behavior |
-| --- | --- | --- | --- | --- |
-| p_morse | text | oc1808 | 0 | requires c_diary + c_laptop_locked; grants c_morse; evidence diary_morse + decoder |
-| p_laptop | code | oc1808 | 0 | requires c_morse; grants c_laptop |
-| p_cassette | choice | Play it | 0 | options [Play it, Put it back]; requires c_backpack; grants c_mixtape |
-| p_drums | text | cassette, the cassette, mixtape | 0 | requires c_videos |
-| p_dosa | choice | Eat it | 0 | options [Eat it, Skip it]; fail_message "But he bought it ?" |
-| p_voicenote2 | text | park, the park | 0 | riddle "Where we would go for a walk…"; grants nothing; gates c_cd |
-| p_cd_mode | choice | Use the cyber cafe | 1 | options [Use my laptop, Use the cyber cafe]; continue_on_fail; fail_grants [c_laptop_fried]; grants c_footage |
-| p_ticket | choice | Normal ticket | 1 | options [Normal ticket, Backstage ticket]; continue_on_fail; grants c_ticket |
-| p_veer_1 | choice | No, but I have donated some money to them | 0 | options [Yes, I'm part of it, No, but I have donated some money to them] |
-| p_veer_2 | choice | Foster scientific temper, empowering the youth | 0 | options [Foster scientific temper, empowering the youth, Teach astronomy to tourists] |
-| p_band_name | text | apogee | 0 | grants c_apogee |
-| p_registration | email | any email | 0 | grants c_workshop_address; placeholder "you@example.com" |
-| p_fare | choice | 230 | 0 | options [100, 200, 230, Walk away] |
-| p_ascension | code | ascension | 0 | grants c_records |
-| p_hide | choice | Stay hidden | 1 | options [Run, Stay hidden]; continue_on_fail; grants c_ambulance |
-| p_delve | choice | Yes | 5 | options [Yes, No]; retry on No |
-| p_hospital | choice | Shashdhar Hospital | 2 | options [Vyadha Hospital, Shashdhar Hospital, BMC Hospital]; retry |
-| p_security_pin | text | uvct, star | 0 | hint 'vykpmng vykpmng nkvvng ____'; success reveals twinkle twinkle little star |
-| p_parth_alive | text | parth | 1 | prompt "It couldn't be, could it?"; grants c_parth_alive |
-| p_tablet | code | 1607 | 0 | hint ties to 16-07-2020 |
-| p_handbook | choice | Take it | 0 | options [Take it, Leave it]; grants c_handbook |
-| p_knowledge | text | handbook, the handbook | 0 | grants c_tablet_data |
-| p_tablet_content | choice | Chants, schedules, and holy blade maintenance | 0 | options [Chants, schedules, and holy blade maintenance, Lua Pharmaceuticals invoices, The full member list]; grants c_recruits + c_finance |
-| p_connection | text | perigee, apogee, perigee and apogee | 0 | success notes the bonus for both |
-| p_exposed | text | email, the email, sending the files to himself | 0 | requires p_connection; triggers c_voice3 |
-| p_fullmoon | text | missing people, people going missing, disappearances | 0 | grants c_pen_camera |
-| p_voice_hq | text | ngo headquarters, the headquarters, the ngo | 0 | requires c_ritual2 |
-| p_tanush | text | tanush | 0 | requires p_voice_hq |
-| p_box | text | holy blade, the holy blade, blade | 0 | requires p_tanush |
-| p_tell | choice | Tell them everything | 1 | options [Tell them everything, Stay silent]; requires c_parth_meet |
-| p_police_info | choice | Financial information, recruitment numbers, and domains | 0 | options [Financial information, recruitment numbers, and domains, The names of every member, The hospital's location] |
-| p_police_where | text | ngo headquarters, the archive rooms, archive rooms in ngo headquarters | 0 | requires p_police_info |
-| p_police_video | text | pen camera, the pen camera, pen camera recording | 0 | requires p_police_where; grants c_mask |
-| p_mask_owner | text | the big bad, big bad, leader | 0 | requires c_mask; grants c_mask_owner |
-| p_veer_mask | text | wendigo, wendigo mask, mask | 0 | requires p_mask_owner |
-| p_lua | text | lua pharmaceuticals and selenocide, lua pharmaceuticals, selenocide | 0 | requires p_veer_mask; grants c_lua_files |
-| p_nigeria | text | pamphlet, the pamphlet, ngo pamphlet | 0 | requires p_lua; grants c_article |
-| p_continue | choice | Continue | 0 | options [Continue, Stop]; option_endings {Stop: ending_cult} |
-| p_floor | text | third floor, 3rd floor, third, 3 | 0 | requires c_disguise; grants c_caught |
-| p_refer | text | you, sameer, me | 0 | act8 |
-| p_spiral | text | fibonacci, golden spiral, fibonacci spiral | 0 | act8 |
-| p_years | text | 5, five, 5 years, five years | 0 | act8 |
-| p_rooms | text | security room, the security room | 0 | act8 |
-| p_why | text | to find parth, find parth | 0 | act8; required for complete |
-| p_where | text | dead, parth is dead | 0 | act8; required for complete |
-| p_wrong | text | lose, i would lose, game over | 0 | act8; required for complete |
+| id | kind | answer(s) | behavior |
+| --- | --- | --- | --- |
+| p_morse | text | oc1808 | requires c_diary + c_laptop_locked; grants c_morse; evidence diary_morse + decoder |
+| p_laptop | code | oc1808 | requires c_morse; grants c_laptop |
+| p_cassette | choice | Play it | options [Play it, Put it back]; requires c_backpack; grants c_mixtape |
+| p_drums | text | cassette, the cassette, mixtape | requires c_videos |
+| p_dosa | choice | Eat it | options [Eat it, Skip it]; fail_message "But he bought it ?" |
+| p_voicenote2 | text | park, the park | riddle "Where we would go for a walk…"; grants nothing; gates c_cd |
+| p_cd_mode | choice | Use the cyber cafe | options [Use my laptop, Use the cyber cafe]; continue_on_fail; fail_grants [c_laptop_fried]; grants c_footage |
+| p_ticket | choice | Normal ticket | options [Normal ticket, Backstage ticket]; continue_on_fail; grants c_ticket |
+| p_veer_1 | choice | No, but I have donated some money to them | options [Yes, I'm part of it, No, but I have donated some money to them] |
+| p_veer_2 | choice | Foster scientific temper, empowering the youth | options [Foster scientific temper, empowering the youth, Teach astronomy to tourists] |
+| p_band_name | text | apogee | grants c_apogee |
+| p_registration | email | any email | grants c_workshop_address; placeholder "you@example.com" |
+| p_fare | choice | 230 | options [100, 200, 230, Walk away] |
+| p_ascension | code | ascension | grants c_records |
+| p_hide | choice | Stay hidden | options [Run, Stay hidden]; continue_on_fail; grants c_ambulance |
+| p_delve | choice | Yes | options [Yes, No]; retry on No |
+| p_hospital | choice | Shashdhar Hospital | options [Vyadha Hospital, Shashdhar Hospital, BMC Hospital]; retry |
+| p_security_pin | text | uvct, star | hint 'vykpmng vykpmng nkvvng ____'; success reveals twinkle twinkle little star |
+| p_parth_alive | text | parth | prompt "It couldn't be, could it?"; grants c_parth_alive |
+| p_tablet | code | 1607 | hint ties to 16-07-2020 |
+| p_handbook | choice | Take it | options [Take it, Leave it]; grants c_handbook |
+| p_knowledge | text | handbook, the handbook | grants c_tablet_data |
+| p_tablet_content | choice | Chants, schedules, and holy blade maintenance | options [Chants, schedules, and holy blade maintenance, Lua Pharmaceuticals invoices, The full member list]; grants c_recruits + c_finance |
+| p_connection | text | perigee, apogee, perigee and apogee | success notes the bonus for both |
+| p_exposed | text | email, the email, sending the files to himself | requires p_connection; triggers c_voice3 |
+| p_fullmoon | text | missing people, people going missing, disappearances | grants c_pen_camera |
+| p_voice_hq | text | ngo headquarters, the headquarters, the ngo | requires c_ritual2 |
+| p_tanush | text | tanush | requires p_voice_hq |
+| p_box | text | holy blade, the holy blade, blade | requires p_tanush |
+| p_tell | choice | Tell them everything | options [Tell them everything, Stay silent]; requires c_parth_meet |
+| p_police_info | choice | Financial information, recruitment numbers, and domains | options [Financial information, recruitment numbers, and domains, The names of every member, The hospital's location] |
+| p_police_where | text | ngo headquarters, the archive rooms, archive rooms in ngo headquarters | requires p_police_info |
+| p_police_video | text | pen camera, the pen camera, pen camera recording | requires p_police_where; grants c_mask |
+| p_mask_owner | text | the big bad, big bad, leader | requires c_mask; grants c_mask_owner |
+| p_veer_mask | text | wendigo, wendigo mask, mask | requires p_mask_owner |
+| p_lua | text | lua pharmaceuticals and selenocide, lua pharmaceuticals, selenocide | requires p_veer_mask; grants c_lua_files |
+| p_nigeria | text | pamphlet, the pamphlet, ngo pamphlet | requires p_lua; grants c_article |
+| p_continue | choice | Continue | options [Continue, Stop]; option_endings {Stop: ending_cult} |
+| p_floor | text | third floor, 3rd floor, third, 3 | requires c_disguise; grants c_caught |
+| p_refer | text | you, sameer, me | act8 |
+| p_spiral | text | fibonacci, golden spiral, fibonacci spiral | act8 |
+| p_years | text | 5, five, 5 years, five years | act8 |
+| p_rooms | text | security room, the security room | act8 |
+| p_why | text | to find parth, find parth | act8; required for complete |
+| p_where | text | dead, parth is dead | act8; required for complete |
+| p_wrong | text | lose, i would lose, game over | act8; required for complete |
 
 Normalization: lowercase, strip punctuation, collapse whitespace. `email` kind accepts any
 string matching /^[^@\s]+@[^@\s]+\.[^@\s]+$/. Choice accepts the option string or its
@@ -258,14 +259,19 @@ letter (A/B/C…).
 Keep all existing exports. Add:
 
 ```js
-publicPuzzle(puzzleId) -> { id, kind, prompt, hint, evidence, options, requires, solvedHint? }
-solvePuzzle(puzzlesValue, discoveredValue, puzzleId, answer)
+publicPuzzle(puzzleId) -> { id, kind, prompt, evidence, options, requires, solvedHint? }
+solvePuzzle(puzzlesValue, discoveredValue, puzzleId, answer, { wrongCharges = 0 })
   -> { ok:false, error } | { ok:true, correct, alreadySolved, penalty, message,
        grants:[clueIds], discovered:[...], solvedPuzzles:[...], newlyUnlocked:[...],
        ending?: endingId, optionEndings? }
 canAdvanceAct(solvedPuzzlesValue, discoveredValue, actId) -> { ok, missing: { clues, puzzles } }
 publicEnding(endingId) -> { id, title, body }
 ```
+
+`penalty` is always 0 or the fixed `WRONG_ANSWER_PENALTY` (1): the worker passes the
+per-clue charge count in `wrongCharges` and the engine zeroes the fee at
+`WRONG_ANSWER_PENALTY_CAP` (3). `WRONG_ANSWER_PENALTY`, `WRONG_ANSWER_PENALTY_CAP` and
+`wrongAnswerPenalty(charges)` are exported so the rules can be tested in isolation.
 
 `publicCase()` adds: `puzzles` (answers/option_endings stripped), `endings` (titles only),
 per-act `kicker/rooms/intro/outro/complete`, room `hotspots` with requires + type
@@ -279,14 +285,20 @@ DEFAULT 0`, `ending TEXT`. Keep `db:local` + `seed.sql` working (PANDA-7K2).
 
 - `GET /api/state` adds `solvedPuzzles`, `penalties`, `canAdvance` { ok, missing },
   `ending` (public ending or null), `score` = discovered + solvedPuzzles − penalties.
-- `POST /api/puzzles/:id/solve` body `{ answer }` → engine.solvePuzzle; persists
-  `solved_puzzles`/`penalties`; on `ending` sets `progress.ending` and `solved=1`; response
-  mirrors engine result (never leaks accepted answers).
+- `POST /api/puzzles/:id/solve` body `{ answer }` (empty answers are rejected `bad_answer`)
+  → engine.solvePuzzle; persists `solved_puzzles`/`discovered`, advances the per-clue
+  `flags.wrongAttempts` counter, and atomically adds the penalty
+  (`UPDATE progress SET penalties = penalties + ?`); on `ending` sets `progress.ending`
+  and `solved=1`; response mirrors engine result plus `totalPenalties`, `penaltyCap` and
+  `wrongCharges` (never leaks accepted answers).
+- `POST /api/restart` adds `RESTART_PENALTY` (10) in campaign runs and 0 in practice,
+  resets `flags.wrongAttempts`, and keeps accumulated penalties.
 - `POST /api/act/complete`: for interactive acts, verify `canAdvanceAct`; 409
   `{ error:'act_locked', missing }` when unsatisfied; completing act8 sets
   `ending=ending_main`, `solved=1`. Cinematic acts unchanged.
 - `/api/interrogate`, `/api/accuse`, `/api/clues/:id/discover`, `/api/leaderboard` keep
-  working; leaderboard adds `penalties` and `puzzles_solved` columns.
+  working; leaderboard exposes `penalties`/`puzzles_solved` and orders unsolved teams by
+  score (evidence + puzzles − penalties), then fewest penalties.
 
 ## 6. Client contracts (W6 + W7 + W8)
 
@@ -296,9 +308,10 @@ App (W6):
 - Rooms tabs = `currentAct.rooms ?? state.rooms.map(r=>r.id)` mapped to rooms.
 - Hotspots: `clue` -> existing notice; `puzzle` -> PuzzleModal (pass `state.solvedPuzzles`);
   `travel` -> `setRoomId(to)`; `character` -> existing dialogue.
-- PuzzleModal: prompt, hint, evidence image, text/code/email input OR option buttons;
-  shows success narrative / fail message; penalties toast; solved puzzles show a check in
-  the Notebook.
+- PuzzleModal: prompt, evidence image, text/code/email input OR option buttons;
+  shows success narrative / fail message and the wrong-answer penalty; the
+  "From your notebook" references only appear after a wrong attempt; solved puzzles show a
+  check in the Notebook.
 - Act flow: when act changes and `act.intro` exists, play StoryOverlay once (per act id).
   HUD "Advance act" button visible when `state.canAdvance.ok`, plays `act.outro` then
   `completeAct(act.id)`. `?beat=` dev param and Act 0 behave as today.

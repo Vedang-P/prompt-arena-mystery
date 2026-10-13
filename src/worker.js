@@ -23,6 +23,7 @@ import {
   puzzleGate,
   solvePuzzle,
   unlockedFactList,
+  WRONG_ANSWER_PENALTY_CAP,
 } from './engine.js';
 import { makeLLM } from './llm.js';
 import { createSession, hashCode, readSession } from './auth.js';
@@ -337,7 +338,7 @@ function eventSummary(type, detail) {
     case 'clue_found': return `Found evidence: ${d.name ?? d.clue ?? 'unknown'}`;
     case 'puzzle_solve': return `${d.puzzle ?? 'Puzzle'} — ${d.correct ? 'correct' : 'wrong'}${d.penalty ? ` · +${d.penalty} penalties` : ''}${d.alreadySolved ? ' · repeat' : ''}`;
     case 'accusation': return `Accused ${d.culprit ?? 'someone'} — ${d.correct ? 'correct' : 'rejected'}${d.judge ? ` (${d.judge})` : ''}`;
-    case 'restart': return `Restarted the run (+${d.penalty ?? 0} penalties)`;
+    case 'restart': return d.practice ? 'Restarted the practice run (free)' : `Restarted the run (+${d.penalty ?? 0} penalties)`;
     case 'exit': return `Left fullscreen (${d.kind ?? 'fullscreen'})`;
     case 'exit_return': return `Returned after ${seconds(d.elapsedMs)}s — no strike`;
     case 'exit_strike': return `Late return after ${Math.round((Number(d.elapsedMs) || 0) / 1000)}s — strike ${d.strikes}`;
@@ -593,21 +594,27 @@ app.post('/api/login', async (c) => {
 
 // Reopen the case from Act 0. The run keeps its start time (the event clock
 // never stops) and takes a fixed penalty so a restart cannot beat a clean run.
+// Practice restarts are free, and the per-clue wrong-answer counters reset.
 const RESTART_PENALTY = 10;
 
 app.post('/api/restart', async (c) => {
   const { auth, error } = await requireActiveTeam(c);
   if (error) return error;
-  const penalties = Number(auth.progress.penalties ?? 0) + RESTART_PENALTY;
+  const flags = parseJsonObject(auth.progress.flags);
+  const penalty = flags.practice ? 0 : RESTART_PENALTY;
+  const nextFlags = { ...flags, wrongAttempts: {} };
   await c.env.DB.prepare(
-    "UPDATE progress SET act = 'act0', discovered = '[]', solved_puzzles = '[]', penalties = ?, hints_used = 0, accusation = NULL, ending = NULL, solved = 0, solved_at = NULL WHERE team_id = ?"
+    "UPDATE progress SET act = 'act0', discovered = '[]', solved_puzzles = '[]', penalties = penalties + ?, hints_used = 0, accusation = NULL, ending = NULL, solved = 0, solved_at = NULL, flags = ? WHERE team_id = ?"
   )
-    .bind(penalties, auth.teamId)
+    .bind(penalty, JSON.stringify(nextFlags), auth.teamId)
     .run();
+  const row = await c.env.DB.prepare('SELECT penalties FROM progress WHERE team_id = ?')
+    .bind(auth.teamId)
+    .first();
   await c.env.DB.prepare('INSERT INTO events(team_id, type, detail) VALUES (?,?,?)')
-    .bind(auth.teamId, 'restart', JSON.stringify({ penalty: RESTART_PENALTY }))
+    .bind(auth.teamId, 'restart', JSON.stringify({ penalty, practice: !!flags.practice }))
     .run();
-  return c.json({ ok: true, penalties });
+  return c.json({ ok: true, penalty, penalties: Number(row?.penalties ?? 0) });
 });
 
 app.get('/api/state', async (c) => {
@@ -844,7 +851,8 @@ app.post('/api/puzzles/:id/solve', async (c) => {
   if (error) return error;
   const puzzleId = c.req.param('id');
   const body = await c.req.json().catch(() => ({}));
-  const answer = String(body.answer ?? '');
+  const answer = String(body.answer ?? '').trim();
+  if (!answer) return c.json({ error: 'bad_answer' }, 400);
   const discovered = parseJsonArray(auth.progress.discovered);
   const solvedPuzzles = parseJsonArray(auth.progress.solved_puzzles);
 
@@ -855,7 +863,14 @@ app.post('/api/puzzles/:id/solve', async (c) => {
     return c.json({ error: 'not_ready', missing: gate.missing ?? null }, 403);
   }
 
-  const result = solvePuzzle(auth.progress.solved_puzzles, discovered, puzzleId, answer);
+  // Wrong answers are charged from a per-clue counter (flags.wrongAttempts) so
+  // the fee stops at the cap; the counter advances only after a wrong attempt.
+  const flags = parseJsonObject(auth.progress.flags);
+  const wrongAttempts = { ...(flags.wrongAttempts ?? {}) };
+  const chargedBefore = Number(wrongAttempts[puzzleId] ?? 0);
+  const result = solvePuzzle(auth.progress.solved_puzzles, discovered, puzzleId, answer, {
+    wrongCharges: chargedBefore,
+  });
   if (!result.ok) {
     if (result.error === 'unknown_puzzle') return c.json({ error: 'unknown_puzzle' }, 404);
     if (result.error === 'bad_answer') return c.json({ error: 'bad_answer' }, 400);
@@ -866,7 +881,7 @@ app.post('/api/puzzles/:id/solve', async (c) => {
   }
 
   const penalty = Number(result.penalty ?? 0);
-  const totalPenalties = Number(auth.progress.penalties ?? 0) + penalty;
+  const wrong = !result.correct && !result.alreadySolved;
   const nextSolved = Array.isArray(result.solvedPuzzles) ? result.solvedPuzzles : solvedPuzzles;
   const nextDiscovered = Array.isArray(result.discovered) ? result.discovered : discovered;
 
@@ -880,10 +895,25 @@ app.post('/api/puzzles/:id/solve', async (c) => {
       .bind(JSON.stringify(nextDiscovered), auth.teamId)
       .run();
   }
-  if (penalty > 0) {
-    await c.env.DB.prepare('UPDATE progress SET penalties = ? WHERE team_id = ?')
-      .bind(totalPenalties, auth.teamId)
+  if (wrong) {
+    wrongAttempts[puzzleId] = chargedBefore + 1;
+    flags.wrongAttempts = wrongAttempts;
+    await c.env.DB.prepare('UPDATE progress SET flags = ? WHERE team_id = ?')
+      .bind(JSON.stringify(flags), auth.teamId)
       .run();
+  }
+
+  let totalPenalties = Number(auth.progress.penalties ?? 0);
+  if (penalty > 0) {
+    // Atomic increment: a second tab solving at the same time can never clobber
+    // the total, and the read-back answers with the real stored value.
+    await c.env.DB.prepare('UPDATE progress SET penalties = penalties + ? WHERE team_id = ?')
+      .bind(penalty, auth.teamId)
+      .run();
+    const row = await c.env.DB.prepare('SELECT penalties FROM progress WHERE team_id = ?')
+      .bind(auth.teamId)
+      .first();
+    totalPenalties = Number(row?.penalties ?? totalPenalties + penalty);
   }
 
   const ending = result.ending ?? null;
@@ -907,6 +937,7 @@ app.post('/api/puzzles/:id/solve', async (c) => {
         correct: !!result.correct,
         alreadySolved: !!result.alreadySolved,
         penalty,
+        wrongCharges: wrongAttempts[puzzleId] ?? chargedBefore,
         ending,
       })
     )
@@ -917,6 +948,8 @@ app.post('/api/puzzles/:id/solve', async (c) => {
     alreadySolved: !!result.alreadySolved,
     penalty,
     totalPenalties,
+    penaltyCap: WRONG_ANSWER_PENALTY_CAP,
+    wrongCharges: wrongAttempts[puzzleId] ?? chargedBefore,
     message: result.message ?? '',
     grants: result.grants ?? [],
     newlyUnlocked: result.newlyUnlocked ?? [],
@@ -1127,7 +1160,8 @@ app.get('/api/leaderboard', async (c) => {
      ${isTruthy(c.env.EVENT_MODE) ? `AND COALESCE(p.flags, '{}') LIKE '%"eventEntered":true%'` : ''}
      ORDER BY p.solved_at IS NULL, p.solved_at ASC,
               (json_array_length(COALESCE(p.solved_puzzles, '[]')) +
-               json_array_length(COALESCE(p.discovered, '[]'))) DESC,
+               json_array_length(COALESCE(p.discovered, '[]')) -
+               COALESCE(p.penalties, 0)) DESC,
               COALESCE(p.penalties, 0) ASC, p.hints_used ASC`
   ).all();
   const now = Date.now();
@@ -1135,7 +1169,9 @@ app.get('/api/leaderboard', async (c) => {
   const teams = rows.results.filter(row => !isTruthy(c.env.EVENT_MODE) || (!/^(guest:|practice:|google:)/.test(row.code_hash) && row.name !== 'TEAM-042'))
     .map(({ code_hash, ...row }) => ({ ...row, actTitle: `${caseData.acts.find(a=>a.id===row.act)?.kicker ?? row.act} · ${caseData.acts.find(a=>a.id===row.act)?.title ?? ''}`,
       elapsedSeconds: row.act === 'act0' || !row.started_at ? 0 : Math.max(0, Math.floor(((timestamp(row.solved_at) ?? now) - timestamp(row.started_at)) / 1000)) }));
-  teams.sort((a,b) => Number(b.solved)-Number(a.solved) || Number(b.act?.replace('act',''))-Number(a.act?.replace('act','')) || a.elapsedSeconds-b.elapsedSeconds || a.name.localeCompare(b.name));
+  // The SQL already orders: solved teams by earliest solve, then every other
+  // team by score (evidence + puzzles − penalties), then fewest penalties.
+  // Do not re-sort here or the penalty tiebreak silently disappears.
   c.header('Cache-Control', 'public, max-age=0, s-maxage=5');
   return c.json({ teams, serverTime: new Date(now).toISOString() });
 });
@@ -1565,7 +1601,7 @@ app.get('/api/admin/export', async (c) => {
       (a, b) =>
         Number(b.solved) - Number(a.solved) ||
         (Date.parse(a.solvedAt) || Infinity) - (Date.parse(b.solvedAt) || Infinity) ||
-        b.discovered + b.solvedPuzzles - (a.discovered + a.solvedPuzzles) ||
+        b.discovered + b.solvedPuzzles - b.penalties - (a.discovered + a.solvedPuzzles - a.penalties) ||
         a.penalties - b.penalties ||
         a.name.localeCompare(b.name)
     );
@@ -1858,13 +1894,15 @@ app.post('/api/admin/teams/:id/reset', async (c) => {
   if (ctx.error) return ctx.error;
   const id = Number(c.req.param('id'));
   if (!Number.isInteger(id) || id <= 0) return c.json({ error: 'unknown_team' }, 404);
-  const row = await ctx.env.DB.prepare('SELECT t.id, COALESCE(p.penalties, 0) AS penalties FROM teams t LEFT JOIN progress p ON p.team_id = t.id WHERE t.id = ?').bind(id).first();
+  const row = await ctx.env.DB.prepare('SELECT t.id, COALESCE(p.penalties, 0) AS penalties, p.flags FROM teams t LEFT JOIN progress p ON p.team_id = t.id WHERE t.id = ?').bind(id).first();
   if (!row) return c.json({ error: 'unknown_team' }, 404);
   const addPenalty = Math.max(0, Math.trunc(Number(ctx.body.penalty ?? 0) || 0));
-  const penalties = Number(row.penalties ?? 0) + addPenalty;
+  const nextFlags = { ...parseJsonObject(row.flags), wrongAttempts: {} };
   await ctx.env.DB.prepare(
-    "UPDATE progress SET act = 'act0', discovered = '[]', solved_puzzles = '[]', penalties = ?, hints_used = 0, accusation = NULL, ending = NULL, solved = 0, solved_at = NULL WHERE team_id = ?"
-  ).bind(penalties, id).run();
+    "UPDATE progress SET act = 'act0', discovered = '[]', solved_puzzles = '[]', penalties = penalties + ?, hints_used = 0, accusation = NULL, ending = NULL, solved = 0, solved_at = NULL, flags = ? WHERE team_id = ?"
+  ).bind(addPenalty, JSON.stringify(nextFlags), id).run();
+  const after = await ctx.env.DB.prepare('SELECT penalties FROM progress WHERE team_id = ?').bind(id).first();
+  const penalties = Number(after?.penalties ?? Number(row.penalties ?? 0) + addPenalty);
   await ctx.env.DB.prepare('INSERT INTO events(team_id, type, detail) VALUES (?,?,?)')
     .bind(id, 'admin_reset', JSON.stringify({ penalty: addPenalty })).run();
   await audit(ctx.env, 'reset', id, { penalty: addPenalty });

@@ -706,11 +706,17 @@ export default function App() {
     setRestartOpen(false);
     setLoginBusy(true);
     try {
-      await restartRun();
+      const restarted = await restartRun();
       clearIntros(); setStory(null); setRoomId(null); setChats({}); setEvidence(null);
       setActiveChar(null); setPuzzleSpot(null); setWon(null); setAccuseResult(null); setPhase('game');
       await loadGame('game');
-      setNotice({ kicker: 'Case reopened', title: 'A fresh start', body: 'Ten penalties added. The clock has not stopped.' });
+      setNotice({
+        kicker: 'Case reopened',
+        title: 'A fresh start',
+        body: restarted?.penalty
+          ? `${restarted.penalty} penalties added. The clock has not stopped.`
+          : 'Practice restart — no penalty. The clock keeps running.',
+      });
     } catch {
       setNotice({ title: 'Could not restart', body: 'Please try again.' });
     } finally {

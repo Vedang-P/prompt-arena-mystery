@@ -15,6 +15,7 @@
     "test:scenes": "node scripts/measure-actors.mjs && node scripts/test-scene-staging.mjs",
     "test:assets": "node scripts/test-environment-assets.mjs",
     "test:campaign": "npm run build:case && node scripts/test-campaign.mjs",
+    "test:penalties": "npm run build:case && node scripts/test-penalties.mjs",
     "test:event": "npm run build:case && node scripts/test-event.mjs",
     "test:admin": "npm run build:case && node scripts/test-admin.mjs",
     "test:admin-ui": "node scripts/test-admin-ui.mjs",

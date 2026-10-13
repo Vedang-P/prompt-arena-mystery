@@ -242,7 +242,7 @@ export function RestartConfirm({ onClose, onConfirm, busy }) {
       </header>
       <div className="case-reading-scroll">
         <p className="case-reading-text">Everything collected so far is cleared — evidence, resolved leads, the accusation — and the story begins again at the prologue.</p>
-        <p className="case-reading-text">A restart adds <strong>10 penalties</strong> to your score, and the event clock keeps running. The notebook cannot be recovered.</p>
+        <p className="case-reading-text">A restart adds <strong>10 penalties</strong> to your score in an event run (practice restarts are free), and the event clock keeps running. The notebook cannot be recovered.</p>
       </div>
       <footer className="case-panel-foot">
         <p>This cannot be undone</p>

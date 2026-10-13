@@ -35,7 +35,16 @@ export default function CinematicStory({ story, act, characters, onDone, busy, i
     },80);
     return()=>clearInterval(timer);
   },[line,last,readyRoom,sceneReadyKey]);
-  const advance = () => { if (busy) return; if (!last) setIndex((i) => i + 1); else onDone(); };
+  // Rapid clicks (or a held Space/Enter) must not skip past a line before it
+  // has even been on screen; one advance per cooldown window.
+  const advanceLock=useRef(0);
+  const advance = () => {
+    if (busy) return;
+    const now=performance.now();
+    if (now-advanceLock.current<450) return;
+    advanceLock.current=now;
+    if (!last) setIndex((i) => i + 1); else onDone();
+  };
   useEffect(() => {
     const key = (e) => { if (!['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA', 'A'].includes(e.target.tagName) && (e.code === 'Space' || e.code === 'Enter')) { e.preventDefault(); advance(); } };
     window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key);

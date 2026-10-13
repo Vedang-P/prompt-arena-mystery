@@ -40,7 +40,7 @@ Three failure modes this project is explicitly designed against:
 | D1 | **Web app, not a downloadable binary** | The LLM is core gameplay and cannot ship in a bundle; BYO laptops cannot run a local model; install/update friction at the venue is unacceptable |
 | D2 | **Cloudflare Workers + D1 + Hono + React/Vite** | Global CDN for 3D assets, native SSE streaming, D1 is plenty of database for 70 teams, no server ops on event day |
 | D3 | **3D rooms + click-to-talk hotspots** (not free-roam) | Vaudeville feel at a fraction of the engineering/art cost; interaction is the game |
-| D4 | **Detective-first scoring**: correct solve, then earliest solve time, then fewest hints | Simple to explain, hard to cheese |
+| D4 | **Detective-first scoring**: solved teams by earliest solve, everyone else by score (evidence + puzzles − penalties), then fewest penalties; every wrong answer costs a flat 1 penalty, capped at 3 per puzzle | Simple to explain, hard to cheese |
 | D5 | **Gated per-NPC knowledge, server-authoritative** | Prompt injection is structurally useless: an NPC only *has* facts the team has unlocked; the solution never reaches the client or a locked prompt |
 | D6 | **Single paid LLM provider** behind our own provider adapter (retries, failover, streaming, spend tracking) | Free tiers rate-limit under event load; event budget is ~$10-40; adapter stays model-agnostic so the provider can be swapped after the bake-off |
 | D7 | **Text input v1; voice later** | Typing on a shared laptop fits 3-person teams; push-to-talk Whisper is a stretch goal |

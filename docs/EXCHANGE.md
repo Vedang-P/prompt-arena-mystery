@@ -302,12 +302,17 @@ POST /api/accuse
 Projector polls every 3s (`GET /api/leaderboard`):
 ```sql
 SELECT t.name, p.solved, p.solved_at,
-       json_array_length(p.discovered) AS clues_found, p.hints_used
+       json_array_length(p.discovered) AS clues_found,
+       json_array_length(p.solved_puzzles) AS puzzles_solved,
+       COALESCE(p.penalties, 0) AS penalties
 FROM progress p JOIN teams t ON t.id = p.team_id
-ORDER BY p.solved_at IS NULL, p.solved_at ASC, clues_found DESC, p.hints_used ASC;
+ORDER BY p.solved_at IS NULL, p.solved_at ASC,
+         json_array_length(p.solved_puzzles) + json_array_length(p.discovered) - COALESCE(p.penalties, 0) DESC,
+         COALESCE(p.penalties, 0) ASC;
 ```
-Solved teams rank by first correct submission; everyone else by progress. The same endpoint
-feeds each team's own screen.
+Solved teams rank by first correct submission; everyone else by score, then fewest
+penalties (1 per wrong answer, capped at 3 per puzzle; a campaign restart adds 10). The
+same endpoint feeds each team's own screen.
 
 ---
 

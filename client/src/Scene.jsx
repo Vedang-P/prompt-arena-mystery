@@ -6,8 +6,10 @@ import DemonMask from './DemonMask.jsx';
 import {seatContact} from './SceneStaging.js';
 import Actor from './Actor.jsx';
 import { useSettings } from './Settings.jsx';
-import { SceneLoading, SceneWatchdog, WorldBoundary, WorldStopped, SceneReady } from './WorldBoundary.jsx';
+import { SceneLoading, SceneWatchdog, WorldBoundary, SceneReady, AssetBoundary } from './WorldBoundary.jsx';
 import PerformanceGuard from './PerformanceGuard.jsx';
+import { RoomFallback } from './StageFallback.jsx';
+import { webglSupported, resetWebglProbe } from './webgl.js';
 import { useCallback, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import {
@@ -121,7 +123,13 @@ function labelChip({ x, ...rest }) {
 
 // ---------- primitives ----------
 
-function GLTFModel({
+// A failed model must not take the room down with it: the boundary sits above
+// the suspending loader so a rejected asset renders nothing in its place.
+function GLTFModel(props) {
+  return <AssetBoundary fallback={null}><GLTFModelInner {...props} /></AssetBoundary>;
+}
+
+function GLTFModelInner({
   url,
   position = [0, 0, 0],
   rotation = [0, 0, 0],
@@ -449,7 +457,7 @@ function AnchoredHotspot({hotspots,position,hot,avoidLabelOverlap=false}) {
     }
   });
   const open=h=>h.type==='puzzle'?hot.onPuzzle?.(h):h.type==='travel'?hot.onTravel?.(h):hot.onClue?.(h);
-  return <group position={position}><Html position={[0,.28,0]} center zIndexRange={[30,0]}><div className="object-actions" style={orbitShiftY?{transform:`translateY(${orbitShiftY}px)`}:undefined}>{hotspots.map(h=>{const solved=(hot.solvedPuzzles??[]).includes(h.puzzle),found=(hot.state.discovered??[]).includes(h.clue);return <button key={h.id} className="object-anchor" disabled={solved} onClick={()=>open(h)}>{h.label}{found||solved?' ✓':''}</button>;})}</div></Html><mesh onClick={e=>{e.stopPropagation();open(hotspots[0]);}}><sphereGeometry args={[.045,12,8]}/><meshStandardMaterial color="#d4b67c" emissive="#b39256" emissiveIntensity={.4}/></mesh></group>;
+  return <group position={position}><Html position={[0,.28,0]} center zIndexRange={[30,0]}><div className="object-actions" style={orbitShiftY?{transform:`translateY(${orbitShiftY}px)`}:undefined}>{hotspots.map(h=>{const solved=(hot.solvedPuzzles??[]).includes(h.puzzle),found=(hot.state.discovered??[]).includes(h.clue);return <button key={h.id} className={`object-anchor${found||solved?' done':''}`} disabled={solved} onClick={()=>open(h)}>{h.label}{found||solved?' ✓':''}</button>;})}</div></Html><mesh onClick={e=>{e.stopPropagation();open(hotspots[0]);}}><sphereGeometry args={[.045,12,8]}/><meshStandardMaterial color="#d4b67c" emissive="#b39256" emissiveIntensity={.4}/></mesh></group>;
 }
 
 // ---------- room shell ----------
@@ -682,35 +690,29 @@ function Column({ position, height = 5, radius = 0.34 }) {
 function Emblem({ position, radius = 1.4 }) {
   return (
     <group position={position}>
-      <mesh>
-        <torusGeometry args={[radius, 0.07, 12, 48]} />
-        <meshStandardMaterial
-          color="#8a6b2f"
-          metalness={0.85}
-          roughness={0.35}
-          emissive="#8a6b2f"
-          emissiveIntensity={0.25}
-        />
-      </mesh>
-      <mesh>
-        <circleGeometry args={[radius * 0.92, 48]} />
-        <meshStandardMaterial color="#241d14" roughness={0.9} side={THREE.DoubleSide} />
-      </mesh>
-      <mesh position={[0, 0, 0.03]}>
-        <circleGeometry args={[radius * 0.5, 32]} />
-        <meshStandardMaterial
-          color="#c9a24a"
-          emissive="#8a6b2f"
-          emissiveIntensity={0.5}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
+      <Picture src="/assets/signs/perigee_emblem.jpg" width={radius * 1.9} height={radius * 1.425} />
       <pointLight position={[0, 0, 1.2]} color="#ffd98a" intensity={0.8} distance={7} decay={0} />
     </group>
   );
 }
 
-function Picture({ src, position, rotation = [0, 0, 0], width = 1.2, height = 1.6 }) {
+// A missing or corrupt sign image keeps its frame and loses only the picture.
+function Picture(props) {
+  return <AssetBoundary fallback={<PictureFrame {...props} />}><PictureImage {...props} /></AssetBoundary>;
+}
+
+function PictureFrame({ position, rotation = [0, 0, 0], width = 1.2, height = 1.6 }) {
+  return (
+    <group position={position} rotation={rotation}>
+      <mesh castShadow>
+        <boxGeometry args={[width + 0.12, height + 0.12, 0.05]} />
+        <meshStandardMaterial color="#2a2018" roughness={0.8} />
+      </mesh>
+    </group>
+  );
+}
+
+function PictureImage({ src, position, rotation = [0, 0, 0], width = 1.2, height = 1.6 }) {
   const tex = useTexture(src);
   tex.colorSpace = THREE.SRGBColorSpace;
   return (
@@ -862,9 +864,9 @@ function PoliceStationRoom({ room, hot }) {
   return <group>
     <Shell width={12} depth={10} height={3.4} tint="#8fa9b5" painted/>
     <Floor width={12} depth={10} repeat={[6,5]} color="#c6ced0" tiled/>
-    <Picture src="/assets/signs/police.svg" position={[0,2.45,-4.94]} width={3.7} height={.82}/>
-    <Picture src="/assets/signs/noticeboard.svg" position={[-3.8,1.85,-4.92]} width={1.65} height={1.2}/>
-    <Picture src="/assets/signs/duty.svg" position={[3.8,2.5,-4.92]} width={1.65} height={.9}/>
+    <Picture src="/assets/signs/police.jpg" position={[0,2.45,-4.94]} width={3.7} height={1.2}/>
+    <Picture src="/assets/signs/noticeboard.jpg" position={[-3.8,1.85,-4.92]} width={1.65} height={1.2}/>
+    <Picture src="/assets/signs/duty.jpg" position={[3.8,2.5,-4.92]} width={1.65} height={.9}/>
     <Prop model="desk.glb" position={POLICE.desk} tint="#75858d" />
     <Prop model="chairDesk.glb" position={POLICE.chair} tint="#344c5a" />
     <FileStack position={[-.43,DESK_TOP,-1.05]} />
@@ -992,10 +994,16 @@ function AbandonedFieldRoom({ room, hot }) {
 }
 
 function CyberCafeRoom({room,hot,paused=false}) {
+ // Act 2 starts at Ramu's Dosa Corner side of the shop: the workstations, the
+ // cassette player and the cyber-café dressing would tip the laptop-vs-cafe
+ // choice before Sameer makes it, so they only appear after that decision
+ // (or on the fried-laptop path, where he has to come back to use a machine).
+ const state=hot?.state??{};
+ const cyberVisible=state.act!=='act2'||(state.solvedPuzzles??[]).includes('p_cd_mode')||(state.discovered??[]).includes('c_laptop_fried');
  return <group>
   <Shell width={13} depth={11} height={3.4} tint="#92958b" painted/>
   <Floor width={13} depth={11} repeat={[6,5]} color="#aab5ac" tiled/>
-  {[-3.1,-.35,2.4].map((x,i)=><ComputerStation key={x} position={[x,0,-3.45]} number={i+1} deskTint={['#8a6446','#73563d','#92704e'][i]}/>)}
+  {cyberVisible&&[-3.1,-.35,2.4].map((x,i)=><ComputerStation key={x} position={[x,0,-3.45]} number={i+1} deskTint={['#8a6446','#73563d','#92704e'][i]}/>)}
   <DetailProp asset="counter" position={[-3.9,0,2]} rotation={[0,Math.PI/2,0]}/>
   <DetailProp asset="CashRegister_01" position={[-3.8,1.1275,1.05]} scale={.6} rotation={[0,Math.PI/2,0]}/>
   <DetailProp asset="vintage_electric_kettle" position={[-3.9,1.1275,2.7]} scale={.85}/>
@@ -1010,7 +1018,7 @@ function CyberCafeRoom({room,hot,paused=false}) {
   <WallSign position={[3.2,2.35,5.42]} width={1.2} height={.42} title="CAFÉ SEATING" lines={['PLEASE TAKE A TABLE']}/>
   {/* Manager's workstation: the desk opens towards the room (-x) so the chair
       tucks into the knee-hole; every item is placed in the desk's own frame. */}
-  <group position={[4.7,0,-2.3]} rotation={[0,-Math.PI/2,0]}>
+  {cyberVisible&&<group position={[4.7,0,-2.3]} rotation={[0,-Math.PI/2,0]}>
     <DetailProp asset="metal_office_desk"/>
     <DetailProp asset="monitor" position={[-.35,.7875,-.18]}/>
     <DetailProp asset="keyboard" position={[-.35,.7875,.18]}/>
@@ -1020,13 +1028,13 @@ function CyberCafeRoom({room,hot,paused=false}) {
     <DetailProp asset="portable_cassette_player" position={[-.8,.7875,0]} scale={1.4}/>
     <DetailProp asset="binder_notebook" position={[.1,.7875,.02]} scale={.65}/>
     <DetailProp asset="office_chair" position={[0,0,.78]} rotation={[0,Math.PI,0]} height={1.168*.49035/.618}/>
-  </group>
-  <ShelfContents position={[5.65,0,1.3]} rotation={[0,-Math.PI/2,0]}/>
+  </group>}
+  {cyberVisible&&<ShelfContents position={[5.65,0,1.3]} rotation={[0,-Math.PI/2,0]}/>}
   <DetailProp asset="cardboard_box_01" position={[5.5,0,3.2]}/>
   <DetailProp asset="cardboard_box_01" position={[5.5,.342,3.2]} scale={.8}/>
-  <WallSign position={[0,2.55,-5.42]} width={4.4} height={.85} title="RAMU'S CYBER CAFÉ" lines={['INTERNET • PRINTING • SCANNING']}/>
+  {cyberVisible&&<WallSign position={[0,2.55,-5.42]} width={4.4} height={.85} title="RAMU'S CYBER CAFÉ" lines={['INTERNET • PRINTING • SCANNING']}/>}
   <WallSign position={[-6.42,2,2]} rotation={[0,Math.PI/2,0]} width={2} height={1.05} title="DOSA CORNER" lines={['PLAIN DOSA   ₹40','MASALA DOSA   ₹60']}/>
-  <WallSign position={[5,2.4,-5.42]} width={1.3} height={.65} title="HOUSE RULES" lines={['SAVE YOUR WORK','ASK RAMU FOR HELP']}/>
+  {cyberVisible&&<WallSign position={[5,2.4,-5.42]} width={1.3} height={.65} title="HOUSE RULES" lines={['SAVE YOUR WORK','ASK RAMU FOR HELP']}/>}
   <WallSign position={[-3.5,2.5,-5.42]} width={1.55} height={.58} title="RAMU'S DOSA CORNER" lines={['FRESH BATTER • FILTER COFFEE']}/>
   <DetailProp asset="wall_clock" position={[-4.8,2.55,-5.4]} height={.4}/>
   <CeilingFan position={[-1.9,3.15,-2]} paused={paused}/><CeilingFan position={[2.7,3.15,-2]} paused={paused}/>
@@ -1034,7 +1042,7 @@ function CyberCafeRoom({room,hot,paused=false}) {
   <Window position={[-6.44,1.8,-1.2]} rotation={[0,Math.PI/2,0]} width={2.2} height={1.6} moon={false}/>
   <DetailProp asset="potted_plant_02" position={[-5.5,0,4.3]} height={1.1}/>
   {/* The phone line leaves the wall jack, crosses the floor and climbs to the router. */}
-  <Cable points={[[6.42,.85,-1.9],[6.42,.12,-1.9],[5.6,.055,-2.0],[5.2,.055,-2.1],[5.16,.5,-2.2],[5.04,.9,-2.22]]}/>
+  {cyberVisible&&<Cable points={[[6.42,.85,-1.9],[6.42,.12,-1.9],[5.6,.055,-2.0],[5.2,.055,-2.1],[5.16,.5,-2.2],[5.04,.9,-2.22]]}/>}
   <pointLight position={[0,2.25,-1.7]} color="#f1d8b8" intensity={5} distance={12}/>
   <pointLight position={[-4,2.1,2]} color="#ffd09a" intensity={7} distance={6}/>
   <pointLight position={[2.3,2.2,2.7]} color="#ffc47d" intensity={4} distance={6}/>
@@ -1561,22 +1569,35 @@ export default function Scene({
   );
 
   const [sceneStopped, setSceneStopped] = useState(null);
-  useEffect(() => { setSceneStopped(null); }, [room.id]);
+  const [sceneReady, setSceneReady] = useState(false);
+  const [glSupported, setGlSupported] = useState(webglSupported);
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => { setSceneStopped(null); setSceneReady(false); }, [room.id]);
 
   const bounds = ROOM_BOUNDS[room.id] ?? { x: 6.5, zMin: -5.5, zMax: 9 };
   const bg = room.id==='abandoned_field' ? '#26394e' : isOutdoor ? '#05070d' : '#080604';
 
   const { quality } = useSettings();
+  const handleReady = () => { setSceneReady(true); onReady?.(); };
+  // Whatever happens to the 3D view — no WebGL at all, a rejected context or a
+  // lost one mid-exploration — the room stays playable on the storyboard stage
+  // with the same hotspots, so the case never dead-ends on a device.
+  const retry3d = () => { resetWebglProbe(); setSceneStopped(null); setSceneReady(false); setGlSupported(webglSupported()); setAttempt((a) => a + 1); };
+  const storyboard = <RoomFallback room={room} roomId={room.id} state={state} solvedPuzzles={solvedPuzzles} onCharacter={onCharacter} onClue={onClue} onPuzzle={onPuzzle} onTravel={onTravel}
+    notice={sceneStopped ? (sceneStopped === 'webgl_lost' ? '3D graphics stopped — playing the storyboard.' : '3D view stalled — playing the storyboard.') : null}
+    onRetry={retry3d} />;
+  if (!glSupported) return storyboard;
   return (
-    <WorldBoundary resetKey={room.id}>
-      {sceneStopped ? <WorldStopped reason={sceneStopped} /> : (
-      <Canvas shadows={quality !== 'low' ? 'percentage' : false}
+    <WorldBoundary resetKey={`${room.id}:${attempt}`} fallback={storyboard}>
+      {sceneStopped ? storyboard : (
+      <div className="room-world">
+      <Canvas key={attempt} shadows={quality !== 'low' ? 'percentage' : false}
         dpr={quality === 'high' ? [1, 1.65] : quality === 'medium' ? [1, 1] : [0.6, 0.8]}
         gl={{ antialias: quality !== 'low', powerPreference: 'high-performance' }}
         camera={{ position: view.at, fov: view.fov }}>
         <color attach="background" args={[bg]} />
         <fog attach="fog" args={room.id==='abandoned_field'?[bg,12,50]:isOutdoor ? [bg, 25, 65] : [bg, 22, 42]} />
-        <Suspense fallback={<SceneLoading />}>
+        <Suspense fallback={null}>
           <RoomLighting roomId={room.id} quality={quality} />
           <RoomEnvironment roomId={room.id} room={room} hot={hot} />
           <OrbitControls makeDefault enablePan enableDamping dampingFactor={0.08}
@@ -1585,7 +1606,7 @@ export default function Scene({
           <CameraRig key={room.id} focusInfo={focusInfo} view={view} />
           <ExploreKeys disabled={!!focus} bounds={bounds} />
           <ListenerPosition />
-          <SceneReady onReady={onReady} onMetrics={onMetrics}/>
+          <SceneReady onReady={handleReady} onMetrics={onMetrics}/>
         </Suspense>
         <SceneWatchdog onStopped={setSceneStopped} />
         <PerformanceGuard />
@@ -1594,6 +1615,8 @@ export default function Scene({
           <Vignette offset={0.3} darkness={room.id==='abandoned_field'?.16:.35} />
         </EffectComposer>}
       </Canvas>
+      {!sceneReady && <SceneLoading />}
+      </div>
       )}
     </WorldBoundary>
   );

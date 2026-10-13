@@ -171,8 +171,8 @@ for (const pz of c.puzzles ?? []) {
   for (const key of ['evidence', 'success', 'fail_message']) {
     if (pz[key] !== undefined && !isStr(pz[key])) err(`${where}: ${key} must be a non-empty string`);
   }
-  if (pz.penalty !== undefined && !(Number.isFinite(pz.penalty) && pz.penalty >= 0)) {
-    err(`${where}: penalty must be a non-negative number`);
+  if (pz.penalty !== undefined) {
+    err(`${where}: per-puzzle penalty is not supported — every wrong answer costs 1 penalty (cap 3 per puzzle)`);
   }
   if (pz.kind === 'choice') {
     const optionsOk =

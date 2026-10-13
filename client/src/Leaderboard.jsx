@@ -22,9 +22,9 @@ export default function Leaderboard({ team, onClose }) {
         <button className="case-close" onClick={onClose} aria-label="Close leaderboard">×</button>
       </header>
       {(error||!data)&&<p className="case-note" role="status">{error?'Connection interrupted. Showing the last update; reconnecting…':'Loading teams…'}</p>}
-      {data&&<div className="leaderboard-scroll"><table><thead><tr><th>Rank</th><th>Team</th><th>Latest act</th><th>Clues</th><th>Puzzles</th><th>Time</th></tr></thead><tbody>{data.teams.map((t,i)=>{
+      {data&&<div className="leaderboard-scroll"><table><thead><tr><th>Rank</th><th>Team</th><th>Latest act</th><th>Clues</th><th>Puzzles</th><th>Penalties</th><th>Time</th></tr></thead><tbody>{data.teams.map((t,i)=>{
         const elapsed=t.elapsedSeconds+(!t.solved&&t.act!=='act0'?Math.max(0,(now-data.received)/1000):0);
-        return <tr key={t.name} className={t.name===team?'your-team':''}><td>{i+1}</td><th scope="row">{t.name}{t.name===team&&<small>You</small>}</th><td>{t.solved?'Case complete':t.act==='act0'?'Prologue':`${t.actTitle??t.act}`}</td><td className="count">{t.clues_found??0}</td><td className="count">{t.puzzles_solved??0}</td><td className="timer">{t.act==='act0'?'Not started':formatTime(elapsed)}</td></tr>;
+        return <tr key={t.name} className={t.name===team?'your-team':''}><td>{i+1}</td><th scope="row">{t.name}{t.name===team&&<small>You</small>}</th><td>{t.solved?'Case complete':t.act==='act0'?'Prologue':`${t.actTitle??t.act}`}</td><td className="count">{t.clues_found??0}</td><td className="count">{t.puzzles_solved??0}</td><td className="count">{t.penalties??0}</td><td className="timer">{t.act==='act0'?'Not started':formatTime(elapsed)}</td></tr>;
       })}</tbody></table>{data.teams.length===0&&<p className="case-muted">No teams have entered yet.</p>}</div>}
       <footer className="case-panel-foot">
         <p>{data?`${data.teams.length} team${data.teams.length===1?'':'s'} in play`:'—'}</p>

@@ -152,7 +152,18 @@ function answerMatches(puzzle, raw) {
 const grantedFrom = (ids, before) =>
   [...new Set(ids ?? [])].filter((id) => !before.has(id));
 
-export function solvePuzzle(puzzlesValue, discoveredValue, puzzleId, answer) {
+// Penalties: a wrong answer costs the same small fee anywhere in the case. A
+// single clue can charge at most WRONG_ANSWER_PENALTY_CAP times, so a stuck
+// player is never farmed for unlimited points; correct answers, repeat guesses
+// on an already solved clue, and practice restarts are free.
+export const WRONG_ANSWER_PENALTY = 1;
+export const WRONG_ANSWER_PENALTY_CAP = 3;
+
+/** The fee for a wrong answer, given how many times this clue has already charged. */
+export const wrongAnswerPenalty = (chargesAlready = 0) =>
+  chargesAlready >= WRONG_ANSWER_PENALTY_CAP ? 0 : WRONG_ANSWER_PENALTY;
+
+export function solvePuzzle(puzzlesValue, discoveredValue, puzzleId, answer, { wrongCharges = 0 } = {}) {
   const puzzle = getPuzzle(puzzleId);
   if (!puzzle) return { ok: false, error: 'unknown_puzzle' };
 
@@ -212,7 +223,7 @@ export function solvePuzzle(puzzlesValue, discoveredValue, puzzleId, answer) {
     return settle(true, 0, puzzle.success ?? null, puzzle.grants);
   }
 
-  const penalty = Number.isFinite(puzzle.penalty) ? puzzle.penalty : 0;
+  const penalty = wrongAnswerPenalty(wrongCharges);
   if (puzzle.continue_on_fail) {
     // A wrong answer that the story continues through may still grant its own
     // fail-only clue, but never the success grants — that would skip the plot.

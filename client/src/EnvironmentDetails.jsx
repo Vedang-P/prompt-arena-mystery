@@ -1,11 +1,16 @@
-import {useEffect,useLayoutEffect,useMemo,useRef} from 'react';
+import {Component,Suspense,useEffect,useLayoutEffect,useMemo,useRef} from 'react';
 import {useGLTF,useTexture} from '@react-three/drei';
 import {Box3,Vector3,RepeatWrapping,SRGBColorSpace,CanvasTexture,CatmullRomCurve3} from 'three';
 import {scatterInstanceMatrix} from './InstanceTransform.js';
 import {useSettings} from './Settings.jsx';
+import {AssetBoundary} from './WorldBoundary.jsx';
+
+// One broken model must not blank the room: each prop is isolated so a missing
+// or corrupt asset renders nothing while the rest of the scene carries on.
+export function DetailProp(props){return <AssetBoundary fallback={null}><DetailPropMesh {...props}/></AssetBoundary>;}
 
 // Original licensed meshes. Centre/ground each selected modular part independently.
-export function DetailProp({asset,part,position=[0,0,0],rotation=[0,0,0],scale=1,height,tint,alphaMap,castShadow=true,receiveShadow=true}){
+function DetailPropMesh({asset,part,position=[0,0,0],rotation=[0,0,0],scale=1,height,tint,alphaMap,castShadow=true,receiveShadow=true}){
  const {scene}=useGLTF(`/assets/detail/${asset}.glb`);
  const model=useMemo(()=>{
   const original=part?scene.getObjectByName(part):scene;
@@ -33,7 +38,9 @@ export function DetailProp({asset,part,position=[0,0,0],rotation=[0,0,0],scale=1
 
 // Repeated field plants share geometry and material; one instanced draw per
 // species keeps the overgrowth without paying for a draw call per tuft.
-export function InstancedDetailScatter({asset,part,placements,castShadow=false,receiveShadow=true}){
+export function InstancedDetailScatter(props){return <AssetBoundary fallback={null}><InstancedScatterMesh {...props}/></AssetBoundary>;}
+
+function InstancedScatterMesh({asset,part,placements,castShadow=false,receiveShadow=true}){
  const {scene}=useGLTF(`/assets/detail/${asset}.glb`);
  const ref=useRef();
  const source=useMemo(()=>{
@@ -75,7 +82,82 @@ export function TerrainSurface({material='aerial_grass_rock',width=48,depth=48,p
  return <mesh position={position} rotation-x={-Math.PI/2} receiveShadow><planeGeometry args={[width,depth]}/><meshStandardMaterial map={textures[0]} normalMap={textures[1]} roughnessMap={textures[2]} normalScale={[.45,.45]} color={color} alphaMap={mask} transparent={trail} depthWrite={!trail}/></mesh>;
 }
 
-export function WallSign({position,rotation=[0,0,0],width=1.4,height=.5,title,lines=[],background='#182d30',ink='#e2c78e'}){
+// Generated board art (public/assets/signs) keyed by the exact text the boards
+// draw. Boards without art, and every run at low quality, keep the canvas
+// version so the extra textures are only fetched when they can be shown.
+const SIGN_FILES={
+ "RAMU'S CYBER CAFÉ|INTERNET • PRINTING • SCANNING":'/assets/signs/sign_cyber_cafe.jpg',
+ "DOSA CORNER|PLAIN DOSA   ₹40|MASALA DOSA   ₹60":'/assets/signs/sign_dosa_menu.jpg',
+ "HOUSE RULES|SAVE YOUR WORK|ASK RAMU FOR HELP":'/assets/signs/sign_house_rules.jpg',
+ "RAMU'S DOSA CORNER|FRESH BATTER • FILTER COFFEE":'/assets/signs/sign_dosa_batter.jpg',
+ "CAFÉ SEATING|PLEASE TAKE A TABLE":'/assets/signs/sign_cafe_seating.jpg',
+ "RAMU / 01|INTERNET • PRINT • SCAN":'/assets/signs/sign_ramu_plaque_01.jpg',
+ "RAMU / 02|INTERNET • PRINT • SCAN":'/assets/signs/sign_ramu_plaque_02.jpg',
+ "RAMU / 03|INTERNET • PRINT • SCAN":'/assets/signs/sign_ramu_plaque_03.jpg',
+ "STAY CURIOUS|LOOK CLOSER|QUESTION EVERYTHING":'/assets/signs/sign_stay_curious.jpg',
+ "APOGEE / 2019|FIRST SHOW • FRONT ROW":'/assets/signs/sign_apogee_2019.jpg',
+ "THE MOON'S DARK SIDE|NOT EVERYTHING IS AS IT SEEMS":'/assets/signs/sign_moon_dark_side.jpg',
+ "OUR FAMILY|A home full of memories":'/assets/signs/sign_our_family.jpg',
+ "PARTH|":'/assets/signs/sign_parth.jpg',
+ "APOGEE|LIVE / A PERIGEE EVENT":'/assets/signs/banner_apogee_stage.jpg',
+ "BACKSTAGE|PASS HOLDERS ONLY":'/assets/signs/sign_backstage.jpg',
+ "PERIGEE|MEMBER REGISTRATION":'/assets/signs/sign_member_registration.jpg',
+ "SHASHDHAR EMS|EMERGENCY RESPONSE":'/assets/signs/sign_shashdhar_ems.jpg',
+ "APOGEE / SERVICE YARD|STAFF & VEHICLES ONLY":'/assets/signs/sign_service_yard.jpg',
+ "PERIGEE / NIGHT SKY|LOOK UP. THERE IS MORE TO SEE.":'/assets/signs/sign_perigee_workshop.jpg',
+ "PERIGEE FOUNDATION|REACH BEYOND THE ORDINARY":'/assets/signs/sign_perigee_foundation.jpg',
+ "PROGRAMMES|NIGHT SKY WORKSHOPS|COMMUNITY OUTREACH":'/assets/signs/sign_programmes.jpg',
+ "MEMBERSHIP|REGISTER AT RECEPTION|STAFF ACCESS BEYOND THIS POINT":'/assets/signs/sign_membership.jpg',
+ "ARCHIVE / STAFF ONLY|":'/assets/signs/door_archive_staff.jpg',
+ "RECORDS / 01|":'/assets/signs/sign_records_01.jpg',
+ "RECORDS / 02|":'/assets/signs/sign_records_02.jpg',
+ "RECORDS / 03|":'/assets/signs/sign_records_03.jpg',
+ "RECORDS / 04|":'/assets/signs/sign_records_04.jpg',
+ "RECORDS / 05|":'/assets/signs/sign_records_05.jpg',
+ "ARCHIVE POLICY|NO RECORDS LEAVE THIS ROOM":'/assets/signs/sign_archive_policy.jpg',
+ "SHASHDHAR HOSPITAL|WARD 03 / RESTRICTED ACCESS":'/assets/signs/sign_hospital_ward.jpg',
+ "PERIGEE|THE ASCENSION":'/assets/signs/sign_perigee_ascension.jpg',
+ "WARD 03|KEEP THE CORRIDOR CLEAR":'/assets/signs/sign_ward03_corridor.jpg',
+ "SECURITY|AUTHORISED STAFF ONLY":'/assets/signs/sign_security.jpg',
+ "SERVICE ACCESS|":'/assets/signs/door_service_access.jpg',
+ "OPERATING THEATRE|":'/assets/signs/door_operating_theatre.jpg',
+ "STAIR B / ROOF ACCESS|":'/assets/signs/door_stair_b.jpg',
+ "WARD 03 / RESTRICTED ACCESS|":'/assets/signs/door_ward03_restricted.jpg',
+ "SHASHDHAR / LOADING BAY|":'/assets/signs/sign_loading_bay.jpg',
+ "SEALED MEDICAL SUPPLIES|":'/assets/signs/sign_sealed_medical.jpg',
+ "LUA PHARMACEUTICALS|SEALED SHIPMENTS / LOG EVERY TRANSFER":'/assets/signs/sign_lua_pharma.jpg',
+ "SERVICE LIFT / STAFF|":'/assets/signs/door_service_lift.jpg',
+ "PERIGEE / DIRECTOR|TANUSH":'/assets/signs/sign_director_tanush.jpg',
+ "THIS WEEK|THURSDAY / HOSPITAL|SATURDAY / WORKSHOP":'/assets/signs/sign_this_week.jpg',
+ "PRIVATE OFFICE|":'/assets/signs/door_private_office.jpg',
+ "PERIGEE FOUNDATION|A HIGHER PURPOSE":'/assets/signs/sign_perigee_higher.jpg',
+ "PRIVATE|":'/assets/signs/door_private.jpg',
+};
+
+// A texture that fails to load must degrade to the drawn board, not the room.
+class SignLoadBoundary extends Component{
+ constructor(props){super(props);this.state={failed:false};}
+ static getDerivedStateFromError(){return{failed:true};}
+ render(){return this.state.failed?this.props.fallback:this.props.children;}
+}
+
+// Full-bleed board image cropped to the plane's aspect so the lettering never
+// stretches, whatever shape the artwork arrived in.
+function SignImage({src,width,height}){
+ const {quality}=useSettings();
+ const source=useTexture(src);
+ const texture=useMemo(()=>{
+  const t=source.clone();t.colorSpace=SRGBColorSpace;t.anisotropy=quality==='high'?8:4;
+  const imageAspect=(source.image?.width??1)/(source.image?.height??1),planeAspect=width/height;
+  if(imageAspect>planeAspect){const r=planeAspect/imageAspect;t.repeat.set(r,1);t.offset.set((1-r)/2,0);}
+  else{const r=imageAspect/planeAspect;t.repeat.set(1,r);t.offset.set(0,(1-r)/2);}
+  return t;
+ },[source,width,height,quality]);
+ useEffect(()=>()=>texture.dispose(),[texture]);
+ return <meshStandardMaterial map={texture} roughness={.9}/>;
+}
+
+function ProceduralSign({title,lines,background,ink,width,height}){
  const texture=useMemo(()=>{
   const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=Math.round(1024*height/width);
   const c=canvas.getContext('2d');c.fillStyle=background;c.fillRect(0,0,canvas.width,canvas.height);
@@ -86,7 +168,18 @@ export function WallSign({position,rotation=[0,0,0],width=1.4,height=.5,title,li
   const t=new CanvasTexture(canvas);t.colorSpace=SRGBColorSpace;return t;
  },[title,lines.join('|'),background,ink,width,height]);
  useEffect(()=>()=>texture.dispose(),[texture]);
- return <mesh position={position} rotation={rotation}><planeGeometry args={[width,height]}/><meshStandardMaterial map={texture} roughness={.9}/></mesh>;
+ return <meshStandardMaterial map={texture} roughness={.9}/>;
+}
+
+export function WallSign({position,rotation=[0,0,0],width=1.4,height=.5,title,lines=[],background='#182d30',ink='#e2c78e'}){
+ const {quality}=useSettings();
+ const src=SIGN_FILES[`${title}|${lines.join('|')}`];
+ const procedural=<ProceduralSign title={title} lines={lines} background={background} ink={ink} width={width} height={height}/>;
+ return <mesh position={position} rotation={rotation}><planeGeometry args={[width,height]}/>
+  {src&&quality!=='low'
+   ? <Suspense fallback={procedural}><SignLoadBoundary fallback={procedural}><SignImage src={src} width={width} height={height}/></SignLoadBoundary></Suspense>
+   : procedural}
+ </mesh>;
 }
 
 export function Cable({points,color='#20272b',radius=.009}){

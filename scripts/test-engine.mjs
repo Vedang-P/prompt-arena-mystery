@@ -22,6 +22,9 @@ import {
   puzzleGate,
   solvePuzzle,
   unlockedFactList,
+  wrongAnswerPenalty,
+  WRONG_ANSWER_PENALTY,
+  WRONG_ANSWER_PENALTY_CAP,
 } from '../src/engine.js';
 
 let passed = 0;
@@ -163,10 +166,33 @@ test('a wrong text answer applies the penalty and does not solve', () => {
   const result = solvePuzzle([], [], 'p_ash', 'the cat');
   assert.equal(result.ok, true);
   assert.equal(result.correct, false);
-  assert.equal(result.penalty, 2);
+  assert.equal(result.penalty, 1);
   assert.deepEqual(result.solvedPuzzles, []);
   assert.deepEqual(result.discovered, []);
   assert.deepEqual(result.grants, []);
+});
+
+test('wrong answers cost a small capped fee per clue', () => {
+  assert.equal(WRONG_ANSWER_PENALTY, 1);
+  assert.equal(WRONG_ANSWER_PENALTY_CAP, 3);
+  for (const charges of [0, 1, 2]) {
+    assert.equal(solvePuzzle([], [], 'p_ash', 'wrong', { wrongCharges: charges }).penalty, 1);
+  }
+  for (const charges of [3, 4, 50]) {
+    assert.equal(solvePuzzle([], [], 'p_ash', 'wrong', { wrongCharges: charges }).penalty, 0);
+  }
+  assert.equal(wrongAnswerPenalty(0), 1);
+  assert.equal(wrongAnswerPenalty(2), 1);
+  assert.equal(wrongAnswerPenalty(3), 0);
+});
+
+test('correct answers and solved clues never charge, even after many misses', () => {
+  const correct = solvePuzzle([], [], 'p_ash', 'ledger', { wrongCharges: 9 });
+  assert.equal(correct.correct, true);
+  assert.equal(correct.penalty, 0);
+  const solved = solvePuzzle(['p_ash'], [], 'p_ash', 'still wrong', { wrongCharges: 9 });
+  assert.equal(solved.alreadySolved, true);
+  assert.equal(solved.penalty, 0);
 });
 
 test('unknown puzzles are rejected', () => {

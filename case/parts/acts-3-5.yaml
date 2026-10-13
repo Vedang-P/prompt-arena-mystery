@@ -31,7 +31,6 @@ acts:
     objective: "Find the hospital the man from the ambulance was taken to."
     intro:
       - { speaker: narrator, text: "He thinks about the hospital the man may be at. If there is torture taking place, it won't be a normal hospital — it would be some sort of abandoned or isolated one. He tries to search for extremely old or isolated hospitals." }
-      - { speaker: narrator, text: "He drives to Shashdhar Hospital, out on the outskirts of the city. He walks in through the janitor backdoor with the world-owning confidence that saved him before, and grabs a uniform and a mop to pose as a janitor." }
     outro:
       - { speaker: narrator, text: "Parth was alive." }
       - { speaker: narrator, text: "Sameer wanted to dance, he wanted to scream; he honestly felt a wave of numbness go over him. He was panicking so much — and all for naught. Parth was alive; maybe starving, but still healthy. He wasn't covered with bruises and burns. That was more than enough." }
@@ -263,7 +262,6 @@ puzzles:
     answers: ["No, but I have donated some money to them"]
     success: "Veer straightened up: \"Oh that's great — you know what they do, right?\""
     fail_message: "Veer's smile thins. Sameer instantly regrets it — he fumbles and tries again."
-    penalty: 0
   - id: p_veer_2
     kind: choice
     prompt: "\"Oh that's great — you know what they do, right?\""
@@ -271,20 +269,17 @@ puzzles:
     answers: ["Foster scientific temper, empowering the youth"]
     success: "Veer looks impressed: \"That's great! I have believed the same thing. We actually got inspired by the NGO's name to change our band name — we still wanted to keep our theme of being at the peak or at the highest of all.\""
     fail_message: "Veer tilts his head. That is not what the NGO is about, and he knows it."
-    penalty: 0
   - id: p_band_name
     kind: text
     prompt: "Sameer thought — what was their band name again?"
     answers: ["apogee"]
     success: "Apogee — of course. \"The point of the Moon's orbit farthest from Earth,\" Veer explains. \"Perigee is where it is closest. We wanted to keep our theme of being at the peak, at the highest of all.\" Sameer's mind was racing: he may have stumbled into a gold mine of clues."
-    penalty: 0
     grants: [c_apogee]
   - id: p_registration
     kind: email
     prompt: "Veer sends him the link for member registration. It doesn't ask for much — just an email and an OTP. He joins as a volunteer."
     answers: []
     success: "The registration goes through. A volunteer confirms his membership and sends the address of the upcoming workshop: \"Hutting, 3rd cross, DJ Halli.\" He has a gut feeling that all that is happening to him has a reason and a rhyme — including the fact that he lost his phone charger a couple of days ago."
-    penalty: 0
     grants: [c_workshop_address]
   - id: p_fare
     kind: choice
@@ -294,13 +289,11 @@ puzzles:
     requires: { clues: [c_workshop_address] }
     fail_message: "\"Ok sir, find someone else then.\""
     success: "\"The hell — I'll give 100, no more.\" — \"Ok sir, find someone else then.\" Sameer looked around; the auto guy looked at him. Sameer sighed, \"I can't give more than 200.\" — \"230.\" Sameer sighed and got into the auto. After that daylight robbery, he saw the workshop: it was in an open field, kids were running around and volunteers were setting up the instruments for observation."
-    penalty: 0
   - id: p_ascension
     kind: code
     prompt: "He glanced at the records around him, then finally tried to switch on the ancient system on the desk. Blue light reflected on his face — it asked for a password."
     answers: ["ascension"]
     success: "Blue light reflects on his face; the records open. A folder named \"offeringRecords\" — a bunch of .avi videos, and a text file tracking how much of the physical archive has been moved to digital. It stopped on 16-07-2020."
-    penalty: 0
     grants: [c_records]
   - id: p_hide
     kind: choice
@@ -309,30 +302,26 @@ puzzles:
     answers: ["Stay hidden"]
     fail_message: "Veer catches a glimpse of him running — he starts yelling. This was the wrong decision; he had to go quickly before the rest of those freaks were alerted. He found the exit just in time to escape."
     success: "Too risky. Veer enters the room and goes for the desk — shoot, he left the system on, he should have run. Veer rummaged through it, but thankfully Sameer had closed all the tabs. Veer looked around and then left. Sameer ran towards the nearest exit, hid near the trash cans, and peeked through."
-    penalty: 1
     grants: [c_ambulance]
   - id: p_delve
     kind: choice
     prompt: "The captured man is struggling, frantically calling for help; two people — maybe nurses — tie him up, and the ambulance leaves talking about taking him to some hospital. Should he delve deeper into this NGO?"
     options: ["Yes", "No"]
     answers: ["Yes"]
-    fail_message: "If you refuse, you are blocked from the game. Getting back in the game would cause a huge penalty."
+    fail_message: "\"No\" sits on his tongue — and he hates himself for even thinking it. There is no way out of this now. He has to go deeper. (One penalty.)"
     success: "He is going to put his life in danger if he delves deeper, but he has to. The police are nearly incompetent and apparently children are being captured too. He needs to expose them, or bring light to this, or something. He has to."
-    penalty: 5
   - id: p_hospital
     kind: choice
     prompt: "He tries to search for extremely old or isolated hospitals. Which hospital should he pick?"
     options: ["Vyadha Hospital", "Shashdhar Hospital", "BMC Hospital"]
     answers: ["Shashdhar Hospital"]
     fail_message: "The wards of the wrong hospital scroll past — normal, staffed, full of visitors. Nobody would hide a torture room there. He scrolls back to the top and tries again."
-    success: "Shashdhar Hospital — old and isolated, out on the outskirts of the city. The only one that fits. He feels it in his gut."
-    penalty: 2
+    success: "Shashdhar Hospital — old and isolated, out on the outskirts of the city. The only one that fits. He feels it in his gut. He drives out to the outskirts, walks in through the janitor backdoor with the world-owning confidence that saved him before, and grabs a uniform and a mop to pose as a janitor."
   - id: p_security_pin
     kind: text
     prompt: "He turns left and finds what he thinks is a security room. The control panel is locked, and a note is taped to it: \"vykpmng vykpmng nkvvng ____\". The panel wants the missing word."
     answers: ["uvct", "star"]
     success: "Each letter is shifted two places ahead: vykpmng becomes twinkle, nkvvng becomes little, uvct becomes star. Twinkle twinkle little star. The panel unlocks — he can check out other rooms of the hospital without travelling."
-    penalty: 0
     grants: [c_cameras]
   - id: p_parth_alive
     kind: text
@@ -340,14 +329,12 @@ puzzles:
     answers: ["parth"]
     fail_message: "No — focus. If not him, then... what is this entire thing about??"
     success: "Parth. Parth was alive."
-    penalty: 1
     grants: [c_parth_alive]
   - id: p_tablet
     kind: code
     prompt: "There was a tablet under these folders. It was unfortunately password protected — a 4 digit numeric passcode. The archived records stopped on 16-07-2020; the higher ups seem to love that date. What could he put down?"
     answers: ["1607", "16-07-2020", "16/07/2020", "16072020", "16 07"]
     success: "1607 — the day the records stopped. The tablet unlocks in his hands; this is the Big Bad's own device."
-    penalty: 0
   - id: p_handbook
     kind: choice
     prompt: "He heard footsteps in the corridor. There is a handbook kept near the reports. Should he pick it up?"
@@ -355,14 +342,12 @@ puzzles:
     answers: ["Take it"]
     fail_message: "The footsteps grow louder. He leaves the handbook where it lies — and hates himself for it. There is still time."
     success: "He quickly grabs the handbook and leaves the room. He leaves the hospital, hoping he goes undetected."
-    penalty: 0
     grants: [c_handbook]
   - id: p_knowledge
     kind: text
     prompt: "The tablet is thankfully unlocked. How did he know about the tablet given by the cult?"
     answers: ["handbook", "the handbook"]
     success: "The handbook. Somewhere in those pages, between the chants and the maintenance of the holy blade, it said a tablet is given to all higher ups. The tablet's screen glows in his hand."
-    penalty: 0
     grants: [c_tablet_data]
   - id: p_tablet_content
     kind: choice
@@ -372,19 +357,16 @@ puzzles:
     requires: { clues: [c_tablet_data] }
     fail_message: "Not quite. He swipes back — the handbook said the tablet holds the chants, the schedules, and the maintenance of the holy blade."
     success: "Chants, schedules, and the proper maintenance of the holy blade — blood included. And when he digs further: the number of people recruited by the cult and its different domains, plus a spreadsheet of the financial records — where the funds were collected from and allocated. A lot of donations by a company named Lua Pharmaceuticals."
-    penalty: 0
     grants: [c_recruits, c_finance]
   - id: p_connection
     kind: text
     prompt: "Once he is back home with his wounds sufficiently bandaged and his files properly backed up, he looks through them. He notices that there are a lot of donations by a company named Lua Pharmaceuticals. Could there be any other connection to the cult?"
     answers: ["perigee", "apogee", "perigee and apogee"]
     success: "Perigee or Apogee — both are correct, and a bonus for both mentioned. The point of the Moon's orbit closest to Earth, and the farthest: the two faces of the same NGO. The cult and the NGO are one and the same."
-    penalty: 0
   - id: p_exposed
     kind: text
     prompt: "Just as he is about to go to sleep, a notification arrives — another voice note, in a different modified voice, this time mocking. What could have exposed his investigation of the cult?"
     answers: ["email", "the email", "sending the files to himself"]
     success: "The email — the financial files he sent to himself. That is how they found him. Cats play with rats before swallowing them, and the cult has been playing with him all along."
     fail_message: "That's not it. Whatever exposed him was something he sent out himself, that night."
-    penalty: 0
     requires: { puzzles: [p_connection] }

@@ -526,7 +526,6 @@ puzzles:
       - "Stay silent"
     answers:
       - "Tell them everything"
-    penalty: 1
     fail_message: "He stays silent. The officer taps his pen against the table. (Penalty — the truth keeps burning a hole in his pocket.)"
     success: "He tells them about it, and the police ask him about the information he got from her home."
     requires: { clues: [c_parth_meet] }

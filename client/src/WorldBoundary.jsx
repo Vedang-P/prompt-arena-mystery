@@ -1,5 +1,5 @@
 import { Component,useEffect,useRef } from 'react';
-import { Html } from '@react-three/drei';
+import {useProgress} from '@react-three/drei';
 import {useFrame,useThree} from '@react-three/fiber';
 
 export function SceneReady({onReady,onMetrics}){
@@ -91,13 +91,38 @@ export function WorldStopped({ reason }) {
   );
 }
 
-export function SceneLoading() {
-  return <Html center><div className="world-loading"><span className="loading-moon" /><p>Opening the scene</p></div></Html>;
+// The loading panel is a DOM overlay pinned to the centre of the stage — never
+// an in-world element, which used to drift around the frame as the camera moved.
+// The bar tracks every asset three.js is fetching, with the percentage shown.
+export function SceneLoading(){
+  const {progress,total}=useProgress();
+  const known=total>0;
+  const pct=known?Math.max(0,Math.min(100,Math.round(progress))):null;
+  return <div className="scene-loader" role="status" aria-live="polite" aria-label="Loading the scene">
+    <div className="scene-loader-card">
+      <span className="loading-moon" aria-hidden="true"/>
+      <p>Opening the scene</p>
+      <div className={`scene-loader-track ${pct===null?'indeterminate':''}`}>
+        <span style={pct===null?undefined:{width:`${pct}%`}}/>
+      </div>
+      <small>{pct===null?'Preparing…':pct>=100?'Setting the stage…':`${pct}%`}</small>
+    </div>
+  </div>;
+}
+
+// One missing texture or model used to reject the whole room's Suspense tree and
+// blank the entire scene. Each risky asset sits in its own boundary now: the
+// broken piece renders nothing and everything else carries on.
+export class AssetBoundary extends Component {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch(error) { console.warn('asset_error', error.message); }
+  render() { return this.state.failed ? (this.props.fallback ?? null) : this.props.children; }
 }
 export class WorldBoundary extends Component {
   state = { failed: false };
   static getDerivedStateFromError() { return { failed: true }; }
-  componentDidCatch(error) { console.error('scene_error', error.message); }
+  componentDidCatch(error) { console.error('scene_error', error.message); this.props.onError?.(error); }
   // A change of resetKey retries the boundary in place, so the caller can swap
   // rooms or cinematic scenes without remounting (and rebuilding) the WebGL
   // canvas beneath it.
@@ -105,7 +130,12 @@ export class WorldBoundary extends Component {
     if (this.state.failed && prevProps.resetKey !== this.props.resetKey) this.setState({ failed: false });
   }
   render() {
-    if (this.state.failed) return <div className="world-fallback"><p>The scene could not load.</p><p>Your case is saved. You can still use Explore to inspect the room.</p><button className="btn ghost" onClick={() => this.setState({ failed: false })}>Reload scene</button></div>;
+    if (this.state.failed) {
+      // A caller can hand over a working alternative (the 2D storyboard stage)
+      // so a failed 3D tree never leaves the player without a scene.
+      if (this.props.fallback !== undefined) return this.props.fallback;
+      return <div className="world-fallback"><p>The scene could not load.</p><p>Your case is saved. You can still use Explore to inspect the room.</p><button className="btn ghost" onClick={() => this.setState({ failed: false })}>Reload scene</button></div>;
+    }
     return this.props.children;
   }
 }

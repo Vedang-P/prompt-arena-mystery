@@ -9,7 +9,7 @@ export default function ActDirector({act,characters=[],onComplete,busy,nextActTi
   const debug=import.meta.env.DEV?new URLSearchParams(location.search).get('beat'):null;
   const start=Math.max(0,beats.findIndex(b=>b.id===debug));
   const [phase,setPhase]=useState(debug||review?'play':'card'),[beatIndex,setBeatIndex]=useState(start),[lineIndex,setLineIndex]=useState(0);
-  const [paused,setPaused]=useState(review),[readyRoom,setReadyRoom]=useState(null);
+  const [paused,setPaused]=useState(review),[readyRoom,setReadyRoom]=useState(null),[sceneFailed,setSceneFailed]=useState(false);
   const pausedRef=useRef(paused),advanceRef=useRef(null),completeRef=useRef(onComplete),finishing=useRef(false);
   completeRef.current=onComplete;pausedRef.current=paused;
   const beat=beats[beatIndex],line=beat?.lines?.[lineIndex];
@@ -23,8 +23,19 @@ export default function ActDirector({act,characters=[],onComplete,busy,nextActTi
     ['sameer','parth','mother','officer'].forEach(c=>useGLTF.preload(`/assets/cast/${c}.glb`));
   },[]);
   useEffect(()=>{
-    if(phase!=='card'||readyRoom!==beat?.room)return;
+    if(phase!=='card')return;
+    // A failed or missing 3D scene must never hold the prologue hostage: the
+    // story runs on subtitles either way, so start it as soon as we know.
+    if(sceneFailed){const t=setTimeout(()=>{setReadyRoom(beat?.room);setPhase('play');},600);return()=>clearTimeout(t);}
+    if(readyRoom!==beat?.room)return;
     const timer=setTimeout(()=>setPhase('play'),2400);return()=>clearTimeout(timer);
+  },[phase,readyRoom,beat?.room,sceneFailed]);
+  // Hard watchdog: if the scene never reports ready (dead WebGL context, blocked
+  // device, stuck asset), roll the opening anyway instead of waiting forever.
+  useEffect(()=>{
+    if(phase!=='card'||readyRoom===beat?.room)return;
+    const timer=setTimeout(()=>{setSceneFailed(true);setReadyRoom(beat?.room);},12000);
+    return()=>clearTimeout(timer);
   },[phase,readyRoom,beat?.room]);
   useEffect(()=>{
     window.dispatchEvent(new CustomEvent('arena-cue',{detail:{cue:beatIndex<3?'dusk':beat?.room==='sameer_room'?'unknown':'search',ambience:ambienceFor(beat?.room),paused}}));
@@ -56,9 +67,9 @@ export default function ActDirector({act,characters=[],onComplete,busy,nextActTi
   if(!act)return null;
   const phone=beat?.overlay?.includes('voicenote');
   return <main className={`cinema prologue ${phase==='card'?'cinema-card-phase':''}`} data-scene-ready={readyRoom===beat.room}>
-    <div className="cinema-stage"><Cinema actId={act.id} sceneId={beat.room} shot={beat.shot} cast={beat.cast??[]} speaker={phase==='play'?line?.speaker:null} paused={paused} onReady={()=>setReadyRoom(beat.room)}/><div className="cinema-bar top"/><div className="cinema-bar bottom"/></div>
+    <div className="cinema-stage"><Cinema actId={act.id} sceneId={beat.room} shot={beat.shot} cast={beat.cast??[]} speaker={phase==='play'?line?.speaker:null} paused={paused} onReady={()=>setReadyRoom(beat.room)} onFail={()=>setSceneFailed(true)}/><div className="cinema-bar top"/><div className="cinema-bar bottom"/></div>
     <header className="prologue-header"><span>Prompt Arena <i>/</i> Prologue</span><div className="arena-account-actions"><button className="quiet-button" onClick={()=>{setPaused(true);onLeaderboard?.();}}>Live leaderboard ↗</button><LogoutButton disabled={busy}/></div></header>
-    {phase==='card'&&<div className="cinema-titlecard"><p className="cinema-act-kicker">Act 0 · Prologue</p><h1 className="cinema-act-title">The Vanishing</h1><p className="cinema-act-sub">Yesterday, he was right beside you.</p><small>{readyRoom!==beat.room?'Preparing the opening scene…':'The story is about to begin'}</small></div>}
+    {phase==='card'&&<div className="cinema-titlecard"><p className="cinema-act-kicker">Act 0 · Prologue</p><h1 className="cinema-act-title">The Vanishing</h1><p className="cinema-act-sub">Yesterday, he was right beside you.</p><small>{sceneFailed?'The 3D scene could not start on this device — playing with subtitles…':readyRoom!==beat.room?'Preparing the opening scene…':'The story is about to begin'}</small></div>}
     {phase==='play'&&line&&<>
       <aside className="scene-caption"><span>{beat.room==='gazebo'?(beatIndex<3?'Yesterday · 6:42 PM':'Today · 6:30 PM'):beat.room==='parth_home'?'Parth’s home · 7:15 PM':beat.room==='police_station'?'Police station · 9:08 PM':'Sameer’s room · 11:47 PM'}</span><small>{String(beatIndex+1).padStart(2,'0')} / {String(beats.length).padStart(2,'0')}</small></aside>
       <div className="cinema-footer"><div className={`cinema-subtitles ${phone?'voicenote-subtitles':''}`}><div className="subtitle-card" key={`${beat.id}-${lineIndex}`}><span className="cinema-speaker">{phone?'Voice message · Unknown sender':SPEAKERS[line.speaker]??names[line.speaker]??line.speaker}</span>{phone&&<div className={`message-wave ${paused?'paused':''}`} aria-hidden="true">{Array.from({length:25},(_,i)=><i key={i} style={{height:12+Math.abs(Math.sin(i*2.7))*23,animationDelay:`${i*35}ms`}}/>)}</div>}<p>{line.text}</p></div></div>
