@@ -8,8 +8,10 @@ import { useSettings } from './Settings.jsx';
 const SPEAKER = { x: -3.9, z: 2.0 };
 const NEAR_M = 1.8;
 const FAR_M = 9;
-const NEAR_GAIN = 0.075;
-const FAR_GAIN = 0.025;
+// A tenth of the previous mix: the radio should read as distant counter
+// music under the room, never as the loudest thing in the cafe.
+const NEAR_GAIN = 0.0075;
+const FAR_GAIN = 0.0025;
 
 // One AudioContext per page: browsers cap them, and Soundtrack remounts across
 // branch changes, so creating one per mount would exhaust the hardware limit.

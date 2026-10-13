@@ -186,10 +186,12 @@ acts:
     objective: "Search Parth's room, follow the coordinates to the field, and find out who Vihaan is."
     intro:
       - { speaker: narrator, text: "Sameer goes to Parth's home. He meets Parth's mother — she looks as if she hasn't slept at all since the day her son went missing. She still smiles at him, with a lot of effort." }
+      - { speaker: narrator, text: "Small talk first — the neighbours, the tea, the rain — while a rock sits in his throat the whole time." }
       - { speaker: sameer, text: "I would like to go to Parth's room, aunty." }
       - { speaker: narrator, text: "His mum looks up the stairs with unshed tears, looks at Sameer, then allows him." }
       - { speaker: mother, text: "Please don't disturb anything in his room. Parth may have a hard time finding stuff once he comes back." }
       - { speaker: narrator, text: "Sameer runs up the stairs." }
+      - { speaker: narrator, text: "He finds himself in Parth's room. He sits on the unmade bed and looks around — his gaze falls on the laptop, sitting open in sleep mode." }
     outro:
       - { speaker: narrator, text: "He looked through every video of Parth and Vihaan but found nothing else. With a resigned look he bid farewell to Parth's mother and left." }
       - { speaker: sameer, text: "I'll find you, man. I promise." }
@@ -239,8 +241,9 @@ rooms:
       - id: ph_albums
         type: clue
         clue: c_videos
-        label: "Album of old home videos"
+        label: "Old home videos — Parth & Vihaan"
         position: [-1.6, 0.9, -1.2]
+        requires: { clues: [c_vihaan] }
       - id: ph_drums
         type: puzzle
         puzzle: p_drums
@@ -330,6 +333,7 @@ rooms:
         clue: c_diary
         label: "Book shelf"
         position: [-3.2, 1.0, -0.5]
+        requires: { clues: [c_laptop_locked] }
       - id: pr_morse
         type: puzzle
         puzzle: p_morse
@@ -378,6 +382,12 @@ rooms:
         puzzle: p_cassette
         label: "Cassette player"
         position: [0.6, 0.7, -1.0]
+      - id: cc_vihaan
+        type: clue
+        clue: c_vihaan
+        label: "Look up the car's owner on his phone"
+        position: [0.6, 0.5, 3.1]
+        requires: { clues: [c_mixtape] }
       - id: cc_cd_watch
         act: act2
         type: puzzle
@@ -390,7 +400,7 @@ rooms:
         to: parth_home
         label: "Go to Parth's home"
         position: [-4.6, 0.3, 3.4]
-        requires: { clues: [c_mixtape] }
+        requires: { clues: [c_vihaan] }
       - id: cc_ramu
         type: character
         character: ramu
@@ -688,7 +698,7 @@ clues:
     grants: [mother_room]
   - id: c_laptop_locked
     name: "Locked laptop"
-    description: "Parth's laptop sits open in sleep mode, password protected."
+    description: "Parth's laptop sits open in sleep mode, password protected. Sameer tries a guess — the field shakes. The screen offers a hint instead: \"Look where my loudest secrets are kept, away from prying eyes, leather bound and stained with ink.\""
     grants: []
   - id: c_morse
     name: "Decoded diary message"
@@ -711,13 +721,17 @@ clues:
     grants: []
   - id: c_coords
     name: "Map coordinates"
-    description: "A screenshot of a map area with coordinates. Fed into Boogle Maps, it leads to an abandoned field — a lot like a ground one would get kidnapped at."
-    requires: [c_reports]
+    description: "A screenshot of a map area with coordinates — the other files in the folder are corrupted, and he is too impatient for them. Fed into Boogle Maps, the pin lands on an abandoned field. It looks a lot like a ground one would get kidnapped at."
+    requires: [c_email]
     grants: []
   - id: c_sedan
     name: "Silver sedan"
     description: "A dusty but luxurious silver sedan, parked at the edge of the field. The number plate reads KA01OC1808."
     grants: [officer_plate]
+  - id: c_vihaan
+    name: "The car's owner"
+    description: "A quick look-up on the phone: the silver sedan KA01OC1808 is registered to a Vihaan — the only real name attached to any of this."
+    grants: []
   - id: c_backpack
     name: "Black backpack"
     description: "A black backpack on the seat of the car. Inside: a few cassettes, and nothing else."

@@ -99,6 +99,8 @@ app.get('/api/health', (c) =>
       eventMode: isTruthy(c.env.EVENT_MODE),
       codeLogin: isTruthy(c.env.ALLOW_CODE_LOGIN),
       llm: Boolean(c.env.LLM_BASE_URL && c.env.LLM_API_KEY && c.env.LLM_MODEL),
+      adminConfigured: Boolean(c.env.ADMIN_PASSWORD),
+      fullscreenEnforced: fullscreenEnforced(c.env),
     },
   })
 );
