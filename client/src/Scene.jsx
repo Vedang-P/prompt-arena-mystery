@@ -1032,7 +1032,7 @@ function CyberCafeRoom({room,hot,paused=false}) {
   {cyberVisible&&<ShelfContents position={[5.65,0,1.3]} rotation={[0,-Math.PI/2,0]}/>}
   <DetailProp asset="cardboard_box_01" position={[5.5,0,3.2]}/>
   <DetailProp asset="cardboard_box_01" position={[5.5,.342,3.2]} scale={.8}/>
-  {cyberVisible&&<WallSign position={[0,2.55,-5.42]} width={4.4} height={.85} title="RAMU'S CYBER CAFÉ" lines={['INTERNET • PRINTING • SCANNING']}/>}
+  {cyberVisible&&<WallSign position={[0,2.55,-5.42]} width={4.4} height={1.0} title="RAMU'S CYBER CAFÉ" lines={['INTERNET • PRINTING • SCANNING']}/>}
   <WallSign position={[-6.42,2,2]} rotation={[0,Math.PI/2,0]} width={2} height={1.05} title="DOSA CORNER" lines={['PLAIN DOSA   ₹40','MASALA DOSA   ₹60']}/>
   {cyberVisible&&<WallSign position={[5,2.4,-5.42]} width={1.3} height={.65} title="HOUSE RULES" lines={['SAVE YOUR WORK','ASK RAMU FOR HELP']}/>}
   <WallSign position={[-3.5,2.5,-5.42]} width={1.55} height={.58} title="RAMU'S DOSA CORNER" lines={['FRESH BATTER • FILTER COFFEE']}/>
@@ -1107,7 +1107,7 @@ function ConcertCaptureRoom({room,phase='capture'}) {
     <DetailProp asset="hospital_bed" position={[3.3,0,-.6]} rotation={[0,-.22,0]}/>
     <DetailProp asset="medical_cart" position={[5.1,0,-2.8]} rotation={[0,-.2,0]}/>
     {[-8,-6,-4,-2,0,2,4,6,8].map(x=><FencePanel key={x} position={[x,0,-8.5]}/>)}
-    <WallSign position={[-5.6,1.6,-8.42]} width={2.5} height={.62} title={yardName} lines={['STAFF & VEHICLES ONLY']} background="#1e2b30"/>
+    <WallSign position={[-5.6,1.6,-8.42]} width={2.5} height={1.07} title={yardName} lines={['STAFF & VEHICLES ONLY']} background="#1e2b30"/>
     <DetailProp asset="metal_trash_can" position={[5.45,0,1.05]}/>
     <DetailProp asset="metal_trash_can" position={[7.05,0,1.9]} rotation={[0,-.3,0]}/>
     <DetailProp asset="cardboard_box_01" position={[4.55,0,.7]} scale={.8}/>
@@ -1149,7 +1149,7 @@ function NgoHqRoom({room,hot}) {
   <Floor width={18} depth={14} repeat={[8,6]} color="#c3b294" tiled/>
   {[-6.3,6.3].map(x=><Column key={x} position={[x,0,-5.4]} height={5}/>)}
   <Emblem position={[0,3.05,-6.92]} radius={1.25}/>
-  <WallSign position={[0,1.65,-6.9]} width={3.1} height={.6} title="PERIGEE FOUNDATION" lines={['REACH BEYOND THE ORDINARY']}/>
+  <WallSign position={[0,1.65,-6.9]} width={3.1} height={.7} title="PERIGEE FOUNDATION" lines={['REACH BEYOND THE ORDINARY']}/>
   <DetailProp asset="counter" position={[4.8,0,-2.5]}/>
   <DetailProp asset="monitor" position={[4.7,1.1275,-2.55]}/>
   <DetailProp asset="binder_notebook" position={[3.9,1.1275,-2.5]} scale={.75}/>
@@ -1293,7 +1293,7 @@ function HospitalDispatch({room,hot,loading=false}) {
   <Floor width={12} depth={14} repeat={[4,4]} color="#8e9895" tiled/>
   <mesh position={[-2,1.65,-6.93]}><planeGeometry args={[4.3,3.3]}/><meshStandardMaterial color="#465654" metalness={.35} roughness={.65}/></mesh>
   {Array.from({length:14},(_,i)=><mesh key={i} position={[-2,.15+i*.23,-6.89]}><boxGeometry args={[4.3,.018,.018]}/><meshStandardMaterial color="#73817c" metalness={.4}/></mesh>)}
-  <WallSign position={[-2,3.6,-6.9]} width={3.5} height={.5} title="SHASHDHAR / LOADING BAY"/>
+  <WallSign position={[-2,3.55,-6.9]} width={3.5} height={1.15} title="SHASHDHAR / LOADING BAY"/>
   <DoorOpening position={[4.2,0,-6.75]} label="SERVICE LIFT / STAFF"/>
   <DetailProp asset="cargo_van" position={[-3,0,-2.2]} height={2.2} rotation={[0,Math.PI/2,0]}/>
   {loading ? <>
@@ -1573,6 +1573,13 @@ export default function Scene({
   const [glSupported, setGlSupported] = useState(webglSupported);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => { setSceneStopped(null); setSceneReady(false); }, [room.id]);
+  // A first context request can fail while the GPU process is still coming up;
+  // one delayed re-probe lets the 3D room take over if it was only transient.
+  useEffect(() => {
+    if (glSupported) return;
+    const timer = setTimeout(() => { resetWebglProbe(); if (webglSupported()) setGlSupported(true); }, 2500);
+    return () => clearTimeout(timer);
+  }, [glSupported]);
 
   const bounds = ROOM_BOUNDS[room.id] ?? { x: 6.5, zMin: -5.5, zMax: 9 };
   const bg = room.id==='abandoned_field' ? '#26394e' : isOutdoor ? '#05070d' : '#080604';

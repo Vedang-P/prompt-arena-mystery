@@ -70,6 +70,9 @@
   background:
     radial-gradient(46% 34% at 50% 62%, var(--fs-pool) 0%, transparent 72%),
     radial-gradient(120% 80% at 50% -12%, rgba(255, 255, 255, 0.06) 0%, transparent 60%),
+    radial-gradient(60% 16% at 50% 96%, rgba(255, 235, 200, 0.09) 0%, transparent 70%),
+    linear-gradient(180deg, transparent calc(var(--fs-horizon) - 3.5%), rgba(0, 0, 0, 0.3) var(--fs-horizon), transparent calc(var(--fs-horizon) + 0.7%)),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.06) 0 2px, transparent 2px 110px),
     linear-gradient(
       180deg,
       var(--fs-sky) 0%,

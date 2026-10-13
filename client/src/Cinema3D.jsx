@@ -57,6 +57,13 @@ export default function Cinema({sceneId='gazebo',shot='wide',cast=[],speaker,end
   const [attempt,setAttempt]=useState(0);
   const [ready,setReady]=useState(false),[failed,setFailed]=useState(false);
   useEffect(()=>{setStopped(null);setReady(false);setFailed(false);},[sceneId,cinematicPhase]);
+  // A first context request can fail while the GPU process is still coming up;
+  // one delayed re-probe lets the 3D stage take over if it was only transient.
+  useEffect(()=>{
+    if(supported)return;
+    const timer=setTimeout(()=>{resetWebglProbe();if(webglSupported())setSupported(true);},2500);
+    return()=>clearTimeout(timer);
+  },[supported]);
   const handleReady=()=>{setReady(true);onReady?.();};
   const handleFail=()=>{setFailed(true);onFail?.();};
   // A machine without 3D graphics — or one that lost its context mid-story —

@@ -96,7 +96,7 @@ const SIGN_FILES={
  "RAMU / 03|INTERNET • PRINT • SCAN":'/assets/signs/sign_ramu_plaque_03.jpg',
  "STAY CURIOUS|LOOK CLOSER|QUESTION EVERYTHING":'/assets/signs/sign_stay_curious.jpg',
  "APOGEE / 2019|FIRST SHOW • FRONT ROW":'/assets/signs/sign_apogee_2019.jpg',
- "THE MOON'S DARK SIDE|NOT EVERYTHING IS AS IT SEEMS":'/assets/signs/sign_moon_dark_side.jpg',
+ // Pending artwork regeneration: the THE MOON'S DARK SIDE board renders the wrong text.
  "OUR FAMILY|A home full of memories":'/assets/signs/sign_our_family.jpg',
  "PARTH|":'/assets/signs/sign_parth.jpg',
  "APOGEE|LIVE / A PERIGEE EVENT":'/assets/signs/banner_apogee_stage.jpg',
@@ -104,7 +104,7 @@ const SIGN_FILES={
  "PERIGEE|MEMBER REGISTRATION":'/assets/signs/sign_member_registration.jpg',
  "SHASHDHAR EMS|EMERGENCY RESPONSE":'/assets/signs/sign_shashdhar_ems.jpg',
  "APOGEE / SERVICE YARD|STAFF & VEHICLES ONLY":'/assets/signs/sign_service_yard.jpg',
- "PERIGEE / NIGHT SKY|LOOK UP. THERE IS MORE TO SEE.":'/assets/signs/sign_perigee_workshop.jpg',
+ // Pending artwork regeneration: the PERIGEE / NIGHT SKY board is missing its sub-line.
  "PERIGEE FOUNDATION|REACH BEYOND THE ORDINARY":'/assets/signs/sign_perigee_foundation.jpg',
  "PROGRAMMES|NIGHT SKY WORKSHOPS|COMMUNITY OUTREACH":'/assets/signs/sign_programmes.jpg',
  "MEMBERSHIP|REGISTER AT RECEPTION|STAFF ACCESS BEYOND THIS POINT":'/assets/signs/sign_membership.jpg',

@@ -812,7 +812,7 @@ rooms:
         act: act2
         type: travel
         to: cyber_cafe
-        label: Ramu's cyber cafe down the road
+        label: Ramu's corner down the road
         position:
           - 3.4
           - 0.3

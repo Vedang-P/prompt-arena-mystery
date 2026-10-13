@@ -58,7 +58,7 @@ function ActorFigure({ character, slot, index, speaking }) {
   );
 }
 
-function StageArt({ roomId, backdrop }) {
+function StageArt({ backdrop }) {
   return (
     <>
       {backdrop && <img className="fs-backdrop" src={backdrop} alt="" draggable={false} />}
@@ -106,7 +106,7 @@ export default function FallbackCinema({ sceneId = 'gazebo', shot = 'wide', cast
       aria-label={`Scene: ${sceneId}`}
     >
       <div className="fs-camera">
-        <StageArt roomId={sceneId} backdrop={backdrop} />
+        <StageArt backdrop={backdrop} />
         <div className="fs-cast">
           {cast.map((person, i) => (
             <ActorFigure key={`${person.character}-${i}`} character={person.character} slot={slots[i]} index={i} speaking={person.character === speaker} />
@@ -144,7 +144,7 @@ export function RoomFallback({ room, roomId, state, solvedPuzzles = [], onCharac
   return (
     <div className={`fs-stage room-fallback fs-room-${id}${backdrop ? ' has-backdrop' : ''} fs-shot-wide`} data-scene={id}>
       <div className="fs-camera">
-        <StageArt roomId={id} backdrop={backdrop} />
+        <StageArt backdrop={backdrop} />
         <div className="fs-cast">
           {people.map((person, i) => (
             <ActorFigure key={`${person.character}-${i}`} character={person.character} slot={slots[i]} index={i} speaking={false} />

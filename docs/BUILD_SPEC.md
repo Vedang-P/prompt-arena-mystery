@@ -219,7 +219,7 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 | p_ascension | code | ascension | grants c_records |
 | p_hide | choice | Stay hidden | options [Run, Stay hidden]; continue_on_fail; grants c_ambulance |
 | p_delve | choice | Yes | options [Yes, No]; retry on No |
-| p_hospital | choice | Shashdhar Hospital | options [Vyadha Hospital, Shashdhar Hospital, BMC Hospital]; retry |
+| p_hospital | choice | Shashdhar Hospital | options [Vyadha Hospital, Shashdhar Hospital, BMC Hospital]; retry; asked in Sameer's room before the drive, success narrates the disguise |
 | p_security_pin | text | uvct, star | hint 'vykpmng vykpmng nkvvng ____'; success reveals twinkle twinkle little star |
 | p_parth_alive | text | parth | prompt "It couldn't be, could it?"; grants c_parth_alive |
 | p_tablet | code | 1607 | hint ties to 16-07-2020 |
