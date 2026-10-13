@@ -2018,6 +2018,44 @@ app.post('/api/admin/requalify-all', async (c) => {
   return c.json({ ok: true, teams: rows.length });
 });
 
+// Full event reset: every team back to the opening prologue with a clean
+// sheet — run progress, penalties, rate-limit counters, strikes and
+// disqualifications. Identity flags (practice, eventEntered) survive so
+// practice saves stay separate and entered teams stay on the leaderboard.
+// Interrogation transcripts are cleared unless the invigilator opts out.
+app.post('/api/admin/reset-all', async (c) => {
+  const ctx = await adminContext(c);
+  if (ctx.error) return ctx.error;
+  const clearMessages = ctx.body.clearMessages !== false;
+  const rows = (await ctx.env.DB.prepare(
+    'SELECT t.id, p.flags FROM teams t LEFT JOIN progress p ON p.team_id = t.id'
+  ).all()).results;
+  await ctx.env.DB.prepare('INSERT OR IGNORE INTO progress(team_id) SELECT id FROM teams').run();
+  for (const row of rows) {
+    const flags = parseJsonObject(row.flags);
+    const kept = {};
+    if (flags.practice) kept.practice = true;
+    if (flags.eventEntered) kept.eventEntered = true;
+    await ctx.env.DB.prepare(
+      `UPDATE progress SET act = 'act0', flags = ?, score = 0, penalties = 0,
+        discovered = '[]', solved_puzzles = '[]', hints_used = 0,
+        accusation = NULL, ending = NULL, solved = 0, solved_at = NULL,
+        started_at = NULL, finished_at = NULL,
+        last_prompt_ms = 0, window_start = 0, window_count = 0
+       WHERE team_id = ?`
+    )
+      .bind(JSON.stringify(kept), row.id)
+      .run();
+  }
+  await ctx.env.DB.prepare(
+    `UPDATE teams SET disqualified = 0, disqualified_at = NULL, disqualify_reason = NULL,
+      exit_strikes = 0, pending_exit_at = NULL, pending_exit_kind = NULL`
+  ).run();
+  if (clearMessages) await ctx.env.DB.prepare('DELETE FROM messages').run();
+  await audit(ctx.env, 'reset_all', null, { teams: rows.length, clearMessages });
+  return c.json({ ok: true, teams: rows.length, messagesCleared: clearMessages });
+});
+
 app.post('/api/admin/announce', async (c) => {
   const ctx = await adminContext(c);
   if (ctx.error) return ctx.error;

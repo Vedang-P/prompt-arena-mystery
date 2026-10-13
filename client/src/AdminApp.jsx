@@ -113,6 +113,7 @@ const AUDIT_ACTIONS = [
   ['rename', 'Renames'],
   ['note', 'Notes'],
   ['reset', 'Run resets'],
+  ['reset_all', 'Reset all runs'],
   ['create_team', 'Team creation'],
   ['delete_team', 'Team deletion'],
   ['announce', 'Announcements'],
@@ -501,6 +502,28 @@ function Dashboard({ session, onLoggedOut }) {
         <div className="admin-header-actions">
           <button className="admin-button" onClick={refresh} title="Fetch the latest state now">Refresh</button>
           <a className="admin-button" href="/api/admin/export" title="Final standings with rank and score">Results CSV</a>
+          <button
+            className="admin-button danger-ghost"
+            disabled={busyAction === 'reset-all'}
+            title="Return every team to the opening prologue"
+            onClick={async () => {
+              const answer = window.prompt('This resets EVERY team to the opening prologue: progress, penalties, transcripts, strikes and disqualifications. Type RESET to confirm.');
+              if (answer !== 'RESET') return;
+              setBusyAction('reset-all');
+              try {
+                const res = await post('/api/admin/reset-all', { clearMessages: true });
+                setToast({ kind: 'ok', text: `All ${res.teams} teams are back at the beginning.` });
+                await refresh();
+                setRefreshTick((n) => n + 1);
+              } catch {
+                setToast({ kind: 'error', text: 'Could not reset all teams.' });
+              } finally {
+                setBusyAction(null);
+              }
+            }}
+          >
+            Reset all runs
+          </button>
           <button
             className="admin-button danger-ghost"
             onClick={async () => {
