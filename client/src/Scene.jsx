@@ -805,12 +805,12 @@ function GazeboRoom({room,hot}) {
   </group>;
 }
 
-function HomeRoom({room,hot,actId}) {
+function HomeRoom({room,hot}) {
  // The mezzanine walls run from the stair landing surface to the hall ceiling.
  const bedroomWallCenter=(HOME_STAIRS.top+HOME_BEDROOM.ceilingY)/2;
  const bedroomWallHeight=HOME_BEDROOM.ceilingY-HOME_STAIRS.top;
- // The missing-person poster only exists once Parth is actually missing.
- const parthMissing=actId!=='act0';
+ // No missing-person poster here: it is Parth's own home, and the family would
+ // never put one up inside their own living room.
  return <group>
   <Shell width={13} depth={11} height={5.65} tint="#bcaa91" painted backOpening={HOME_UPPER_DOORWAY}/>
   <Floor width={13} depth={11} repeat={[6,5]} color="#dcc9ae"/>
@@ -828,7 +828,6 @@ function HomeRoom({room,hot,actId}) {
   <DetailProp asset="metal_office_desk" position={[2.55,0,-2.6]}/>
   <DetailProp asset="portable_cassette_player" position={[2.7,.7875,-2.6]} scale={1.2}/>
   <DetailProp asset="book_encyclopedia_set_01" position={[2,.7875,-2.65]} scale={.7}/>
-  {parthMissing && <Picture src={`${ASSETS}/pictures/evidence_gone_poster.jpg`} position={[-1.35,1.75,-5.42]} width={.72} height={1.05}/>}
   <WallSign position={[-4.45,2.85,-5.42]} title="OUR FAMILY" lines={['A home full of memories']} width={1.8} height={.5}/>
   <DetailProp asset="wall_clock" position={[.6,2.35,-5.42]}/>
   <Window position={[-6.44,1.9,1.1]} rotation={[0,Math.PI/2,0]} width={2.2} height={1.8} moon={false}/>
@@ -1345,7 +1344,7 @@ function TanushOfficeRoom({room,hot}) {
   <Window position={[6.44,1.9,-2.3]} rotation={[0,-Math.PI/2,0]} width={2.4} height={1.9}/>
   <DetailProp asset="curtains" position={[6.3,.4,-2.3]} rotation={[0,-Math.PI/2,0]} height={2.6}/>
   <WallSign position={[0,2.6,-4.94]} width={3.1} height={.7} title="PERIGEE / DIRECTOR" lines={['TANUSH']} background="#4a3830"/>
-  <WallSign position={[-1.9,1.7,-4.94]} width={1.1} height={1.15} title="THIS WEEK" lines={['THURSDAY / HOSPITAL','SATURDAY / WORKSHOP']}/>
+  <WallSign position={[-1.9,1.7,-4.94]} width={1.15} height={1.15} title="THIS WEEK" lines={['THURSDAY / HOSPITAL','SATURDAY / WORKSHOP']}/>
   <DoorOpening position={[4.2,0,-4.4]} label="PRIVATE OFFICE"/>
   <pointLight position={[1.03,1.2,-1.62]} color="#ffcb82" intensity={5} distance={5}/>
   <pointLight position={[0,3.1,1.5]} color="#efd7af" intensity={18} distance={12}/>
@@ -1598,7 +1597,10 @@ export default function Scene({
           <CameraRig key={room.id} focusInfo={focusInfo} view={view} />
           <ExploreKeys disabled={!!focus} bounds={bounds} />
           <ListenerPosition />
-          <SceneReady onReady={handleReady} onMetrics={onMetrics}/>
+          {/* Keyed by room: the ready signal must fire once per room, not once
+              per Canvas mount — a reused instance never re-announced the new
+              room and left the loading card up forever. */}
+          <SceneReady key={room.id} onReady={handleReady} onMetrics={onMetrics}/>
         </Suspense>
         <SceneWatchdog onState={(state) => setSceneStalled(state === 'stalled')} />
         <PerformanceGuard />

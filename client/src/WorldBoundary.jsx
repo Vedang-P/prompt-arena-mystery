@@ -1,4 +1,4 @@
-import { Component,useEffect,useRef } from 'react';
+import { Component,useEffect,useRef,useState } from 'react';
 import {useProgress} from '@react-three/drei';
 import {useFrame,useThree} from '@react-three/fiber';
 
@@ -75,6 +75,12 @@ export function SceneWatchdog({ onState, timeoutMs = 10000 }) {
 // The bar tracks every asset three.js is fetching, with the percentage shown.
 export function SceneLoading({ label = 'Opening the scene' }){
   const {progress,total}=useProgress();
+  const [expired,setExpired]=useState(false);
+  // A loading card must never become a permanent wall: if the scene has not
+  // announced itself in time the card steps aside — the stage can still light
+  // up later, and the room stays playable through Explore and the room tabs.
+  useEffect(()=>{const timer=setTimeout(()=>setExpired(true),15000);return()=>clearTimeout(timer);},[]);
+  if(expired)return null;
   const known=total>0;
   const pct=known?Math.max(0,Math.min(100,Math.round(progress))):null;
   return <div className="scene-loader" role="status" aria-live="polite" aria-label={label}>
