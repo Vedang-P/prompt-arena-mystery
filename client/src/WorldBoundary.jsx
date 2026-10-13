@@ -86,7 +86,7 @@ export function WorldStopped({ reason }) {
   };
   return (
     <div className="world-fallback">
-      <p>The 3D view stopped{reason === 'webgl_lost' ? ' — the graphics context was lost' : ''}.</p>
+      <p>The 3D view stopped{reason === 'webgl_lost' ? ' — the graphics context was lost' : reason === 'load_timeout' ? ' — the scene took too long to load' : reason === 'scene_error' ? ' — the scene failed to load' : ''}.</p>
       <p>Your case is saved. Reload to bring the scene back.</p>
       <div className="world-fallback-actions">
         <button className="btn ghost" onClick={() => window.location.reload()}>Reload scene</button>
@@ -112,6 +112,41 @@ export function SceneLoading() {
       </div>
     </Html>
   );
+}
+
+// A scene child that throws while loading (a failed GLB/HDR fetch, a bad loader)
+// is rendered through R3F's own reconciler root, so the WorldBoundary wrapping
+// <Canvas> can never see it and the tab is left on a blank canvas. This boundary
+// lives inside the Canvas, swallows the failed subtree and reports upward so the
+// caller can show the recovery panel.
+export class SceneErrorBoundary extends Component {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch(error) {
+    console.error('scene_error', error?.message ?? error);
+    this.props.onError?.(error);
+  }
+  componentDidUpdate(prevProps) {
+    if (this.state.failed && prevProps.resetKey !== this.props.resetKey) this.setState({ failed: false });
+  }
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
+// A suspended scene still draws empty frames, so SceneWatchdog never fires while
+// an asset fetch hangs and the player is stuck on the loading card forever. This
+// timer lives outside Suspense and, if the scene has not announced itself ready
+// in time, asks the caller to surface the recovery panel.
+export function SceneLoadTimeout({ active = true, onTimeout, timeoutMs = 25000 }) {
+  const cb = useRef(onTimeout);
+  cb.current = onTimeout;
+  useEffect(() => {
+    if (!active) return undefined;
+    const timer = setTimeout(() => cb.current?.(), timeoutMs);
+    return () => clearTimeout(timer);
+  }, [active, timeoutMs]);
+  return null;
 }
 export class WorldBoundary extends Component {
   state = { failed: false };

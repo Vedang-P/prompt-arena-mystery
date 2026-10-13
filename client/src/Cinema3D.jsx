@@ -1,11 +1,11 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import { Vector3 } from 'three';
 import Actor from './Actor.jsx';
 const SceneEnvironment=lazy(()=>import('./Scene.jsx').then(({RoomEnvironment,RoomLighting})=>({default:({roomId,quality,cinematicPhase,paused,actId})=><><RoomLighting roomId={roomId} quality={quality} cinematicPhase={cinematicPhase}/><RoomEnvironment roomId={roomId} paused={paused} storyAct={actId} cinematicPhase={cinematicPhase}/></>})));
 import { useSettings } from './Settings.jsx';
-import { SceneLoading, SceneWatchdog, WorldBoundary, WorldStopped, SceneReady } from './WorldBoundary.jsx';
+import { SceneLoading, SceneWatchdog, WorldBoundary, WorldStopped, SceneReady, SceneErrorBoundary, SceneLoadTimeout } from './WorldBoundary.jsx';
 import PerformanceGuard from './PerformanceGuard.jsx';
 import { placeCast, roomWideShot, captureShot } from './SceneStaging.js';
 const CLOSE={close_parth:'parth',close_mother:'mother',close_officer:'officer'};
@@ -40,21 +40,30 @@ export default function Cinema({sceneId='gazebo',shot='wide',cast=[],speaker,end
   const people=useMemo(()=>placeCast(sceneId,cast),[cast,sceneId]);
   const cinematicNight=['concert','ngo_hq'].includes(sceneId)&&['capture','departure'].includes(cinematicPhase);
   const backdrop=cinematicNight?'#26394e':'#10171c';
+  const resetKey=`${sceneId}:${cinematicPhase??'default'}`;
   const [stopped,setStopped]=useState(null);
-  useEffect(()=>{setStopped(null);},[sceneId,cinematicPhase]);
+  const [ready,setReady]=useState(false);
+  const fail=useCallback((reason)=>setStopped((prev)=>prev??reason),[]);
+  const handleReady=useCallback(()=>{setReady(true);onReady?.();},[onReady]);
+  // Swapping rooms or beats retries in place (the boundary is reset by key, not
+  // remounted) and re-arms the loading guards for the new scene.
+  useEffect(()=>{setStopped(null);setReady(false);},[resetKey]);
   // The boundary is reset by key instead of remounted: swapping rooms or beats
   // must not rebuild the WebGL context and recompile every shader on stage.
-  return <WorldBoundary resetKey={`${sceneId}:${cinematicPhase??'default'}`}>{stopped?<WorldStopped reason={stopped}/>:<Canvas shadows={quality!=='low'?'percentage':false}
+  return <WorldBoundary resetKey={resetKey}>{stopped?<WorldStopped reason={stopped}/>:<Canvas shadows={quality!=='low'?'percentage':false}
     dpr={quality==='high'?[1,1.5]:quality==='medium'?[1,1]:[0.6,0.8]}
     gl={{ antialias: quality !== 'low', powerPreference: 'high-performance' }}
     camera={{position:[0,2.15,6.2],fov:39}}>
     <color attach="background" args={[sceneId==='abandoned_field'||cinematicNight?'#26394e':'#10171c']}/><fog attach="fog" args={[sceneId==='gazebo'?'#9bafa5':backdrop,28,85]}/>
-    <Suspense fallback={<SceneLoading/>}>
-      <SceneEnvironment roomId={sceneId} quality={quality} cinematicPhase={cinematicPhase} paused={paused} actId={actId}/>
-      <spotLight position={[0,4,5]} angle={.7} penumbra={1} color="#ffdfbe" intensity={24} distance={13}/>
-      {people.map(c=><group key={c.character} position={[c.at[0],c.y,c.at[1]]} rotation={[c.rotationX??0,c.rot??0,0]}><Actor character={c.character} pose={c.pose} footLift={c.footLift} paused={paused} speaking={c.character===speaker} wearingMask={c.wearingMask} holdingMask={c.holdingMask}/></group>)}
-      <SceneReady key={`${sceneId}:${cinematicPhase??'default'}`} onReady={onReady}/>
-    </Suspense>
+    <SceneErrorBoundary resetKey={resetKey} onError={()=>fail('scene_error')}>
+      <Suspense fallback={<SceneLoading/>}>
+        <SceneEnvironment roomId={sceneId} quality={quality} cinematicPhase={cinematicPhase} paused={paused} actId={actId}/>
+        <spotLight position={[0,4,5]} angle={.7} penumbra={1} color="#ffdfbe" intensity={24} distance={13}/>
+        {people.map(c=><group key={c.character} position={[c.at[0],c.y,c.at[1]]} rotation={[c.rotationX??0,c.rot??0,0]}><Actor character={c.character} pose={c.pose} footLift={c.footLift} paused={paused} speaking={c.character===speaker} wearingMask={c.wearingMask} holdingMask={c.holdingMask}/></group>)}
+        <SceneReady key={resetKey} onReady={handleReady}/>
+      </Suspense>
+    </SceneErrorBoundary>
+    <SceneLoadTimeout key={resetKey} active={!ready} onTimeout={()=>fail('load_timeout')}/>
     <SceneWatchdog onStopped={setStopped}/>
     <PerformanceGuard/>
     <ShotCamera roomId={sceneId} shot={shot} cast={people} speaker={speaker} paused={paused} cinematicPhase={cinematicPhase}/>

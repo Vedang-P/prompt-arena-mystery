@@ -6,7 +6,7 @@ import DemonMask from './DemonMask.jsx';
 import {seatContact} from './SceneStaging.js';
 import Actor from './Actor.jsx';
 import { useSettings } from './Settings.jsx';
-import { SceneLoading, SceneWatchdog, WorldBoundary, WorldStopped, SceneReady } from './WorldBoundary.jsx';
+import { SceneLoading, SceneWatchdog, WorldBoundary, WorldStopped, SceneReady, SceneErrorBoundary, SceneLoadTimeout } from './WorldBoundary.jsx';
 import PerformanceGuard from './PerformanceGuard.jsx';
 import { useCallback, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
@@ -1561,7 +1561,10 @@ export default function Scene({
   );
 
   const [sceneStopped, setSceneStopped] = useState(null);
-  useEffect(() => { setSceneStopped(null); }, [room.id]);
+  const [sceneReady, setSceneReady] = useState(false);
+  const failScene = useCallback((reason) => setSceneStopped((prev) => prev ?? reason), []);
+  const handleSceneReady = useCallback(() => { setSceneReady(true); onReady?.(); }, [onReady]);
+  useEffect(() => { setSceneStopped(null); setSceneReady(false); }, [room.id]);
 
   const bounds = ROOM_BOUNDS[room.id] ?? { x: 6.5, zMin: -5.5, zMax: 9 };
   const bg = room.id==='abandoned_field' ? '#26394e' : isOutdoor ? '#05070d' : '#080604';
@@ -1576,17 +1579,20 @@ export default function Scene({
         camera={{ position: view.at, fov: view.fov }}>
         <color attach="background" args={[bg]} />
         <fog attach="fog" args={room.id==='abandoned_field'?[bg,12,50]:isOutdoor ? [bg, 25, 65] : [bg, 22, 42]} />
-        <Suspense fallback={<SceneLoading />}>
-          <RoomLighting roomId={room.id} quality={quality} />
-          <RoomEnvironment roomId={room.id} room={room} hot={hot} />
-          <OrbitControls makeDefault enablePan enableDamping dampingFactor={0.08}
-            target={view.look} minDistance={2.6} maxDistance={16}
-            minPolarAngle={0.35} maxPolarAngle={Math.PI / 2.02} />
-          <CameraRig key={room.id} focusInfo={focusInfo} view={view} />
-          <ExploreKeys disabled={!!focus} bounds={bounds} />
-          <ListenerPosition />
-          <SceneReady onReady={onReady} onMetrics={onMetrics}/>
-        </Suspense>
+        <SceneErrorBoundary resetKey={room.id} onError={() => failScene('scene_error')}>
+          <Suspense fallback={<SceneLoading />}>
+            <RoomLighting roomId={room.id} quality={quality} />
+            <RoomEnvironment roomId={room.id} room={room} hot={hot} />
+            <OrbitControls makeDefault enablePan enableDamping dampingFactor={0.08}
+              target={view.look} minDistance={2.6} maxDistance={16}
+              minPolarAngle={0.35} maxPolarAngle={Math.PI / 2.02} />
+            <CameraRig key={room.id} focusInfo={focusInfo} view={view} />
+            <ExploreKeys disabled={!!focus} bounds={bounds} />
+            <ListenerPosition />
+            <SceneReady onReady={handleSceneReady} onMetrics={onMetrics}/>
+          </Suspense>
+        </SceneErrorBoundary>
+        <SceneLoadTimeout key={room.id} active={!sceneReady} onTimeout={() => failScene('load_timeout')} />
         <SceneWatchdog onStopped={setSceneStopped} />
         <PerformanceGuard />
         {quality === 'high' && <EffectComposer multisampling={2}>
