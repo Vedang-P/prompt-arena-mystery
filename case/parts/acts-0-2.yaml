@@ -773,7 +773,7 @@ puzzles:
   - id: p_morse
     kind: text
     prompt: "The diary's last filled page is covered in dots and dashes. The next page holds a decoder — each pattern, one letter. Oh god, he now has to sit and decode it. Why couldn't Parth write it normally?"
-    evidence: "/assets/pictures/evidence_diary_morse.png"
+    evidence: "/assets/pictures/evidence_diary_morse.jpg"
     answers: [oc1808, "oc 1808"]
     success: "Dots and dashes fall into place: O, C, 1, 8, 0, 8. The full line reads \"OC1808 in laptop.\" A very strange thing to encode — but Sameer shelves it for later."
     grants: [c_morse]

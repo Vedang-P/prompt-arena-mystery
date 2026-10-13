@@ -2146,7 +2146,7 @@ clues:
     description: "A leather diary engraved with a moon and stars. Its final page reads: --- / -.-. / .---- / ---.. / ----- / ---.. . On the facing page: O = ---; C = -.-.; 1 = .----; 8 = ---..; 0 = -----. A scribbled arrow points from the code to the laptop."
     grants:
       - mother_room
-    page: /assets/pictures/evidence_diary_morse.png
+    page: /assets/pictures/evidence_diary_morse.jpg
   - id: c_laptop_locked
     name: Locked laptop
     description: "Parth's laptop sits open in sleep mode, password protected. Sameer tries a guess — the field shakes. The screen offers a hint instead: \"Look where my loudest secrets are kept, away from prying eyes, leather bound and stained with ink.\""
@@ -2367,7 +2367,7 @@ puzzles:
   - id: p_morse
     kind: text
     prompt: Decode the groups in Parth's diary, then enter the six-character code. Review the diary entry below; the photograph shows the letter key.
-    evidence: /assets/pictures/evidence_diary_morse.png
+    evidence: /assets/pictures/evidence_diary_morse.jpg
     answers:
       - oc1808
       - oc 1808

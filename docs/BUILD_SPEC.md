@@ -81,7 +81,7 @@ puzzles:
     kind: text | choice | code | email
     prompt: string             # the question exactly as the player sees it
     hint: string?              # optional
-    evidence: string?          # optional asset path (e.g. /assets/pictures/evidence_diary_morse.png)
+    evidence: string?          # optional asset path (e.g. /assets/pictures/evidence_diary_morse.jpg)
     options: [string]          # choice only
     answers: [string]          # accepted answers; text/code normalized case/punct/space
                                # choice answers must equal an option string (or its letter)
