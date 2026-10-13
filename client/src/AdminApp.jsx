@@ -379,6 +379,58 @@ function Dashboard({ session, onLoggedOut }) {
   const stats = data?.stats;
   const disqualified = teams.filter((t) => t.disqualified);
 
+  // The same ranking players see on the live leaderboard: solved teams first
+  // (fastest finish), then furthest stage, then quickest clock. Disqualified
+  // teams and preview saves are excluded and listed separately below it.
+  const board = useMemo(() => {
+    const isEvent = !!data?.config?.eventMode;
+    const eligible = teams.filter(
+      (t) =>
+        t.kind === 'team' &&
+        !t.disqualified &&
+        t.name !== 'Instructor preview' &&
+        (!isEvent || t.eventEntered)
+    );
+    const ranked = [...eligible].sort(
+      (a, b) =>
+        Number(b.solved) - Number(a.solved) ||
+        b.actNumber - a.actNumber ||
+        a.elapsedSeconds - b.elapsedSeconds ||
+        a.name.localeCompare(b.name)
+    );
+    return ranked.map((t, i) => ({ ...t, rank: i + 1 }));
+  }, [teams, data?.config?.eventMode]);
+
+  const excludedFromBoard = useMemo(() => {
+    const isEvent = !!data?.config?.eventMode;
+    return teams
+      .filter(
+        (t) =>
+          t.disqualified ||
+          t.name === 'Instructor preview' ||
+          t.kind !== 'team' ||
+          (isEvent && !t.eventEntered)
+      )
+      .map((t) => ({
+        ...t,
+        exclusion: t.disqualified
+          ? t.disqualifyReason === 'left_fullscreen'
+            ? 'Disqualified — left fullscreen 3×'
+            : 'Disqualified by an invigilator'
+          : t.kind !== 'team'
+            ? t.kind === 'practice' ? 'Practice save' : t.kind === 'guest' ? 'Guest preview' : 'Google sign-in'
+            : t.name === 'Instructor preview'
+              ? 'Instructor preview'
+              : 'Has not entered the event',
+      }));
+  }, [teams, data?.config?.eventMode]);
+
+  const boardClock = (t) => {
+    if (t.solved) return t.elapsedSeconds;
+    if (!data?.serverTime || t.actNumber === 0) return t.elapsedSeconds;
+    return t.elapsedSeconds + Math.max(0, (now - Date.parse(data.serverTime)) / 1000);
+  };
+
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     let list = teams.filter((t) => !q || t.name.toLowerCase().includes(q));
@@ -540,6 +592,7 @@ function Dashboard({ session, onLoggedOut }) {
 
               <div className="admin-tabs">
                 <button className={tab === 'teams' ? 'active' : ''} onClick={() => setTab('teams')}>Teams</button>
+                <button className={tab === 'board' ? 'active' : ''} onClick={() => setTab('board')}>Leaderboard</button>
                 <button className={tab === 'log' ? 'active' : ''} onClick={() => setTab('log')}>Event log</button>
                 <button className={tab === 'audit' ? 'active' : ''} onClick={() => setTab('audit')}>Admin log</button>
                 <span className="admin-tab-note">updated {fmtAgo(new Date(data.serverTime).toISOString(), now)}</span>
@@ -668,6 +721,90 @@ function Dashboard({ session, onLoggedOut }) {
                     {visible.length === 0 && <p className="admin-note">No teams match this view.</p>}
                   </div>
                 </>
+              )}
+
+              {tab === 'board' && (
+                <div className="admin-board">
+                  <div className="admin-board-head">
+                    <p className="admin-board-note">
+                      Exactly what players see on the live leaderboard — solved teams first, then furthest stage, then the quickest clock.
+                      Disqualified teams and preview saves never rank.
+                    </p>
+                    <a className="admin-button" href="/api/admin/export" title="Final standings with rank and score">Results CSV</a>
+                  </div>
+                  <div className="admin-table-wrap">
+                    <table className="admin-table admin-board-table">
+                      <thead>
+                        <tr>
+                          <th className="num">#</th>
+                          <th>Team</th>
+                          <th>Status</th>
+                          <th>Latest act</th>
+                          <th className="num">Clues</th>
+                          <th className="num">Puzzles</th>
+                          <th className="num">Penalties</th>
+                          <th className="num">Strikes</th>
+                          <th className="num">Time</th>
+                          <th />
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {board.map((t) => (
+                          <tr key={t.id}>
+                            <td className="num">
+                              <span className={`board-rank rank-${Math.min(t.rank, 4)}`}>{t.rank}</span>
+                            </td>
+                            <td>
+                              <button className="admin-team-link" onClick={() => setSelected(t.id)}>
+                                <span className={`presence ${t.online ? 'on' : 'off'}`} />
+                                {t.name}
+                              </button>
+                            </td>
+                            <td>
+                              {t.solved ? (
+                                <span className="pill ok">Solved</span>
+                              ) : t.pendingExit ? (
+                                <span className="pill warn">Outside</span>
+                              ) : t.online ? (
+                                <span className="pill ok">Active</span>
+                              ) : (
+                                <span className="pill">Away</span>
+                              )}
+                            </td>
+                            <td>
+                              <span className="stage-title">{t.solved ? 'Case complete' : t.actTitle ?? t.act}</span>
+                              <small>{t.solvedAt ? `solved ${fmtAgo(t.solvedAt, now)}` : t.actEnteredAt ? `entered ${fmtAgo(t.actEnteredAt, now)}` : '—'}</small>
+                            </td>
+                            <td className="num">{t.discovered}<small>/{t.totalClues}</small></td>
+                            <td className="num">{t.solvedPuzzles}<small>/{t.totalPuzzles}</small></td>
+                            <td className={`num ${t.penalties > 0 ? 'bad-text' : ''}`}>{t.penalties}</td>
+                            <td className={`num ${t.strikes > 0 ? 'warn-text' : ''}`}>{t.strikes}/{t.maxStrikes}</td>
+                            <td className="num board-clock">{t.actNumber === 0 ? '—' : fmtDuration(boardClock(t))}</td>
+                            <td className="actions-cell">
+                              <div className="row-actions">
+                                <button className="admin-button quiet" onClick={() => setSelected(t.id)}>Manage</button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {board.length === 0 && <p className="admin-note">No teams are on the board yet.</p>}
+                  </div>
+                  {excludedFromBoard.length > 0 && (
+                    <section className="admin-excluded">
+                      <h3>Not on the board ({excludedFromBoard.length})</h3>
+                      <ul>
+                        {excludedFromBoard.map((t) => (
+                          <li key={t.id}>
+                            <button className="admin-team-link" onClick={() => setSelected(t.id)}>{t.name}</button>
+                            <span>{t.exclusion}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
+                </div>
               )}
 
               {tab === 'log' && (

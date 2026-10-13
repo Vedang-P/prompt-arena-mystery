@@ -138,8 +138,16 @@ const annText = await page.$eval('.admin-announce-current', (el) => el.textConte
 assert(annText.includes('Two minutes until the final act.'), 'the board mirrors the live announcement');
 await page.screenshot({ path: path.join(OUT, 'admin-control-room.png') });
 
-// Event log tab: readable entries, filters and a CSV export of what is shown.
+// Leaderboard tab mirrors the player-facing ranking.
 await page.click('.admin-tabs button:nth-child(2)');
+await page.waitForSelector('.admin-board-table tbody tr', { timeout: 20000 });
+const rankOne = await page.$eval('.admin-board-table .board-rank', (el) => el.textContent.trim());
+assert.equal(rankOne, '1', 'the leaderboard ranks teams');
+assert(await page.$('.admin-board-note'), 'the board explains its ranking rule');
+await page.screenshot({ path: path.join(OUT, 'admin-leaderboard.png') });
+
+// Event log tab: readable entries, filters and a CSV export of what is shown.
+await page.click('.admin-tabs button:nth-child(3)');
 await page.waitForSelector('.admin-log-table tbody tr', { timeout: 20000 });
 const logRows = await page.$$eval('.admin-log-table tbody tr', (rows) => rows.length);
 assert(logRows >= 1, 'event log lists entries');
