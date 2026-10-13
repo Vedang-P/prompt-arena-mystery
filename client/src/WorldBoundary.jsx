@@ -1,6 +1,12 @@
 import { Component,useEffect,useRef } from 'react';
-import { Html } from '@react-three/drei';
+import { Html, useProgress } from '@react-three/drei';
 import {useFrame,useThree} from '@react-three/fiber';
+
+// Pin the loading card to the middle of the canvas viewport. The default
+// `calculatePosition` projects the object's world origin through the camera,
+// so the card drifted around as the cinematic camera moved; returning the
+// viewport centre keeps it fixed and perfectly centred on both axes.
+const centerOfViewport = (_el, _camera, size) => [size.width / 2, size.height / 2];
 
 export function SceneReady({onReady,onMetrics}){
   const callback=useRef(onReady),elapsed=useRef(0),done=useRef(false);callback.current=onReady;
@@ -92,7 +98,20 @@ export function WorldStopped({ reason }) {
 }
 
 export function SceneLoading() {
-  return <Html center><div className="world-loading"><span className="loading-moon" /><p>Opening the scene</p></div></Html>;
+  const { progress, total } = useProgress();
+  const indeterminate = !(total > 0);
+  const pct = indeterminate ? 0 : Math.max(0, Math.min(100, Math.round(progress)));
+  return (
+    <Html center calculatePosition={centerOfViewport} zIndexRange={[40, 0]}>
+      <div className="world-loading" role="status" aria-live="polite">
+        <span className="loading-moon" />
+        <p>Opening the scene</p>
+        <div className={`loading-bar${indeterminate ? ' is-indeterminate' : ''}`} aria-hidden="true">
+          <span className="loading-bar-fill" style={indeterminate ? undefined : { width: `${pct}%` }} />
+        </div>
+      </div>
+    </Html>
+  );
 }
 export class WorldBoundary extends Component {
   state = { failed: false };
