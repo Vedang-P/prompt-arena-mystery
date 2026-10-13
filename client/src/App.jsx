@@ -851,7 +851,6 @@ export default function App() {
           characters={state.characters}
           busy={actBusy}
           onComplete={() => finishAct(cinematic.id)}
-          onLeaderboard={()=>setLeaderboardOpen(true)}
           nextActKicker={next?.kicker}
           nextActTitle={next?.title}
           endLabel={next ? (next.type === 'cinematic' ? 'Continue' : 'Enter') : undefined}

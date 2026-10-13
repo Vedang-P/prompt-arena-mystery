@@ -7,8 +7,10 @@ const read = () => {
 
 // Integrated GPUs, tiny machines and low-memory laptops cannot hold the
 // balanced preset; they start on low instead of stuttering through it. The
-// renderer string is the most reliable signal available to the browser.
-const WEAK_GPU = /(hd|uhd) graphics|intel\(r\) gma|mali-|adreno [1-5]\d\d|powervr|swiftshader|llvmpipe|software rasterizer|basic render/i;
+// renderer string is the most reliable signal available to the browser —
+// including the software rasterisers (WARP, SwiftShader, llvmpipe) that draw
+// the game on machines with hardware acceleration switched off.
+const WEAK_GPU = /(hd|uhd) graphics|intel\(r\) gma|mali-|adreno [1-5]\d\d|powervr|swiftshader|llvmpipe|software rasterizer|basic render|warp/i;
 
 function detectQuality() {
   try {
@@ -17,7 +19,7 @@ function detectQuality() {
     const memory = navigator.deviceMemory;
     if ((cores && cores <= 4) || (memory && memory <= 4)) return 'low';
     const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl');
+    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
     if (!gl) return 'low';
     const info = gl.getExtension('WEBGL_debug_renderer_info');
     const gpu = info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL) ?? '') : '';

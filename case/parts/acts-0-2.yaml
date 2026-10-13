@@ -14,6 +14,7 @@ acts:
         room: gazebo
         shot: wide
         seconds: 9
+        caption: "Yesterday · 6:42 PM"
         cast:
           - { character: sameer, at: [-0.7, 0.1], rot: 0.55, pose: sit }
           - { character: parth, at: [0.75, 0.05], rot: -0.55, pose: sit }
@@ -25,6 +26,7 @@ acts:
         room: gazebo
         shot: two
         seconds: 11
+        caption: "Yesterday · 6:42 PM"
         cast:
           - { character: sameer, at: [-0.7, 0.1], rot: 0.55, pose: sit }
           - { character: parth, at: [0.75, 0.05], rot: -0.55, pose: sit }
@@ -36,7 +38,8 @@ acts:
       - id: gazebo_call
         room: gazebo
         shot: close_parth
-        seconds: 11
+        seconds: 10
+        caption: "Yesterday · 6:42 PM"
         cast:
           - { character: sameer, at: [-0.7, 0.1], rot: 0.55, pose: sit }
           - { character: parth, at: [0.75, 0.05], rot: -0.55, pose: sit }
@@ -44,12 +47,21 @@ acts:
           - { speaker: narrator, text: "Parth's phone rings. He picks it up and listens — not a word. Sameer notices his friend looks a little disheveled — maybe it's the light." }
           - { speaker: parth, text: "Alright, I gotta go. Mum's calling. Tomorrow — same time?" }
           - { speaker: narrator, text: "And then he ran off. Weird." }
+      - id: gazebo_alone
+        room: gazebo
+        shot: wide
+        seconds: 7
+        caption: "Yesterday · 6:42 PM"
+        cast:
+          - { character: sameer, at: [-0.4, 0.3], rot: 0.2 }
+        lines:
           - { speaker: sameer, text: "Yeah, yeah, dude." }
-          - { speaker: narrator, text: "Parth leaves earlier than usual. Sameer walks home alone." }
+          - { speaker: narrator, text: "Parth left earlier than usual. Sameer walks home alone." }
       - id: gazebo_nextday
         room: gazebo
         shot: wide
         seconds: 10
+        caption: "Today · 6:30 PM"
         cast:
           - { character: sameer, at: [-0.4, 0.3], rot: 0.2 }
         lines:

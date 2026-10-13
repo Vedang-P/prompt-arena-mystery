@@ -208,6 +208,17 @@ In event mode, guest and Google sign-in, practice starts, chapter selection and 
 
 The private roster lives in `event-private/team-codes.csv` (ignored by Git and Vercel); distribute one assigned code per team. Run `npm run test:event` for 70 concurrent local sessions and gate/timer checks, then rehearse on the actual classroom network before the event.
 
+### Laptop requirements (publish to teams)
+
+| | Minimum | Recommended |
+| --- | --- | --- |
+| Browser | Latest Chrome or Edge; Firefox 120+; Safari 16.4+ | Latest Chrome or Edge |
+| Graphics | Hardware acceleration **enabled**; any GPU from ~2015 (Intel HD 5000 class) | Dedicated GPU or a modern iGPU |
+| CPU / RAM | 4 threads / 4 GB (the game auto-selects Low) | 4 threads+ / 8 GB |
+| Display | 1280×720 | 1920×1080 |
+
+The game requires WebGL2. It draws even with hardware acceleration off — the browser's software rasteriser takes over — but heavy outdoor scenes drop to roughly 10 FPS that way, so teams should bring a laptop with acceleration on. **Pre-check before the event:** open the game; if the title-screen gazebo renders smoothly you are set. If the screen stays black, open `chrome://gpu` and confirm "WebGL2: Hardware accelerated" is enabled, or use another laptop. The test-day preload doubles as the compatibility check — anyone whose screen does not draw should switch laptops before the event starts.
+
 ---
 
 ## Control room (`/admin/`)

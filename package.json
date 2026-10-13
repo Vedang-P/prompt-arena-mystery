@@ -19,6 +19,7 @@
     "test:event": "npm run build:case && node scripts/test-event.mjs",
     "test:admin": "npm run build:case && node scripts/test-admin.mjs",
     "test:admin-ui": "node scripts/test-admin-ui.mjs",
+    "test:3d": "node scripts/test-3d.mjs",
     "test:signs": "node scripts/test-signs.mjs",
     "test:deployment": "npm run build:case && node scripts/test-deployment.mjs",
     "prepare:facade": "node scripts/prepare-factory-facade.mjs",

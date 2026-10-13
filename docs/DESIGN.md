@@ -177,7 +177,16 @@ Tooling:
 - One URL + 70 team codes. **Test day**: every team opens the game once so the 3D assets are
   cached locally before the event.
 - Asset budget: rooms kept under roughly 60-80 MB total; hashed filenames, immutable caching.
-- Fallback for devices without usable WebGL: a visual-novel view over the same API.
+- Devices with 3D graphics "switched off" still get the 3D game: the renderer asks for WebGL2 with
+  permissive attributes so the browser's software rasteriser (ANGLE WARP / SwiftShader) draws the
+  rooms, keeps retrying a failing context, restores a lost one in place, and auto-drops the quality
+  preset on slow frames. There is no 2D mode.
+- Player laptop requirements (publish in the event email): latest Chrome/Edge (Firefox/Safari
+  current), **hardware acceleration on**, any GPU from ~2015 (Intel HD 5000 class), 4 threads,
+  4 GB RAM (8 GB recommended), 1280×720 minimum. Measured on the software rasteriser at the
+  auto-selected Low preset: indoor rooms hold 18-31 FPS, heavy outdoor sets ~9 FPS; any real GPU
+  holds 60+. The test-day preload doubles as the compatibility check — teams whose screen does not
+  draw swap laptops before the event.
 - Venue wifi is the top risk. Cloud-only means the event dies with the network; a local mirror
   is on the backlog but out of scope for v1.
 - Event-day runbook: to be written at M5 (start/pause, hint broadcast, kill switch, team
