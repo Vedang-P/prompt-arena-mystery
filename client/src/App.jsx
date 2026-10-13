@@ -2,7 +2,7 @@ import { lazy, useEffect, useMemo, useRef, useState } from 'react';
 const Scene = lazy(() => import('./Scene.jsx'));
 import TitleScreen, { ChapterSelect, EvidenceCard } from './TitleScreen.jsx';
 const CinematicStory = lazy(() => import('./CinematicStory.jsx'));
-import { SettingsPanel, useSettings } from './Settings.jsx';
+import { SettingsPanel } from './Settings.jsx';
 import Soundtrack from './Soundtrack.jsx';
 import Leaderboard from './Leaderboard.jsx';
 const ActDirector = lazy(() => import('./ActDirector.jsx'));
@@ -57,7 +57,6 @@ export default function App() {
   const [leaderboardOpen,setLeaderboardOpen] = useState(false);
   const [exploreOpen, setExploreOpen] = useState(false);
   const [evidence, setEvidence] = useState(null);
-  const { sound, update } = useSettings();
   useEffect(() => {
     const key = (e) => { if (e.key === 'Escape') { setSettingsOpen(false); setChaptersOpen(false); setLeaderboardOpen(false); setEvidence(null); setNotebookOpen(false); setPuzzleSpot(null); setActiveChar(null); setExploreOpen(false); setAccuseOpen(false); } };
     window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key);
@@ -793,7 +792,6 @@ export default function App() {
         <div className="location"><p className="location-kicker">{currentAct?.kicker} · {currentAct?.title}{state.practice ? ' · Practice' : ''}</p><h1 className="location-name">{room.name}</h1><p className="hud-objective">{currentAct?.objective}</p></div>
         <div className="release-tools">
           <span className="penalty-counter" title="Case penalties">{state.penalties ?? 0} {(state.penalties ?? 0) === 1 ? 'penalty' : 'penalties'}</span>
-          <button className="quiet-button" onClick={() => update({ sound: !sound })} aria-label={sound ? 'Mute sound' : 'Enable sound'}>{sound ? 'Sound on' : 'Sound off'}</button>
           <button className="quiet-button" onClick={() => setSettingsOpen(true)}>Settings</button>
           {!authConfig?.eventMode && <button className="quiet-button" onClick={() => setChaptersOpen(true)}>Chapters</button>}
           <button className="quiet-button" onClick={()=>setLeaderboardOpen(true)}>Live leaderboard</button>

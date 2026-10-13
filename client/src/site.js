@@ -9,7 +9,6 @@ import { registerAssetCache } from './registerSW.js';
   const root = document.documentElement;
   const enter = document.getElementById('enter');
   const settingsStore = 'moon-settings';
-  const muteStash = 'moon-settings-before-mute';
   const INTRO_MS = 2600;
   const REFRESH_MS = 5000;
   const GAME = '/play/?resume=1';
@@ -47,38 +46,14 @@ import { registerAssetCache } from './registerSW.js';
     } catch {}
     return next;
   };
-  const isMuted = (settings) => !settings.sound;
-
-  const muteBtn = document.getElementById('mute-btn');
   const soundBox = document.getElementById('set-sound');
   const qualityBox = document.getElementById('set-quality');
 
   const paintAudio = () => {
     const settings = readSettings();
-    const muted = isMuted(settings);
-    muteBtn.textContent = muted ? 'Unmute audio' : 'Mute audio';
-    muteBtn.setAttribute('aria-pressed', String(muted));
     soundBox.checked = !!settings.sound;
     qualityBox.value = settings.quality;
   };
-
-  muteBtn.addEventListener('click', () => {
-    const settings = readSettings();
-    if (isMuted(settings)) {
-      let previous = { sound: true };
-      try {
-        const raw = localStorage.getItem(muteStash);
-        if (raw) previous = { ...previous, ...JSON.parse(raw) };
-      } catch {}
-      writeSettings({ sound: !!previous.sound });
-    } else {
-      try {
-        localStorage.setItem(muteStash, JSON.stringify({ sound: settings.sound }));
-      } catch {}
-      writeSettings({ sound: false });
-    }
-    paintAudio();
-  });
 
   soundBox.addEventListener('change', () => {
     writeSettings({ sound: soundBox.checked });
