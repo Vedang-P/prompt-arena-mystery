@@ -182,6 +182,14 @@ async function settlePendingExit(env, row) {
     )
     .run();
 
+  // The automatic disqualification belongs in the timeline too, exactly like
+  // the manual one — the admin log must not show a team vanishing with no line.
+  if (crossesLimit && !current.disqualified) {
+    await env.DB.prepare('INSERT INTO events(team_id, type, detail) VALUES (?,?,?)')
+      .bind(row.id, 'disqualified', JSON.stringify({ reason: DISQUALIFY_REASON, automatic: true, strikes }))
+      .run();
+  }
+
   return { strikes, disqualified, resolved: struck ? 'strike' : 'return', elapsedMs: elapsedMs === Infinity ? null : Math.round(elapsedMs) };
 }
 
@@ -756,6 +764,39 @@ app.post('/api/heartbeat', async (c) => {
   await c.env.DB.prepare('UPDATE teams SET last_seen_at = ? WHERE id = ?')
     .bind(new Date().toISOString(), auth.teamId)
     .run();
+  // A reloaded tab returns with no client-side pending handle. If the team
+  // reports being in fullscreen again inside the grace window, the pending exit
+  // is cleared here — otherwise it would settle as a late strike they never
+  // earned. A late return is still left for the return endpoint to settle.
+  const body = await c.req.json().catch(() => ({}));
+  if (body?.fullscreen === true && auth.row?.pending_exit_at) {
+    const startedMs = parseStamp(auth.row.pending_exit_at);
+    const elapsedMs = startedMs === null ? Infinity : Date.now() - startedMs;
+    if (elapsedMs <= exitWindowMs(c.env)) {
+      const claim = await c.env.DB.prepare(
+        'UPDATE teams SET pending_exit_at = NULL, pending_exit_kind = NULL WHERE id = ? AND pending_exit_at = ?'
+      )
+        .bind(auth.teamId, auth.row.pending_exit_at)
+        .run();
+      if (Number(claim?.meta?.changes ?? 0) > 0) {
+        await c.env.DB.prepare('INSERT INTO events(team_id, type, detail) VALUES (?,?,?)')
+          .bind(
+            auth.teamId,
+            'exit_return',
+            JSON.stringify({
+              elapsedMs: elapsedMs === Infinity ? null : Math.round(elapsedMs),
+              strikes: auth.strikes,
+              graceMs: exitGraceMs(c.env),
+              windowMs: exitWindowMs(c.env),
+              late: false,
+              kind: auth.row.pending_exit_kind ?? null,
+              via: 'heartbeat',
+            })
+          )
+          .run();
+      }
+    }
+  }
   // The ping also carries the live announcement so an invigilator's broadcast
   // reaches every playing team within one heartbeat, not on their next action.
   return c.json({ ok: true, strikes: auth.strikes, announcement: await activeAnnouncement(c.env) });
@@ -793,13 +834,24 @@ app.post('/api/act/complete', async (c) => {
 
   const next = acts[Math.min(actIndex + 1, acts.length - 1)] ?? act;
   const stored = actIndex >= currentIndex ? next.id : current;
-  await c.env.DB.prepare("UPDATE progress SET act = ?, started_at = CASE WHEN act = 'act0' AND ? != 'act0' THEN datetime('now') ELSE started_at END WHERE team_id = ?")
-    .bind(stored, stored, auth.teamId)
+  // The run clock starts the first time a team leaves the prologue and never
+  // restarts — reopening act0 via /api/restart must not reset the event clock
+  // the client promises "has not stopped".
+  const flags = parseJsonObject(auth.progress.flags);
+  const stampClock = current === 'act0' && stored !== 'act0' && !flags.clockStarted;
+  if (stampClock) {
+    await c.env.DB.prepare('UPDATE progress SET started_at = datetime(\'now\'), flags = ? WHERE team_id = ?')
+      .bind(JSON.stringify({ ...flags, clockStarted: true }), auth.teamId)
+      .run();
+  }
+  await c.env.DB.prepare('UPDATE progress SET act = ? WHERE team_id = ?')
+    .bind(stored, auth.teamId)
     .run();
 
-  // Completing the final act ends the run; solved_at is only set the first time.
+  // Completing the final act ends the run; solved_at is only set the first
+  // time, and an authored branch ending is never overwritten by the main one.
   let ending = null;
-  if (actIndex === acts.length - 1 && actIndex >= currentIndex) {
+  if (actIndex === acts.length - 1 && actIndex >= currentIndex && !auth.progress.ending) {
     ending = 'ending_main';
     await c.env.DB.prepare('UPDATE progress SET ending = ? WHERE team_id = ?')
       .bind(ending, auth.teamId)
@@ -965,12 +1017,14 @@ app.get('/api/characters/:id/history', async (c) => {
   const characterId = c.req.param('id');
   if (!getCharacter(characterId)) return c.json({ error: 'unknown_character' }, 404);
   if (!characterAvailable(characterId, auth.progress.act ?? 'act0')) return c.json({ error: 'not_available' }, 403);
+  // The newest 100 turns matter, not the oldest: reordering DESC then flipping
+  // keeps long conversations complete instead of losing everything recent.
   const rows = await c.env.DB.prepare(
-    'SELECT role, content, source FROM messages WHERE team_id = ? AND character = ? ORDER BY id ASC LIMIT 100'
+    'SELECT role, content, source FROM messages WHERE team_id = ? AND character = ? ORDER BY id DESC LIMIT 100'
   )
     .bind(auth.teamId, characterId)
     .all();
-  return c.json({ messages: rows.results });
+  return c.json({ messages: [...rows.results].reverse() });
 });
 
 // ---------- interrogation (SSE) ----------
@@ -993,9 +1047,10 @@ app.post('/api/interrogate', async (c) => {
   // the reply is the next npc row after it; a retry of a turn that died mid-stream reuses
   // the stored question instead of inserting it again.
   let playerStored = false;
+  let question = text;
   if (reqId) {
     const prior = await c.env.DB.prepare(
-      'SELECT id FROM messages WHERE team_id = ? AND character = ? AND req_id = ? ORDER BY id LIMIT 1'
+      'SELECT id, content FROM messages WHERE team_id = ? AND character = ? AND req_id = ? ORDER BY id LIMIT 1'
     )
       .bind(auth.teamId, characterId, reqId)
       .first();
@@ -1013,28 +1068,36 @@ app.post('/api/interrogate', async (c) => {
         });
       }
       playerStored = true;
+      question = prior.content ?? text;
     }
   }
 
   const now = Date.now();
   const p = auth.progress;
-  if (now - p.last_prompt_ms < RATE_MIN_MS) return c.json({ error: 'slow_down' }, 429);
-  const windowStart = now - p.window_start > RATE_WINDOW_MS ? now : p.window_start;
-  const windowCount = windowStart === now ? 1 : p.window_count + 1;
-  if (windowCount > RATE_WINDOW_MAX) return c.json({ error: 'slow_down' }, 429);
-  await c.env.DB.prepare(
-    'UPDATE progress SET last_prompt_ms = ?, window_start = ?, window_count = ? WHERE team_id = ?'
-  )
-    .bind(now, windowStart, windowCount, auth.teamId)
-    .run();
+  // A dedup hit is a retry of a turn that never received its reply: it must not
+  // spend a rate-limit slot, and its question is the stored one, not the body
+  // a flaky client resent.
+  if (!playerStored) {
+    if (now - p.last_prompt_ms < RATE_MIN_MS) return c.json({ error: 'slow_down' }, 429);
+    const windowStart = now - p.window_start > RATE_WINDOW_MS ? now : p.window_start;
+    const windowCount = windowStart === now ? 1 : p.window_count + 1;
+    if (windowCount > RATE_WINDOW_MAX) return c.json({ error: 'slow_down' }, 429);
+    await c.env.DB.prepare(
+      'UPDATE progress SET last_prompt_ms = ?, window_start = ?, window_count = ? WHERE team_id = ?'
+    )
+      .bind(now, windowStart, windowCount, auth.teamId)
+      .run();
+  }
 
   const previousPlayer = await c.env.DB.prepare(
     "SELECT content FROM messages WHERE team_id = ? AND character = ? AND role = 'player' ORDER BY id DESC LIMIT 1"
   )
     .bind(auth.teamId, characterId)
     .first();
-  const repeat = isRepeat(text, previousPlayer?.content ?? '');
-  const noise = isNoise(text);
+  // A stored retry's own question is the last player row, so comparing against
+  // it would flag every legitimate retry as a repeat and snub it.
+  const repeat = !playerStored && isRepeat(question, previousPlayer?.content ?? '');
+  const noise = isNoise(question);
   const priorFallbacks = await c.env.DB.prepare(
     "SELECT COUNT(*) AS n FROM messages WHERE team_id = ? AND character = ? AND role = 'npc' AND source IN ('deflect','snub')"
   )
@@ -1042,17 +1105,30 @@ app.post('/api/interrogate', async (c) => {
     .first();
 
   if (!playerStored) {
-    await c.env.DB.prepare(
-      'INSERT INTO messages(team_id, character, role, content, source, req_id) VALUES (?,?,?,?,?,?)'
-    )
-      .bind(auth.teamId, characterId, 'player', text, 'player', reqId)
-      .run();
+    try {
+      await c.env.DB.prepare(
+        'INSERT INTO messages(team_id, character, role, content, source, req_id) VALUES (?,?,?,?,?,?)'
+      )
+        .bind(auth.teamId, characterId, 'player', text, 'player', reqId)
+        .run();
+    } catch (e) {
+      // A concurrent request with the same reqId won the unique index: adopt
+      // its stored question instead of failing the turn with a 500.
+      if (!reqId) throw e;
+      const duplicate = await c.env.DB.prepare(
+        'SELECT content FROM messages WHERE team_id = ? AND character = ? AND req_id = ? ORDER BY id LIMIT 1'
+      )
+        .bind(auth.teamId, characterId, reqId)
+        .first();
+      playerStored = true;
+      question = duplicate?.content ?? question;
+    }
   }
 
   // The interrogation is deterministic: the authored keywords plus the 70%
   // similarity gate decide whether a lead is revealed. Any other question
   // cycles the character's deflection lines instead of leaking information.
-  const canned = !repeat && !noise ? canonicalAnswer(characterId, text) : null;
+  const canned = !repeat && !noise ? canonicalAnswer(characterId, question) : null;
   const source = canned ? 'canonical' : repeat ? 'snub' : 'deflect';
   const final = canned ?? deflection(characterId, (priorFallbacks?.n ?? 0) + 1, repeat);
 
@@ -1107,10 +1183,16 @@ app.post('/api/accuse', async (c) => {
 
   let checks = null;
   let judge = 'fallback';
+  // Instruction-like text or JSON braces in a conclusion are exactly the shape
+  // of a judge-prompt injection: grade those with the deterministic matcher
+  // only, never through the model.
+  const injectionShaped = /[{}]|ignore (all |the )?(previous|above)|system prompt|output (exactly|only)|json/i.test(`${method} ${motive}`);
   const llm = makeLLM(c.env, () => {});
-  if (llm) {
+  if (llm && !injectionShaped) {
     try {
-      const out = await llm.complete(judgeMessages(method, motive), { temperature: 0, maxTokens: 200 });
+      // The platform kills this function at 60s: the judge gets a small budget
+      // so a slow model chain still lands on the deterministic fallback in time.
+      const out = await llm.complete(judgeMessages(method, motive), { temperature: 0, maxTokens: 200, timeoutMs: 20000 });
       const parsed = parseJudge(out);
       if (parsed) {
         checks = parsed;

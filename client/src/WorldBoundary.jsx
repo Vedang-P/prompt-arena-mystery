@@ -100,21 +100,59 @@ export class AssetBoundary extends Component {
 }
 
 // A scene-tree error is retried in place instead of dead-ending the stage: the
-// boundary resets itself every couple of seconds and the stage relights the
-// moment the retry succeeds. A change of resetKey retries immediately, so the
-// caller can swap rooms or cinematic scenes without remounting the canvas.
+// boundary resets itself a few times and the stage relights the moment a retry
+// succeeds. A change of resetKey retries immediately, so the caller can swap
+// rooms or cinematic scenes without remounting the canvas. After the retries
+// are spent — or when WebGL itself could not start — a terminal card explains
+// the situation and offers recovery, so nobody waits on a loader forever.
+const MAX_SCENE_RETRIES = 3;
+function recoverLowGraphics() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('moon-settings') || '{}');
+    localStorage.setItem('moon-settings', JSON.stringify({ ...saved, quality: 'low', autoTune: false }));
+  } catch {}
+  window.location.reload();
+}
+async function clearCachesAndReload() {
+  try { if ('caches' in window) for (const key of await caches.keys()) await caches.delete(key); } catch {}
+  try {
+    const registrations = await navigator.serviceWorker?.getRegistrations?.();
+    for (const registration of registrations ?? []) await registration.unregister();
+  } catch {}
+  window.location.reload();
+}
 export class WorldBoundary extends Component {
-  state = { failed: false };
-  static getDerivedStateFromError() { return { failed: true }; }
+  state = { failed: false, terminal: false, webgl: false, retries: 0 };
+  static getDerivedStateFromError(error) {
+    const webgl = error?.code === 'webgl_unavailable';
+    return { failed: true, terminal: webgl, webgl };
+  }
   componentDidCatch(error) { console.error('scene_error', error.message); }
   componentDidMount() {
-    this.timer = setInterval(() => { if (this.state.failed) this.setState({ failed: false }); }, 2500);
+    this.timer = setInterval(() => {
+      if (!this.state.failed || this.state.terminal) return;
+      if (this.state.retries >= MAX_SCENE_RETRIES) this.setState({ terminal: true });
+      else this.setState((s) => ({ failed: false, retries: s.retries + 1 }));
+    }, 2500);
   }
   componentWillUnmount() { clearInterval(this.timer); }
   componentDidUpdate(prevProps) {
-    if (this.state.failed && prevProps.resetKey !== this.props.resetKey) this.setState({ failed: false });
+    if (this.props.resetKey !== prevProps.resetKey) this.setState({ failed: false, terminal: false, retries: 0 });
   }
   render() {
+    if (this.state.terminal) {
+      return (
+        <div className="world-fallback">
+          <p>{this.state.webgl ? 'The 3D view could not start on this device.' : 'The 3D view kept failing to start.'}</p>
+          <p>Your case is saved. You can still play with the Explore list — or bring the stage back:</p>
+          <div className="world-fallback-actions">
+            <button className="btn ghost" onClick={() => window.location.reload()}>Reload scene</button>
+            <button className="btn ghost" onClick={recoverLowGraphics}>Reload on lowest graphics</button>
+            <button className="btn ghost" onClick={clearCachesAndReload}>Clear cache &amp; reload</button>
+          </div>
+        </div>
+      );
+    }
     if (this.state.failed) return <SceneLoading label="Reconnecting the scene" />;
     return this.props.children;
   }

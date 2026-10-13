@@ -15,28 +15,39 @@ export const fullscreenSupported = () =>
   typeof document.documentElement?.requestFullscreen === 'function' &&
   document.fullscreenEnabled !== false;
 
-export function tryEnterFullscreen() {
+export function tryEnterFullscreen(onDenied) {
   if (!fullscreenSupported() || document.fullscreenElement) return;
   try {
     const request = document.documentElement.requestFullscreen({ navigationUI: 'hide' });
-    if (request?.catch) request.catch(() => {});
+    if (request?.catch) request.catch(() => onDenied?.());
   } catch {
-    // The overlay's escape hatch covers browsers that refuse the request.
+    // The caller shows the escape hatch once the request is actually refused.
+    onDenied?.();
   }
 }
 
 const EXIT_ESCAPE_HATCH_MS = 9_000;
 
+// One team per page: the pending exit must survive a phase change (the gate is
+// remounted between the cinematic and the room view), or a player who returns
+// in time still eats the strike because the fresh mount has no pending handle.
+let pendingExitShared = false;
+
 export default function FullscreenGate({ enabled, graceMs = 10_000, maxStrikes = 3, strikes = 0, onStrike, onDisqualified }) {
   const [supported] = useState(fullscreenSupported);
   const [active, setActive] = useState(() => Boolean(document.fullscreenElement));
-  const [pending, setPending] = useState(false);
+  const [pending, setPending] = useState(pendingExitShared);
   const [deadline, setDeadline] = useState(0);
   const [now, setNow] = useState(() => Date.now());
   const [strikeFlash, setStrikeFlash] = useState(null);
   const [escapeHatch, setEscapeHatch] = useState(false);
+  const [denied, setDenied] = useState(false);
   const [optedOut, setOptedOut] = useState(false);
-  const pendingRef = useRef(false);
+  const pendingRef = useRef(pendingExitShared);
+  const exitPromiseRef = useRef(Promise.resolve());
+  // Only an exit from a session that actually entered fullscreen counts; a tab
+  // hidden behind the "Fullscreen required" overlay has not left anything.
+  const everActive = useRef(Boolean(document.fullscreenElement));
   const live = enabled && supported && !optedOut;
 
   const reportFailure = useCallback(
@@ -50,9 +61,10 @@ export default function FullscreenGate({ enabled, graceMs = 10_000, maxStrikes =
     (kind) => {
       if (pendingRef.current) return;
       pendingRef.current = true;
+      pendingExitShared = true;
       setPending(true);
       setDeadline(Date.now() + graceMs);
-      fullscreenExit(kind)
+      exitPromiseRef.current = fullscreenExit(kind)
         .then((res) => {
           // The server owns the window: adopt its deadline so the countdown
           // and the strike verdict can never disagree.
@@ -70,15 +82,20 @@ export default function FullscreenGate({ enabled, graceMs = 10_000, maxStrikes =
   const returned = useCallback(() => {
     if (!pendingRef.current) return;
     pendingRef.current = false;
+    pendingExitShared = false;
     setPending(false);
     setDeadline(0);
-    fullscreenReturn()
-      .then((res) => {
-        if (res?.late) setStrikeFlash(res.strikes);
-        onStrike?.(res);
-        if (res?.disqualified) onDisqualified?.(res);
-      })
-      .catch(reportFailure);
+    // The return must never overtake its own exit on the wire, or the server
+    // sees a return with nothing pending and the exit settles as a late strike.
+    exitPromiseRef.current.finally(() => {
+      fullscreenReturn()
+        .then((res) => {
+          if (res?.late) setStrikeFlash(res.strikes);
+          onStrike?.(res);
+          if (res?.disqualified) onDisqualified?.(res);
+        })
+        .catch(reportFailure);
+    });
   }, [onStrike, onDisqualified, reportFailure]);
 
   useEffect(() => {
@@ -90,6 +107,7 @@ export default function FullscreenGate({ enabled, graceMs = 10_000, maxStrikes =
     if (optedOut) return;
     const onFullscreenChange = () => {
       if (document.fullscreenElement) {
+        everActive.current = true;
         setActive(true);
         returned();
       } else {
@@ -98,10 +116,15 @@ export default function FullscreenGate({ enabled, graceMs = 10_000, maxStrikes =
       }
     };
     const onVisibility = () => {
-      if (document.hidden) exited('hidden');
-      else returned();
+      if (document.hidden) {
+        // Leaving a tab that was never in fullscreen is not an exit.
+        if (everActive.current) exited('hidden');
+      } else returned();
     };
     const onPageHide = () => {
+      // Only a session that entered fullscreen can leave it; the beacon would
+      // otherwise open a pending exit for a player who never entered.
+      if (!everActive.current) return;
       try {
         navigator.sendBeacon?.('/api/fullscreen/exit', new Blob([JSON.stringify({ kind: 'unload' })], { type: 'application/json' }));
       } catch {
@@ -125,7 +148,7 @@ export default function FullscreenGate({ enabled, graceMs = 10_000, maxStrikes =
   // anywhere on the page, and keep trying while the gate is up.
   useEffect(() => {
     if (!live || active) return;
-    const onGesture = () => tryEnterFullscreen();
+    const onGesture = () => tryEnterFullscreen(() => setDenied(true));
     window.addEventListener('pointerdown', onGesture, { capture: true });
     window.addEventListener('keydown', onGesture, { capture: true });
     return () => {
@@ -145,6 +168,14 @@ export default function FullscreenGate({ enabled, graceMs = 10_000, maxStrikes =
     const tick = setInterval(() => setNow(Date.now()), 200);
     return () => clearInterval(tick);
   }, [pending]);
+
+  // A gate remounted after a reload inherits a pending exit but not its
+  // deadline; estimate the window locally (the server's answer corrects it)
+  // so the countdown never opens on "expired".
+  useEffect(() => {
+    if (pendingRef.current && !deadline) setDeadline(Date.now() + graceMs);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (strikeFlash === null) return;
@@ -178,14 +209,14 @@ export default function FullscreenGate({ enabled, graceMs = 10_000, maxStrikes =
                 <span className={expired ? 'expired' : ''} style={{ width: `${expired ? 100 : (remainingMs / graceMs) * 100}%` }} />
               </div>
             )}
-            <button className="fs-gate-button" onClick={() => tryEnterFullscreen()}>
+            <button className="fs-gate-button" onClick={() => tryEnterFullscreen(() => setDenied(true))}>
               {pending ? 'Return to fullscreen ↗' : 'Enter fullscreen ↗'}
             </button>
             <p className="fs-gate-strikes">
               Exit strikes: <strong>{projected}</strong> of {maxStrikes}
               {projected > 0 && ' — miss the window three times and the team is disqualified.'}
             </p>
-            {escapeHatch && !active && (
+            {escapeHatch && denied && !active && (
               <button
                 className="fs-gate-skip"
                 onClick={() => {
@@ -215,16 +246,19 @@ const DQ_REASON_TEXT = {
 
 export function DisqualifiedScreen({ info, onRequalified }) {
   const [checking, setChecking] = useState(false);
+  const [expired, setExpired] = useState(false);
   const reason = DQ_REASON_TEXT[info?.reason] ?? 'The team was removed from the event.';
 
   useEffect(() => {
+    if (expired) return;
     let alive = true;
     const check = async () => {
       try {
         await getState();
         if (alive) onRequalified?.();
-      } catch {
-        // Still blacklisted — keep waiting for the invigilator.
+      } catch (e) {
+        // A dead session can never requalify: say so instead of waiting forever.
+        if (alive && e?.status === 401) setExpired(true);
       }
     };
     const timer = setInterval(check, 5000);
@@ -233,7 +267,7 @@ export function DisqualifiedScreen({ info, onRequalified }) {
       alive = false;
       clearInterval(timer);
     };
-  }, [onRequalified]);
+  }, [onRequalified, expired]);
 
   return (
     <div className="center-screen dq-screen">
@@ -246,7 +280,7 @@ export function DisqualifiedScreen({ info, onRequalified }) {
           <div>
             <dt>Exit strikes</dt>
             <dd>
-              {info?.strikes ?? 3} of {info?.maxStrikes ?? 3}
+              {info?.strikes ?? 0} of {info?.maxStrikes ?? 3}
             </dd>
           </div>
           {info?.disqualifiedAt && (
@@ -257,12 +291,17 @@ export function DisqualifiedScreen({ info, onRequalified }) {
           )}
         </dl>
         <p className="dq-help">
-          This is not the end: an invigilator can review your case and clear the team. Keep this screen open — the
-          game resumes by itself the moment you are back in.
+          {expired
+            ? 'Your session has ended. Sign in again to keep this screen live.'
+            : 'This is not the end: an invigilator can review your case and clear the team. Keep this screen open — the game resumes by itself the moment you are back in.'}
         </p>
-        <button className="fs-gate-button" onClick={() => { setChecking(true); getState().then(() => onRequalified?.()).catch(() => setChecking(false)); }}>
-          {checking ? 'Checking…' : 'Check again now'}
-        </button>
+        {expired ? (
+          <a className="fs-gate-button" href="/">Sign in again ↗</a>
+        ) : (
+          <button className="fs-gate-button" onClick={() => { setChecking(true); getState().then(() => onRequalified?.()).catch((e) => { if (e?.status === 401) setExpired(true); setChecking(false); }); }}>
+            {checking ? 'Checking…' : 'Check again now'}
+          </button>
+        )}
       </section>
     </div>
   );

@@ -92,6 +92,7 @@ export default function App() {
   const [dqInfo, setDqInfo] = useState(null);
   const [dismissedAnn, setDismissedAnn] = useState(null);
   const accuseTimer = useRef(null);
+  const puzzleRequest = useRef(null);
 
   // Dev/testing shortcuts: ?beat=<id> replays the cinematic from that beat, even
   // after the act is complete; ?puzzle=<id> opens that puzzle's modal once on
@@ -222,6 +223,18 @@ export default function App() {
       ? state.discovered.length + (state.solvedPuzzles?.length ?? 0) - (state.penalties ?? 0)
       : 0);
 
+  // The server's canAdvance is the source of truth, but a failed refresh after
+  // the last required clue must not leave the Continue button missing forever:
+  // the same gate can be derived locally from the act's own requirements.
+  const advanceReady = useMemo(() => {
+    if (state?.canAdvance?.ok) return true;
+    const complete = currentAct?.complete;
+    if (!state || !currentAct || !complete) return false;
+    const discovered = new Set(state.discovered ?? []);
+    const solved = new Set(state.solvedPuzzles ?? []);
+    return (complete.clues ?? []).every((c) => discovered.has(c)) && (complete.puzzles ?? []).every((p) => solved.has(p));
+  }, [state, currentAct]);
+
   const finishAct = async (actId) => {
     if (actBusy) return;
     setActBusy(true);
@@ -279,7 +292,13 @@ export default function App() {
         // block, so the boot path must never bounce back to the title card.
         return 'disqualified';
       } else if (e.status === 401) setPhase('login');
-      else { setLoginError('The case server is unavailable. Try again in a moment.'); setPhase('login'); }
+      else {
+        // A server/network failure is not "no session": stay on the sign-in
+        // screen and show the error instead of bouncing to the landing page.
+        setLoginError('The case server is unavailable. Try again in a moment.');
+        setPhase('login');
+        return 'error';
+      }
       return false;
     }
   };
@@ -300,6 +319,19 @@ export default function App() {
     setPhase('disqualified');
   };
 
+  // A dead session surfaces from anywhere (a clue click, a puzzle submit, a
+  // heartbeat): one listener clears the stale save and returns to sign-in.
+  useEffect(() => {
+    const onExpired = () => {
+      setState(null);
+      setDqInfo(null);
+      setLoginError('Your session ended — sign in again to continue.');
+      setPhase('login');
+    };
+    window.addEventListener('pa-session-expired', onExpired);
+    return () => window.removeEventListener('pa-session-expired', onExpired);
+  }, []);
+
   // Presence + enforcement ping while the team is in play. It also notices an
   // admin-side disqualification (or a requalification) without a reload.
   useEffect(() => {
@@ -308,7 +340,7 @@ export default function App() {
     const ping = async () => {
       if (document.hidden) return;
       try {
-        const res = await heartbeat();
+        const res = await heartbeat(Boolean(document.fullscreenElement));
         if (!alive || !res) return;
         setState((s) => {
           if (!s) return s;
@@ -346,7 +378,7 @@ export default function App() {
         url.searchParams.delete('resume');
         window.history.replaceState(null, '', url);
       }
-      if (!entered && codeIsTheWay) {
+      if (entered === false && codeIsTheWay) {
         window.location.replace(authError ? '/?auth_error=' + encodeURIComponent(authError) : '/');
       }
     })();
@@ -436,7 +468,7 @@ export default function App() {
   };
 
   const advanceAct = () => {
-    if (!currentAct || !state?.canAdvance?.ok || actBusy || story) return;
+    if (!currentAct || !advanceReady || actBusy || story) return;
     if (currentAct.outro?.length) {
       setStory({
         key: `pa-outro-${currentAct.id}`,
@@ -459,21 +491,28 @@ export default function App() {
     if (!id) return;
     setNotebookOpen(false);
     const placement = state.rooms.flatMap(r => r.hotspots).find(h => h.puzzle === id);
+    puzzleRequest.current = null;
     setPuzzleSpot(typeof target === 'string' ? { puzzle: id, label: placement?.label ?? 'Examine the clue' } : target);
     setPuzzleResult(null);
   };
 
   const closePuzzle = () => {
+    puzzleRequest.current = null;
     setPuzzleSpot(null);
     setPuzzleResult(null);
   };
 
   const handleSolve = async (answer) => {
     if (!activePuzzle) return;
+    // The verdict belongs to the puzzle that was submitted: closing this modal
+    // and opening another one must not paint A's result inside B.
+    const puzzleId = activePuzzle.id;
+    puzzleRequest.current = puzzleId;
     setPuzzleBusy(true);
     setPuzzleResult(null);
     try {
-      const res = await solvePuzzle(activePuzzle.id, answer);
+      const res = await solvePuzzle(puzzleId, answer);
+      if (puzzleRequest.current !== puzzleId) return;
       setPuzzleResult(res);
       setState((s) => {
         const next = {
@@ -491,6 +530,7 @@ export default function App() {
       // Reconcile derived server state (canAdvance) without a page reload.
       refreshState();
     } catch (e) {
+      if (puzzleRequest.current !== puzzleId) return;
       if (e.status === 403) {
         setPuzzleResult({ correct: false, message: 'This lead is locked. Inspect the other evidence first.', penalty: 0 });
       } else if (e.status === 404) {
@@ -500,7 +540,7 @@ export default function App() {
         setPuzzleResult({ correct: false, message: 'The line went dead. Try again.', penalty: 0 });
       }
     } finally {
-      setPuzzleBusy(false);
+      if (puzzleRequest.current === puzzleId) setPuzzleBusy(false);
     }
   };
 
@@ -568,10 +608,13 @@ export default function App() {
       });
     } catch (e) {
       setChatError(e.status === 429 ? 'Give them a moment to breathe.' : 'The line went dead. Try again.');
+      // Unblock the composer immediately — the reconcile below is best-effort
+      // and must never hold the input hostage behind its own timeout.
+      setTyping(false);
       // The server may have finished and stored the reply after the client gave up
       // (failover can outlast the browser timeout), so reconcile with the transcript.
       try {
-        const stored = await getHistory(character);
+        const stored = await getHistory(character, 6000);
         if (Array.isArray(stored.messages) && stored.messages.length) {
           setChats((prev) => ({ ...prev, [character]: stored.messages }));
         }
@@ -616,6 +659,13 @@ export default function App() {
     } catch (e) {
       if (e.status === 409) {
         setNotice({ kicker: 'Sealed', title: 'Locked', body: 'Something else has to come first.' });
+      } else if (e.status !== 401) {
+        // Never swallow a failed discovery: the hotspot would just look dead.
+        setNotice({
+          kicker: 'Evidence',
+          title: 'Could not log that clue',
+          body: e.status === 429 ? 'Give it a moment, then try again.' : 'Check your connection and try again.',
+        });
       }
     }
   };
@@ -697,7 +747,7 @@ export default function App() {
       }
       setRoomId(to); setEvidence(null); setPuzzleSpot(null); setActiveChar(null);
     }
-    else if (state.canAdvance?.ok) advanceAct();
+    else if (advanceReady) advanceAct();
     else setNotice({ title: 'Finish this chapter first', body: currentAct.objective });
   };
 
@@ -728,12 +778,22 @@ export default function App() {
     {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
     {chaptersOpen && <ChapterSelect acts={state?.acts ?? []} onSelect={beginPractice} onClose={() => setChaptersOpen(false)} busy={loginBusy} practice={state?.practice} onCampaign={returnCampaign} />}
     {restartOpen && <RestartConfirm onClose={() => setRestartOpen(false)} onConfirm={restartCase} busy={loginBusy} />}
+    {/* Notices and the deploy chip live above every phase, not just the room:
+        a failed cinematic save or chapter start must still say so. */}
+    {notice && !evidence && <Notice notice={notice} onClose={() => setNotice(null)} />}
+    {staleBuild && (
+      <button className="update-chip" onClick={() => window.location.reload()}>
+        New build ready — refresh ↺
+      </button>
+    )}
   </>;
   const audio = <Soundtrack roomId={roomId ?? 'gazebo'} radio={!story} />;
 
   // Fullscreen enforcement is active whenever the deployment enforces it and
   // this team is a real event entry (practice saves and exempt teams step out).
-  const fsGate = authConfig?.fullscreen && state && !state.practice && !state.exempt ? (
+  // /api/state also carries the server's verdict, so a failed /api/auth/config
+  // can never silently switch enforcement off for the session.
+  const fsGate = (authConfig?.fullscreen || state?.fullscreen) && state && !state.practice && !state.exempt ? (
     <FullscreenGate
       enabled
       graceMs={state.windowMs ?? authConfig.windowMs ?? state.graceMs ?? authConfig.graceMs ?? 10000}
@@ -776,7 +836,7 @@ export default function App() {
 
   if (phase === 'login' || phase === 'menu') {
     return <>{audio}<TitleScreen config={authConfig} state={state} busy={loginBusy} error={loginError}
-      onGuest={beginGuest} onResume={() => setPhase(state.solved ? 'solved' : 'game')}
+      onGuest={beginGuest} onResume={() => { setPhase('loading'); loadGame('game'); }}
       onLeaderboard={()=>setLeaderboardOpen(true)} onDevLogin={handleDevLogin} onSettings={() => setSettingsOpen(true)} onChapters={() => setChaptersOpen(true)} />{overlays}</>;
   }
 
@@ -892,7 +952,7 @@ export default function App() {
         </div>
       </header>
       <div className="chapter-progress" aria-label="Campaign progress">{state.acts.map((a, i) => <span key={a.id} className={a.id === state.act ? 'current' : i < state.acts.findIndex((x) => x.id === state.act) ? 'done' : ''} title={a.title}>{i}</span>)}</div>
-      {state.canAdvance?.ok && <button className="next-chapter" onClick={advanceAct} disabled={actBusy || !!story}>{actBusy ? 'Saving…' : currentAct.id === 'act8' ? 'Finish the case →' : 'Continue to next act →'}</button>}
+      {advanceReady && <button className="next-chapter" onClick={advanceAct} disabled={actBusy || !!story}>{actBusy ? 'Saving…' : currentAct.id === 'act8' ? 'Finish the case →' : 'Continue to next act →'}</button>}
       {!activeChar && <>
         {!exploreOpen && <button className="explore-toggle" onClick={() => setExploreOpen(true)}>Explore this room ↗</button>}
         {exploreOpen && <aside className="explore-panel" aria-label="Room interactions">
@@ -917,12 +977,6 @@ export default function App() {
         </aside>}
       </>}
       <div className="camera-hint">Drag to look · Scroll to zoom · WASD to move</div>
-
-      {staleBuild && (
-        <button className="update-chip" onClick={() => window.location.reload()}>
-          New build ready — refresh ↺
-        </button>
-      )}
 
       <button
         className={`notebook-toggle ${notebookOpen ? 'open' : ''}`}
@@ -972,7 +1026,6 @@ export default function App() {
       )}
 
       {evidence && <EvidenceCard clue={evidence} onClose={() => setEvidence(null)} />}
-      {notice && !evidence && <Notice notice={notice} onClose={() => setNotice(null)} />}
       {accuseOpen && (
         <AccuseModal
           state={state}

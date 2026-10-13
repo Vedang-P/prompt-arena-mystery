@@ -13,6 +13,14 @@ import { registerAssetCache } from './registerSW.js';
   const REFRESH_MS = 5000;
   const GAME = '/play/?resume=1';
 
+  // A hung backend must never leave the buttons spinning forever.
+  const withTimeout = (ms) => {
+    if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') return AbortSignal.timeout(ms);
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(new Error('timeout')), ms);
+    return controller.signal;
+  };
+
   /* ---------- the card plays, or is dismissed by a click / key ---------- */
   let entered = false;
   const enterNow = () => {
@@ -152,6 +160,7 @@ import { registerAssetCache } from './registerSW.js';
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ code }),
+        signal: withTimeout(30000),
       });
       if (res.ok) {
         // A team-code sign-in is always the campaign save; a stale practice marker from the
@@ -177,7 +186,7 @@ import { registerAssetCache } from './registerSW.js';
   });
 
   /* ---------- what this deployment offers ---------- */
-  fetch('/api/auth/config', { headers: { accept: 'application/json' } })
+  fetch('/api/auth/config', { headers: { accept: 'application/json' }, signal: withTimeout(20000) })
     .then((res) => (res.ok ? res.json() : null))
     .then((config) => {
       if (config) codeLogin = !!config.devLogin;
@@ -190,7 +199,7 @@ import { registerAssetCache } from './registerSW.js';
       markConfigKnown();
     });
 
-  fetch('/api/state', { headers: { accept: 'application/json' } })
+  fetch('/api/state', { headers: { accept: 'application/json' }, signal: withTimeout(20000) })
     .then(async (res) => {
       if (!res.ok) {
         if (res.status === 401) enter.textContent = 'Sign in to play';

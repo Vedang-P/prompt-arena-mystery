@@ -1,8 +1,24 @@
-const request = (url, { timeout = 65000, ...options } = {}) => fetch(url, { ...options, headers: { ...(options.headers ?? {}), ...(localStorage.getItem('moon-mode') === 'practice' ? { 'x-game-mode': 'practice' } : {}) }, signal: AbortSignal.timeout(timeout) });
+// AbortSignal.timeout is missing on older Safari/webviews; without a fallback
+// every request would throw synchronously and the game could never start there.
+const timeoutSignal = (ms) => {
+  if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+    return AbortSignal.timeout(ms);
+  }
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(new Error('timeout')), ms);
+  return controller.signal;
+};
+
+const request = (url, { timeout = 65000, ...options } = {}) => fetch(url, { ...options, headers: { ...(options.headers ?? {}), ...(localStorage.getItem('moon-mode') === 'practice' ? { 'x-game-mode': 'practice' } : {}) }, signal: options.signal ?? timeoutSignal(timeout) });
 
 async function json(res) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
+    // One place notices a dead session: the app shows the sign-in screen again
+    // instead of leaving every action to fail with a generic message.
+    if (res.status === 401) {
+      try { window.dispatchEvent(new Event('pa-session-expired')); } catch {}
+    }
     const error = new Error(data.error || res.statusText);
     error.status = res.status;
     error.data = data;
@@ -43,7 +59,7 @@ export const solvePuzzle = (id, answer) =>
     body: JSON.stringify({ answer }),
   }).then(json);
 
-export const getHistory = (id) => request(`/api/characters/${id}/history`).then(json);
+export const getHistory = (id, timeout = 65000) => request(`/api/characters/${id}/history`, { timeout }).then(json);
 
 export const accuse = (payload) =>
   request('/api/accuse', {
@@ -109,4 +125,10 @@ export const fullscreenReturn = () => request('/api/fullscreen/return', { method
 
 export const fullscreenUnsupported = () => request('/api/fullscreen/unsupported', { method: 'POST', timeout: 10000 }).then(json);
 
-export const heartbeat = () => request('/api/heartbeat', { method: 'POST', timeout: 10000 }).then(json);
+export const heartbeat = (fullscreen = false) =>
+  request('/api/heartbeat', {
+    method: 'POST',
+    timeout: 10000,
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ fullscreen: !!fullscreen }),
+  }).then(json);

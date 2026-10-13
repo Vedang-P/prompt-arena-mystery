@@ -9,9 +9,11 @@ import * as THREE from 'three';
 // expose any WebGL2 implementation — hardware or software — will draw the room.
 //
 // Context creation can also fail transiently while a GPU process restarts, so
-// the factory never gives up: it keeps retrying on the same canvas and React
-// Three Fiber mounts the scene the moment a context arrives. There is no 2D
-// substitute anywhere — the game renders 3D or it waits and retries.
+// the factory retries on the same canvas for a while and React Three Fiber
+// mounts the scene the moment a context arrives. If no WebGL2 implementation
+// appears within the grace window the factory gives up with a typed error so
+// the stage can explain itself instead of loading forever. There is no 2D
+// substitute anywhere — the game renders 3D or it says it cannot.
 
 const ATTEMPTS = [
   { alpha: false, depth: true, stencil: true, antialias: true, powerPreference: 'high-performance', failIfMajorPerformanceCaveat: false },
@@ -21,6 +23,7 @@ const ATTEMPTS = [
   { alpha: true, depth: true, stencil: true, antialias: false, powerPreference: 'low-power', failIfMajorPerformanceCaveat: false },
 ];
 const RETRY_MS = 1200;
+const MAX_BOOT_MS = 20000;
 
 const boots = new WeakMap();
 
@@ -39,6 +42,7 @@ function acquireContext(canvas) {
 }
 
 async function boot(canvas, defaultProps) {
+  const startedAt = Date.now();
   for (;;) {
     const acquired = acquireContext(canvas);
     if (acquired) {
@@ -55,6 +59,13 @@ async function boot(canvas, defaultProps) {
       });
       renderer.debug.checkShaderErrors = import.meta.env.DEV;
       return renderer;
+    }
+    if (Date.now() - startedAt > MAX_BOOT_MS) {
+      // Let a later remount (a room change, a reload) try again from scratch.
+      boots.delete(canvas);
+      const error = new Error('webgl_unavailable');
+      error.code = 'webgl_unavailable';
+      throw error;
     }
     await new Promise((resolve) => setTimeout(resolve, RETRY_MS));
   }
