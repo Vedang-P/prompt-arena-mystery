@@ -942,7 +942,6 @@ function ParthRoomScene({ room, hot, paused=false }) {
   <DetailProp asset="desk_lamp_arm_01" position={[-.92,.67,.76]} scale={.62}/>
   <DetailProp asset="binder_notebook" position={[-2.5,.687,.05]} rotation={[0,1.15,0]} scale={.8}/>
   <DetailProp asset="pencil_cup" position={[3.55,DESK_TOP,-1.98]} scale={.85}/>
-  <DetailProp asset="star_chart" position={[1.95,DESK_TOP,-1.98]} scale={.62}/>
   <DetailProp asset="cardboard_box_01" position={[-4.2,0,-.6]} scale={.78}/>
   <DetailProp asset="cardboard_box_01" position={[-4.14,.266604,-.62]} rotation={[0,.4,0]} scale={.67}/>
   <WallSign position={[4.94,2.35,.9]} rotation={[0,-Math.PI/2,0]} width={1.35} height={.55} title="APOGEE / 2019" lines={['FIRST SHOW • FRONT ROW']} background="#263c43"/>
