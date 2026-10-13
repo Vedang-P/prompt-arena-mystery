@@ -949,7 +949,6 @@ function ParthRoomScene({ room, hot, paused=false }) {
     <DetailProp asset="cardboard_box_01" position={[-4.25,0,2.6]}/>
     <WallSign position={[-.5,2.3,-3.93]} width={1.6} height={.6} title="THE MOON'S DARK SIDE" lines={['NOT EVERYTHING IS AS IT SEEMS']} background="#263c43"/>
     <pointLight position={[-2,2.7,1]} color="#ecd4b8" intensity={9} distance={8}/>
-    <Picture src={`${ASSETS}/pictures/evidence_gone_poster.jpg`} position={[-4.94,1.85,.9]} rotation={[0,Math.PI/2,0]} width={.9} height={1.3}/>
     <HotspotMarkers room={room} hot={hot}/>
   </group>;
 }
