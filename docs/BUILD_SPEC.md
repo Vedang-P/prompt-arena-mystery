@@ -114,8 +114,8 @@ must treat puzzle `requires` as gating; dead-content warnings count puzzle grant
 | id | type | title | entry | rooms | complete |
 | --- | --- | --- | --- | --- | --- |
 | act0 | cinematic | The Vanishing | — | — | — |
-| act1 | interactive | The Room | parth_room | parth_room | puzzles: [p_laptop] |
-| act2 | interactive | Full Moon | sameer_room | sameer_room, gazebo, abandoned_field, cyber_cafe, parth_home | puzzles: [p_ticket] |
+| act1 | interactive | The Room | parth_room | parth_room, abandoned_field, cyber_cafe, parth_home | puzzles: [p_morse, p_laptop, p_email, p_cassette, p_drums] |
+| act2 | interactive | Full Moon | sameer_room | sameer_room, gazebo, cyber_cafe | puzzles: [p_voicenote2, p_dosa, p_ticket] |
 | act3 | interactive | The Concert | concert | concert, workshop, ngo_hq, ngo_archive, sameer_room | puzzles: [p_delve] |
 | act4 | interactive | Shashdhar | sameer_room | sameer_room, hospital | puzzles: [p_parth_alive] |
 | act5 | interactive | The Big Bad | tanush_office | tanush_office, enakshi_house, sameer_room | puzzles: [p_exposed] |
