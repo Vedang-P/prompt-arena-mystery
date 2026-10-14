@@ -442,6 +442,21 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [notice]);
 
+  // The refresh must land every participant on the new build: drop the old
+  // service worker and its asset buckets first, then reload, so no browser can
+  // keep serving the previous bundle or the previous models from cache. The new
+  // page registers the new build's worker and starts a fresh bucket on its own.
+  const updateApp = async () => {
+    try {
+      const registrations = await navigator.serviceWorker?.getRegistrations?.();
+      for (const registration of registrations ?? []) await registration.unregister();
+    } catch {}
+    try {
+      if ('caches' in window) for (const key of await caches.keys()) await caches.delete(key);
+    } catch {}
+    window.location.reload();
+  };
+
   // An open tab keeps running its old bundle after a deploy; compare the
   // running build with the server's and offer a refresh instead of letting
   // players judge fixes they have not actually received.
@@ -952,7 +967,7 @@ export default function App() {
         a failed cinematic save or chapter start must still say so. */}
     {notice && !evidence && <Notice notice={notice} onClose={() => setNotice(null)} />}
     {staleBuild && (
-      <button className="update-chip" onClick={() => window.location.reload()}>
+      <button className="update-chip" onClick={updateApp}>
         New build ready — refresh ↺
       </button>
     )}

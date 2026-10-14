@@ -35,15 +35,18 @@ try {
   });
   console.log('prep', JSON.stringify(prep));
   await page.goto(`${BASE}/play/?resume=1&room=cyber_cafe`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await page.waitForSelector('.cinematic-tools, .hud-top', { timeout: 60000 }).catch(() => console.log('[warn] no intro or hud'));
   for (let i = 0; i < 60; i += 1) {
-    const hasStory = await page.$('.story-overlay');
-    if (!hasStory) break;
-    const btn = await page.$('.cinematic-tools .btn.brass, .story-buttons .btn.brass');
-    if (btn) await btn.click().catch(() => {});
-    else await page.evaluate(() => document.querySelector('.story-overlay')?.click());
-    await sleep(250);
+    if (!(await page.$('.story-overlay'))) break;
+    await page.evaluate(() => {
+      const btn = [...document.querySelectorAll('.cinematic-tools .btn, .story-buttons .btn')].find((b) => /skip/i.test(b.textContent));
+      if (btn) btn.click();
+      else [...document.querySelectorAll('.cinematic-tools .btn.brass, .story-buttons .btn.brass')][0]?.click();
+    });
+    await sleep(400);
   }
   await page.waitForSelector('.hud-top', { timeout: 30000 }).catch(() => console.log('[warn] no hud'));
+  await page.waitForFunction(() => /cyber/i.test(document.querySelector('.location-name')?.textContent ?? ''), { timeout: 30000 }).catch(() => console.log('[warn] not in the cyber cafe'));
   await sleep(5000);
   const state = await page.evaluate(() => ({
     hud: Boolean(document.querySelector('.hud-top')),
