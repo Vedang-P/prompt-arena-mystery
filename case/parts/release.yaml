@@ -1,4 +1,6 @@
 # Playability fixes. The authored nine-act story and ending remain intact.
+# Each act's complete list is the act's checklist: every clue and puzzle the act
+# places must be done before the Continue gate offers the next act.
 acts:
   - id: act1
     complete:
@@ -7,21 +9,32 @@ acts:
   - id: act2
     complete:
       clues: [c_cd, c_footage, c_veer_profile, c_ticket]
-      puzzles: [p_voicenote2, p_dosa, p_ticket]
+      # p_cd_watch only exists on the fried-laptop branch; c_footage (granted by
+      # either branch of the CD question) already gates that choice, and the
+      # videos themselves are the task every team must finish.
+      puzzles: [p_voicenote2, p_dosa, p_ticket, p_video_noise]
+  - id: act3
+    complete:
+      puzzles: [p_ascension, p_playback]
   - id: act4
     complete:
       clues: [c_janitor, c_ritual]
       puzzles: [p_hide, p_delve, p_hospital, p_security_pin, p_parth_alive]
   - id: act5
     complete:
-      clues: [c_drug_report, c_timetable, c_assessments, c_handbook, c_recruits, c_finance, c_voice3]
+      clues: [c_drug_report, c_timetable, c_assessments, c_handbook, c_recruits, c_finance, c_voice3, c_enakshi]
       puzzles: [p_tablet, p_handbook, p_knowledge, p_tablet_content, p_connection, p_exposed]
+  - id: act6
+    complete:
+      clues: [c_arrest, c_ritual2, c_sacrifice, c_parth_meet]
+      puzzles: [p_fullmoon, p_taken_in, p_voice_hq, p_tanush, p_box, p_tell, p_police_info, p_police_where, p_police_video]
   - id: act7
     complete:
+      clues: [c_trucks, c_disguise]
       puzzles: [p_mask_owner, p_veer_mask, p_lua, p_nigeria, p_continue, p_hand_owner, p_floor]
   - id: act8
     complete:
-      clues: [c_office]
+      clues: [c_office, c_veer_death]
       puzzles: [p_refer, p_spiral, p_escape, p_office, p_years, p_burn, p_rooms, p_why, p_found, p_saved, p_where, p_wrong]
 
 clues:

@@ -4,7 +4,7 @@
 import { Hono } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import { streamSSE } from 'hono/streaming';
-import { caseData, getCharacter } from './case.js';
+import { caseData, getCharacter, getPuzzle } from './case.js';
 import {
   buildMessages,
   chapterCheckpoint,
@@ -696,6 +696,8 @@ app.get('/api/state', async (c) => {
     solvedPuzzles,
     penalties,
     unlocked: unlockedFactList(discovered),
+    // The sandbox is a review tool: it moves to any act without the player
+    // checklist. Players follow the real act gate.
     canAdvance: auth.dev ? { ok: true, missing: { clues: [], puzzles: [] }, dev: true } : canAdvanceAct(auth.progress.solved_puzzles, discovered, act),
     ending: auth.progress.ending ? publicEnding(auth.progress.ending) : null,
     score: discovered.length + solvedPuzzles.length - penalties,
@@ -1088,6 +1090,9 @@ app.post('/api/puzzles/:id/solve', async (c) => {
     wrongCharges: wrongAttempts[puzzleId] ?? chargedBefore,
     message: result.message ?? '',
     grants: result.grants ?? [],
+    // An authored `hide_grants: true` keeps the reward out of the result card —
+    // the clue is still added to the notebook, but its title is not announced.
+    hideGrants: getPuzzle(puzzleId)?.hide_grants === true,
     newlyUnlocked: result.newlyUnlocked ?? [],
     solvedPuzzles: nextSolved,
     discovered: nextDiscovered,

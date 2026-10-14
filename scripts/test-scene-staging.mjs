@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {AnimationMixer,Box3,PerspectiveCamera,Raycaster,Vector3} from 'three';
 import {caseData} from '../src/case.js';
-import {locationFor,storyCast,placeCast,wideShot,roomWideShot,captureShot,cinematicPhaseFor,maskVisibleFor} from '../client/src/SceneStaging.js';
+import {locationFor,storyCast,placeCast,wideShot,roomWideShot,captureShot,crowdShot,cinematicPhaseFor,maskVisibleFor} from '../client/src/SceneStaging.js';
 import {createFootContact} from '../client/src/FootContact.js';
 import {PARK,BEDROOM,SAMEER_BED,DETAIL_ANCHORS,HOME_STAIRS,HOME_UPPER_DOORWAY,HOME_BEDROOM,backWallPanels,DESK_TOP,FIELD,FIELD_TRACKS,ROOM_VIEWS,updateFieldBackpackOrbit,updateHospitalSecurityOrbit,HOSPITAL_BED,HOSPITAL_BED_GROUP,HOSPITAL_RITUAL_CROWD} from '../client/src/SceneLayout.js';
 import {loadGeometry} from './gltf-geometry.mjs';
@@ -24,8 +24,28 @@ assert.equal(locationFor(act2,'intro',4),'cyber_cafe','The café scene must acco
 assert.equal(locationFor(act2,'intro',5),'sameer_room','He must be back in his room when he stumbles home');
 const ngoSwarm=storyCast(act2,'intro','cyber_cafe',1);
 assert.equal(ngoSwarm.length,4,'The NGO bombardment must stage Sameer with the three canvassers');
-assert(ngoSwarm.filter(c=>c.character!=='sameer').every(c=>c.staged),'The canvassers must read as staged extras');
-assert(ngoSwarm.filter(c=>c.character!=='sameer').every(c=>Math.abs(Math.abs(c.rot)-Math.PI)<0.7),'The canvassers must keep their backs to the camera');
+const canvassers=ngoSwarm.filter(c=>c.character!=='sameer');
+const sameerAt=ngoSwarm.find(c=>c.character==='sameer').at;
+assert(canvassers.every(c=>c.staged),'The canvassers must read as staged extras');
+assert(canvassers.every(c=>Math.hypot(c.at[0]-sameerAt[0],c.at[1]-sameerAt[1])<1.2),'The canvassers must crowd Sameer in a tight arc, not line up apart');
+assert(canvassers.every(c=>{
+  const yaw=Math.atan2(sameerAt[0]-c.at[0],sameerAt[1]-c.at[1]);
+  const off=Math.atan2(Math.sin(c.rot-yaw),Math.cos(c.rot-yaw));
+  return Math.abs(off)<.35;
+}),'Every canvasser must square up to Sameer');
+// The blitz must read as a bombardment, not a room-wide tableau: the shared
+// 'crowd' shot is a medium over-the-shoulder frame that keeps every canvasser
+// legible around Sameer.
+for(const index of [1,2,3])assert.equal(act2.intro[index].shot,'crowd',`Act 2 intro line ${index} must use the NGO blitz shot`);
+const blitzCast=placeCast('cyber_cafe',ngoSwarm),crowd=crowdShot(blitzCast);
+const crowdCamera=new PerspectiveCamera(39,16/9,.1,100);
+crowdCamera.position.set(...crowd.at);crowdCamera.lookAt(new Vector3(...crowd.center));crowdCamera.updateMatrixWorld();
+assert(Math.hypot(crowd.at[0]-crowd.center[0],crowd.at[2]-crowd.center[2])<4,'The NGO blitz must stay a medium shot, not a room-wide');
+for(const c of blitzCast){
+  const height=measurements[c.character]?.idle?.height??1.85;
+  const head=new Vector3(c.at[0],(c.y??0)+height*.92,c.at[1]).project(crowdCamera);
+  assert(Math.abs(head.x)<.96&&Math.abs(head.y)<.96,`${c.character} is cropped out of the NGO blitz frame`);
+}
 assert(storyCast(act2,'intro','cyber_cafe',4).some(c=>c.character==='ramu'),'Ramu must appear when Sameer reaches the dosa corner');
 assert.equal(locationFor(act3,'outro',0),'ngo_archive','The overheard call must stage in the archive room');
 assert.equal(locationFor(act3,'outro',act3.outro.length-1),'ngo_archive','The overheard call must stay in the archive room until Sameer hides');
@@ -50,15 +70,20 @@ for(const member of HOSPITAL_RITUAL_CROWD){
   assert(Math.hypot(member.at[0],member.at[1]+2.1)<2.4,`${member.character} must ring the altar`);
   assert(angleOff(member,[0,-2.1])<0.2,`${member.character} must face the altar`);
 }
+assert(HOSPITAL_RITUAL_CROWD.filter(m=>!m.officiant).length>=7,'The ritual needs a crowd around the sacrifice, not a handful of stand-ins');
 assert(HOSPITAL_RITUAL_CROWD.some(m=>m.character==='parth'),'Parth must stand masked in the ritual crowd');
+assert(HOSPITAL_RITUAL_CROWD.some(m=>m.character==='tanush'),'Tanush must stand in the ritual crowd');
+assert(HOSPITAL_RITUAL_CROWD.some(m=>m.character==='sameer'&&m.mask===false),'Sameer must witness the sacrifice bare-faced among the masked crowd');
 assert(HOSPITAL_RITUAL_CROWD.some(m=>m.officiant),'The leader must officiate behind the altar');
 // Acts 7–8 must follow the story: Act 7 closes inside the ritual with the
-// leader's speech (never the loading bay), Act 8 opens with Sameer already
+// leader's speech — every line, from the forced mask to the roaring crowd —
+// never in Sameer's room or the loading bay. Act 8 opens with Sameer already
 // masked in the crowd, and the ending's last two beats return to his room at
 // dawn instead of the phone playing on in the burning hospital.
-assert.equal(locationFor(act7,'outro',0),'hospital','The forced mask and the pushing-in must stage at the ritual');
-assert.equal(locationFor(act7,'outro',act7.outro.length-1),'hospital','The whole closing speech stays in the ritual room');
-assert.equal(cinematicPhaseFor(act7,'outro','hospital',2),'ceremony','Act 7 must close in the ceremony tableau');
+for(const [index,line] of act7.outro.entries()){
+  assert.equal(locationFor(act7,'outro',index),'hospital',`Act 7 closing line ${index} must stage in the sacrifice room, not "${locationFor(act7,'outro',index)}": ${line.text.slice(0,60)}`);
+  assert.equal(cinematicPhaseFor(act7,'outro','hospital',index),'ceremony',`Act 7 closing line ${index} must keep the ceremony tableau`);
+}
 const ceremonyCast=storyCast(act7,'outro','hospital',2);
 const ceremonySameer=ceremonyCast.find(c=>c.character==='sameer'),ceremonyLeader=ceremonyCast.find(c=>c.character==='leader');
 assert(ceremonySameer&&ceremonySameer.wearingMask,'Sameer must already wear the mask the leader forced on him');

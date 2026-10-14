@@ -1,7 +1,7 @@
 import './styles-scene.css';
 import { CinemaProp, ParkGround, WindTree, CeilingFan } from './CinemaAssets.jsx';
 import {DetailProp,InstancedDetailScatter,TerrainSurface,WallSign,Cable,ComputerStation,ShelfContents,FencePanel} from './EnvironmentDetails.jsx';
-import { BEDROOM, SAMEER_BED, HOME_STAIRS, HOME_UPPER_DOORWAY, HOME_BEDROOM, backWallPanels, POLICE, HOSPITAL_BED, HOSPITAL_BED_GROUP, HOSPITAL_RITUAL_CROWD, DESK_TOP, DESK_SEAT, PARTH_ANCHORS, PARK, DETAIL_ANCHORS,FIELD,FIELD_TRACKS,FIELD_BACKGROUND_BUILDING,FIELD_OVERGROWTH,ROOM_VIEWS,ROOM_BOUNDS,updateFieldBackpackOrbit,updateHospitalSecurityOrbit } from './SceneLayout.js';
+import { BEDROOM, SAMEER_BED, HOME_STAIRS, HOME_UPPER_DOORWAY, HOME_BEDROOM, backWallPanels, POLICE, HOSPITAL_BED, HOSPITAL_BED_GROUP, HOSPITAL_RITUAL_CROWD, DESK_TOP, DESK_SEAT, PARTH_ANCHORS, PARK, DETAIL_ANCHORS,FIELD,FIELD_TRACKS,FIELD_BACKGROUND_BUILDING,FIELD_OVERGROWTH,ROOM_VIEWS,ROOM_BOUNDS,updateFieldBackpackOrbit,updateHospitalSecurityOrbit,updateLoadingBayOrbit } from './SceneLayout.js';
 import DemonMask from './DemonMask.jsx';
 import {seatContact,maskVisibleFor} from './SceneStaging.js';
 import Actor from './Actor.jsx';
@@ -437,7 +437,8 @@ function HotspotMarkers({ room, hot }) {
       // security label sits alone and must keep its authored place.
       const fieldBackpack=room.id==='abandoned_field'&&group.hotspots.some(h=>h.id==='af_backpack');
       const hospitalSecurity=room.id==='hospital'&&group.hotspots.some(h=>h.id==='h4_security')&&room.hotspots.some(h=>h.id==='h4_theatre');
-      const labelGuard=fieldBackpack?{partner:DETAIL_ANCHORS.abandoned_field.af_sedan,update:updateFieldBackpackOrbit}:hospitalSecurity?{partner:DETAIL_ANCHORS.hospital.h4_theatre,update:updateHospitalSecurityOrbit}:null;
+      const loadingBayWorker=room.id==='hospital'&&group.hotspots.some(h=>h.id==='h7_worker')&&room.hotspots.some(h=>h.id==='h7_floor');
+      const labelGuard=fieldBackpack?{partner:DETAIL_ANCHORS.abandoned_field.af_sedan,update:updateFieldBackpackOrbit}:hospitalSecurity?{partner:DETAIL_ANCHORS.hospital.h4_theatre,update:updateHospitalSecurityOrbit}:loadingBayWorker?{partner:DETAIL_ANCHORS.hospital.h7_floor,update:updateLoadingBayOrbit}:null;
       return <AnchoredHotspot key={key} {...group} hot={hot} labelGuard={labelGuard}/>;
     })}</>;
   }
@@ -1251,14 +1252,16 @@ function HospitalRoom({room,hot,actId,phase,paused=false,cast=[]}) {
   {/* The story's people, staged where it puts them. Act 4: Parth on the ward
       bed while the group that was injecting him rings it (the cinematic's own
       discovery phase brings its Parth, so the room only stages its own when
-      the camera is not already inside this moment). Acts 6/8: the masked crowd
-      around the altar, the leader officiating, Parth masked in the crowd. */}
+      the camera is not already inside this moment). Acts 6/8: a crowd of
+      masked onlookers rings the altar and its sacrifice, the leader officiates
+      behind it, Tanush and Parth stand masked in the crowd and Sameer keeps
+      his bare face as the witness (a member's mask:false renders him so). */}
   {actId==='act4'&&<group>
    {phase!=='discovery'&&<group position={[HOSPITAL_BED.center[0]+.89,HOSPITAL_BED.mattressY+.15,HOSPITAL_BED.center[2]]}><Actor character="parth" pose="lie"/></group>}
-   {HOSPITAL_BED_GROUP.map((member)=><group key={member.character} position={[member.at[0],0,member.at[1]]} rotation={[0,member.rot,0]}><Actor character={member.character} pose="idle" wearingMask/></group>)}
+   {HOSPITAL_BED_GROUP.map((member)=><group key={member.character} position={[member.at[0],0,member.at[1]]} rotation={[0,member.rot,0]}><Actor character={member.character} pose="idle" wearingMask={member.mask!==false}/></group>)}
   </group>}
   {ritual&&<group>
-   {HOSPITAL_RITUAL_CROWD.filter((member)=>!(staged.has(member.character)||(ceremony&&member.officiant))).map((member,i)=><group key={`${member.character}-${i}`} position={[member.at[0],0,member.at[1]]} rotation={[0,member.rot,0]}><Actor character={member.character} pose="idle" wearingMask/></group>)}
+   {HOSPITAL_RITUAL_CROWD.filter((member)=>!(staged.has(member.character)||(ceremony&&member.officiant))).map((member,i)=><group key={`${member.character}-${i}`} position={[member.at[0],0,member.at[1]]} rotation={[0,member.rot,0]}><Actor character={member.character} pose="idle" wearingMask={member.mask!==false}/></group>)}
   </group>}
   <WallSign position={[-7.93,2,1]} rotation={[0,Math.PI/2,0]} width={1.8} height={.55} title="WARD 03" lines={['KEEP THE CORRIDOR CLEAR']}/>
   <WallSign position={[7.93,2,1]} rotation={[0,-Math.PI/2,0]} width={1.8} height={.55} title="SECURITY" lines={['AUTHORISED STAFF ONLY']}/>
@@ -1609,8 +1612,7 @@ export default function Scene({
 
   const [sceneStalled, setSceneStalled] = useState(false);
   const [sceneReady, setSceneReady] = useState(false);
-  const [sceneDismissed, setSceneDismissed] = useState(false);
-  useEffect(() => { setSceneStalled(false); setSceneReady(false); setSceneDismissed(false); }, [room.id]);
+  useEffect(() => { setSceneStalled(false); setSceneReady(false); }, [room.id]);
 
   const bounds = ROOM_BOUNDS[room.id] ?? { x: 6.5, zMin: -5.5, zMax: 9 };
   const bg = room.id==='abandoned_field' ? '#26394e' : isOutdoor ? '#05070d' : '#080604';
@@ -1653,8 +1655,8 @@ export default function Scene({
           <Vignette offset={0.3} darkness={room.id==='abandoned_field'?.16:.35} />
         </EffectComposer>}
       </Canvas>
-      {!sceneReady && !sceneDismissed && <SceneLoading label={sceneStalled ? 'Still starting 3D graphics' : 'Opening the scene'} onDismiss={() => setSceneDismissed(true)} />}
-      {sceneReady && sceneStalled && !sceneDismissed && <SceneLoading label="Restoring 3D graphics" onDismiss={() => setSceneDismissed(true)} />}
+      {!sceneReady && <SceneLoading label={sceneStalled ? 'Still starting 3D graphics' : 'Opening the scene'} />}
+      {sceneReady && sceneStalled && <SceneLoading label="Restoring 3D graphics" />}
       </div>
     </WorldBoundary>
   );

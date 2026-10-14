@@ -149,7 +149,7 @@ Why are people around? A police officer takes him to the police station, apparen
 As he is put into a chair, he tells them about everything he found. He shares the information obtained from her home, including financial details, the recruitment count, and the cult's operational domains. The police are shocked at not only how organised the information is but also the dates. They are able to trace at least 5 missing cases to the cult. They hound him a bit more about where he got it, and he explains it came from the archive rooms in the NGO headquarters. When asked if he has video or audio evidence, he provides the pen camera recording.
 The police take in all of this and mark it.The officers tell him that they will comb over this all and may call him anytime this week. Sameer agrees and is let out of the station. He goes home, on his bed , a wendigo mask is kept.
 ACT 7:
-The mask is decorated too, with beautiful lace tied around the horns. It clearly belonged to the Big Bad. Was it the police ? Did he do the wrong thing by taking all the evidence to the police ?
+He goes home and finds the mask on his bed — decorated too, with beautiful lace tied around the horns. It clearly belonged to the Big Bad. Was it the police ? Did he do the wrong thing by taking all the evidence to the police ?
 He looks at the mask, why was it here, how was it here ?
 Before he could fall into a spiral, he hears a knock on the door. Sameer peeked through, it was Veer, he looked unarmed but Sameer kept his trusty hammer with him. He opened the door.
 Veer looked frazzled, scared and angry. “How the hell did you know about us ? You couldn’t keep your nose from sniffing about”
@@ -158,7 +158,7 @@ Sameer saw for the first time how pathetic Veer looked.
 Veer started speaking again , “I’m hearing from my dad that you apparently got folders full of information. I swear to god, if my name comes in the cult, I will -”
 Someone walks in hearing distance. Sameer looks at the guy.Sameer looks at Veer, he could get something from him right now.
 Sameer says to Veer , “I think your name was in one of the folders but I’m not sure if I have sent it yet. Does this cu- organisation follow people around?”
-Veer asked, “Do you see any signs of being followed?” Sameer thought of the Wendigo Mask.
+Veer asked, “What makes you think you’re being followed?” Sameer thought of the Wendigo Mask.
 Veer hesitated, “I mean- I’ve heard some being tailed around. Usually the aftermath is messy. If there is something like that happening, I suggest that you step down. It’s not worth it man”
 Veer then looks at him, “Hey man, I’m sorry I blasted at you right now. I really didn’t know the extent of what they had done. I don’t want them to target my family too, man. Please don’t send it”
 Sameer agreed and closed the door. Veer was in the first file that he had sent. The door is double latched and a chair is stuck under it. He locks his windows. He then picks up the mask.

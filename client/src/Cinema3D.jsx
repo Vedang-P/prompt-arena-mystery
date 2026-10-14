@@ -7,7 +7,7 @@ const SceneEnvironment=lazy(()=>import('./Scene.jsx').then(({RoomEnvironment,Roo
 import { useSettings } from './Settings.jsx';
 import { SceneLoading, SceneWatchdog, WorldBoundary, SceneReady, SceneRecoveryCard } from './WorldBoundary.jsx';
 import PerformanceGuard from './PerformanceGuard.jsx';
-import { placeCast, roomWideShot, captureShot } from './SceneStaging.js';
+import { placeCast, roomWideShot, captureShot, crowdShot } from './SceneStaging.js';
 import { createRenderer } from './renderer.js';
 const CLOSE={close_parth:'parth',close_mother:'mother',close_officer:'officer'};
 // Errors thrown inside the canvas root do not reach boundaries outside the
@@ -49,9 +49,11 @@ function ShotCamera({roomId,shot,cast,speaker,paused,cinematicPhase}) {
   const angle=(person?.rot??0)-(deskPortrait ? .55 : 0),portrait=!!person&&shot!=='wide',distance=portrait?1.82:6.2;
   const cameraAt=portrait?[center[0]+Math.sin(angle)*distance+.12,center[1]+.12,center[2]+Math.cos(angle)*distance]:roomId==='police_station'?[4.3,2.6,6.3]:[.35,2.4,7.2];
   if(!portrait&&roomId==='police_station')center.splice(0,3,0,1.15,-.8);
+  const crowd=shot==='crowd'&&cast.length>1?crowdShot(cast):null;
   const target=new Vector3(...center),desired=new Vector3(...cameraAt),animated=new Vector3();
   useFrame(({camera},dt)=>{
-    if(!portrait){const wide=roomWideShot(roomId,cast,camera.aspect);target.set(...wide.center);desired.set(...wide.at);}
+    if(crowd){target.set(...crowd.center);desired.set(...crowd.at);}
+    else if(!portrait){const wide=roomWideShot(roomId,cast,camera.aspect);target.set(...wide.center);desired.set(...wide.at);}
     if(cinematicPhase==='capture'||cinematicPhase==='departure'){
       const sceneShot=captureShot(camera.aspect);
       target.set(...sceneShot.center);desired.set(...sceneShot.at);
@@ -68,8 +70,8 @@ export default function Cinema({sceneId='gazebo',shot='wide',cast=[],speaker,end
   const people=useMemo(()=>placeCast(sceneId,cast),[cast,sceneId]);
   const cinematicNight=['concert','ngo_hq'].includes(sceneId)&&['capture','departure'].includes(cinematicPhase);
   const backdrop=cinematicNight?'#26394e':'#10171c';
-  const [ready,setReady]=useState(false),[failed,setFailed]=useState(false),[stalled,setStalled]=useState(false),[dismissed,setDismissed]=useState(false);
-  useEffect(()=>{setReady(false);setFailed(false);setStalled(false);setDismissed(false);},[sceneId,cinematicPhase]);
+  const [ready,setReady]=useState(false),[failed,setFailed]=useState(false),[stalled,setStalled]=useState(false);
+  useEffect(()=>{setReady(false);setFailed(false);setStalled(false);},[sceneId,cinematicPhase]);
   const handleReady=()=>{setReady(true);onReady?.();};
   const handleFail=()=>{setFailed(true);onFail?.();};
   // The renderer factory inside `createRenderer` keeps retrying until the
@@ -97,8 +99,8 @@ export default function Cinema({sceneId='gazebo',shot='wide',cast=[],speaker,end
       <ShotCamera roomId={sceneId} shot={shot} cast={people} speaker={speaker} paused={paused} cinematicPhase={cinematicPhase}/>
       {quality==='high'&&<EffectComposer multisampling={0}><Bloom intensity={.12} luminanceThreshold={1} mipmapBlur/><Vignette offset={.22} darkness={.35}/></EffectComposer>}
     </Canvas>
-    {!ready&&!failed&&!dismissed&&<SceneLoading label={stalled?'Still starting 3D graphics':'Opening the scene'} onDismiss={()=>setDismissed(true)}/>}
-    {ready&&stalled&&!dismissed&&<SceneLoading label="Restoring 3D graphics" onDismiss={()=>setDismissed(true)}/>}
+    {!ready&&!failed&&<SceneLoading label={stalled?'Still starting 3D graphics':'Opening the scene'}/>}
+    {ready&&stalled&&<SceneLoading label="Restoring 3D graphics"/>}
     </div>
   </WorldBoundary>;
 }

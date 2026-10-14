@@ -237,7 +237,7 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 | p_connection | text | perigee, apogee, perigee and apogee, apogee and perigee | success notes the bonus for both; either order accepted |
 | p_exposed | text | email, the email, sending the files to himself | requires p_connection; triggers c_voice3; the sent-mail evidence image carries his address |
 | p_fullmoon | text | missing people, people going missing, disappearances | grants c_pen_camera |
-| p_voice_hq | text | ngo headquarters, the headquarters, the ngo | requires c_ritual2 |
+| p_voice_hq | text | ngo headquarters, the headquarters, the ngo, the archive rooms (and the archive room forms) | requires c_ritual2 |
 | p_tanush | text | tanush | requires p_voice_hq |
 | p_box | text | holy blade, the holy blade, blade | requires p_tanush |
 | p_taken_in | scene | — | the accusation at home plays out (crowd, officer, ride) and lands the player at the police station (`lands_in`) |
@@ -248,9 +248,9 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 | p_mask_owner | text | the leader, leader, tanush | requires c_mask; grants c_mask_owner |
 | p_veer_mask | text | wendigo, wendigo mask, mask | requires p_mask_owner |
 | p_lua | text | lua pharmaceuticals and selenocide, lua pharmaceuticals, selenocide | requires p_veer_mask; grants c_lua_files |
-| p_nigeria | text | pamphlet, the pamphlet, ngo pamphlet | requires p_lua; grants c_article |
+| p_nigeria | text | pamphlet(s), the pamphlet(s), ngo pamphlet(s), workshop pamphlet(s), ngo workshop pamphlet(s) | requires p_lua; grants c_article |
 | p_continue | choice | Continue | options [Continue, Stop]; option_endings {Stop: ending_cult} |
-| p_floor | text | third floor, 3rd floor, third, 3 | requires c_disguise; grants c_caught |
+| p_floor | text | third floor, 3rd floor, third, 3rd, three, 3 (floor 3 / floor three too) | requires c_disguise; grants c_caught |
 | p_hand_owner | text | tanush, the leader, leader | requires p_floor; the hand on his neck |
 | p_refer | text | you, sameer, me | act8; requires c_veer_death |
 | p_spiral | text | fibonacci, golden spiral, fibonacci spiral | act8; requires p_refer |

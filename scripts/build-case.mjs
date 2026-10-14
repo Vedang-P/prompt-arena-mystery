@@ -229,6 +229,12 @@ for (const pz of c.puzzles ?? []) {
   for (const g of pz.grants ?? []) {
     if (!clueIds.has(g)) err(`${where}: grants unknown clue "${g}"`);
   }
+  // A puzzle may add evidence without announcing its title on the result card.
+  if (pz.hide_grants !== undefined && typeof pz.hide_grants !== 'boolean') {
+    err(`${where}: hide_grants must be a boolean`);
+  } else if (pz.hide_grants === true && !(pz.grants ?? []).length) {
+    warn(`${where}: hide_grants has no effect without grants`);
+  }
   checkRequires(where, pz.requires);
   if (pz.continue_on_fail !== undefined && typeof pz.continue_on_fail !== 'boolean') {
     err(`${where}: continue_on_fail must be a boolean`);

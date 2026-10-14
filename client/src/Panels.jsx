@@ -411,7 +411,7 @@ export function EndingCard({ ending, penalties, elapsedSeconds, team, onReplay, 
   );
 }
 
-export function Notice({ notice, onClose }) {
+export function Notice({ notice, onClose, onInspect }) {
   return (
     <div className="toast" onClick={onClose}>
       {notice.page && <img className="toast-page" src={notice.page} alt="" />}
@@ -424,6 +424,18 @@ export function Notice({ notice, onClose }) {
             <li key={f.fact}>{f.text}</li>
           ))}
         </ul>
+      )}
+      {/* The exhibit card is opened on demand — the log itself never blocks the room. */}
+      {notice.clue && onInspect && (
+        <button
+          className="toast-open"
+          onClick={(e) => {
+            e.stopPropagation();
+            onInspect(notice.clue);
+          }}
+        >
+          Open exhibit →
+        </button>
       )}
     </div>
   );
