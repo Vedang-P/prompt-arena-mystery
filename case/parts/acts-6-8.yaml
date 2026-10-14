@@ -579,6 +579,7 @@ puzzles:
       - { speaker: narrator, text: "The police drag him off as he pleads his innocence. At the station, the fluorescent lights wash over him as they put him in a chair across the desk." }
     success: "The police drag him off as he pleads his innocence. At the station, they put him in a chair across the desk — should he tell them about what he found?"
     requires: { clues: [c_arrest] }
+    lands_in: police_station
 
   - id: p_tell
     kind: choice

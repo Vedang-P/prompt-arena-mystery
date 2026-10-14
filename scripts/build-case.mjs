@@ -194,6 +194,13 @@ for (const pz of c.puzzles ?? []) {
     if (pz.options !== undefined) err(`${where}: scene puzzles have no options — the scene plays itself out`);
     if (pz.answers !== undefined) err(`${where}: scene puzzles have no answers — the scene plays itself out`);
   }
+  // A scene can hand the player straight to the room it lands in (the arrest
+  // ride ends at the police station) instead of returning them to the room
+  // they left.
+  if (pz.lands_in !== undefined) {
+    if (pz.kind !== 'scene') err(`${where}: lands_in only applies to scene puzzles`);
+    else if (!roomIds.has(pz.lands_in)) err(`${where}: lands_in must be a known room id`);
+  }
   if (pz.kind !== 'email' && pz.kind !== 'scene') {
     const answersOk =
       Array.isArray(pz.answers) &&

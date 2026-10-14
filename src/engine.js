@@ -128,6 +128,7 @@ export function publicPuzzle(puzzleId) {
     lines: puzzle.lines ?? null,
     requires: puzzle.requires ?? null,
     solvedHint: puzzle.solvedHint ?? null,
+    lands_in: puzzle.lands_in ?? null,
   };
 }
 

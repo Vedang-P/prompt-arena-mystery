@@ -239,7 +239,7 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 | p_voice_hq | text | ngo headquarters, the headquarters, the ngo | requires c_ritual2 |
 | p_tanush | text | tanush | requires p_voice_hq |
 | p_box | text | holy blade, the holy blade, blade | requires p_tanush |
-| p_taken_in | scene | — | the accusation at home plays out (crowd, officer, ride); after it, the police-station travel opens |
+| p_taken_in | scene | — | the accusation at home plays out (crowd, officer, ride) and lands the player at the police station (`lands_in`) |
 | p_tell | choice | Tell them everything | options [Tell them everything, Stay silent]; requires c_parth_meet |
 | p_police_info | choice | Financial information, recruitment numbers, and domains | options [Financial information, recruitment numbers, and domains, The names of every member, The hospital's location] |
 | p_police_where | text | ngo headquarters, the archive rooms, archive rooms in ngo headquarters | requires p_police_info |
@@ -268,14 +268,16 @@ Normalization: lowercase, strip punctuation, collapse whitespace. With no author
 kind accepts any string matching /^[^@\s]+@[^@\s]+$/; with authored answers, only those addresses
 are accepted (normalized) and any other address is a wrong answer that costs the penalty. Choice
 accepts the option string or its letter (A/B/C…). A `scene` never asks and never charges: watching
-it through (or skipping) resolves it, whatever token the client submits.
+it through (or skipping) resolves it, whatever token the client submits. A `scene` may also carry
+`lands_in: <roomId>`: when it resolves, the client moves the player straight to that room of the
+current act (the arrest ride lands at the police station) instead of returning to the room they left.
 
 ## 4. Engine API (W4, `src/engine.js`)
 
 Keep all existing exports. Add:
 
 ```js
-publicPuzzle(puzzleId) -> { id, kind, prompt, evidence, options, lines, requires, solvedHint? }
+publicPuzzle(puzzleId) -> { id, kind, prompt, evidence, options, lines, requires, solvedHint?, lands_in? }
 solvePuzzle(puzzlesValue, discoveredValue, puzzleId, answer, { wrongCharges = 0 })
   -> { ok:false, error } | { ok:true, correct, alreadySolved, penalty, message,
        grants:[clueIds], discovered:[...], solvedPuzzles:[...], newlyUnlocked:[...],

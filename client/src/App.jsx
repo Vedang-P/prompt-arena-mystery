@@ -597,12 +597,20 @@ export default function App() {
     if (activePuzzle) applySolve(activePuzzle.id, answer);
   };
 
-  // When a scene's last line (or its skip button) lands, record the lead and
-  // return to the room; the act itself continues.
+  // When a scene's last line (or its skip button) lands, record the lead. A
+  // scene that names a landing room (the arrest ride that ends at the police
+  // station) moves the player straight there; any other returns to the room.
   const finishScene = async (puzzleId) => {
     const recorded = await applySolve(puzzleId, 'scene');
-    if (recorded) setStory(null);
-    else setNotice({ kicker: 'Case saved', title: 'Could not record the scene', body: 'Check your connection and try again.' });
+    if (!recorded) {
+      setNotice({ kicker: 'Case saved', title: 'Could not record the scene', body: 'Check your connection and try again.' });
+      return;
+    }
+    setStory(null);
+    const landing = state.puzzles?.find((p) => p.id === puzzleId)?.lands_in;
+    if (landing && actRooms.some((r) => r.id === landing)) {
+      setRoomId(landing); setEvidence(null); setPuzzleSpot(null); setActiveChar(null);
+    }
   };
 
   const handleDevLogin = async (code) => {

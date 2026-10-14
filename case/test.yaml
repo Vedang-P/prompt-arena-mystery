@@ -162,6 +162,7 @@ puzzles:
       - { speaker: narrator, text: "The lamp gutters. Footsteps cross the cellar floor." }
       - { speaker: butler, text: "You should not have followed me down here." }
     success: "The scene plays out; nothing is asked of the detective."
+    lands_in: cellar
 
 acts:
   - id: act0

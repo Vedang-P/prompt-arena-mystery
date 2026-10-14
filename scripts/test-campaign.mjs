@@ -38,6 +38,10 @@ assert.equal(state.acts.length, 9);
 assert.equal(state.rooms.length, 14);
 assert.equal(state.puzzles.length, 58);
 assert(state.puzzles.every((p) => !('answers' in p) && !('grants' in p)));
+// The arrest cinematic must hand the player to the station, not back to the room.
+assert.equal(state.puzzles.find((p) => p.id === 'p_taken_in')?.lands_in, 'police_station');
+const act6Rooms = caseData.acts.find((a) => a.id === 'act6')?.rooms ?? [];
+assert(act6Rooms.includes('police_station'), 'the arrest landing must be one of the act rooms');
 assert(state.endings.every((e) => !('body' in e)));
 await call('/api/puzzles/p_floor/solve', { answer: '3' }, 403);
 await call('/api/act/complete', { act: 'act4' }, 409);
