@@ -118,13 +118,30 @@
 
 /* ---------- ending ---------- */
 .ending-screen{background:radial-gradient(ellipse at 50% 0%, #1b2b32, #060d14 65%)}
-.ending-card{background:#142127;border:1px solid #425252;border-radius:12px;box-shadow:0 30px 120px #0009;color:#eeeade}
+.ending-card{background:#142127;border:1px solid #425252;border-radius:12px;box-shadow:0 30px 120px #0009;color:#eeeade;padding:44px 48px 38px}
 .ending-kicker{color:#d4b67c;font-size:10px;letter-spacing:.12em;text-transform:uppercase}
-.ending-title{font-family:Inter,sans-serif;font-weight:500;letter-spacing:-.04em}
+.ending-title{font-family:Inter,sans-serif;font-weight:500;letter-spacing:-.04em;color:#f3efdf}
 .ending-ornament{color:#d4b67c}
 .ending-body p{color:#c7d2cd}
+.ending-body p.ending-ping{color:#f0d0c2;border-left-color:#b06a52;background:#c96b4a14}
+.ending-stats{border-top:1px solid #334348}
+.ending-stat{color:#9dafb0}
 .ending-stat b{color:#f3efdf}
 .ending-team{color:#9dafb0}
+.ending-thanks{color:#d4b67c}
+.ending-feedback-form{background:#0f1b21;border:1px solid #2b3a40;border-radius:10px}
+.ending-feedback-title{color:#f3efdf}
+.ending-feedback-form label{color:#a8b3b6}
+.ending-feedback-form textarea{background:#14252d;border:1px solid #3e5358;border-radius:6px;color:#e6ecdf;font-family:Inter,sans-serif}
+.ending-feedback-form textarea::placeholder{color:#7f9296}
+.ending-feedback-form textarea:focus{outline:2px solid #d4b67c;outline-offset:1px;border-color:#d4b67c}
+.ending-feedback-note{color:#9dafb0}
+.ending-feedback-note.saved{color:#8fd0a8}
+.ending-feedback-note.error{color:#f0a892}
+.ending-card .btn.ghost{color:#c7d2cd;border-color:#425252}
+.ending-card .btn.ghost:hover{color:#e8d5aa;border-color:#d4b67c;background:#ffffff0f}
+.ending-card .btn.brass{background:linear-gradient(180deg,#d9b55d,#b68e32);border-color:#d4b67c66;color:#162126;box-shadow:0 10px 26px #0007}
+.ending-card .btn.brass:hover{background:linear-gradient(180deg,#e6cb93,#c79f3f);color:#162126}
 
 /* ---------- in-game HUD alignment ---------- */
 .quiet-button{border:0;background:none;color:#c7d2cd;font-size:11px;letter-spacing:.02em;padding:8px 10px;border-radius:4px;font-family:inherit}

@@ -291,7 +291,7 @@ const formatRunDuration = (seconds) => {
   return h > 0 ? `${h}h ${String(m).padStart(2, '0')}m` : `${m}m ${String(sec).padStart(2, '0')}s`;
 };
 
-export function EndingCard({ ending, penalties, elapsedSeconds, team, title, onReplay, onRestart }) {
+export function EndingCard({ ending, penalties, elapsedSeconds, team, onReplay, onRestart }) {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
   const [feedbackBusy, setFeedbackBusy] = useState(false);
@@ -350,16 +350,17 @@ export function EndingCard({ ending, penalties, elapsedSeconds, team, title, onR
           </span>
         </div>
         <p className="ending-team">
-          {title} — Team {team}
+          Prompt Arena — Team {team}
         </p>
         <p className="ending-thanks">Thank you for playing Prompt Arena</p>
         <div className="ending-feedback">
           {feedbackStatus === 'saved' ? (
-            <p className="ending-feedback-note" role="status">
+            <p className="ending-feedback-note saved" role="status">
               Thank you — your feedback has been saved for the team.
             </p>
           ) : feedbackOpen ? (
             <div className="ending-feedback-form">
+              <p className="ending-feedback-title">Share your feedback</p>
               <label htmlFor="ending-feedback-text">Tell the team what you thought</label>
               <textarea
                 id="ending-feedback-text"
@@ -370,6 +371,11 @@ export function EndingCard({ ending, penalties, elapsedSeconds, team, title, onR
                 onChange={(e) => setFeedbackText(e.target.value)}
                 disabled={feedbackBusy}
               />
+              {feedbackStatus === 'error' ? (
+                <p className="ending-feedback-note error" role="alert">
+                  The feedback could not be saved. Please try again.
+                </p>
+              ) : null}
               <div className="ending-feedback-actions">
                 <button
                   className="btn ghost"
@@ -382,11 +388,6 @@ export function EndingCard({ ending, penalties, elapsedSeconds, team, title, onR
                   {feedbackBusy ? 'Saving…' : 'Send feedback'}
                 </button>
               </div>
-              {feedbackStatus === 'error' && (
-                <p className="ending-feedback-note error" role="alert">
-                  The feedback could not be saved. Please try again.
-                </p>
-              )}
             </div>
           ) : (
             <button className="btn ghost" onClick={() => setFeedbackOpen(true)}>

@@ -2218,15 +2218,16 @@ h4 {
 
 .ending-thanks {
   margin: 20px 0 0;
-  font-size: 12px;
-  letter-spacing: 0.32em;
-  text-indent: 0.32em;
+  font-size: 13px;
+  letter-spacing: 0.28em;
+  text-indent: 0.28em;
   text-transform: uppercase;
-  color: #8a6a2a;
+  text-align: center;
+  font-weight: 600;
 }
 
 .ending-feedback {
-  margin-top: 16px;
+  margin-top: 18px;
 }
 
 .ending-feedback-form {
@@ -2234,46 +2235,39 @@ h4 {
   flex-direction: column;
   gap: 10px;
   margin-top: 4px;
-  padding: 16px;
+  padding: 18px;
   text-align: left;
-  border: 1px solid rgba(88, 66, 36, 0.32);
-  background: rgba(255, 255, 255, 0.3);
+}
+
+.ending-feedback-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .ending-feedback-form label {
-  font-size: 10.5px;
-  letter-spacing: 0.3em;
+  font-size: 10px;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--ink-paper-faint);
 }
 
 .ending-feedback-form textarea {
   width: 100%;
-  min-height: 88px;
+  min-height: 96px;
   resize: vertical;
-  padding: 10px 12px;
+  padding: 11px 13px;
   font: inherit;
-  font-size: 15px;
-  line-height: 1.5;
-  color: var(--ink-paper);
-  background: rgba(255, 255, 255, 0.55);
-  border: 1px solid rgba(88, 66, 36, 0.4);
+  font-size: 14px;
+  line-height: 1.6;
   border-radius: 2px;
-}
-
-.ending-feedback-form textarea::placeholder {
-  color: rgba(58, 44, 24, 0.5);
-}
-
-.ending-feedback-form textarea:focus {
-  outline: 2px solid rgba(138, 106, 42, 0.5);
-  outline-offset: 1px;
 }
 
 .ending-feedback-actions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+  margin-top: 4px;
 }
 
 .ending-card .ending-feedback-actions .btn {
@@ -2281,14 +2275,9 @@ h4 {
 }
 
 .ending-feedback-note {
-  margin: 8px 0 0;
+  margin: 2px 0 0;
   font-size: 13px;
   font-style: italic;
-  color: #4d3d1f;
-}
-
-.ending-feedback-note.error {
-  color: #6b1f1a;
 }
 
 /* -- google sign-in -- */

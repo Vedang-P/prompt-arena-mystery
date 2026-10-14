@@ -502,6 +502,7 @@ function Dashboard({ session, onLoggedOut }) {
         <div className="admin-header-actions">
           <button className="admin-button" onClick={refresh} title="Fetch the latest state now">Refresh</button>
           <a className="admin-button" href="/api/admin/export" title="Final standings with rank and score">Results CSV</a>
+          <a className="admin-button" href="/api/admin/export/feedback" title="Every piece of player feedback from the ending screen">Feedback CSV</a>
           <button
             className="admin-button danger-ghost"
             disabled={busyAction === 'reset-all'}
