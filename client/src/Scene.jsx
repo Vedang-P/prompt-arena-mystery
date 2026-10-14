@@ -1,7 +1,7 @@
 import './styles-scene.css';
 import { CinemaProp, ParkGround, WindTree, CeilingFan } from './CinemaAssets.jsx';
 import {DetailProp,InstancedDetailScatter,TerrainSurface,WallSign,Cable,ComputerStation,ShelfContents,FencePanel} from './EnvironmentDetails.jsx';
-import { BEDROOM, SAMEER_BED, HOME_STAIRS, HOME_UPPER_DOORWAY, HOME_BEDROOM, backWallPanels, POLICE, HOSPITAL_BED, HOSPITAL_BED_GROUP, HOSPITAL_RITUAL_CROWD, DESK_TOP, DESK_SEAT, PARTH_ANCHORS, PARK, DETAIL_ANCHORS,FIELD,FIELD_TRACKS,FIELD_BACKGROUND_BUILDING,FIELD_OVERGROWTH,ROOM_VIEWS,ROOM_BOUNDS,updateFieldBackpackOrbit,updateHospitalSecurityOrbit } from './SceneLayout.js';
+import { BEDROOM, SAMEER_BED, HOME_STAIRS, HOME_UPPER_DOORWAY, HOME_BEDROOM, backWallPanels, POLICE, HOSPITAL_BED, HOSPITAL_BED_GROUP, HOSPITAL_RITUAL_CROWD, DESK_TOP, DESK_SEAT, PARTH_ANCHORS, PARK, DETAIL_ANCHORS,FIELD,FIELD_TRACKS,FIELD_BACKGROUND_BUILDING,FIELD_OVERGROWTH,ROOM_VIEWS,ROOM_BOUNDS,updateFieldBackpackOrbit,updateHospitalSecurityOrbit,updateLoadingBayOrbit } from './SceneLayout.js';
 import DemonMask from './DemonMask.jsx';
 import {seatContact,maskVisibleFor} from './SceneStaging.js';
 import Actor from './Actor.jsx';
@@ -437,7 +437,8 @@ function HotspotMarkers({ room, hot }) {
       // security label sits alone and must keep its authored place.
       const fieldBackpack=room.id==='abandoned_field'&&group.hotspots.some(h=>h.id==='af_backpack');
       const hospitalSecurity=room.id==='hospital'&&group.hotspots.some(h=>h.id==='h4_security')&&room.hotspots.some(h=>h.id==='h4_theatre');
-      const labelGuard=fieldBackpack?{partner:DETAIL_ANCHORS.abandoned_field.af_sedan,update:updateFieldBackpackOrbit}:hospitalSecurity?{partner:DETAIL_ANCHORS.hospital.h4_theatre,update:updateHospitalSecurityOrbit}:null;
+      const loadingBayWorker=room.id==='hospital'&&group.hotspots.some(h=>h.id==='h7_worker')&&room.hotspots.some(h=>h.id==='h7_floor');
+      const labelGuard=fieldBackpack?{partner:DETAIL_ANCHORS.abandoned_field.af_sedan,update:updateFieldBackpackOrbit}:hospitalSecurity?{partner:DETAIL_ANCHORS.hospital.h4_theatre,update:updateHospitalSecurityOrbit}:loadingBayWorker?{partner:DETAIL_ANCHORS.hospital.h7_floor,update:updateLoadingBayOrbit}:null;
       return <AnchoredHotspot key={key} {...group} hot={hot} labelGuard={labelGuard}/>;
     })}</>;
   }

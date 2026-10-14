@@ -76,12 +76,14 @@ assert(HOSPITAL_RITUAL_CROWD.some(m=>m.character==='tanush'),'Tanush must stand 
 assert(HOSPITAL_RITUAL_CROWD.some(m=>m.character==='sameer'&&m.mask===false),'Sameer must witness the sacrifice bare-faced among the masked crowd');
 assert(HOSPITAL_RITUAL_CROWD.some(m=>m.officiant),'The leader must officiate behind the altar');
 // Acts 7–8 must follow the story: Act 7 closes inside the ritual with the
-// leader's speech (never the loading bay), Act 8 opens with Sameer already
+// leader's speech — every line, from the forced mask to the roaring crowd —
+// never in Sameer's room or the loading bay. Act 8 opens with Sameer already
 // masked in the crowd, and the ending's last two beats return to his room at
 // dawn instead of the phone playing on in the burning hospital.
-assert.equal(locationFor(act7,'outro',0),'hospital','The forced mask and the pushing-in must stage at the ritual');
-assert.equal(locationFor(act7,'outro',act7.outro.length-1),'hospital','The whole closing speech stays in the ritual room');
-assert.equal(cinematicPhaseFor(act7,'outro','hospital',2),'ceremony','Act 7 must close in the ceremony tableau');
+for(const [index,line] of act7.outro.entries()){
+  assert.equal(locationFor(act7,'outro',index),'hospital',`Act 7 closing line ${index} must stage in the sacrifice room, not "${locationFor(act7,'outro',index)}": ${line.text.slice(0,60)}`);
+  assert.equal(cinematicPhaseFor(act7,'outro','hospital',index),'ceremony',`Act 7 closing line ${index} must keep the ceremony tableau`);
+}
 const ceremonyCast=storyCast(act7,'outro','hospital',2);
 const ceremonySameer=ceremonyCast.find(c=>c.character==='sameer'),ceremonyLeader=ceremonyCast.find(c=>c.character==='leader');
 assert(ceremonySameer&&ceremonySameer.wearingMask,'Sameer must already wear the mask the leader forced on him');
