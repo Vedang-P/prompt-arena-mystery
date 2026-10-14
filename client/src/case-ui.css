@@ -236,8 +236,9 @@
   .case-note{padding:10px 18px}
   .talk-location{top:2.5vh;left:5vw}
   .talk-leave{top:2vh;right:4vw;width:56px}
-  .talk-name{left:5vw;right:auto;bottom:auto;top:calc(2.5vh + 72px);text-align:left;max-width:none}
-  .talk-name h3{font-size:22px}
+  /* The room title wraps on narrow screens; the big name plate would land on
+     top of it. Speaker labels in the log already name who is talking. */
+  .talk-name{display:none}
   .talk-input{left:4vw;right:4vw;width:auto;bottom:2.5vh}
   .talk-log{left:4vw;right:4vw;width:auto;bottom:calc(2.5vh + 88px);max-height:42vh}
   .talk-line.player{margin-right:0}
