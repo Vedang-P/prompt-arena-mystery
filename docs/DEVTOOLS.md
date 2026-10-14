@@ -35,7 +35,9 @@ It opens the sandbox panel:
   survives a reload. Room tabs and travel restrictions do not apply to dev
   sessions, and every hotspot in a room is visible regardless of act or
   requirements. An act jump clears the parked room, so the new act opens on
-  its own entry room.
+  its own entry room. Reaching the run's ending (or a correct accusation)
+  releases the parked room too, so the ending card and the certificate are
+  never hidden behind a room the dev was inspecting.
 - **Clues** — the full clue registry with toggles per clue, plus
   *Reveal everything* / *Clear everything*. On the server the dev session is
   ungated everywhere: clues discover with unmet requirements, puzzles solve
@@ -56,7 +58,7 @@ cookie) cannot call them. They edit the dev team's own save.
 | --- | --- | --- |
 | `GET /api/dev/catalog` | — | acts, rooms, clues, puzzles + answers |
 | `POST /api/dev/act` | `{ act }` | jump to any act; clears the parked room and any ending/solve |
-| `POST /api/dev/room` | `{ room }` | park the room the client opens next |
+| `POST /api/dev/room` | `{ room }` or `{ room: null }` | park the room the client opens next, or release the park |
 | `POST /api/dev/toggle` | `{ kind: 'clue'\|'puzzle', id, on }` | toggle one item (puzzle grants cascade) |
 | `POST /api/dev/bulk` | `{ mode: 'all'\|'none' }` | reveal or clear everything |
 | `POST /api/dev/reset` | — | act 0, clean save, dev flags kept |

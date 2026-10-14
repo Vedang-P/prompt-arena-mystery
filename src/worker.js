@@ -1523,14 +1523,19 @@ app.post('/api/dev/act', async (c) => {
 });
 
 // Remember the room the client should open next (rooms live in the client, but
-// this keeps the jump across reloads and devices).
+// this keeps the jump across reloads and devices). `{ room: null }` releases the
+// park — the client does that when the run reaches its ending, so the ending
+// card is shown instead of the room the dev was inspecting.
 app.post('/api/dev/room', async (c) => {
   const { auth, error } = await requireDev(c);
   if (error) return error;
   const body = await c.req.json().catch(() => ({}));
-  const room = String(body.room ?? '');
-  if (!(caseData.rooms ?? []).some((r) => r.id === room)) return c.json({ error: 'unknown_room' }, 400);
-  const flags = { ...parseJsonObject(auth.progress.flags), dev: true, devRoom: room };
+  const clearing = body.room === null;
+  const room = clearing ? null : String(body.room ?? '');
+  if (!clearing && !(caseData.rooms ?? []).some((r) => r.id === room)) return c.json({ error: 'unknown_room' }, 400);
+  const flags = { ...parseJsonObject(auth.progress.flags), dev: true };
+  if (clearing) delete flags.devRoom;
+  else flags.devRoom = room;
   await c.env.DB.prepare('UPDATE progress SET flags = ? WHERE team_id = ?')
     .bind(JSON.stringify(flags), auth.teamId)
     .run();

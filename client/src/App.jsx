@@ -22,6 +22,7 @@ import {
   accuse,
   completeAct,
   devLogin,
+  devRoom as parkDevRoom,
   discoverClue,
   getAuthConfig,
   getHistory,
@@ -261,6 +262,15 @@ export default function App() {
     return (complete.clues ?? []).every((c) => discovered.has(c)) && (complete.puzzles ?? []).every((p) => solved.has(p));
   }, [state, currentAct]);
 
+  // The run's ending is what the dev was playing toward: release the sandbox's
+  // parked room so the ending card (and its thank-you screen) is shown instead
+  // of being hidden behind a room pin set while inspecting a scene.
+  const releaseDevPark = () => {
+    if (!state?.dev) return;
+    setDevParkedRoom(null);
+    parkDevRoom(null).catch(() => {});
+  };
+
   const finishAct = async (actId) => {
     if (actBusy) return;
     setActBusy(true);
@@ -269,7 +279,10 @@ export default function App() {
       const fresh = await getState();
       setState(fresh);
       setActiveChar(null); setPuzzleSpot(null); setEvidence(null); setExploreOpen(false);
-      if (res.ending) setPhase('solved');
+      if (res.ending || fresh.ending) {
+        releaseDevPark();
+        setPhase('solved');
+      }
       const url = new URL(window.location.href); url.searchParams.delete('beat'); window.history.replaceState(null, '', url);
     } catch (e) {
       setNotice({ kicker: 'Case saved', title: e.status === 409 ? 'Keep investigating' : 'Connection interrupted', body: e.status === 409 ? 'Collect the remaining evidence before advancing.' : 'Your case has not advanced. Please try again.' });
@@ -816,6 +829,8 @@ export default function App() {
       setAccuseResult({ ...res, payload });
       if (res.correct) {
         setState((s) => ({ ...s, solved: true }));
+        // The certificate is the story's payoff: let it show over a parked room.
+        releaseDevPark();
         clearTimeout(accuseTimer.current);
         accuseTimer.current = setTimeout(() => {
           setAccuseOpen(false);

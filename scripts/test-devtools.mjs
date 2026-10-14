@@ -60,6 +60,11 @@ assert.equal((await call('/api/dev/room', devCookie, { room: 'hospital' })).stat
 state = await (await call('/api/state', devCookie)).json();
 assert.equal(state.devRoom, 'hospital');
 assert.equal((await call('/api/dev/room', devCookie, { room: 'nowhere' })).status, 400, 'unknown room rejected');
+// `{ room: null }` releases the park (the client does this when the run ends,
+// so the ending card is not hidden behind the room the dev was inspecting).
+assert.equal((await call('/api/dev/room', devCookie, { room: null })).status, 200);
+assert.equal((await (await call('/api/state', devCookie)).json()).devRoom, null, 'null releases the parked room');
+assert.equal((await call('/api/dev/room', devCookie, { room: 'hospital' })).status, 200);
 
 // An act jump clears the parked room so the client opens the act's own entry.
 assert.equal((await call('/api/dev/act', devCookie, { act: 'act3' })).status, 200);
