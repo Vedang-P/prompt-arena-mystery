@@ -215,11 +215,10 @@ acts:
     title: "Full Moon"
     entry_room: sameer_room
     rooms: [sameer_room, gazebo, cyber_cafe]
-    objective: "Chase the leads — the park CD, the videos, and the man behind the voice."
     intro:
       - { speaker: narrator, text: "He felt sick — Parth had a whole life he was only finding out about, one abandoned car's mixtape at a time. He tries to ignore the teeny tiny piece of horribly sickening revelation at the back of his mind — he does this by going to the store to find something to eat." }
       - { speaker: narrator, text: "He is bombarded at the entrance by someone from a non-profit organisation. One can figure out if a person is from an NGO by a smile that stretches across their face but there is no crinkle near the eye. He tried ignoring, but another person stepped in front of him, the same stretched smile spooking him. He stopped and tiredly signalled them to tell him what they wanted." }
-      - { speaker: narrator, text: "The one right in front of him pushed a pamphlet into his hands. It was apparently a worldwide NGO working towards the mission of fostering scientific temperament throughout the underprivileged youth — they were going to have a huge astronomy event in a few days. They had quite a few notable achievements, like the largest astronomy workshop organised in Nigeria just a year ago." }
+      - { speaker: narrator, text: "The one right in front of him pushed a pamphlet into his hands. It was apparently Perigee — a worldwide NGO working towards the mission of fostering scientific temperament throughout the underprivileged youth — they were going to have a huge astronomy event in a few days. They had quite a few notable achievements, like the largest astronomy workshop organised in Nigeria just a year ago." }
       - { speaker: narrator, text: "He is impressed. He opens his wallet to give out 10 rupees. The worker at his side looks into his wallet; Sameer falls for their judgement and pulls out the 50 rupee note. He uses all his interview-larping skills to protect his last 30 rupees and makes a quick exit." }
       - { speaker: narrator, text: "He somehow reaches Ramu's Dosa Corner — Parth loved the place for some reason. He feels nostalgic and orders Parth's usual." }
       - { speaker: narrator, text: "He eats it and stumbles back home, the dosa weighing his stomach and the bag weighing his back. He crashes on his bed." }
@@ -598,7 +597,7 @@ characters:
         disposition: deny
       - id: officer_plate
         text: "The plate KA01OC1808 belongs to a Vihaan — the sedan was his. It's the only name attached to any of this."
-        unlock: { requires: [c_sedan] }
+        unlock: { requires: [c_vihaan] }
         disposition: admit
 
   - id: veer
@@ -814,7 +813,7 @@ clues:
   - id: c_sedan
     name: "Silver sedan"
     description: "A dusty but luxurious silver sedan, parked at the edge of the field. The number plate reads KA01OC1808."
-    grants: [officer_plate]
+    grants: []
   - id: c_backpack
     name: "Black backpack"
     description: "A black backpack on the seat of the car. Inside: a few cassettes, and nothing else."
