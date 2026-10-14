@@ -1100,9 +1100,6 @@ function ConcertRoom({room,hot}) {
     <WallSign position={[0,1.35,.028]} width={1.15} height={.5} title="PERIGEE" lines={['MEMBER REGISTRATION']}/>
   </group>
   {[-8.5,8.5].map(x=><group key={x}><DetailProp asset="street_lamp_01" position={[x,0,2.5]} height={3.8}/><pointLight position={[x,3.1,2.5]} color="#f6cc91" intensity={12} distance={10}/></group>)}
-  {/* The parked auto that carries Sameer to the workshop — its driver side is
-      where the fare and travel markers cluster (see DETAIL_ANCHORS.concert). */}
-  <DetailProp asset="sedan_detailed" position={[-4.6,0,3.6]}/>
   <WindTree position={[-10,0,-7]} height={6}/><WindTree position={[10,0,-7]} height={6}/>
   <pointLight position={[0,4.3,-3.8]} color="#c2cef4" intensity={30} distance={14}/>
   <HotspotMarkers room={room} hot={hot}/>
