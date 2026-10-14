@@ -46,7 +46,7 @@ export default function PuzzleWorkbench({ puzzle, team, solved, penalties = 0, o
             </form>}
           </section>
         </div>
-        <footer className="case-panel-foot"><p>{settled ? 'Discoveries saved to your notebook' : <>Case penalties <b>{penalties}</b></>}</p><div className="case-footer-actions"><button className={`case-button ${settled ? 'primary' : ''}`} onClick={onClose}>{settled ? 'Return to investigation →' : 'Back to room'}</button>{!settled && (scene ? <button className="case-button primary" onClick={() => onSolve('scene')} disabled={busy}>{busy ? 'Saving…' : 'Continue →'}</button> : <button className="case-button primary" form="case-puzzle-answer" disabled={busy || !answer.trim()} type="submit">{busy ? 'Checking…' : puzzle.kind === 'choice' ? 'Confirm choice →' : 'Check answer →'}</button>)}</div></footer>
+        <footer className="case-panel-foot"><p>{settled ? 'Discoveries saved to your notebook' : <>Case penalties <b>{penalties}</b></>}</p><div className="case-footer-actions"><button className={`case-button ${settled ? 'primary' : ''}`} onClick={onClose}>{settled ? 'Return to investigation →' : 'Back to room'}</button>{!settled && (scene ? <button className="case-button primary" onClick={() => onSolve('scene')} disabled={busy}>{busy ? 'Saving…' : 'Finish scene →'}</button> : <button className="case-button primary" form="case-puzzle-answer" disabled={busy || !answer.trim()} type="submit">{busy ? 'Checking…' : puzzle.kind === 'choice' ? 'Confirm choice →' : 'Check answer →'}</button>)}</div></footer>
       </>}
     </section>
   </div>;

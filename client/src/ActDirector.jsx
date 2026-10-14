@@ -10,7 +10,7 @@ export default function ActDirector({act,characters=[],onComplete,busy,nextActTi
   const start=Math.max(0,beats.findIndex(b=>b.id===debug));
   const [phase,setPhase]=useState(debug||review?'play':'card'),[beatIndex,setBeatIndex]=useState(start),[lineIndex,setLineIndex]=useState(0);
   const [paused,setPaused]=useState(review),[readyRoom,setReadyRoom]=useState(null),[sceneFailed,setSceneFailed]=useState(false);
-  const advanceRef=useRef(null),finishing=useRef(false);
+  const advanceRef=useRef(null),finishing=useRef(false),advanceLock=useRef(0);
   const beat=beats[beatIndex],line=beat?.lines?.[lineIndex];
   // The prologue's park beats run across two evenings: everything before the
   // "next day" beat is yesterday, the rest is today.
@@ -18,6 +18,11 @@ export default function ActDirector({act,characters=[],onComplete,busy,nextActTi
   const yesterday=beat?.room==='gazebo'&&(todayStart===-1||beatIndex<todayStart);
   const advance=()=>{
     if(phase==='card'){setPhase('play');return;}
+    // One click (or key press) advances exactly one line; a held Space/Enter or
+    // a double-click must never run the whole segment down.
+    const now=performance.now();
+    if(now-advanceLock.current<450)return;
+    advanceLock.current=now;
     if(lineIndex<(beat?.lines.length??0)-1)setLineIndex(i=>i+1);
     else if(beatIndex<beats.length-1){setLineIndex(0);setBeatIndex(i=>i+1);}
     else setPhase('end');

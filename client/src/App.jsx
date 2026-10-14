@@ -534,7 +534,7 @@ export default function App() {
         kicker: currentAct.kicker,
         title: currentAct.title,
         backdrop: currentAct.backdrop,
-        doneLabel: 'Continue',
+        doneLabel: currentAct.id === 'act8' ? 'Finish the case →' : 'Continue to next act →',
       });
     } else {
       clearNextIntro(currentAct.id);
@@ -567,7 +567,7 @@ export default function App() {
       kicker: currentAct.kicker,
       title: currentAct.title,
       backdrop: currentAct.backdrop,
-      doneLabel: kind === 'intro' ? 'Begin' : 'Continue',
+      doneLabel: kind === 'intro' ? 'Begin' : currentAct.id === 'act8' ? 'Finish the case →' : 'Continue to next act →',
     });
   };
 
@@ -590,7 +590,7 @@ export default function App() {
       lines: puzzle.lines,
       kicker: currentAct?.kicker,
       title: label ?? currentAct?.title,
-      doneLabel: 'Continue',
+      doneLabel: 'Finish scene →',
       backdrop: sceneRoom?.id ?? currentAct?.entry_room,
       cast: [{ character: 'sameer' }],
     });

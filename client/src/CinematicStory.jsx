@@ -22,16 +22,17 @@ export default function CinematicStory({ story, act, characters, onDone, busy, i
   // Restore the act's room cue on unmount only, so changing scene or pausing does not
   // restart the score from the top.
   useEffect(()=>()=>window.dispatchEvent(new CustomEvent('arena-cue',{detail:{cue:musicFor(act.entry_room),ambience:ambienceFor(act.entry_room),paused:false}})),[]);
-  // Lines never roll on their own: the story waits for the Continue button (or
-  // Space/Enter), so a team reads at its own pace and a stall upstream cannot
-  // push the captions past a line they have not seen.
-  const advanceLock=useRef(0);
+  // Continue moves the story on by exactly one dialogue line. Only the last
+  // line carries the story's own finish label, and it can fire onDone at most
+  // once — a double-click or a held key can never skip the segment.
+  const advanceLock=useRef(0),finishing=useRef(false);
   const advance = () => {
-    if (busy) return;
+    if (busy||finishing.current) return;
     const now=performance.now();
     if (now-advanceLock.current<450) return;
     advanceLock.current=now;
-    if (!last) setIndex((i) => i + 1); else onDone();
+    if (!last) setIndex((i) => i + 1);
+    else { finishing.current=true; onDone(); }
   };
   useEffect(() => {
     const key = (e) => { if (!['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA', 'A'].includes(e.target.tagName) && (e.code === 'Space' || e.code === 'Enter')) { e.preventDefault(); advance(); } };
