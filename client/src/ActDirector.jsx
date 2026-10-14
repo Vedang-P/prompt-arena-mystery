@@ -10,8 +10,7 @@ export default function ActDirector({act,characters=[],onComplete,busy,nextActTi
   const start=Math.max(0,beats.findIndex(b=>b.id===debug));
   const [phase,setPhase]=useState(debug||review?'play':'card'),[beatIndex,setBeatIndex]=useState(start),[lineIndex,setLineIndex]=useState(0);
   const [paused,setPaused]=useState(review),[readyRoom,setReadyRoom]=useState(null),[sceneFailed,setSceneFailed]=useState(false);
-  const pausedRef=useRef(paused),advanceRef=useRef(null),completeRef=useRef(onComplete),finishing=useRef(false);
-  completeRef.current=onComplete;pausedRef.current=paused;
+  const advanceRef=useRef(null),finishing=useRef(false);
   const beat=beats[beatIndex],line=beat?.lines?.[lineIndex];
   // The prologue's park beats run across two evenings: everything before the
   // "next day" beat is yesterday, the rest is today.
@@ -48,25 +47,10 @@ export default function ActDirector({act,characters=[],onComplete,busy,nextActTi
   // Hand the room's own cue back only when the cinematic goes away — running this on every
   // beat restarted the score each time a dependency changed.
   useEffect(()=>()=>window.dispatchEvent(new CustomEvent('arena-cue',{detail:{cue:'dusk',ambience:ambienceFor(act.entry_room),paused:false}})),[]);
+  // The prologue never advances on a timer: every line waits for Next (or
+  // Space/Enter), and the end card waits for Enter Act 1.
   useEffect(()=>{
-    if(phase!=='play'||!line||readyRoom!==beat.room)return;
-    // Subtitles hold for a reading-time estimate; pausing stops the clock.
-    let elapsed=0,last=performance.now();
-    const duration=Math.max(2.2,line.text.length*.06+.65);
-    const timer=setInterval(()=>{
-      const now=performance.now(),delta=Math.min((now-last)/1000,.3);last=now;
-      if(pausedRef.current)return;
-      elapsed+=delta;if(elapsed>=duration)advanceRef.current();
-    },80);
-    return()=>clearInterval(timer);
-  },[phase,line,readyRoom,beat?.room]);
-  useEffect(()=>{
-    if(phase!=='end'||busy||finishing.current)return;
-    const timer=setTimeout(()=>{finishing.current=true;completeRef.current?.();},2200);
-    return()=>clearTimeout(timer);
-  },[phase,busy]);
-  useEffect(()=>{
-    const key=e=>{if(phase==='play'&&e.code==='Space'&&!['BUTTON','INPUT'].includes(e.target.tagName)){e.preventDefault();setPaused(p=>!p);}};
+    const key=e=>{if(phase==='play'&&(e.code==='Space'||e.code==='Enter')&&!['BUTTON','INPUT','SELECT','TEXTAREA','A'].includes(e.target.tagName)){e.preventDefault();advanceRef.current();}};
     window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);
   },[phase]);
   if(!act)return null;
@@ -78,9 +62,9 @@ export default function ActDirector({act,characters=[],onComplete,busy,nextActTi
     {phase==='play'&&line&&<>
       <aside className="scene-caption"><span>{beat.caption ?? (beat.room==='parth_home'?'Parth’s home · 7:15 PM':beat.room==='police_station'?'Police station · 9:08 PM':beat.room==='sameer_room'?'Sameer’s room · 11:47 PM':'The park gazebo')}</span><small>{String(beatIndex+1).padStart(2,'0')} / {String(beats.length).padStart(2,'0')}</small></aside>
       <div className="cinema-footer"><div className={`cinema-subtitles ${phone?'voicenote-subtitles':''}`}><div className="subtitle-card" key={`${beat.id}-${lineIndex}`}><span className="cinema-speaker">{phone?'Voice message · Unknown sender':SPEAKERS[line.speaker]??names[line.speaker]??line.speaker}</span>{phone&&<div className={`message-wave ${paused?'paused':''}`} aria-hidden="true">{Array.from({length:25},(_,i)=><i key={i} style={{height:12+Math.abs(Math.sin(i*2.7))*23,animationDelay:`${i*35}ms`}}/>)}</div>}<p>{line.text}</p></div></div>
-      <footer className="cinema-controls"><div className="cinema-progress" aria-label="Opening progress">{beats.map((b,i)=><span key={b.id} className={`seg ${i<beatIndex?'done':''} ${i===beatIndex?'active':''}`}/>)}</div><div className="cinema-buttons"><button className="btn ghost" onClick={()=>setPaused(p=>!p)}>{paused?'Resume':'Pause'}</button><button className="btn ghost" onClick={()=>setPhase('end')}>Skip prologue →</button></div></footer></div>
-      {paused&&<div className="pause-label">Paused <small>Space to resume</small></div>}
+      <footer className="cinema-controls"><div className="cinema-progress" aria-label="Opening progress">{beats.map((b,i)=><span key={b.id} className={`seg ${i<beatIndex?'done':''} ${i===beatIndex?'active':''}`}/>)}</div><div className="cinema-buttons"><button className="btn ghost" onClick={()=>setPaused(p=>!p)}>{paused?'Resume':'Pause'}</button><button className="btn ghost" onClick={()=>setPhase('end')}>Skip prologue →</button><button className="btn brass" onClick={advance}>Next →</button></div></footer></div>
+      {paused&&<div className="pause-label">Paused <small>Resume to keep reading</small></div>}
     </>}
-    {phase==='end'&&<div className="cinema-endcard"><p className="cinema-act-kicker">The investigation begins</p><h1 className="cinema-act-title">{nextActKicker??'Act I'}</h1><p className="cinema-act-sub">{nextActTitle??'The Room'}</p><p className="cinema-act-hint">{busy?'Opening your case…':'Entering Act 1…'}</p><button className="btn brass" disabled={busy} onClick={()=>{finishing.current=true;onComplete?.();}}>Enter Act 1 →</button></div>}
+    {phase==='end'&&<div className="cinema-endcard"><p className="cinema-act-kicker">The investigation begins</p><h1 className="cinema-act-title">{nextActKicker??'Act I'}</h1><p className="cinema-act-sub">{nextActTitle??'The Room'}</p><p className="cinema-act-hint">{busy?'Opening your case…':'Enter Act 1 when you are ready.'}</p><button className="btn brass" disabled={busy} onClick={()=>{finishing.current=true;onComplete?.();}}>Enter Act 1 →</button></div>}
   </main>;
 }

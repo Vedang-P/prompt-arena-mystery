@@ -103,12 +103,15 @@ export function discover(discoveredValue, clueId) {
 // must not block the story ("sameer@mail" is fine).
 const EMAIL_ANSWER = /^[^@\s]+@[^@\s]+$/;
 
-/** Lowercase, strip punctuation (spaces, "@" and "." survive), collapse whitespace. */
+/** Lowercase, strip punctuation (spaces, "@" and "." survive inside tokens),
+ *  drop sentence-ending periods, collapse whitespace. */
 export function normalizeAnswer(text) {
   return String(text ?? '')
     .toLowerCase()
     .replace(/[^a-z0-9 @.]/g, '')
     .replace(/\s+/g, ' ')
+    .replace(/\.+$/, '')
+    .replace(/\.(?= )/g, '')
     .trim();
 }
 

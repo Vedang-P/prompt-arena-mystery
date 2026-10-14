@@ -1159,16 +1159,16 @@ app.post('/api/interrogate', async (c) => {
     }
   }
 
-  // The authored ladder is the floor of the game: canonical answers are the
-  // case's real leads and are always served from the hardcoded data, so the
-  // story never depends on the model pool. The live suspects (the opencode
-  // pool) answer everything else; when the pool is limited, timing out or
-  // unreachable the same ladder (canonical, snub, deflection) answers instead
-  // of leaving the team waiting on a dead stream.
+  // The live suspect answers first; the authored ladder underneath it keeps the
+  // scene alive when the pool is limited, timing out or unconfigured: the
+  // scripted answer when the question matches one, otherwise a snub or a
+  // cycling in-voice deflection. The hardcoded data is the outage floor — the
+  // interview never stalls on a dead stream.
   const canned = !repeat && !noise ? canonicalAnswer(characterId, question) : null;
-  const source = canned ? 'canonical' : repeat ? 'snub' : 'deflect';
-  const final = canned ?? deflection(characterId, (priorFallbacks?.n ?? 0) + 1, repeat);
-  const llm = !canned && !repeat && !noise ? makeLLM(c.env, () => {}) : null;
+  const snub = repeat || noise;
+  const fallbackSource = canned ? 'canonical' : snub ? 'snub' : 'deflect';
+  const fallbackText = canned ?? deflection(characterId, (priorFallbacks?.n ?? 0) + 1, snub);
+  const llm = !repeat && !noise ? makeLLM(c.env, () => {}) : null;
 
   return streamSSE(c, async (stream) => {
     let clientGone = false;
@@ -1186,11 +1186,10 @@ app.post('/api/interrogate', async (c) => {
 
     await send('meta', { character: characterId, live: !!llm });
 
-    let storedText = final;
-    let storedSource = source;
+    let storedText = fallbackText;
+    let storedSource = fallbackSource;
     if (llm) {
       let text = '';
-      let completed = false;
       try {
         const rows = await c.env.DB.prepare(
           'SELECT role, content FROM messages WHERE team_id = ? AND character = ? ORDER BY id DESC LIMIT 14'
@@ -1210,18 +1209,21 @@ app.post('/api/interrogate', async (c) => {
           text += delta;
           await send('delta', { text: delta });
         }
-        completed = true;
       } catch {
         // A limited or unreachable pool degrades to the authored turn.
       }
-      if (completed && text.trim().length >= 2) {
-        storedText = text.trim();
+      const reply = text.trim();
+      // A stream that died mid-sentence would otherwise be stored truncated:
+      // only a reply that reads as finished is kept, everything else swaps in
+      // the authored answer.
+      if (reply && /([.!?…"')\]])\s*$/.test(reply)) {
+        storedText = reply;
         storedSource = 'llm';
       } else {
-        await send('reset', { text: final });
+        await send('reset', { text: fallbackText });
       }
     } else {
-      await send('reset', { text: final });
+      await send('reset', { text: fallbackText });
     }
 
     await c.env.DB.prepare(

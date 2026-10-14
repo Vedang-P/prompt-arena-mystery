@@ -900,7 +900,7 @@ The mask is decorated too, with beautiful lace tied
 around the horns.
 Q.There was only one person with a decorated mask on the
 podium.
-Ans : The Big Bad
+Ans : The Leader — Tanush
 He looks at the mask, why was it here, how was it here ?
 Was it the police ? Did he do the wrong thing by taking
 all the evidence to the police ?
@@ -1019,7 +1019,7 @@ Sameer had enough of this. How dare he be mocked after
 all this, he had some dignity. He turned around,
 Q.Of course he knew this was a waste of oxygen. It was
 ____
-Ans : Big Bad
+Ans : Tanush (the leader)
 The leader holds the neck a little tighter as Sameer
 tries to move his head. “What are you doing in such
 shabby clothes, my boy. This is worse than the time you

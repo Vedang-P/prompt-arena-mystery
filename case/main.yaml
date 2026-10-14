@@ -86,8 +86,8 @@ acts:
             text: Parth's phone rings. He picks it up and listens — not a word. Sameer notices his friend looks a little disheveled — maybe it's the light.
           - speaker: parth
             text: Alright, I gotta go. Mum's calling. Tomorrow — same time?
-          - speaker: narrator
-            text: And then he ran off. Weird.
+          - speaker: sameer
+            text: Yeah, yeah, dude.
       - id: gazebo_alone
         room: gazebo
         shot: wide
@@ -100,10 +100,8 @@ acts:
               - 0.3
             rot: 0.2
         lines:
-          - speaker: sameer
-            text: Yeah, yeah, dude.
           - speaker: narrator
-            text: Parth left earlier than usual. Sameer walks home alone.
+            text: And then he ran off. Weird. Parth left earlier than usual. Sameer walks home alone.
       - id: gazebo_nextday
         room: gazebo
         shot: wide
@@ -3037,8 +3035,32 @@ puzzles:
     prompt: They hound him a bit more — where did he get it?
     answers:
       - ngo headquarters
+      - the ngo headquarters
+      - archive room
+      - the archive room
+      - archive rooms
       - the archive rooms
       - archive rooms in ngo headquarters
+      - archive rooms in the ngo headquarters
+      - the archive rooms in the ngo headquarters
+      - the archive room in the ngo headquarters
+      - ngo archive
+      - the ngo archive
+      - ngo archive room
+      - the ngo archive room
+      - ngo archive rooms
+      - the ngo archive rooms
+      - ngo hq archive
+      - the ngo hq archive
+      - ngo hq archive room
+      - the ngo hq archive rooms
+      - the ngo hq archives
+      - the archive in the ngo headquarters
+      - the archives in the ngo headquarters
+      - the ngo headquarters archives
+      - the headquarters archives
+      - the archives
+      - archives
     success: The archive rooms in the NGO headquarters. The officers write it down without looking up.
     requires:
       puzzles:
@@ -3049,7 +3071,19 @@ puzzles:
     answers:
       - pen camera
       - the pen camera
+      - pen cam
+      - the pen cam
       - pen camera recording
+      - the pen camera recording
+      - pen camera video
+      - the pen camera video
+      - the camera recording
+      - camera recording
+      - the recording
+      - recording
+      - the video
+      - video
+      - the pen camera video recording
     success: The pen camera recording. The police take in all of this and mark it. The officers tell him they will comb over it all and may call him anytime this week. Sameer agrees and is let out of the station. He goes home — on his bed, a wendigo mask is kept.
     grants:
       - c_mask

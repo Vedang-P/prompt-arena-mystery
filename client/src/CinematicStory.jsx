@@ -22,34 +22,9 @@ export default function CinematicStory({ story, act, characters, onDone, busy, i
   // Restore the act's room cue on unmount only, so changing scene or pausing does not
   // restart the score from the top.
   useEffect(()=>()=>window.dispatchEvent(new CustomEvent('arena-cue',{detail:{cue:musicFor(act.entry_room),ambience:ambienceFor(act.entry_room),paused:false}})),[]);
-  const pausedRef=useRef(paused);pausedRef.current=paused;
-  // The captions wait for the 3D stage to be visible before they roll — but a
-  // stalled or slow stage must never freeze the story. After a grace period the
-  // lines advance anyway; the stage catches up underneath when it can, and the
-  // player can always Skip.
-  const [stageGrace,setStageGrace]=useState(false);
-  useEffect(()=>{
-    if(readyRoom===sceneReadyKey){setStageGrace(false);return undefined;}
-    setStageGrace(false);
-    const timer=setTimeout(()=>setStageGrace(true),8000);
-    return()=>clearTimeout(timer);
-  },[readyRoom,sceneReadyKey]);
-  const stageUp=readyRoom===sceneReadyKey||stageGrace;
-  // Subtitles hold for a reading-time estimate, then move on; pausing stops the
-  // clock and the final line waits for the player.
-  useEffect(()=>{
-    if(!line||last||!stageUp)return;
-    let elapsed=0,before=performance.now();
-    const duration=Math.max(2.5,line.text.length*.06);
-    const timer=setInterval(()=>{
-      const now=performance.now(),delta=Math.min((now-before)/1000,.3);before=now;
-      if(pausedRef.current)return;
-      elapsed+=delta;if(elapsed>=duration){clearInterval(timer);setIndex(i=>i+1);}
-    },80);
-    return()=>clearInterval(timer);
-  },[line,last,stageUp,sceneReadyKey]);
-  // Rapid clicks (or a held Space/Enter) must not skip past a line before it
-  // has even been on screen; one advance per cooldown window.
+  // Lines never roll on their own: the story waits for the Continue button (or
+  // Space/Enter), so a team reads at its own pace and a stall upstream cannot
+  // push the captions past a line they have not seen.
   const advanceLock=useRef(0);
   const advance = () => {
     if (busy) return;

@@ -46,7 +46,7 @@ acts:
         lines:
           - { speaker: narrator, text: "Parth's phone rings. He picks it up and listens — not a word. Sameer notices his friend looks a little disheveled — maybe it's the light." }
           - { speaker: parth, text: "Alright, I gotta go. Mum's calling. Tomorrow — same time?" }
-          - { speaker: narrator, text: "And then he ran off. Weird." }
+          - { speaker: sameer, text: "Yeah, yeah, dude." }
       - id: gazebo_alone
         room: gazebo
         shot: wide
@@ -55,8 +55,7 @@ acts:
         cast:
           - { character: sameer, at: [-0.4, 0.3], rot: 0.2 }
         lines:
-          - { speaker: sameer, text: "Yeah, yeah, dude." }
-          - { speaker: narrator, text: "Parth left earlier than usual. Sameer walks home alone." }
+          - { speaker: narrator, text: "And then he ran off. Weird. Parth left earlier than usual. Sameer walks home alone." }
       - id: gazebo_nextday
         room: gazebo
         shot: wide

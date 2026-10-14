@@ -149,6 +149,8 @@ test('normalizeAnswer lowercases, strips punctuation, and collapses spaces', () 
   assert.equal(normalizeAnswer('  The   LEDGER!! '), 'the ledger');
   assert.equal(normalizeAnswer('OC-1808'), 'oc1808');
   assert.equal(normalizeAnswer('Sameer@Example.COM'), 'sameer@example.com');
+  assert.equal(normalizeAnswer('The archive rooms in the NGO headquarters.'), 'the archive rooms in the ngo headquarters');
+  assert.equal(normalizeAnswer('the ngo. headquarters'), 'the ngo headquarters');
 });
 
 test('a text puzzle accepts a normalized answer and grants its clues', () => {
