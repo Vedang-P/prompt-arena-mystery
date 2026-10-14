@@ -182,7 +182,7 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 | c_timetable | tanush_office calendar hotspot | — | meetings; Enakshi is online-only |
 | c_assessments | tanush_office drawer hotspot | c_drug_report | aggression/empathy assessments |
 | c_tablet_data | grant of p_knowledge | — | the cult tablet |
-| c_handbook | grant of p_handbook | — | chants, holy blade maintenance, blood |
+| c_handbook | grant of p_handbook | — | chants, holy blade maintenance, blood; every higher-up is issued a tablet; recruitment numbers and financial records |
 | c_enakshi | enakshi_house door hotspot | p_tablet | she lunges; the closet |
 | c_recruits | grant of p_tablet_content | — | recruitment numbers + domains |
 | c_finance | grant of p_tablet_content | — | donations: Lua Pharmaceuticals |
@@ -305,7 +305,10 @@ DEFAULT 0`, `ending TEXT`. Keep `db:local` + `seed.sql` working (PANDA-7K2).
   and `solved=1`; response mirrors engine result plus `totalPenalties`, `penaltyCap` and
   `wrongCharges` (never leaks accepted answers).
 - `POST /api/restart` adds `RESTART_PENALTY` (10) in campaign runs and 0 in practice,
-  resets `flags.wrongAttempts`, and keeps accumulated penalties.
+  resets `flags.wrongAttempts`, and keeps accumulated penalties. Once the run has ended
+  (`ending` or `solved`), an Act 0 restart is free, and `{ from: 'recent' }` resumes at the
+  act that ended with the practice-style checkpoint of prior acts for `RESUME_PENALTY` (25),
+  clearing `ending`/`solved` so the title can never loop back into the ending.
 - `POST /api/act/complete`: for interactive acts, verify `canAdvanceAct`; 409
   `{ error:'act_locked', missing }` when unsatisfied; completing act8 sets
   `ending=ending_main`, `solved=1`. Cinematic acts unchanged.

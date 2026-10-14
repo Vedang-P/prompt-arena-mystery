@@ -2443,7 +2443,7 @@ clues:
     description: The tablet the handbook says is given to all higher ups — thankfully unlocked.
   - id: c_handbook
     name: Higher-up handbook
-    description: "Back home, he finally reads it properly: the chants, and the proper maintenance of the 'holy blade' — blood included. He stopped reading after he saw the blood being used. One line stuck with him, though: every higher-up is issued a tablet."
+    description: "Back home, he finally reads it properly: the chants, the schedules, and the proper maintenance of the 'holy blade' — blood included. He stopped reading after he saw the blood being used. Two lines stuck with him, though: every higher-up is issued a tablet that keeps the same chants, schedules and maintenance notes; and every higher-up answers for the cult's recruitment numbers and its financial records."
   - id: c_enakshi
     name: Enakshi
     description: A woman peeks through the door, her hair greasy and eyes sunken, the house dark behind her. She lets out an animalistic hiss and lunges with a heavy brass candlestick. Sameer shoves her away with the handle of his hammer; she slips on the entryway rug, cracks her head against a wooden table, and slumps to the floor. He binds her wrists with an extension cord, drags her into the hallway closet, and locks the door.
@@ -2839,7 +2839,7 @@ puzzles:
     answers:
       - Take it
     fail_message: The footsteps grow louder. He leaves the handbook where it lies — and hates himself for it. There is still time.
-    success: He quickly grabs the handbook and leaves the room. He leaves the hospital, hoping he goes undetected.
+    success: "He quickly grabs the handbook and leaves the room. He leaves the hospital, hoping he goes undetected. Back home, he finally reads it properly: the chants, the schedules, and the proper maintenance of the 'holy blade'. He stops at the blood, but two lines stick with him: every higher-up is issued a tablet, and every higher-up answers for the cult's recruitment numbers and its financial records."
     grants:
       - c_handbook
   - id: p_knowledge
