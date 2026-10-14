@@ -119,7 +119,11 @@ export default function App() {
   const devPuzzle = useMemo(() => devParams.get('puzzle'), [devParams]);
   const devRoom = useMemo(() => devParams.get('room'), [devParams]);
   const devPuzzleOpened = useRef(false);
-  const parkedRoomRef = useRef(null);
+  // The dev session's parked room (the server's flags.devRoom, mirrored here).
+  // While set it outranks the act's framing — the prologue cinematic, the
+  // solved certificate and the ending card — so a sandbox room jump always
+  // opens the room it names. An act jump clears it on both sides.
+  const [devParkedRoom, setDevParkedRoom] = useState(null);
 
   const currentAct = useMemo(
     () => state?.acts?.find((a) => a.id === state.act) ?? state?.acts?.[0] ?? null,
@@ -220,9 +224,9 @@ export default function App() {
   useEffect(() => {
     // A dev session's parked room outranks the act's entry room; the sandbox
     // panel clears the park when the dev jumps acts on purpose.
-    if (state?.dev && parkedRoomRef.current) return;
+    if (state?.dev && devParkedRoom) return;
     if (currentAct?.entry_room) setRoomId(currentAct.entry_room);
-  }, [currentAct?.id]);
+  }, [currentAct?.id, state?.dev, devParkedRoom]);
 
   const activePuzzle = useMemo(() => {
     if (!puzzleSpot || !state) return null;
@@ -240,6 +244,10 @@ export default function App() {
       ? { id: state.ending }
       : state.ending
     : null;
+
+  // A pinned dev room overrides the story's framing: the ending card, the
+  // solved certificate and the prologue cinematic all step aside for it.
+  const devPinnedRoom = state?.dev && devParkedRoom ? devParkedRoom : null;
 
   // The server's canAdvance is the source of truth, but a failed refresh after
   // the last required clue must not leave the Continue button missing forever:
@@ -297,11 +305,14 @@ export default function App() {
       // A dev session may have parked a room server-side (the sandbox panel's
       // room jump). Honour it once per change, even outside the act's rooms.
       const parkedRoom = data.dev && data.devRoom && data.rooms?.some((r) => r.id === data.devRoom) ? data.devRoom : null;
-      if (!parkedRoom) parkedRoomRef.current = null;
-      if (parkedRoom && parkedRoomRef.current !== parkedRoom) {
-        parkedRoomRef.current = parkedRoom;
+      if (!parkedRoom) setDevParkedRoom(null);
+      if (parkedRoom && devParkedRoom !== parkedRoom) {
+        setDevParkedRoom(parkedRoom);
         setRoomId(parkedRoom);
-        setPhase(destination === 'menu' ? 'menu' : data.solved ? 'solved' : 'game');
+        // The parked room renders as the game view even from a cinematic act,
+        // the solved certificate or the ending card: a sandbox jump is what the
+        // dev asked for, not the story's framing.
+        setPhase(destination === 'menu' ? 'menu' : 'game');
         return true;
       }
       const entry =
@@ -529,6 +540,18 @@ export default function App() {
       clearNextIntro(currentAct.id);
       finishAct(currentAct.id);
     }
+  };
+
+  // Developer sandbox: a room jump parks the room locally and (via the panel's
+  // devRoom call) server-side. It closes whatever the story had open and
+  // outranks act framing until the next act jump clears the park.
+  const jumpDevRoom = (id) => {
+    setRoomId(id);
+    setDevParkedRoom(id);
+    setStory(null);
+    setEvidence(null);
+    setPuzzleSpot(null);
+    setActiveChar(null);
   };
 
   // Developer sandbox: replay the current act's cinematics on demand (dev
@@ -992,21 +1015,29 @@ export default function App() {
     }
   }
 
-  if (ending) {
+  if (ending && !devPinnedRoom) {
     return (
       <div>{audio}{announcement}<EndingCard
         ending={ending}
         penalties={state.penalties ?? 0}
         elapsedSeconds={state.elapsedSeconds}
         team={state.team}
-        title={state.title}
         onReplay={() => setPhase('menu')}
         onRestart={() => setRestartOpen(true)}
-      />{overlays}{fsGate}</div>
+      />{state.dev && <DevPanel
+        state={state}
+        roomId={roomId}
+        reveal={devReveal}
+        onReveal={setDevReveal}
+        onJumpRoom={jumpDevRoom}
+        onReload={() => loadGame('game')}
+        onPlayIntro={() => playDevStory('intro')}
+        onPlayOutro={() => playDevStory('outro')}
+      />}{overlays}{fsGate}</div>
     );
   }
 
-  if (phase === 'solved') {
+  if (phase === 'solved' && !devPinnedRoom) {
     return (
       <div className="center-screen">
         {announcement}
@@ -1035,7 +1066,7 @@ export default function App() {
           roomId={roomId}
           reveal={devReveal}
           onReveal={setDevReveal}
-          onJumpRoom={(id) => setRoomId(id)}
+          onJumpRoom={jumpDevRoom}
           onReload={() => loadGame('game')}
           onPlayIntro={() => playDevStory('intro')}
           onPlayOutro={() => playDevStory('outro')}
@@ -1046,7 +1077,7 @@ export default function App() {
     );
   }
 
-  if (currentAct?.type === 'cinematic') {
+  if (currentAct?.type === 'cinematic' && !devPinnedRoom) {
     const next = nextActFor(currentAct);
     return (
       <>{audio}{announcement}{overlays}<ActDirector
@@ -1063,7 +1094,7 @@ export default function App() {
         roomId={roomId}
         reveal={devReveal}
         onReveal={setDevReveal}
-        onJumpRoom={(id) => setRoomId(id)}
+        onJumpRoom={jumpDevRoom}
         onReload={() => loadGame('game')}
         onPlayIntro={() => playDevStory('intro')}
         onPlayOutro={() => playDevStory('outro')}
@@ -1107,7 +1138,7 @@ export default function App() {
         roomId={roomId}
         reveal={devReveal}
         onReveal={setDevReveal}
-        onJumpRoom={(id) => { setRoomId(id); setEvidence(null); setPuzzleSpot(null); setActiveChar(null); }}
+        onJumpRoom={jumpDevRoom}
         onReload={() => loadGame('game')}
         onPlayIntro={() => playDevStory('intro')}
         onPlayOutro={() => playDevStory('outro')}

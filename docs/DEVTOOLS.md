@@ -24,13 +24,18 @@ the env value).
 While signed in as the dev team, a floating **DEV** button sits bottom-left.
 It opens the sandbox panel:
 
-- **Acts** — jump to any act, no completion gates. Intros do not auto-play for
-  dev sessions; use *Tools → Replay act intro*.
-- **Rooms** — jump to any of the 14 rooms at any time, across acts. The room is
-  parked server-side (`flags.devRoom`), so the jump survives a reload. Room
-  tabs and travel restrictions do not apply to dev sessions, and every hotspot
-  in a room is visible regardless of act or requirements. An act jump clears
-  the parked room, so the new act opens on its own entry room.
+- **Acts** — jump to any act, back and forth, with no completion gates. Intros
+  do not auto-play for dev sessions; use *Tools → Replay act intro*. An act
+  jump also reopens a finished sandbox: any recorded ending or solve is
+  cleared, so the jumped-to act is live and playable again.
+- **Rooms** — jump to any of the 14 rooms at any time, across acts. The jump
+  always wins over the story's framing: the room opens even from the prologue
+  cinematic, the solved certificate or the ending card (the panel is available
+  on all three). The room is parked server-side (`flags.devRoom`), so the jump
+  survives a reload. Room tabs and travel restrictions do not apply to dev
+  sessions, and every hotspot in a room is visible regardless of act or
+  requirements. An act jump clears the parked room, so the new act opens on
+  its own entry room.
 - **Clues** — the full clue registry with toggles per clue, plus
   *Reveal everything* / *Clear everything*. On the server the dev session is
   ungated everywhere: clues discover with unmet requirements, puzzles solve
@@ -50,7 +55,7 @@ cookie) cannot call them. They edit the dev team's own save.
 | Route | Body | Effect |
 | --- | --- | --- |
 | `GET /api/dev/catalog` | — | acts, rooms, clues, puzzles + answers |
-| `POST /api/dev/act` | `{ act }` | jump to any act |
+| `POST /api/dev/act` | `{ act }` | jump to any act; clears the parked room and any ending/solve |
 | `POST /api/dev/room` | `{ room }` | park the room the client opens next |
 | `POST /api/dev/toggle` | `{ kind: 'clue'\|'puzzle', id, on }` | toggle one item (puzzle grants cascade) |
 | `POST /api/dev/bulk` | `{ mode: 'all'\|'none' }` | reveal or clear everything |

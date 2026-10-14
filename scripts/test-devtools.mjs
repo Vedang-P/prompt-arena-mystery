@@ -103,6 +103,19 @@ assert.equal(state.discovered.length, 0);
 assert.equal(state.penalties, 0);
 assert.equal(state.dev, true, 'reset keeps the dev flag');
 
+// Finishing the case then jumping acts reopens the sandbox: the ending and
+// the solve flags clear, so the dev is never trapped on the ending card.
+assert.equal((await call('/api/dev/act', devCookie, { act: 'act8' })).status, 200);
+const finished = await (await call('/api/act/complete', devCookie, { act: 'act8' })).json();
+assert(finished.ending, 'completing the final act records the ending');
+state = await (await call('/api/state', devCookie)).json();
+assert.equal(state.solved, true, 'the finished run is marked solved');
+assert(state.ending, 'the state carries the ending');
+assert.equal((await call('/api/dev/act', devCookie, { act: 'act1' })).status, 200);
+state = await (await call('/api/state', devCookie)).json();
+assert.equal(state.ending, null, 'an act jump clears the recorded ending');
+assert.equal(state.solved, false, 'an act jump clears the solved flag');
+
 // The leaderboard never lists the sandbox; the dev team is exempt.
 await call('/api/dev/bulk', devCookie, { mode: 'all' });
 await call('/api/dev/act', devCookie, { act: 'act8' });

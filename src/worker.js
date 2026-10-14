@@ -1507,11 +1507,15 @@ app.post('/api/dev/act', async (c) => {
   const act = String(body.act ?? '');
   if (!(caseData.acts ?? []).some((a) => a.id === act)) return c.json({ error: 'unknown_act' }, 400);
   // An act jump opens the act's own entry room: the parked room is cleared so
-  // the client does not land back in the room it visited before the jump.
+  // the client does not land back in the room it visited before the jump. It
+  // also reopens a finished sandbox — a recorded ending or solve belongs to the
+  // run the dev is leaving, so the jumped-to act is live and playable again.
   const flags = { ...parseJsonObject(auth.progress.flags), dev: true };
   delete flags.devRoom;
   await c.env.DB.prepare(
-    "UPDATE progress SET act = ?, flags = ?, started_at = CASE WHEN started_at IS NULL AND ? != 'act0' THEN datetime('now') ELSE started_at END WHERE team_id = ?"
+    `UPDATE progress SET act = ?, ending = NULL, solved = 0, solved_at = NULL, accusation = NULL, flags = ?,
+     started_at = CASE WHEN started_at IS NULL AND ? != 'act0' THEN datetime('now') ELSE started_at END
+     WHERE team_id = ?`
   )
     .bind(act, JSON.stringify(flags), act, auth.teamId)
     .run();
