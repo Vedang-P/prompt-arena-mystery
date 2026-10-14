@@ -551,6 +551,11 @@ puzzles:
       - "people disappeared"
       - "people go missing"
       - "disappearance"
+      - "people vanish"
+      - "people vanished"
+      - "people vanishing"
+      - "people are vanishing"
+      - "vanishing people"
     success: "People going missing. Determination replaces anxiety — he doesn't want more people screaming in pain because of this rotten cult. He finds a pen camera on his desk, Parth's gift, and leaves for the hospital."
     grants: [c_pen_camera]
 
