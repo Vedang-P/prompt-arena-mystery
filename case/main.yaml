@@ -2891,6 +2891,7 @@ puzzles:
     success: Too risky. Veer enters the room and goes for the desk — shoot, he left the system on, he should have run. Veer rummaged through it, but thankfully Sameer had closed all the tabs. Veer looked around and then left. Sameer ran towards the nearest exit, hid near the trash cans, and peeked through. Wait — the man was familiar. One of the people who went missing during the full moon, struggling and frantically calling for help. Two people — maybe nurses — tied him up and loaded him into an ambulance that left, talking about taking him to some hospital.
     grants:
       - c_ambulance
+    hide_grants: true
   - id: p_delve
     kind: choice
     prompt: The captured man is struggling, frantically calling for help; two people — maybe nurses — tie him up, and the ambulance leaves talking about taking him to some hospital. Should he delve deeper into this NGO?
