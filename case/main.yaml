@@ -452,7 +452,6 @@ acts:
         - c_footage
         - c_veer_profile
         - c_ticket
-    objective: Chase the park CD, watch the videos, and find out who Veer is.
   - id: act3
     type: interactive
     kicker: Act III

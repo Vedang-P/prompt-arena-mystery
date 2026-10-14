@@ -925,7 +925,6 @@ function SameerRoomScene({ room, hot, paused=false, phase }) {
     <DetailProp asset="cup" position={[-1.55,.67,-2]}/>
     <DetailProp asset="floor_lamp" position={[-4.2,0,1.8]} height={1.75}/>
     <WallSign position={[-4.94,1.85,-1.2]} rotation={[0,Math.PI/2,0]} width={1.05} height={1.45} title="STAY CURIOUS" lines={['LOOK CLOSER','QUESTION EVERYTHING']} background="#23404c"/>
-    <WallSign position={[-4.94,1.6,.6]} rotation={[0,Math.PI/2,0]} width={.75} height={1} title="APOGEE" lines={['LIVE IN CONCERT']} background="#3b2830"/>
     <DetailProp asset="cardboard_box_01" position={[-4.3,0,2.4]} scale={.8}/>
     <pointLight position={[-3,2.4,1.3]} color="#f7d7aa" intensity={9} distance={7}/>
     <HotspotMarkers room={room} hot={hot}/>
@@ -951,7 +950,6 @@ function ParthRoomScene({ room, hot, paused=false }) {
   <DetailProp asset="pencil_cup" position={[3.55,DESK_TOP,-1.98]} scale={.85}/>
   <DetailProp asset="cardboard_box_01" position={[-4.2,0,-.6]} scale={.78}/>
   <DetailProp asset="cardboard_box_01" position={[-4.14,.266604,-.62]} rotation={[0,.4,0]} scale={.67}/>
-  <WallSign position={[4.94,2.35,.9]} rotation={[0,-Math.PI/2,0]} width={1.35} height={.55} title="APOGEE / 2019" lines={['FIRST SHOW • FRONT ROW']} background="#263c43"/>
     <DetailProp asset="cardboard_box_01" position={[-4.25,0,2.6]}/>
     <WallSign position={[-.5,2.3,-3.93]} width={1.6} height={.6} title="THE MOON'S DARK SIDE" lines={['NOT EVERYTHING IS AS IT SEEMS']} background="#263c43"/>
     <pointLight position={[-2,2.7,1]} color="#ecd4b8" intensity={9} distance={8}/>
