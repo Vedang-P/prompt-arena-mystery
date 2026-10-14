@@ -425,13 +425,19 @@ acts:
     objective: Chase the park CD, watch the videos, and find out who Veer is.
     intro:
       - speaker: narrator
-        text: "He felt sick — Parth had a whole life he was only finding out about, one abandoned car's mixtape at a time. At the store, someone from a non-profit pushed a pamphlet into his hands: a worldwide NGO fostering scientific temper, an astronomy event in a few days, and a huge workshop in Nigeria behind it."
+        text: He felt sick — Parth had a whole life he was only finding out about, one abandoned car's mixtape at a time. He tries to ignore the teeny tiny piece of horribly sickening revelation at the back of his mind — he does this by going to the store to find something to eat.
       - speaker: narrator
-        text: He reaches Ramu's Dosa Corner — Parth loved the place for some reason. Nostalgic, he orders Parth's usual.
+        text: He is bombarded at the entrance by someone from a non-profit organisation. One can figure out if a person is from an NGO by a smile that stretches across their face but there is no crinkle near the eye. He tried ignoring, but another person stepped in front of him, the same stretched smile spooking him. He stopped and tiredly signalled them to tell him what they wanted.
       - speaker: narrator
-        text: He stumbles back home, the dosa weighing his stomach and the bag weighing his back, and crashes on his bed.
+        text: The one right in front of him pushed a pamphlet into his hands. It was apparently a worldwide NGO working towards the mission of fostering scientific temperament throughout the underprivileged youth — they were going to have a huge astronomy event in a few days. They had quite a few notable achievements, like the largest astronomy workshop organised in Nigeria just a year ago.
       - speaker: narrator
-        text: When he wakes, the phone reads 11:30 am. There is a new voice note from Parth.
+        text: He is impressed. He opens his wallet to give out 10 rupees. The worker at his side looks into his wallet; Sameer falls for their judgement and pulls out the 50 rupee note. He uses all his interview-larping skills to protect his last 30 rupees and makes a quick exit.
+      - speaker: narrator
+        text: He somehow reaches Ramu's Dosa Corner — Parth loved the place for some reason. He feels nostalgic and orders Parth's usual.
+      - speaker: narrator
+        text: He eats it and stumbles back home, the dosa weighing his stomach and the bag weighing his back. He crashes on his bed.
+      - speaker: narrator
+        text: When he wakes, the phone is showing 11:30 am. There was a new voice note from Parth.
     outro:
       - speaker: narrator
         text: Normal ticket. He really doesn't want to do this — he doesn't want to involve more people into this than required.
@@ -475,22 +481,6 @@ acts:
         text: Holy hell, the design was so cool. Then — a sound from the next room. He quickly closed the door and stayed as silent as possible. The volunteers would have left by now.
       - speaker: narrator
         text: The walls were flimsy. Through them, he heard Veer speak.
-    complete:
-      clues:
-        - c_records
-        - c_holy_blade
-        - c_veer_talk
-  - id: act4
-    type: interactive
-    kicker: Act IV
-    title: Shashdhar
-    entry_room: ngo_archive
-    rooms:
-      - ngo_archive
-      - sameer_room
-      - hospital
-    objective: Escape the archive, then find the hospital the man from the ambulance was taken to.
-    intro:
       - speaker: narrator
         text: "Through the flimsy wall: Veer — \"There were so many enthusiastic buds in the field, they were practically waiting to fall in Nishakara's arms.\""
       - speaker: narrator
@@ -503,12 +493,27 @@ acts:
         text: "\"You guys need to be stopped — you stole my child, you arses! I hope your face reflects your mind!\" The interrogator, amused: \"Well, there won't be much change then. I look rather handsome. Veer, why don't you go celebrate with the others. I want to talk to him — he looks like he has a story to tell.\""
       - speaker: narrator
         text: Veer sputtered, but left. Sameer heard the door swing. He hid under the desk.
+    complete:
+      clues:
+        - c_records
+        - c_holy_blade
+        - c_veer_talk
+        - c_plea
+  - id: act4
+    type: interactive
+    kicker: Act IV
+    title: Shashdhar
+    entry_room: ngo_archive
+    rooms:
+      - ngo_archive
+      - sameer_room
+      - hospital
+    objective: Escape the archive, then find the hospital the man from the ambulance was taken to.
     outro:
       - speaker: narrator
         text: Parth was alive.
     complete:
       clues:
-        - c_plea
         - c_janitor
         - c_ritual
       puzzles:
@@ -1272,7 +1277,7 @@ rooms:
       - id: cc_fare
         type: puzzle
         puzzle: p_fare
-        label: The fare to the workshop
+        label: An auto to the workshop
         position:
           - -1.2
           - 0
@@ -1333,9 +1338,9 @@ rooms:
         to: ngo_archive
         label: The door with the keys still in the keyhole
         position:
-          - 2.2
+          - 2.5
           - 0
-          - -1.4
+          - -6.4
         requires:
           clues:
             - c_hq
@@ -1389,7 +1394,7 @@ rooms:
           clues:
             - c_records
       - id: na_plea
-        act: act4
+        act: act3
         type: clue
         clue: c_plea
         label: A stranger's voice through the wall
@@ -2708,22 +2713,25 @@ puzzles:
     grants:
       - c_workshop_address
   - id: p_fare
-    kind: choice
-    prompt: He plans to go to the workshop and finds an auto. "Where do you want to go, sir?" — "Hutting, 3rd cross, DJ Halli." — "300."
-    options:
-      - "100"
-      - "200"
-      - "230"
-      - Walk away
-    answers:
-      - "230"
+    kind: scene
+    prompt: He plans to go to the workshop and finds an auto.
+    lines:
+      - speaker: narrator
+        text: He plans to go to the workshop and finds an auto. "Where do you want to go, sir?" — "Hutting, 3rd cross, DJ Halli." — "300."
+      - speaker: sameer
+        text: "\"The hell — I'll give 100, no more.\""
+      - speaker: narrator
+        text: '"Ok sir, find someone else then." Sameer looked around; the auto guy looked at him. Sameer sighed.'
+      - speaker: sameer
+        text: "\"I can't give more than 200.\""
+      - speaker: narrator
+        text: '"230." Sameer sighed and got into the auto. After that daylight robbery, he saw the workshop: it was in an open field, kids were running around and volunteers setting up the instruments for observation.'
     requires:
       clues:
         - c_workshop_address
       puzzles:
         - p_destination
-    fail_message: '"Ok sir, find someone else then."'
-    success: "\"The hell — I'll give 100, no more.\" — \"Ok sir, find someone else then.\" Sameer looked around; the auto guy looked at him. Sameer sighed, \"I can't give more than 200.\" — \"230.\" Sameer sighed and got into the auto. After that daylight robbery, he saw the workshop: it was in an open field, kids were running around and volunteers were setting up the instruments for observation."
+    success: '"230." Sameer sighed and got into the auto. After that daylight robbery, he saw the workshop: it was in an open field, kids were running around and volunteers setting up the instruments for observation.'
   - id: p_ascension
     kind: code
     prompt: "The archive terminal asks for the nine-letter motto from the headquarters: A _ C _ N _ I _ N. Beneath it: ‘the soul’s ascent’. What is the password?"

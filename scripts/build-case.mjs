@@ -164,8 +164,8 @@ const puzzleIndex = new Map();
 for (const pz of c.puzzles ?? []) {
   if (!isStr(pz.id)) continue;
   const where = `puzzle "${pz.id}"`;
-  if (!['text', 'choice', 'code', 'email'].includes(pz.kind)) {
-    err(`${where}: kind must be text | choice | code | email`);
+  if (!['text', 'choice', 'code', 'email', 'scene'].includes(pz.kind)) {
+    err(`${where}: kind must be text | choice | code | email | scene`);
   }
   if (!isStr(pz.prompt)) err(`${where}: prompt is required`);
   for (const key of ['evidence', 'success', 'fail_message']) {
@@ -181,7 +181,20 @@ for (const pz of c.puzzles ?? []) {
       pz.options.every((o) => isStr(o) || Number.isFinite(o));
     if (!optionsOk) err(`${where}: choice puzzles need a non-empty options list`);
   }
-  if (pz.kind !== 'email') {
+  if (pz.kind === 'scene') {
+    const speakers = new Set(['narrator', 'voice', ...charIds]);
+    if (!Array.isArray(pz.lines) || !pz.lines.length) {
+      err(`${where}: scene puzzles need a non-empty lines list`);
+    } else {
+      for (const ln of pz.lines) {
+        if (!speakers.has(ln?.speaker)) err(`${where}: unknown speaker "${ln?.speaker}"`);
+        if (!isStr(ln?.text)) err(`${where}: every scene line needs text`);
+      }
+    }
+    if (pz.options !== undefined) err(`${where}: scene puzzles have no options — the scene plays itself out`);
+    if (pz.answers !== undefined) err(`${where}: scene puzzles have no answers — the scene plays itself out`);
+  }
+  if (pz.kind !== 'email' && pz.kind !== 'scene') {
     const answersOk =
       Array.isArray(pz.answers) &&
       pz.answers.length > 0 &&

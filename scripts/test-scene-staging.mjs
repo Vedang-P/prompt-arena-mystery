@@ -15,9 +15,11 @@ for(const act of caseData.acts){
 }
 const measurements=JSON.parse(await fs.readFile('.asset-cache/actor-measurements.json','utf8'));
 const act2=caseData.acts.find(act=>act.id==='act2'),act3=caseData.acts.find(act=>act.id==='act3'),act4=caseData.acts.find(act=>act.id==='act4'),act7=caseData.acts.find(act=>act.id==='act7'),act8=caseData.acts.find(act=>act.id==='act8');
-assert.equal(locationFor(act2,'intro',1),'cyber_cafe','The café scene must accompany the café narration');
-assert.equal(locationFor(act3,'outro',0),'ngo_hq','The capture must begin at the NGO headquarters service yard');
-assert.equal(locationFor(act3,'outro',1),'ngo_hq','The departure shot must remain at the NGO headquarters service yard');
+assert.equal(locationFor(act2,'intro',4),'cyber_cafe','The café scene must accompany the café narration');
+assert.equal(locationFor(act3,'outro',0),'ngo_archive','The overheard call must stage in the archive room');
+assert.equal(locationFor(act3,'outro',act3.outro.length-1),'ngo_archive','The overheard call must stay in the archive room until Sameer hides');
+assert.match(act3.outro.at(-1).text,/He hid under the desk/,'Act 3 must close on Sameer hiding under the desk');
+assert.equal((act4.intro??[]).length,0,'Act 4 must open at the door, with the call already told in Act 3');
 const discoveryCast=placeCast('hospital',storyCast(act4,'outro','hospital',0));
 const parthDiscovery=discoveryCast.find(c=>c.character==='parth');
 assert(parthDiscovery,'Act 4 discovery must show Parth in the ward');
@@ -45,6 +47,8 @@ assert(maskPickup.holdingMask,'Sameer must pick up the mask when the closing nar
 const maskHotspot=caseData.rooms.find(r=>r.id==='sameer_room').hotspots.find(h=>h.id==='sameer_room_a7_mask');
 assert.deepEqual(maskHotspot.position,[-2.8,.705,-1.35],'The Act 7 mask clue must be positioned on Sameer’s bed');
 assert.deepEqual(DETAIL_ANCHORS.sameer_room.sameer_room_a7_mask,[SAMEER_BED.center[0],SAMEER_BED.surfaceY+.018,SAMEER_BED.center[2]],'The mask marker must share its measured bed surface anchor');
+// The service-yard capture set stays wired for the capture/departure phase —
+// keep its staging and framing regression-checked for whichever act stages it next.
 const captureCast=placeCast('ngo_hq',storyCast(act3,'outro','ngo_hq'));
 const sameerCapture=captureCast.find(c=>c.character==='sameer');
 assert(sameerCapture,'Sameer must be present in the capture scene');

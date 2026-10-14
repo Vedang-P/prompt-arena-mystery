@@ -19,7 +19,15 @@ acts:
     outro:
       - { speaker: narrator, text: "Holy hell, the design was so cool. Then — a sound from the next room. He quickly closed the door and stayed as silent as possible. The volunteers would have left by now." }
       - { speaker: narrator, text: "The walls were flimsy. Through them, he heard Veer speak." }
-    complete: { clues: [c_records, c_holy_blade, c_veer_talk] }
+      # Act IV's opening was still Act III: the overheard call and the parent's
+      # plea run in the archive room, up to the moment Sameer hides under the desk.
+      - { speaker: narrator, text: "Through the flimsy wall: Veer — \"There were so many enthusiastic buds in the field, they were practically waiting to fall in Nishakara's arms.\"" }
+      - { speaker: narrator, text: "A deep, rumbling laugh answered him: \"Children are usually excited about this. They are pure souls. It is in their nature to call their holy mother.\"" }
+      - { speaker: narrator, text: "A shattering sound — as if a pot had been dropped. Silence for a few seconds; the only sound was Sameer's heartbeat. Then yelling, and screaming. Someone else was in the room, and he had been caught." }
+      - { speaker: narrator, text: "The deep voice: \"What were you trying to find, child?\" A new voice, raspy and squeaky, like nails on a chalkboard: \"I got lost, I wanted to go to the washroom.\" Veer: \"With your phone recording the conversation?\"" }
+      - { speaker: narrator, text: "\"You guys need to be stopped — you stole my child, you arses! I hope your face reflects your mind!\" The interrogator, amused: \"Well, there won't be much change then. I look rather handsome. Veer, why don't you go celebrate with the others. I want to talk to him — he looks like he has a story to tell.\"" }
+      - { speaker: narrator, text: "Veer sputtered, but left. Sameer heard the door swing. He hid under the desk." }
+    complete: { clues: [c_records, c_holy_blade, c_veer_talk, c_plea] }
 
   - id: act4
     type: interactive
@@ -28,16 +36,9 @@ acts:
     entry_room: ngo_archive
     rooms: [ngo_archive, sameer_room, hospital]
     objective: "Escape the archive, then find the hospital the man from the ambulance was taken to."
-    intro:
-      - { speaker: narrator, text: "Through the flimsy wall: Veer — \"There were so many enthusiastic buds in the field, they were practically waiting to fall in Nishakara's arms.\"" }
-      - { speaker: narrator, text: "A deep, rumbling laugh answered him: \"Children are usually excited about this. They are pure souls. It is in their nature to call their holy mother.\"" }
-      - { speaker: narrator, text: "A shattering sound — as if a pot had been dropped. Silence for a few seconds; the only sound was Sameer's heartbeat. Then yelling, and screaming. Someone else was in the room, and he had been caught." }
-      - { speaker: narrator, text: "The deep voice: \"What were you trying to find, child?\" A new voice, raspy and squeaky, like nails on a chalkboard: \"I got lost, I wanted to go to the washroom.\" Veer: \"With your phone recording the conversation?\"" }
-      - { speaker: narrator, text: "\"You guys need to be stopped — you stole my child, you arses! I hope your face reflects your mind!\" The interrogator, amused: \"Well, there won't be much change then. I look rather handsome. Veer, why don't you go celebrate with the others. I want to talk to him — he looks like he has a story to tell.\"" }
-      - { speaker: narrator, text: "Veer sputtered, but left. Sameer heard the door swing. He hid under the desk." }
     outro:
       - { speaker: narrator, text: "Parth was alive." }
-    complete: { clues: [c_plea, c_janitor, c_ritual], puzzles: [p_hide, p_delve, p_hospital, p_security_pin, p_parth_alive] }
+    complete: { clues: [c_janitor, c_ritual], puzzles: [p_hide, p_delve, p_hospital, p_security_pin, p_parth_alive] }
 
   - id: act5
     type: interactive
@@ -70,7 +71,7 @@ rooms:
       - { id: cc_band_name, type: puzzle, puzzle: p_band_name, label: "The band's name", position: [1, 0.6, 0.2], requires: { puzzles: [p_veer_2] } }
       - { id: cc_registration, type: puzzle, puzzle: p_registration, label: "Member registration link", position: [3, 0.6, -0.8], requires: { puzzles: [p_band_name] } }
       - { id: cc_destination, type: puzzle, puzzle: p_destination, label: "Find an auto — where to?", position: [-1.8, 0, 2.8], requires: { clues: [c_workshop_address] } }
-      - { id: cc_fare, type: puzzle, puzzle: p_fare, label: "The fare to the workshop", position: [-1.2, 0, 2.6], requires: { clues: [c_workshop_address], puzzles: [p_destination] } }
+      - { id: cc_fare, type: puzzle, puzzle: p_fare, label: "An auto to the workshop", position: [-1.2, 0, 2.6], requires: { clues: [c_workshop_address], puzzles: [p_destination] } }
       - { id: cc_to_workshop, type: travel, to: workshop, label: "Take the auto to the workshop", position: [-3, 0, 2.4], requires: { puzzles: [p_fare] } }
 
   - id: workshop
@@ -85,19 +86,19 @@ rooms:
     scene: ngo_hq
     hotspots:
       - { id: nh_hall, type: clue, clue: c_hq, label: "The headquarters hall", position: [0, 0.5, -2] }
-      - { id: nh_door, type: travel, to: ngo_archive, label: "The door with the keys still in the keyhole", position: [2.2, 0, -1.4], requires: { clues: [c_hq] } }
+      - { id: nh_door, type: travel, to: ngo_archive, label: "The door with the keys still in the keyhole", position: [2.5, 0, -6.4], requires: { clues: [c_hq] } }
 
   - id: ngo_archive
     name: "The Archive Room"
     scene: ngo_archive
     hotspots:
-      # Act III — the records, the blade, and the first half of the overheard call.
+      # Act III — the records, the blade, the whole overheard call and the plea.
       - { id: na_system, act: act3, type: puzzle, puzzle: p_ascension, label: "Ancient system on the desk", position: [0, 0.7, -2.8] }
       - { id: na_playback, act: act3, type: puzzle, puzzle: p_playback, label: "The .avi files", position: [0.9, 0.6, -2.2], requires: { puzzles: [p_ascension] } }
       - { id: na_blade, act: act3, type: clue, clue: c_holy_blade, label: "Image file: Holy Blade", position: [-2.4, 0.6, -1.2], requires: { clues: [c_records] } }
       - { id: na_wall, act: act3, type: clue, clue: c_veer_talk, label: "Voices through the flimsy wall", position: [-3, 0.9, 0.8], requires: { clues: [c_records] } }
-      # Act IV — the interrogation next door, then the hide and the escape.
-      - { id: na_plea, act: act4, type: clue, clue: c_plea, label: "A stranger's voice through the wall", position: [-3, 0.9, 0.8], requires: { clues: [c_veer_talk] } }
+      - { id: na_plea, act: act3, type: clue, clue: c_plea, label: "A stranger's voice through the wall", position: [-3, 0.9, 0.8], requires: { clues: [c_veer_talk] } }
+      # Act IV — the door opens, then the hide and the escape.
       - { id: na_hide, act: act4, type: puzzle, puzzle: p_hide, label: "The door opens", position: [1.6, 0, -0.6], requires: { clues: [c_plea] } }
       - { id: na_delve, act: act4, type: puzzle, puzzle: p_delve, label: "The ambulance", position: [2.6, 0.5, 1.6], requires: { clues: [c_ambulance] } }
       - { id: na_to_home, act: act4, type: travel, to: sameer_room, label: "Wake up at home the next morning", position: [-2.4, 0, 2.2], requires: { puzzles: [p_delve] } }
@@ -296,14 +297,19 @@ puzzles:
     success: "The registration goes through. A volunteer confirms his membership and sends the address of the upcoming workshop: \"Hutting, 3rd cross, DJ Halli.\" He has a gut feeling that all that is happening to him has a reason and a rhyme — including the fact that he lost his phone charger a couple of days ago."
     fail_message: "The OTP never arrives. That isn't his inbox — he has to sign up with the address from his sent mail."
     grants: [c_workshop_address]
+  # The fare haggling is a scene, not a question: the conversation plays out on
+  # its own and the ride is recorded when it ends.
   - id: p_fare
-    kind: choice
-    prompt: "He plans to go to the workshop and finds an auto. \"Where do you want to go, sir?\" — \"Hutting, 3rd cross, DJ Halli.\" — \"300.\""
-    options: ["100", "200", "230", "Walk away"]
-    answers: ["230"]
+    kind: scene
+    prompt: "He plans to go to the workshop and finds an auto."
+    lines:
+      - { speaker: narrator, text: "He plans to go to the workshop and finds an auto. \"Where do you want to go, sir?\" — \"Hutting, 3rd cross, DJ Halli.\" — \"300.\"" }
+      - { speaker: sameer, text: "\"The hell — I'll give 100, no more.\"" }
+      - { speaker: narrator, text: "\"Ok sir, find someone else then.\" Sameer looked around; the auto guy looked at him. Sameer sighed." }
+      - { speaker: sameer, text: "\"I can't give more than 200.\"" }
+      - { speaker: narrator, text: "\"230.\" Sameer sighed and got into the auto. After that daylight robbery, he saw the workshop: it was in an open field, kids were running around and volunteers setting up the instruments for observation." }
     requires: { clues: [c_workshop_address], puzzles: [p_destination] }
-    fail_message: "\"Ok sir, find someone else then.\""
-    success: "\"The hell — I'll give 100, no more.\" — \"Ok sir, find someone else then.\" Sameer looked around; the auto guy looked at him. Sameer sighed, \"I can't give more than 200.\" — \"230.\" Sameer sighed and got into the auto. After that daylight robbery, he saw the workshop: it was in an open field, kids were running around and volunteers were setting up the instruments for observation."
+    success: "\"230.\" Sameer sighed and got into the auto. After that daylight robbery, he saw the workshop: it was in an open field, kids were running around and volunteers setting up the instruments for observation."
   - id: p_ascension
     kind: code
     prompt: "He glanced at the records around him, then finally tried to switch on the ancient system on the desk. Blue light reflected on his face — it asked for a password."

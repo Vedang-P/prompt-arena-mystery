@@ -1158,7 +1158,7 @@ function NgoHqRoom({room,hot}) {
   <DetailProp asset="potted_plant_02" position={[7.4,0,4]} height={1.4}/>
   <WallSign position={[-4.4,2.3,-6.91]} width={2.1} height={1.1} title="PROGRAMMES" lines={['NIGHT SKY WORKSHOPS','COMMUNITY OUTREACH']}/>
   <WallSign position={[4.4,2.3,-6.91]} width={2.1} height={1.1} title="MEMBERSHIP" lines={['REGISTER AT RECEPTION','STAFF ACCESS BEYOND THIS POINT']}/>
-  <DoorOpening position={[2.2,0,-4.6]} label="ARCHIVE / STAFF ONLY"/>
+  <DoorOpening position={[2.5,0,-6.84]} label="ARCHIVE / STAFF ONLY"/>
   <pointLight position={[0,3.6,-1]} color="#efd5aa" intensity={28} distance={16}/>
   <HotspotMarkers room={room} hot={hot}/>
  </group>;

@@ -122,6 +122,7 @@ export function publicPuzzle(puzzleId) {
     prompt: puzzle.prompt,
     evidence: puzzle.evidence ?? null,
     options: puzzle.options ?? null,
+    lines: puzzle.lines ?? null,
     requires: puzzle.requires ?? null,
     solvedHint: puzzle.solvedHint ?? null,
   };
@@ -223,6 +224,12 @@ export function solvePuzzle(puzzlesValue, discoveredValue, puzzleId, answer, { w
         });
       }
     }
+  }
+
+  // A scene has nothing to answer: watching it through resolves the lead, no
+  // matter which token the client used to submit it.
+  if (puzzle.kind === 'scene') {
+    return settle(true, 0, puzzle.success ?? null, puzzle.grants);
   }
 
   if (answerMatches(puzzle, answer)) {
@@ -341,7 +348,8 @@ export function chapterCheckpoint(actId) {
           }
           if (h.type === 'puzzle' && !solvedPuzzles.includes(h.puzzle) && puzzleGate(act.id, solvedPuzzles, discovered, h.puzzle).ok) {
             const puzzle = getPuzzle(h.puzzle);
-            const answer = puzzle.kind === 'email' ? (puzzle.answers?.[0] ?? 'practice@example.invalid') : puzzle.answers[0];
+            const answer =
+              puzzle.kind === 'email' ? (puzzle.answers?.[0] ?? 'practice@example.invalid') : puzzle.kind === 'scene' ? 'scene' : puzzle.answers[0];
             const result = solvePuzzle(solvedPuzzles, discovered, h.puzzle, answer);
             if (result.ok && result.correct) { discovered = result.discovered; solvedPuzzles = result.solvedPuzzles; changed = true; }
           }

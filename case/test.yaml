@@ -155,6 +155,13 @@ puzzles:
     answers: [sameer@example.com]
     success: "The archive confirms the code."
     fail_message: "No code arrives. That address is not on record."
+  - id: p_scene
+    kind: scene
+    prompt: "The cellar lamp gutters as someone crosses the floor."
+    lines:
+      - { speaker: narrator, text: "The lamp gutters. Footsteps cross the cellar floor." }
+      - { speaker: butler, text: "You should not have followed me down here." }
+    success: "The scene plays out; nothing is asked of the detective."
 
 acts:
   - id: act0

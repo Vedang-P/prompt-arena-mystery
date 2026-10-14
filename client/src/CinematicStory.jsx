@@ -10,11 +10,12 @@ export default function CinematicStory({ story, act, characters, onDone, busy, i
   const [readyRoom,setReadyRoom]=useState(null);
   const line = story.lines[index];
   const last = index >= story.lines.length - 1;
+  const title = story.title ?? act.title;
   const names = Object.fromEntries(characters.map((c) => [c.id, c.name]));
   const sceneId = locationFor(act, story.after, index);
   const cinematicPhase=cinematicPhaseFor(act,story.after,sceneId,index);
   const sceneReadyKey=`${sceneId}:${cinematicPhase??'default'}`;
-  const cast = useMemo(()=>storyCast(act,story.after,sceneId,index),[act.id,index,sceneId,story.after]);
+  const cast = useMemo(()=>story.cast ?? storyCast(act,story.after,sceneId,index),[act.id,index,sceneId,story.after,story.cast]);
   useEffect(()=>{
     window.dispatchEvent(new CustomEvent('arena-cue',{detail:{cue:musicFor(sceneId),ambience:ambienceFor(sceneId),paused}}));
   },[sceneId,paused]);
@@ -49,11 +50,11 @@ export default function CinematicStory({ story, act, characters, onDone, busy, i
     const key = (e) => { if (!['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA', 'A'].includes(e.target.tagName) && (e.code === 'Space' || e.code === 'Enter')) { e.preventDefault(); advance(); } };
     window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key);
   });
-  return <div className="story-overlay cinematic-story" role="dialog" aria-modal="true" aria-label={`${act.title} cinematic`} data-scene-ready={readyRoom===sceneReadyKey}>
+  return <div className="story-overlay cinematic-story" role="dialog" aria-modal="true" aria-label={`${title} cinematic`} data-scene-ready={readyRoom===sceneReadyKey}>
     <div className="story-world"><Cinema actId={act.id} sceneId={sceneId} cinematicPhase={cinematicPhase} cast={cast} shot={index % 3 === 0 ? 'wide' : line?.speaker === 'narrator' ? 'two' : 'portrait'} speaker={line?.speaker} paused={paused} onReady={()=>setReadyRoom(sceneReadyKey)} ending={act.id === 'act8' && story.after === 'outro'} /></div>
     <div className="cinema-bar top" /><div className="cinema-bar bottom" />
-    <header className="story-scene-title"><div><span className="eyebrow">{act.kicker} · {story.after === 'intro' ? 'Opening' : 'Closing'}</span><h2>{act.title}</h2></div><LogoutButton disabled={busy}/></header>
+    <header className="story-scene-title"><div><span className="eyebrow">{act.kicker} · {story.after === 'intro' ? 'Opening' : story.after === 'scene' ? 'Scene' : 'Closing'}</span><h2>{title}</h2></div><LogoutButton disabled={busy}/></header>
     <div className="cinema-footer"><div className="cinematic-caption" key={index}><span className="eyebrow">{names[line?.speaker] ?? (line?.speaker === 'voice' ? 'Unknown voice' : 'Sameer’s story')}</span><p>{line?.text}</p></div>
-    <div className="cinematic-tools"><span>{String(index + 1).padStart(2, '0')} / {String(story.lines.length).padStart(2, '0')}</span><button className="btn ghost" onClick={() => setPaused((p) => !p)}>{paused ? 'Play' : 'Pause'}</button><button className="btn ghost" onClick={onDone} disabled={busy}>Skip cinematic</button><button className="btn brass" onClick={advance} disabled={busy}>{busy ? 'Saving…' : last ? story.doneLabel : 'Continue'}</button></div></div>
+    <div className="cinematic-tools"><span>{String(index + 1).padStart(2, '0')} / {String(story.lines.length).padStart(2, '0')}</span><button className="btn ghost" onClick={() => setPaused((p) => !p)}>{paused ? 'Play' : 'Pause'}</button><button className="btn ghost" onClick={onDone} disabled={busy}>{story.after === 'scene' ? 'Skip scene' : 'Skip cinematic'}</button><button className="btn brass" onClick={advance} disabled={busy}>{busy ? 'Saving…' : last ? story.doneLabel : 'Continue'}</button></div></div>
   </div>;
 }

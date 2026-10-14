@@ -78,13 +78,15 @@ clues:
     # page: optional asset path shown in the evidence panel
 puzzles:
   - id: p_...
-    kind: text | choice | code | email
+    kind: text | choice | code | email | scene
     prompt: string             # the question exactly as the player sees it
     hint: string?              # optional
     evidence: string?          # optional asset path (e.g. /assets/pictures/evidence_diary_morse.jpg)
     options: [string]          # choice only
     answers: [string]          # accepted answers; text/code normalized case/punct/space
                                # choice answers must equal an option string (or its letter)
+                               # scene puzzles take no answers — the scene plays itself out
+    lines: [{ speaker, text }] # scene only: the conversation, auto-played as a story scene
     success: string            # narrative shown on the correct answer
     grants: [clue_id]          # clues granted when solved correctly
     requires: { clues: [], puzzles: [] }
@@ -116,8 +118,8 @@ must treat puzzle `requires` as gating; dead-content warnings count puzzle grant
 | act0 | cinematic | The Vanishing | — | — | — |
 | act1 | interactive | The Room | parth_room | parth_room, abandoned_field, cyber_cafe, parth_home | puzzles: [p_morse, p_laptop, p_email, p_cassette, p_drums] |
 | act2 | interactive | Full Moon | sameer_room | sameer_room, gazebo, cyber_cafe | puzzles: [p_voicenote2, p_dosa, p_ticket] |
-| act3 | interactive | The Concert | concert | concert, workshop, ngo_hq, ngo_archive, sameer_room | clues: [c_records, c_holy_blade, c_veer_talk] |
-| act4 | interactive | Shashdhar | ngo_archive | ngo_archive, sameer_room, hospital | clues: [c_plea, c_janitor, c_ritual]; puzzles: [p_hide, p_delve, p_hospital, p_security_pin, p_parth_alive] |
+| act3 | interactive | The Concert | concert | concert, workshop, ngo_hq, ngo_archive, sameer_room | clues: [c_records, c_holy_blade, c_veer_talk, c_plea] |
+| act4 | interactive | Shashdhar | ngo_archive | ngo_archive, sameer_room, hospital | clues: [c_janitor, c_ritual]; puzzles: [p_hide, p_delve, p_hospital, p_security_pin, p_parth_alive] |
 | act5 | interactive | The Big Bad | tanush_office | tanush_office, enakshi_house, sameer_room | puzzles: [p_exposed] |
 | act6 | interactive | Poornima | sameer_room | sameer_room, hospital, police_station | puzzles: [p_police_video] |
 | act7 | interactive | The Mask | sameer_room | sameer_room, hospital, enakshi_house | puzzles: [p_hand_owner, p_floor] |
@@ -170,7 +172,7 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 | c_records | grant of p_playback | — | offeringRecords folder, .avi files, stopped 16-07-2020 |
 | c_holy_blade | ngo_archive blade hotspot | c_records | carved box, "Holy Blade" image |
 | c_veer_talk | ngo_archive wall hotspot | c_records | Veer + deep voice: Nishakara's arms |
-| c_plea | ngo_archive wall hotspot (act4) | c_veer_talk | the shatter; the parent: "you stole my child" |
+| c_plea | ngo_archive wall hotspot (act3) | c_veer_talk | the shatter; the parent: "you stole my child" |
 | c_ambulance | grant of p_hide | — | man from the posters, struggling |
 | c_janitor | hospital backdoor hotspot | — | uniform + mop |
 | c_ritual | hospital theatre hotspot | c_janitor | incense, chanting, torture |
@@ -219,7 +221,7 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 | p_band_name | text | apogee | grants c_apogee |
 | p_registration | email | sameer@gotmail.com | grants c_workshop_address; the address on the act-1 sent-mail evidence; any other address is a wrong answer and costs the penalty |
 | p_destination | text | hutting 3rd cross dj halli, hutting, 3rd cross dj halli, dj halli | requires c_workshop_address; the auto driver's question |
-| p_fare | choice | 230 | options [100, 200, 230, Walk away]; requires p_destination |
+| p_fare | scene | — | the auto conversation plays as a story scene after p_destination; no question, resolves the lead and unlocks the workshop travel |
 | p_ascension | code | ascension | the folder opens: .avi files, an extension he has never seen |
 | p_playback | choice | It won't play | options [It will play, It won't play]; requires p_ascension; grants c_records |
 | p_hide | choice | Stay hidden | options [Run, Stay hidden]; continue_on_fail; requires c_plea; grants c_ambulance; act4 |
@@ -262,14 +264,15 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 Normalization: lowercase, strip punctuation, collapse whitespace. With no authored answers, `email`
 kind accepts any string matching /^[^@\s]+@[^@\s]+$/; with authored answers, only those addresses
 are accepted (normalized) and any other address is a wrong answer that costs the penalty. Choice
-accepts the option string or its letter (A/B/C…).
+accepts the option string or its letter (A/B/C…). A `scene` never asks and never charges: watching
+it through (or skipping) resolves it, whatever token the client submits.
 
 ## 4. Engine API (W4, `src/engine.js`)
 
 Keep all existing exports. Add:
 
 ```js
-publicPuzzle(puzzleId) -> { id, kind, prompt, evidence, options, requires, solvedHint? }
+publicPuzzle(puzzleId) -> { id, kind, prompt, evidence, options, lines, requires, solvedHint? }
 solvePuzzle(puzzlesValue, discoveredValue, puzzleId, answer, { wrongCharges = 0 })
   -> { ok:false, error } | { ok:true, correct, alreadySolved, penalty, message,
        grants:[clueIds], discovered:[...], solvedPuzzles:[...], newlyUnlocked:[...],
@@ -317,8 +320,10 @@ DEFAULT 0`, `ending TEXT`. Keep `db:local` + `seed.sql` working (PANDA-7K2).
 App (W6):
 - Rooms tabs = `currentAct.rooms ?? state.rooms.map(r=>r.id)` mapped to rooms.
 - Hotspots: `clue` -> existing notice; `puzzle` -> PuzzleModal (pass `state.solvedPuzzles`);
-  `travel` -> `setRoomId(to)`; `character` -> existing dialogue.
-- PuzzleModal: prompt, evidence image, text/code/email input OR option buttons;
+  a `scene` puzzle -> the story overlay (CinematicStory) plays the conversation and records
+  the lead on its last line; `travel` -> `setRoomId(to)`; `character` -> existing dialogue.
+- PuzzleModal: prompt, evidence image, text/code/email input OR option buttons, and a scene
+  transcript with a Continue button as a fallback;
   shows success narrative / fail message and the wrong-answer penalty; the
   "From your notebook" references only appear after a wrong attempt; solved puzzles show a
   check in the Notebook.

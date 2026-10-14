@@ -12,7 +12,7 @@ acts:
       puzzles: [p_voicenote2, p_dosa, p_ticket]
   - id: act4
     complete:
-      clues: [c_plea, c_janitor, c_ritual]
+      clues: [c_janitor, c_ritual]
       puzzles: [p_hide, p_delve, p_hospital, p_security_pin, p_parth_alive]
   - id: act5
     complete:

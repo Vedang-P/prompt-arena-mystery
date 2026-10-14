@@ -449,15 +449,18 @@ export default function App() {
     if (!state || phase !== 'game' || state.ending) return;
     if (!state.puzzles?.some((p) => p.id === devPuzzle)) return;
     devPuzzleOpened.current = true;
-    setNotebookOpen(false);
-    const placement = state.rooms.flatMap(r => r.hotspots).find(h => h.puzzle === devPuzzle);
-    setPuzzleSpot({ puzzle: devPuzzle, label: placement?.label ?? 'Examine the clue' });
-    setPuzzleResult(null);
+    openPuzzle(devPuzzle);
   }, [devPuzzle, devBeat, state, phase]);
 
   const completeStory = () => {
     if (!story) return;
     const current = story;
+    // A scene puzzle is the story: finishing (or skipping) it records the lead
+    // and returns to the room — it never ends the act.
+    if (current.after === 'scene') {
+      finishScene(current.puzzleId);
+      return;
+    }
     setStory(null);
     if (current.after === 'intro') {
       sessionStorage.setItem(current.key, '1');
@@ -465,6 +468,17 @@ export default function App() {
     }
     clearNextIntro(current.actId);
     finishAct(current.actId);
+  };
+
+  // Closing an intro without finishing it must still count as seen: switching
+  // acts (chapter pick, login, restart) nulls the story while the old act's
+  // state is still current, and without the mark the intro effect re-opens the
+  // old act's intro over the new one — the new act's intro then never plays.
+  const closeStory = () => {
+    if (story?.after === 'intro' && story.key) {
+      try { sessionStorage.setItem(story.key, '1'); } catch {}
+    }
+    setStory(null);
   };
 
   const advanceAct = () => {
@@ -486,11 +500,37 @@ export default function App() {
     }
   };
 
+  // A scene puzzle is not a question: its modal is the story overlay, and
+  // finishing it records the lead.
+  const openScene = (puzzleId, label) => {
+    const puzzle = state.puzzles?.find((p) => p.id === puzzleId);
+    if (!puzzle?.lines?.length) return false;
+    puzzleRequest.current = null;
+    setPuzzleSpot(null);
+    setPuzzleResult(null);
+    setStory({
+      key: `pa-scene-${puzzleId}`,
+      after: 'scene',
+      actId: currentAct?.id,
+      puzzleId,
+      lines: puzzle.lines,
+      kicker: currentAct?.kicker,
+      title: label ?? currentAct?.title,
+      doneLabel: 'Continue',
+      cast: [{ character: 'sameer' }],
+    });
+    return true;
+  };
+
   const openPuzzle = (target) => {
     const id = typeof target === 'string' ? target : target?.puzzle;
     if (!id) return;
     setNotebookOpen(false);
     const placement = state.rooms.flatMap(r => r.hotspots).find(h => h.puzzle === id);
+    if (state.puzzles?.find((p) => p.id === id)?.kind === 'scene') {
+      openScene(id, typeof target === 'object' ? target.label : placement?.label);
+      return;
+    }
     puzzleRequest.current = null;
     setPuzzleSpot(typeof target === 'string' ? { puzzle: id, label: placement?.label ?? 'Examine the clue' } : target);
     setPuzzleResult(null);
@@ -502,17 +542,17 @@ export default function App() {
     setPuzzleResult(null);
   };
 
-  const handleSolve = async (answer) => {
-    if (!activePuzzle) return;
-    // The verdict belongs to the puzzle that was submitted: closing this modal
-    // and opening another one must not paint A's result inside B.
-    const puzzleId = activePuzzle.id;
+  // Submitting any puzzle (a guess or a finished scene) funnels through here:
+  // the verdict belongs to the puzzle that was submitted, so closing this modal
+  // and opening another one must not paint A's result inside B.
+  const applySolve = async (puzzleId, answer) => {
     puzzleRequest.current = puzzleId;
     setPuzzleBusy(true);
     setPuzzleResult(null);
+    let recorded = false;
     try {
       const res = await solvePuzzle(puzzleId, answer);
-      if (puzzleRequest.current !== puzzleId) return;
+      if (puzzleRequest.current !== puzzleId) return false;
       setPuzzleResult(res);
       setState((s) => {
         const next = {
@@ -529,8 +569,9 @@ export default function App() {
       });
       // Reconcile derived server state (canAdvance) without a page reload.
       refreshState();
+      recorded = true;
     } catch (e) {
-      if (puzzleRequest.current !== puzzleId) return;
+      if (puzzleRequest.current !== puzzleId) return false;
       if (e.status === 403) {
         setPuzzleResult({ correct: false, message: 'This lead is locked. Inspect the other evidence first.', penalty: 0 });
       } else if (e.status === 404) {
@@ -540,8 +581,23 @@ export default function App() {
         setPuzzleResult({ correct: false, message: 'The line went dead. Try again.', penalty: 0 });
       }
     } finally {
-      if (puzzleRequest.current === puzzleId) setPuzzleBusy(false);
+      // closePuzzle may have released the request; only a newer request that
+      // took over the slot may keep the busy flag.
+      if (puzzleRequest.current === puzzleId || puzzleRequest.current === null) setPuzzleBusy(false);
     }
+    return recorded;
+  };
+
+  const handleSolve = (answer) => {
+    if (activePuzzle) applySolve(activePuzzle.id, answer);
+  };
+
+  // When a scene's last line (or its skip button) lands, record the lead and
+  // return to the room; the act itself continues.
+  const finishScene = async (puzzleId) => {
+    const recorded = await applySolve(puzzleId, 'scene');
+    if (recorded) setStory(null);
+    else setNotice({ kicker: 'Case saved', title: 'Could not record the scene', body: 'Check your connection and try again.' });
   };
 
   const handleDevLogin = async (code) => {
@@ -551,7 +607,7 @@ export default function App() {
     try {
       localStorage.setItem('moon-mode','campaign');
       await devLogin(code);
-      clearIntros(); setStory(null); setRoomId(null); setChats({}); setActiveChar(null); setEvidence(null); setPuzzleSpot(null);
+      clearIntros(); closeStory(); setRoomId(null); setChats({}); setActiveChar(null); setEvidence(null); setPuzzleSpot(null);
       await loadGame('game');
     } catch (e) {
       setLoginError(e.status === 401 ? 'Wrong code. Check the label on your table.' : 'Sign-in failed.');
@@ -720,7 +776,7 @@ export default function App() {
     setLoginBusy(true); setLoginError(null);
     try {
       localStorage.setItem('moon-mode', 'campaign'); await startGuest();
-      clearIntros(); setStory(null); setRoomId(null); setChats({}); setNotice(null); setActiveChar(null); setEvidence(null); setPuzzleSpot(null);
+      clearIntros(); closeStory(); setRoomId(null); setChats({}); setNotice(null); setActiveChar(null); setEvidence(null); setPuzzleSpot(null);
       await loadGame('game');
     } catch { setLoginError('Could not open the case. Please try again.'); }
     finally { setLoginBusy(false); }
@@ -729,13 +785,13 @@ export default function App() {
     setLoginBusy(true);
     try {
       await startPractice(actId); localStorage.setItem('moon-mode', 'practice'); clearIntros();
-      setChaptersOpen(false); setStory(null); setRoomId(null); setChats({}); setEvidence(null); setActiveChar(null); setPuzzleSpot(null);
+      setChaptersOpen(false); closeStory(); setRoomId(null); setChats({}); setEvidence(null); setActiveChar(null); setPuzzleSpot(null);
       await loadGame('game');
     } catch { setNotice({ title: 'Chapter unavailable', body: 'Please try again.' }); }
     finally { setLoginBusy(false); }
   };
   const returnCampaign = async () => {
-    localStorage.setItem('moon-mode', 'campaign'); setChaptersOpen(false); setStory(null); setRoomId(null); setChats({});
+    localStorage.setItem('moon-mode', 'campaign'); setChaptersOpen(false); closeStory(); setRoomId(null); setChats({});
     await loadGame('game');
   };
   const travel = (target) => {
@@ -757,7 +813,7 @@ export default function App() {
     setLoginBusy(true);
     try {
       const restarted = await restartRun();
-      clearIntros(); setStory(null); setRoomId(null); setChats({}); setEvidence(null);
+      clearIntros(); closeStory(); setRoomId(null); setChats({}); setEvidence(null);
       setActiveChar(null); setPuzzleSpot(null); setWon(null); setAccuseResult(null); setPhase('game');
       await loadGame('game');
       setNotice({
@@ -1049,7 +1105,7 @@ export default function App() {
         />
       )}
       {story && (
-        <CinematicStory key={story.key} story={story} act={currentAct} characters={state.characters} onDone={completeStory} busy={actBusy} />
+        <CinematicStory key={story.key} story={story} act={currentAct} characters={state.characters} onDone={completeStory} busy={actBusy || puzzleBusy} />
       )}
     </div>
   );
