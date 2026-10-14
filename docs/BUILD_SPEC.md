@@ -232,8 +232,8 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 | p_tablet | code | 1607 | hint ties to 16-07-2020 |
 | p_handbook | choice | Take it | options [Take it, Leave it]; grants c_handbook |
 | p_knowledge | text | handbook, the handbook | grants c_tablet_data |
-| p_tablet_content | choice | Chants, schedules, and holy blade maintenance | options [Chants, schedules, and holy blade maintenance, Lua Pharmaceuticals invoices, The full member list]; grants c_recruits + c_finance |
-| p_connection | text | perigee, apogee, perigee and apogee | success notes the bonus for both |
+| p_tablet_content | choice | Chants, schedules, and holy blade maintenance | options [Chants, schedules, and holy blade maintenance, Financial records, The full member list]; grants c_recruits + c_finance; Lua Pharmaceuticals only named once the records are found |
+| p_connection | text | perigee, apogee, perigee and apogee, apogee and perigee | success notes the bonus for both; either order accepted |
 | p_exposed | text | email, the email, sending the files to himself | requires p_connection; triggers c_voice3 |
 | p_fullmoon | text | missing people, people going missing, disappearances | grants c_pen_camera |
 | p_voice_hq | text | ngo headquarters, the headquarters, the ngo | requires c_ritual2 |

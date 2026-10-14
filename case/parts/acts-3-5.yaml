@@ -255,7 +255,7 @@ clues:
     description: "The tablet the handbook says is given to all higher ups — thankfully unlocked."
   - id: c_handbook
     name: "Higher-up handbook"
-    description: "Guides on the chants and proper maintenance of the 'holy blade' — he stopped reading after he saw blood being used."
+    description: "Back home, he finally reads it properly: the chants, and the proper maintenance of the 'holy blade' — blood included. He stopped reading after he saw the blood being used. One line stuck with him, though: every higher-up is issued a tablet."
   - id: c_enakshi
     name: "Enakshi"
     description: "A woman peeks through the door, her hair greasy and eyes sunken, the house dark behind her. She lets out an animalistic hiss and lunges with a heavy brass candlestick. Sameer shoves her away with the handle of his hammer; she slips on the entryway rug, cracks her head against a wooden table, and slumps to the floor. He binds her wrists with an extension cord, drags her into the hallway closet, and locks the door."
@@ -368,9 +368,10 @@ puzzles:
     grants: [c_parth_alive]
   - id: p_tablet
     kind: code
-    prompt: "There was a tablet under these folders. It was unfortunately password protected — a 4 digit numeric passcode. The archived records stopped on 16-07-2020; the higher ups seem to love that date. What could he put down?"
+    prompt: "There was a tablet under these folders. It was unfortunately password protected — a 4-digit numeric passcode. The higher-ups seem to love dates — one date above all, the one the archived records stopped on. What could he put down?"
     answers: ["1607", "16-07-2020", "16/07/2020", "16072020", "16 07"]
     success: "1607 — the day the records stopped. The tablet unlocks in his hands; this is the Big Bad's own device."
+    requires: { clues: [c_records] }
   - id: p_handbook
     kind: choice
     prompt: "He heard footsteps in the corridor. There is a handbook kept near the reports. Should he pick it up?"
@@ -388,7 +389,7 @@ puzzles:
   - id: p_tablet_content
     kind: choice
     prompt: "What could be found in the tablet?"
-    options: ["Chants, schedules, and holy blade maintenance", "Lua Pharmaceuticals invoices", "The full member list"]
+    options: ["Chants, schedules, and holy blade maintenance", "Financial records", "The full member list"]
     answers: ["Chants, schedules, and holy blade maintenance"]
     requires: { clues: [c_tablet_data] }
     fail_message: "Not quite. He swipes back — the handbook said the tablet holds the chants, the schedules, and the maintenance of the holy blade."
@@ -397,7 +398,7 @@ puzzles:
   - id: p_connection
     kind: text
     prompt: "Once he is back home with his wounds sufficiently bandaged and his files properly backed up, he looks through them. He notices that there are a lot of donations by a company named Lua Pharmaceuticals. Could there be any other connection to the cult?"
-    answers: ["perigee", "apogee", "perigee and apogee"]
+    answers: ["perigee", "apogee", "perigee and apogee", "apogee and perigee"]
     success: "Perigee or Apogee — both are correct, and a bonus for both mentioned. The point of the Moon's orbit closest to Earth, and the farthest: the two faces of the same NGO. The cult and the NGO are one and the same."
   - id: p_exposed
     kind: text
