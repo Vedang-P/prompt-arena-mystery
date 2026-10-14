@@ -73,13 +73,26 @@ export function SceneWatchdog({ onState, timeoutMs = 10000 }) {
 // The loading panel is a DOM overlay pinned to the centre of the stage — never
 // an in-world element, which used to drift around the frame as the camera moved.
 // The bar tracks every asset three.js is fetching, with the percentage shown.
-export function SceneLoading({ label = 'Opening the scene' }){
+// A loading card must never become a permanent wall: after a short grace period
+// the player can dismiss it (button or Esc), a Reload action appears while it
+// lingers, and it always steps aside on its own — the stage can still light up
+// later, and the room stays playable through Explore and the room tabs.
+export function SceneLoading({ label = 'Opening the scene', onDismiss, expireMs = 15000 }){
   const {progress,total}=useProgress();
   const [expired,setExpired]=useState(false);
-  // A loading card must never become a permanent wall: if the scene has not
-  // announced itself in time the card steps aside — the stage can still light
-  // up later, and the room stays playable through Explore and the room tabs.
-  useEffect(()=>{const timer=setTimeout(()=>setExpired(true),15000);return()=>clearTimeout(timer);},[]);
+  const [waited,setWaited]=useState(false);
+  const dismiss=useRef(onDismiss);
+  dismiss.current=onDismiss;
+  const step=()=>{setExpired(true);dismiss.current?.();};
+  useEffect(()=>{const timer=setTimeout(()=>setExpired(true),expireMs);return()=>clearTimeout(timer);},[expireMs]);
+  // Long enough that a normal load never shows the controls, short enough that a
+  // stuck scene can never hold the player hostage.
+  useEffect(()=>{const timer=setTimeout(()=>setWaited(true),3500);return()=>clearTimeout(timer);},[]);
+  useEffect(()=>{
+    const key=(e)=>{if(e.key==='Escape')step();};
+    window.addEventListener('keydown',key);
+    return()=>window.removeEventListener('keydown',key);
+  },[]);
   if(expired)return null;
   const known=total>0;
   const pct=known?Math.max(0,Math.min(100,Math.round(progress))):null;
@@ -91,6 +104,10 @@ export function SceneLoading({ label = 'Opening the scene' }){
         <span style={pct===null?undefined:{width:`${pct}%`}}/>
       </div>
       <small>{pct===null?'Preparing…':`${pct}%`}</small>
+      {waited&&<div className="scene-loader-actions">
+        <button type="button" className="scene-loader-action" onClick={step}>Continue without waiting →</button>
+        {pct!==null&&pct>=100&&<button type="button" className="scene-loader-action ghost" onClick={()=>window.location.reload()}>Reload scene ↺</button>}
+      </div>}
     </div>
   </div>;
 }

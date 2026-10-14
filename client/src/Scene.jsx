@@ -1070,8 +1070,10 @@ function ConcertRoom({room,hot}) {
   {[-6.8,6.8].map(x=><DetailProp key={x} asset="amplifier" position={[x,0,-3.5]} height={1.6}/>)}
   {[-1,1].flatMap(side=>[0,1,2,3].map(i=><CrowdBlob key={`${side}-${i}`} position={[side*(4+i%2),0,-.6+Math.floor(i/2)*1.7]} scale={.97}/>))}
   <FencePanel position={[-4.5,0,-2.6]} rotation={[0,.2,0]}/>
-  <WallSign position={[-4.5,1.1,-2.42]} width={1.2} height={.45} title="BACKSTAGE" lines={['PASS HOLDERS ONLY']}/>
-  <WallSign position={[5,1.4,-1]} width={1.15} height={.5} title="PERIGEE" lines={['MEMBER REGISTRATION']}/>
+   <WallSign position={[-4.5,1.1,-2.42]} width={1.2} height={.45} title="BACKSTAGE" lines={['PASS HOLDERS ONLY']}/>
+   {/* Inside the default frame: at the old x=5 the board was clipped by the
+       right edge of the view, so the membership art looked cropped. */}
+   <WallSign position={[4.1,1.4,-1]} width={1.15} height={.5} title="PERIGEE" lines={['MEMBER REGISTRATION']}/>
   {[-8.5,8.5].map(x=><group key={x}><DetailProp asset="street_lamp_01" position={[x,0,2.5]} height={3.8}/><pointLight position={[x,3.1,2.5]} color="#f6cc91" intensity={12} distance={10}/></group>)}
   <WindTree position={[-10,0,-7]} height={6}/><WindTree position={[10,0,-7]} height={6}/>
   <pointLight position={[0,4.3,-3.8]} color="#c2cef4" intensity={30} distance={14}/>
@@ -1566,7 +1568,8 @@ export default function Scene({
 
   const [sceneStalled, setSceneStalled] = useState(false);
   const [sceneReady, setSceneReady] = useState(false);
-  useEffect(() => { setSceneStalled(false); setSceneReady(false); }, [room.id]);
+  const [sceneDismissed, setSceneDismissed] = useState(false);
+  useEffect(() => { setSceneStalled(false); setSceneReady(false); setSceneDismissed(false); }, [room.id]);
 
   const bounds = ROOM_BOUNDS[room.id] ?? { x: 6.5, zMin: -5.5, zMax: 9 };
   const bg = room.id==='abandoned_field' ? '#26394e' : isOutdoor ? '#05070d' : '#080604';
@@ -1607,8 +1610,8 @@ export default function Scene({
           <Vignette offset={0.3} darkness={room.id==='abandoned_field'?.16:.35} />
         </EffectComposer>}
       </Canvas>
-      {!sceneReady && <SceneLoading label={sceneStalled ? 'Still starting 3D graphics' : 'Opening the scene'} />}
-      {sceneReady && sceneStalled && <SceneLoading label="Restoring 3D graphics" />}
+      {!sceneReady && !sceneDismissed && <SceneLoading label={sceneStalled ? 'Still starting 3D graphics' : 'Opening the scene'} onDismiss={() => setSceneDismissed(true)} />}
+      {sceneReady && sceneStalled && !sceneDismissed && <SceneLoading label="Restoring 3D graphics" onDismiss={() => setSceneDismissed(true)} />}
       </div>
     </WorldBoundary>
   );
