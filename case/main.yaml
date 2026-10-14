@@ -3417,6 +3417,7 @@ puzzles:
         - c_veer_death
   - id: p_spiral
     kind: text
+    evidence: /assets/pictures/evidence_fibonacci.jpg
     prompt: He looked at the hand pointing — wrinkled, veins protruding, spirals tattooed around his finger. He had learned about that in maths, hadn't he? What was it called again?
     answers:
       - fibonacci
