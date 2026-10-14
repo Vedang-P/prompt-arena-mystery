@@ -3262,7 +3262,19 @@ puzzles:
       - the video
       - video
       - the pen camera video recording
-    success: The pen camera recording. The police take in all of this and mark it. The officers tell him they will comb over it all and may call him anytime this week. Sameer agrees and is let out of the station. He goes home — on his bed, a wendigo mask is kept.
+      - cd
+      - the cd
+      - spiral cd
+      - the spiral cd
+      - copper spiral cd
+      - the copper spiral cd
+      - cassette
+      - the cassette
+      - cassette tape
+      - the cassette tape
+      - the mixtape
+      - mixtape
+    success: The recordings — the pen camera, the spiral CD, the cassette. The police take in all of this and mark it. The officers tell him they will comb over it all and may call him anytime this week. Sameer agrees and is let out of the station. He goes home — on his bed, a wendigo mask is kept.
     grants:
       - c_mask
     requires:
@@ -3283,7 +3295,7 @@ puzzles:
         - c_mask
   - id: p_veer_mask
     kind: text
-    prompt: Sameer asks Veer — does this cu-organisation follow people around? Veer asked, "like what?"
+    prompt: What makes you think you're being followed?
     answers:
       - wendigo
       - wendigo mask
@@ -3345,8 +3357,16 @@ puzzles:
     answers:
       - third floor
       - 3rd floor
+      - the third floor
+      - the 3rd floor
       - third
+      - 3rd
+      - the third
+      - the 3rd
+      - three
       - "3"
+      - floor 3
+      - floor three
     success: Third floor. He reaches the room where the sacrifice happened the last time. Just as he was about to shuffle into a corner to peek at the proceedings, a hand grabs the back of his neck. Sameer freezes.
     grants:
       - c_caught

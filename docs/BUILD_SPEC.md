@@ -250,7 +250,7 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 | p_lua | text | lua pharmaceuticals and selenocide, lua pharmaceuticals, selenocide | requires p_veer_mask; grants c_lua_files |
 | p_nigeria | text | pamphlet, the pamphlet, ngo pamphlet | requires p_lua; grants c_article |
 | p_continue | choice | Continue | options [Continue, Stop]; option_endings {Stop: ending_cult} |
-| p_floor | text | third floor, 3rd floor, third, 3 | requires c_disguise; grants c_caught |
+| p_floor | text | third floor, 3rd floor, third, 3rd, three, 3 (floor 3 / floor three too) | requires c_disguise; grants c_caught |
 | p_hand_owner | text | tanush, the leader, leader | requires p_floor; the hand on his neck |
 | p_refer | text | you, sameer, me | act8; requires c_veer_death |
 | p_spiral | text | fibonacci, golden spiral, fibonacci spiral | act8; requires p_refer |

@@ -455,7 +455,7 @@ Sameer saw for the first time how pathetic Veer looked.
 Veer started speaking again , “I’m hearing from my dad that you apparently got folders full of information. I swear to god, if my name comes in the cult, I will -”
 Someone walks in hearing distance. Sameer looks at the guy.Sameer looks at Veer, he could get something from him right now.
 Sameer says to Veer , “I think your name was in one of the folders but I’m not sure if I have sent it yet. Does this cu- organisation follow people around?”
-Q.Veer asked, “Do you see any signs of being followed?”
+Q.What makes you think you’re being followed?
 Ans : Wendigo Mask
 Veer hesitated, “I mean- I’ve heard some being tailed around. Usually the aftermath is messy. If there is something like that happening, I suggest that you step down. It’s not worth it man”
 
