@@ -49,24 +49,35 @@ for(const member of HOSPITAL_RITUAL_CROWD){
 }
 assert(HOSPITAL_RITUAL_CROWD.some(m=>m.character==='parth'),'Parth must stand masked in the ritual crowd');
 assert(HOSPITAL_RITUAL_CROWD.some(m=>m.officiant),'The leader must officiate behind the altar');
-const maskCastBefore=storyCast(act8,'intro','hospital',4),maskCastAfter=storyCast(act8,'intro','hospital',5);
-assert(!maskCastBefore.find(c=>c.character==='sameer').wearingMask,'Sameer must not wear the mask before the leader puts it on him');
-assert(maskCastAfter.find(c=>c.character==='sameer').wearingMask,'Sameer must wear the physical mask after the leader puts it on him');
-assert(maskCastAfter.find(c=>c.character==='leader').wearingMask,'The leader must wear the cult mask at the ritual');
-assert.deepEqual(Array.from({length:5},(_,i)=>cinematicPhaseFor(act8,'outro','hospital',i)),['ending_fire','ending_fire','ending_phone','ending_voice','ending_fall'],'Act 8 ending must progress through its burning room, phone, voice note and fall beats');
-for(let i=0;i<act8.outro.length;i++){
+// Acts 7–8 must follow the story: Act 7 closes inside the ritual with the
+// leader's speech (never the loading bay), Act 8 opens with Sameer already
+// masked in the crowd, and the ending's last two beats return to his room at
+// dawn instead of the phone playing on in the burning hospital.
+assert.equal(locationFor(act7,'outro',0),'hospital','The forced mask and the pushing-in must stage at the ritual');
+assert.equal(locationFor(act7,'outro',act7.outro.length-1),'hospital','The whole closing speech stays in the ritual room');
+assert.equal(cinematicPhaseFor(act7,'outro','hospital',2),'ceremony','Act 7 must close in the ceremony tableau');
+const ceremonyCast=storyCast(act7,'outro','hospital',2);
+const ceremonySameer=ceremonyCast.find(c=>c.character==='sameer'),ceremonyLeader=ceremonyCast.find(c=>c.character==='leader');
+assert(ceremonySameer&&ceremonySameer.wearingMask,'Sameer must already wear the mask the leader forced on him');
+assert(ceremonyLeader&&ceremonyLeader.wearingMask,'The leader must wear the cult mask while he preaches');
+assert(ceremonyLeader.at[1]<-2,'The leader must officiate behind the altar');
+const introCast=storyCast(act8,'intro','hospital',1);
+assert.equal(introCast.find(c=>c.character==='sameer').wearingMask,true,'Act 8 opens with Sameer masked in the crowd');
+assert.equal(introCast.find(c=>c.character==='leader').wearingMask,true,'The leader must wear the cult mask at the ritual');
+assert.equal(cinematicPhaseFor(act8,'intro','hospital',0),'ceremony','Act 8 must open in the same ceremony tableau');
+assert.equal(locationFor(act8,'outro',0),'hospital','The burning-corridor beats stay at the hospital');
+assert.equal(locationFor(act8,'outro',2),'sameer_room','The waking-up beat must stage in Sameer\'s room');
+assert.equal(locationFor(act8,'outro',3),'sameer_room','The final voice note must stage in Sameer\'s room');
+assert.equal(cinematicPhaseFor(act8,'outro','hospital',1),'ending_fire','The fire beats keep the burning corridor');
+assert.equal(cinematicPhaseFor(act8,'outro','sameer_room',2),'ending_dawn','The room beats play at dawn');
+for(let i=0;i<2;i++){
   const endingCast=storyCast(act8,'outro','hospital',i);
   assert.equal(endingCast.length,1,'The leader must not stand alive beside Sameer during the post-ritual ending');
-  assert.equal(endingCast[0].character,'sameer','Sameer must carry the final hospital scene');
+  assert.equal(endingCast[0].character,'sameer','Sameer must carry the burning corridor');
 }
-assert.equal(storyCast(act8,'outro','hospital',4)[0].pose,'fall','The last Act 8 cue must stage Sameer falling');
-assert.equal(storyCast(act8,'outro','hospital',4)[0].rotationX,Math.PI/2,'The last Act 8 cue must lay Sameer on the floor');
-assert(Math.abs(storyCast(act8,'outro','hospital',0)[0].rotationX)>0,'Sameer must lean toward the burning window before the voice note');
-assert.equal(cinematicPhaseFor(act7,'outro','hospital',2),'cargo_loading','Act 7 arrival must use a loading-bay story phase');
-assert.deepEqual(storyCast(act7,'outro','hospital',2)[0].at,[1.9,.85],'Sameer must stand beside the loading path instead of blocking it');
-assert.equal(storyCast(act7,'outro','hospital',2)[0].rot,-Math.PI/2,'Sameer must face the loading activity');
-const maskPickup=storyCast(act7,'outro','sameer_room',1).find(c=>c.character==='sameer');
-assert(maskPickup.holdingMask,'Sameer must pick up the mask when the closing narration says he does');
+assert(Math.abs(storyCast(act8,'outro','hospital',0)[0].rotationX)>0,'Sameer must lean toward the burning window');
+assert.equal(storyCast(act8,'outro','sameer_room',2)[0].character,'sameer','Sameer must carry the dawn scene alone');
+assert(!maskVisibleFor({hotspots:[],act:'act8',phase:'ending_dawn'}),'The taken mask must never return to the bed in the dawn ending');
 const maskHotspot=caseData.rooms.find(r=>r.id==='sameer_room').hotspots.find(h=>h.id==='sameer_room_a7_mask');
 assert.deepEqual(maskHotspot.position,[-2.8,.705,-1.35],'The Act 7 mask clue must be positioned on Sameer’s bed');
 assert.deepEqual(DETAIL_ANCHORS.sameer_room.sameer_room_a7_mask,[SAMEER_BED.center[0],SAMEER_BED.surfaceY+.018,SAMEER_BED.center[2]],'The mask marker must share its measured bed surface anchor');

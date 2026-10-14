@@ -763,14 +763,14 @@ function StringLights({ from = [-4, 3, 0], to = [4, 2.8, 0], count = 9 }) {
   );
 }
 
-function Window({ position, rotation = [0, 0, 0], width = 1.6, height = 1.4, moon = true }) {
+function Window({ position, rotation = [0, 0, 0], width = 1.6, height = 1.4, moon = true, dawn = false }) {
   return (
     <group position={position} rotation={rotation}>
       <mesh>
         <planeGeometry args={[width, height]} />
-        <meshStandardMaterial color="#0a0f1e" roughness={1} />
+        <meshStandardMaterial color={dawn ? '#c8d8d3' : '#0a0f1e'} roughness={1} />
       </mesh>
-      {moon && (
+      {moon && !dawn && (
         <mesh position={[width * 0.18, height * 0.22, 0.02]}>
           <circleGeometry args={[0.22, 24]} />
           <meshBasicMaterial color="#dfe8ff" />
@@ -784,7 +784,7 @@ function Window({ position, rotation = [0, 0, 0], width = 1.6, height = 1.4, moo
         <boxGeometry args={[width, 0.06, 0.04]} />
         <meshStandardMaterial color="#2a2018" roughness={0.8} />
       </mesh>
-      <pointLight position={[0, 0, 0.8]} color="#9fb2ea" intensity={0.7} distance={7} decay={0} />
+      <pointLight position={[0, 0, 0.8]} color={dawn ? '#ffe2b4' : '#9fb2ea'} intensity={0.7} distance={7} decay={0} />
     </group>
   );
 }
@@ -919,7 +919,7 @@ function SameerRoomScene({ room, hot, paused=false, phase }) {
     {maskVisible&&<DemonMask position={[SAMEER_BED.center[0],SAMEER_BED.surfaceY+.018,SAMEER_BED.center[2]]} rotation={[-Math.PI/2,0,0]} scale={.95}/>}
     <BedroomWorkstation paused={paused}/>
     <Prop model="bookcaseOpen.glb" position={[-3.8,0,-3.25]}/>
-    <Window position={[4.95,1.75,-1.6]} rotation={[0,-Math.PI/2,0]}/>
+    <Window position={[4.95,1.75,-1.6]} rotation={[0,-Math.PI/2,0]} moon={phase!=='ending_dawn'} dawn={phase==='ending_dawn'}/>
     <DetailProp asset="curtains" position={[4.84,.45,-1.6]} rotation={[0,-Math.PI/2,0]} height={2.25}/>
     <DetailProp asset="bedside_cabinet" height={.67} position={[-1.55,0,-2]}/>
     <DetailProp asset="cup" position={[-1.55,.67,-2]}/>
@@ -1319,30 +1319,25 @@ function HospitalEndingRoom({phase,paused}) {
  </group>;
 }
 
-function HospitalDispatch({room,hot,loading=false}) {
+function HospitalDispatch({room,hot}) {
  return <group>
   <Shell width={12} depth={14} height={4.2} tint="#8e9997" painted/>
   <Floor width={12} depth={14} repeat={[4,4]} color="#8e9895" tiled/>
-  <mesh position={[-2,1.45,-6.93]}><planeGeometry args={[4.3,2.9]}/><meshStandardMaterial color="#465654" metalness={.35} roughness={.65}/></mesh>
-  {Array.from({length:13},(_,i)=><mesh key={i} position={[-2,.15+i*.21,-6.89]}><boxGeometry args={[4.3,.018,.018]}/><meshStandardMaterial color="#73817c" metalness={.4}/></mesh>)}
-  <WallSign position={[-2,3.6,-6.9]} width={3.5} height={1.15} title="SHASHDHAR / LOADING BAY"/>
+  <mesh position={[-2,1.65,-6.93]}><planeGeometry args={[4.3,3.3]}/><meshStandardMaterial color="#465654" metalness={.35} roughness={.65}/></mesh>
+  {Array.from({length:14},(_,i)=><mesh key={i} position={[-2,.15+i*.23,-6.89]}><boxGeometry args={[4.3,.018,.018]}/><meshStandardMaterial color="#73817c" metalness={.4}/></mesh>)}
+  <WallSign position={[-2,3.55,-6.9]} width={3.5} height={1.15} title="SHASHDHAR / LOADING BAY"/>
   <DoorOpening position={[4.2,0,-6.75]} label="SERVICE LIFT / STAFF"/>
   <DetailProp asset="cargo_van" position={[-3,0,-2.2]} height={2.2} rotation={[0,Math.PI/2,0]}/>
-  {loading ? <>
-   {/* Cargo is staged between the shutter and the van's rear; the loaded dolly
-       and clear path make the dispatch line legible from the story camera. */}
-   <DetailProp asset="hand_truck" position={[-.65,0,-4.45]} rotation={[0,Math.PI,0]}/>
-   <DetailProp asset="cardboard_box_01" position={[-.65,.48,-4.45]} scale={.82}/>
-   <DetailProp asset="cardboard_box_01" position={[-.65,.98,-4.45]} scale={.82}/>
-   <DetailProp asset="cardboard_box_01" position={[-1.65,0,-4.45]}/>
-   <DetailProp asset="cardboard_box_01" position={[-1.65,.5,-4.45]}/>
-   <DetailProp asset="cardboard_box_01" position={[-.35,0,-3.45]}/>
-   <DetailProp asset="cardboard_box_01" position={[-.35,0,-2.45]}/>
-   <WallSign position={[-2,2.02,-6.89]} width={2.55} height={.32} title="SEALED MEDICAL SUPPLIES" background="#334b47"/>
-  </> : <>
-   <DetailProp asset="hand_truck" position={[-.3,0,-1]}/>
-   {[-4.9,-3.8,-2.7].map(x=><DetailProp key={x} asset="cardboard_box_01" position={[x,0,1.4]}/>)}
-  </>}
+  {/* Cargo is staged between the shutter and the van's rear; the loaded dolly
+      and clear path read as the dispatch line the Act 7 cargo clues describe. */}
+  <DetailProp asset="hand_truck" position={[-.65,0,-4.45]} rotation={[0,Math.PI,0]}/>
+  <DetailProp asset="cardboard_box_01" position={[-.65,.48,-4.45]} scale={.82}/>
+  <DetailProp asset="cardboard_box_01" position={[-.65,.98,-4.45]} scale={.82}/>
+  <DetailProp asset="cardboard_box_01" position={[-1.65,0,-4.45]}/>
+  <DetailProp asset="cardboard_box_01" position={[-1.65,.5,-4.45]}/>
+  <DetailProp asset="cardboard_box_01" position={[-.35,0,-3.45]}/>
+  <DetailProp asset="cardboard_box_01" position={[-.35,0,-2.45]}/>
+  <WallSign position={[-2,2.02,-6.89]} width={2.55} height={.32} title="SEALED MEDICAL SUPPLIES" background="#334b47"/>
   <DetailProp asset="metal_office_desk" position={[3.8,0,-2.8]}/>
   <DetailProp asset="clipboard" position={[3.8,.7875,-2.8]} scale={.7}/>
   <DetailProp asset="office_chair" position={[3.8,0,-1.65]} height={1.168*DESK_SEAT/.618} rotation={[0,Math.PI,0]}/>
@@ -1456,14 +1451,16 @@ export function RoomLighting({ roomId, quality = 'high',cinematicPhase }) {
   const night=outdoor&&roomId!=='gazebo';
   const field=roomId==='abandoned_field';
   const finalHospital=roomId==='hospital'&&String(cinematicPhase??'').startsWith('ending_');
+  // The final act wakes Sameer into a new morning: warm, bright, no moon.
+  const endingDawn=roomId==='sameer_room'&&cinematicPhase==='ending_dawn';
   return <>
-    <Environment files={gazebo?"/assets/cinema/park_sunrise_1k.hdr":outdoor ? "/assets/cinema/park_bench_1k.hdr" : "/assets/env/ballroom_2k.hdr"} ground={gazebo?{height:2,radius:70,scale:120}:undefined} background={outdoor&&roomId!=='abandoned_field'&&!cinematicNight} backgroundBlurriness={.02} backgroundIntensity={finalHospital ? .06 : gazebo ? .35 : night ? .045 : .8} environmentIntensity={finalHospital ? .19 : gazebo ? .56 : field ? .68 : night ? .3 : outdoor ? .85 : .62} />
-    <ambientLight intensity={finalHospital ? .24 : gazebo ? .5 : field ? 1.05 : night ? .5 : outdoor ? .65 : .8} color={finalHospital?'#8193a2':gazebo?'#e8caa7':field?'#cbd8e8':'#bdcce8'} />
-    <directionalLight position={[-4, 8, 6]} intensity={finalHospital ? .38 : gazebo ? 1.1 : field ? 1.7 : night ? .85 : outdoor ? 2 : 1.7} color={finalHospital?'#9aacbf':gazebo?'#ffd2a4':field?'#d7e3f4':night?'#a5bcdc':outdoor?'#ffe2a9':'#d7e5ee'} castShadow={quality !== 'low'}
+    <Environment files={gazebo?"/assets/cinema/park_sunrise_1k.hdr":outdoor ? "/assets/cinema/park_bench_1k.hdr" : "/assets/env/ballroom_2k.hdr"} ground={gazebo?{height:2,radius:70,scale:120}:undefined} background={outdoor&&roomId!=='abandoned_field'&&!cinematicNight} backgroundBlurriness={.02} backgroundIntensity={finalHospital ? .06 : endingDawn ? .6 : gazebo ? .35 : night ? .045 : .8} environmentIntensity={finalHospital ? .19 : endingDawn ? .72 : gazebo ? .56 : field ? .68 : night ? .3 : outdoor ? .85 : .62} />
+    <ambientLight intensity={finalHospital ? .24 : endingDawn ? 1.15 : gazebo ? .5 : field ? 1.05 : night ? .5 : outdoor ? .65 : .8} color={finalHospital?'#8193a2':endingDawn?'#ffd9ae':gazebo?'#e8caa7':field?'#cbd8e8':'#bdcce8'} />
+    <directionalLight position={[-4, 8, 6]} intensity={finalHospital ? .38 : endingDawn ? 2.4 : gazebo ? 1.1 : field ? 1.7 : night ? .85 : outdoor ? 2 : 1.7} color={finalHospital?'#9aacbf':endingDawn?'#ffe3b0':gazebo?'#ffd2a4':field?'#d7e3f4':night?'#a5bcdc':outdoor?'#ffe2a9':'#d7e5ee'} castShadow={quality !== 'low'}
       shadow-mapSize={quality === 'high' ? [2048, 2048] : [1024, 1024]}
       shadow-camera-left={-14} shadow-camera-right={14} shadow-camera-top={14} shadow-camera-bottom={-14}
       shadow-camera-far={38} shadow-bias={-0.0005} />
-    <directionalLight position={[4, 4, -3]} intensity={finalHospital ? .12 : field ? .72 : gazebo ? .38 : night ? .22 : .6} color={finalHospital?'#667a8d':field?'#9db8e4':night?'#7b9fce':'#e0ab7b'} />
+    <directionalLight position={[4, 4, -3]} intensity={finalHospital ? .12 : endingDawn ? .5 : field ? .72 : gazebo ? .38 : night ? .22 : .6} color={finalHospital?'#667a8d':endingDawn?'#f0b97e':field?'#9db8e4':night?'#7b9fce':'#e0ab7b'} />
   </>;
 }
 

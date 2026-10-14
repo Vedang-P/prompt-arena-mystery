@@ -2,14 +2,19 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useAnimations, useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
-import { MathUtils, Quaternion, Vector3 } from 'three';
+import { MathUtils, Matrix4, Quaternion, Vector3 } from 'three';
 import {createFootContact} from './FootContact.js';
 import DemonMask from './DemonMask.jsx';
 
 export const HUMAN_CAST = new Set(['sameer', 'parth', 'mother', 'officer','veer','tanush','leader','enakshi','ramu']);
+// The Rocketbox head bone has its own axes (x: up, y: forward, z: sideways), so
+// the mask is re-based onto it: the mask's +z faces along the head's forward,
+// its +y along the head's up.
+const MASK_FACE = new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(new Vector3(0,0,1),new Vector3(1,0,0),new Vector3(0,1,0)));
 export default function HumanActor({ character, pose = 'idle', focused = false, paused=false, footLift=0, onMeasure, wearingMask=false,holdingMask=false }) {
   const root = useRef();
   const heldMask=useRef();
+  const wornMask=useRef();
   const { scene, animations } = useGLTF(`/assets/cast/${character}.glb`);
   const model = useMemo(() => {
     const copy = clone(scene);
@@ -17,6 +22,7 @@ export default function HumanActor({ character, pose = 'idle', focused = false, 
     return copy;
   }, [scene]);
   const rightHand=useMemo(()=>model.getObjectByName('Bip01_R_Hand')??model.getObjectByName('RightHand'),[model]);
+  const headBone=useMemo(()=>model.getObjectByName('Bip01_Head')??model.getObjectByName('Head')??model.getObjectByName('Bip01_Head1'),[model]);
   const { actions } = useAnimations(animations, root);
   const contact=useMemo(()=>createFootContact(model),[model]);
   useEffect(() => {
@@ -35,6 +41,18 @@ export default function HumanActor({ character, pose = 'idle', focused = false, 
   const at = useMemo(() => new Vector3(), []);
   useFrame(({ camera, clock }, dt) => {
     if (pose !== 'lie') contact(pose==='sit'?footLift:0);
+    if(wearingMask&&headBone&&wornMask.current&&root.current){
+      // The mask rides the head bone: lifted off the neck joint to the face and
+      // pushed just clear of the brow, then yawed with whatever the pose does.
+      headBone.updateWorldMatrix(true,false);
+      const worldPosition=headBone.getWorldPosition(new Vector3());
+      const worldQuaternion=headBone.getWorldQuaternion(new Quaternion());
+      worldPosition.add(new Vector3(.065,.14,0).applyQuaternion(worldQuaternion));
+      root.current.worldToLocal(worldPosition);
+      wornMask.current.position.copy(worldPosition);
+      root.current.getWorldQuaternion(wornMask.current.quaternion);
+      wornMask.current.quaternion.invert().multiply(worldQuaternion).multiply(MASK_FACE);
+    }
     if(holdingMask&&rightHand&&heldMask.current&&root.current){
       rightHand.updateWorldMatrix(true,false);
       const worldPosition=rightHand.getWorldPosition(new Vector3());
@@ -59,5 +77,5 @@ export default function HumanActor({ character, pose = 'idle', focused = false, 
       }
     });
   });
-  return <group ref={root}><primitive object={model} />{wearingMask ? <DemonMask position={[0,1.42,.3]} scale={.8} /> : null}{holdingMask ? <group ref={heldMask}><DemonMask scale={.55}/></group> : null}</group>;
+  return <group ref={root}><primitive object={model} />{wearingMask ? <group ref={wornMask}><DemonMask scale={.48}/></group> : null}{holdingMask ? <group ref={heldMask}><DemonMask scale={.55}/></group> : null}</group>;
 }
