@@ -2962,6 +2962,12 @@ puzzles:
       - perigee headquarters
       - the perigee headquarters
       - the perigee foundation
+      - perigee foundation
+      - the voice at the ngo headquarters
+      - voice at the ngo headquarters
+      - the voice at ngo headquarters
+      - voice at ngo headquarters
+      - the voice at the headquarters
     success: This was the voice he heard in the headquarters. This was the man that had ordered the torture of the missing man.
     requires:
       clues:
