@@ -79,14 +79,10 @@ const discoveredAnywhere = await (await call('/api/clues/c_coords/discover', dev
 assert(discoveredAnywhere.discovered.includes('c_coords'), 'dev discovers a clue whose requirements are unmet');
 const interview = await call('/api/interrogate', devCookie, { character: 'leader', text: 'hello' });
 assert.equal(interview.status, 200, 'dev interviews any character in any act');
-// The dev preview shows the same Continue gate a player sees: an unfinished
-// act reports what is still missing instead of always offering the advance.
+// The sandbox may move through acts at will - the checklist is the player's
+// gate, never the dev's.
 const devCanAdvance = await (await call('/api/state', devCookie)).json();
-assert.equal(devCanAdvance.canAdvance.ok, false, 'dev state reports the real act gate');
-assert(
-  devCanAdvance.canAdvance.missing.clues.length + devCanAdvance.canAdvance.missing.puzzles.length > 0,
-  'dev state names the missing evidence'
-);
+assert.equal(devCanAdvance.canAdvance.ok, true, 'dev can always advance');
 const completed = await (await call('/api/act/complete', devCookie, { act: 'act1' })).json();
 assert.equal(completed.act, 'act2', 'dev completes an act without its checklist');
 
@@ -96,7 +92,6 @@ assert.equal(bulk.solvedPuzzles.length, caseData.puzzles.length);
 state = await (await call('/api/state', devCookie)).json();
 assert.equal(state.discovered.length, caseData.clues.length);
 assert.equal(state.solvedPuzzles.length, caseData.puzzles.length);
-assert.equal(state.canAdvance.ok, true, 'a revealed act offers the advance again');
 
 const off = await (await call('/api/dev/toggle', devCookie, { kind: 'puzzle', id: 'p_morse', on: false })).json();
 assert(!off.solvedPuzzles.includes('p_morse'));

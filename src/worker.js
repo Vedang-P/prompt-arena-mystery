@@ -696,11 +696,9 @@ app.get('/api/state', async (c) => {
     solvedPuzzles,
     penalties,
     unlocked: unlockedFactList(discovered),
-    // The sandbox previews the game as players see it: the Continue button
-    // follows the act's real checklist. Devs still complete any act through the
-    // panel/API (the complete route keeps its dev bypass) or by revealing the
-    // clues and puzzles first.
-    canAdvance: canAdvanceAct(auth.progress.solved_puzzles, discovered, act),
+    // The sandbox is a review tool: it moves to any act without the player
+    // checklist. Players follow the real act gate.
+    canAdvance: auth.dev ? { ok: true, missing: { clues: [], puzzles: [] }, dev: true } : canAdvanceAct(auth.progress.solved_puzzles, discovered, act),
     ending: auth.progress.ending ? publicEnding(auth.progress.ending) : null,
     score: discovered.length + solvedPuzzles.length - penalties,
     hintsUsed: auth.progress.hints_used,
