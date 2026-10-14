@@ -446,6 +446,7 @@ acts:
         - p_voicenote2
         - p_dosa
         - p_ticket
+        - p_video_noise
       clues:
         - c_cd
         - c_footage
@@ -494,6 +495,9 @@ acts:
         - c_holy_blade
         - c_veer_talk
         - c_plea
+      puzzles:
+        - p_ascension
+        - p_playback
   - id: act4
     type: interactive
     kicker: Act IV
@@ -557,6 +561,7 @@ acts:
         - c_recruits
         - c_finance
         - c_voice3
+        - c_enakshi
   - id: act6
     type: interactive
     kicker: Act VI
@@ -581,9 +586,21 @@ acts:
       - speaker: narrator
         text: He goes home. On his bed, a wendigo mask is kept.
     complete:
-      clues: []
+      clues:
+        - c_arrest
+        - c_ritual2
+        - c_sacrifice
+        - c_parth_meet
       puzzles:
         - p_police_video
+        - p_fullmoon
+        - p_taken_in
+        - p_voice_hq
+        - p_tanush
+        - p_box
+        - p_tell
+        - p_police_info
+        - p_police_where
   - id: act7
     type: interactive
     kicker: Act VII
@@ -624,7 +641,9 @@ acts:
       - speaker: narrator
         text: The crowd roared, then went animalistic — no different from a bunch of dogs barking. The smoke rose higher; the people were nothing more than their masks. Sameer felt numb.
     complete:
-      clues: []
+      clues:
+        - c_trucks
+        - c_disguise
       puzzles:
         - p_hand_owner
         - p_floor
@@ -658,6 +677,7 @@ acts:
     complete:
       clues:
         - c_office
+        - c_veer_death
       puzzles:
         - p_office
         - p_found
