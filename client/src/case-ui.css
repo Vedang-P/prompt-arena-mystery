@@ -130,6 +130,8 @@
 .toast-body{color:#a7b7b7;font-size:13px;line-height:1.7}
 .toast-facts li{color:#c7d2cd;font-size:12.5px}
 .toast-page{border-radius:6px;border:1px solid #425252}
+.toast-open{margin-top:12px;border:1px solid #d4b67c66;background:none;color:#e8d5aa;padding:7px 12px;border-radius:4px;font:inherit;font-size:12px;letter-spacing:.02em;cursor:pointer}
+.toast-open:hover{background:#d4b67c1a;border-color:#d4b67c}
 
 /* ---------- ending ---------- */
 .ending-screen{background:radial-gradient(ellipse at 50% 0%, #1b2b32, #060d14 65%)}

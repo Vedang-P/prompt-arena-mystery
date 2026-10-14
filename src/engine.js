@@ -188,9 +188,9 @@ function answerMatches(puzzle, raw) {
 
   if (puzzle.kind === 'email') {
     if (!accepted.length) return EMAIL_ANSWER.test(answer.trim());
-    if (accepted.includes(normalized)) return true;
-    // A one- or two-character slip in an authored address still reaches it.
-    return accepted.some((ref) => wholeStringClose(normalized, ref));
+    // An authored address is exact: only the real inbox opens (case and
+    // surrounding whitespace forgiven by normalizeAnswer, nothing else).
+    return accepted.includes(normalized);
   }
 
   if (!normalized) return false;

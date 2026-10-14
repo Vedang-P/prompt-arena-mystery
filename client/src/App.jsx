@@ -438,7 +438,7 @@ export default function App() {
 
   useEffect(() => {
     if (!notice) return;
-    const timer = setTimeout(() => setNotice(null), 8000);
+    const timer = setTimeout(() => setNotice(null), 6500);
     return () => clearTimeout(timer);
   }, [notice]);
 
@@ -819,13 +819,13 @@ export default function App() {
         discovered: res.discovered,
         unlocked: mergeUnlocked(s.unlocked, res.newlyUnlocked ?? []),
       }));
-      setEvidence(res.clue);
       setNotice({
         kicker: 'Evidence logged',
         title: res.clue.name,
         body: res.clue.description,
         page: res.clue.page,
         facts: res.newlyUnlocked,
+        clue: res.clue,
       });
       // Reconcile derived server state (canAdvance) without a page reload.
       refreshState();
@@ -965,7 +965,7 @@ export default function App() {
     />}
     {/* Notices and the deploy chip live above every phase, not just the room:
         a failed cinematic save or chapter start must still say so. */}
-    {notice && !evidence && <Notice notice={notice} onClose={() => setNotice(null)} />}
+    {notice && !evidence && <Notice notice={notice} onClose={() => setNotice(null)} onInspect={(clue) => { setNotice(null); setEvidence(clue); }} />}
     {staleBuild && (
       <button className="update-chip" onClick={updateApp}>
         New build ready — refresh ↺

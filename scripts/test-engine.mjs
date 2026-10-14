@@ -264,8 +264,9 @@ test('an email puzzle with authored answers accepts only those addresses', () =>
   assert.equal(wrong.penalty, 1);
   assert.equal(wrong.message, 'No code arrives. That address is not on record.');
   assert.deepEqual(wrong.solvedPuzzles, []);
-  // A small slip still reaches the right inbox.
-  assert.equal(solvePuzzle([], [], 'p_register', 'sameer@example.co').correct, true);
+  // Strict: only the authored address reaches the inbox — a slip is a miss.
+  assert.equal(solvePuzzle([], [], 'p_register', 'sameer@example.co').correct, false);
+  assert.equal(solvePuzzle([], [], 'p_register', 'sameer@example.com').correct, true);
 });
 
 test('scene puzzles resolve without an answer and expose their lines', () => {
