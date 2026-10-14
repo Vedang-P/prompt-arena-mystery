@@ -90,7 +90,7 @@ export const DETAIL_ANCHORS = {
  abandoned_field:{af_sedan:carPoint([2.31,.705,0]),af_backpack:carPoint([FIELD.seat[0],FIELD.seat[1]+.327,FIELD.seat[2]])},
  cyber_cafe:{cc_dosa:[-3.9,1.15,1.85],cc_cassette:[4.7,.92,-3.1]},
  workshop:{ws_snacks:[.1,.877,-2.2]},
- ngo_archive:{na_system:[2.9,.89,-1.6],na_blade:[2.9,.89,-1.6],na_wall:[-5.9,1.5,.8],na_hide:[0,.2,3.9]},
+ ngo_archive:{na_system:[2.9,.89,-1.6],na_playback:[2.9,.89,-1.6],na_blade:[2.9,.89,-1.6],na_wall:[-5.9,1.5,.8],na_plea:[-5.9,1.5,.8],na_hide:[0,.2,3.9],na_delve:[0,.2,3.9]},
  tanush_office:{to_drug_report:[-.05,DESK_TOP,-1.35],to_drawer:[-.2,.48,-1.5],to_tablet:[.55,DESK_TOP,-1.5],to_handbook:[1,DESK_TOP,-1.5],to_timetable:[-1.9,1.7,-4.93]},
  enakshi_house:{eh_door:[.8,1.1,-4.2],eh_tablet:[.2,.55,-.4],eh_tablet_content:[.2,.55,-.4],eh_window:[-5.05,1.35,-1.4]},
  hospital:{h4_backdoor:[-5.8,1.2,-4.4],h4_theatre:[5.8,1.3,-4.4],h4_security:[4.7,1.35,-2.2],h4_crowd:[-4.5,.9,-1.1],h4_to_tanush_office:[5.8,.2,-4.4],h6_crowd:[0,.9,-2.1],h6_voice_hq:[0,.9,-2.1],h6_tanush:[0,.9,-2.1],h6_box:[1,.89,-2.1],h6_sacrifice:[0,.9,-2.1],h6_parth_meet:[-2,1,-2],h7_trucks:[-3,.7,-2.2],h7_worker:[3.8,.85,-2.8],h7_floor:[4.2,1.2,-6.75],h8_refer:[0,1,-2.1],h8_spiral:[0,1,-2.1],h8_veer_death:[-2,.9,-2.1],h8_parth2:[-5.8,1.1,-4.4],h8_to_office:[5.8,.2,-4.4]},
