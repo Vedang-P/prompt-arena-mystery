@@ -1595,13 +1595,15 @@ export default function Scene({
           <OrbitControls makeDefault enablePan enableDamping dampingFactor={0.08}
             target={view.look} minDistance={2.6} maxDistance={16}
             minPolarAngle={0.35} maxPolarAngle={Math.PI / 2.02} />
-          <CameraRig key={room.id} focusInfo={focusInfo} view={view} />
+          <CameraRig key={`camera-${room.id}`} focusInfo={focusInfo} view={view} />
           <ExploreKeys disabled={!!focus} bounds={bounds} />
           <ListenerPosition />
           {/* Keyed by room: the ready signal must fire once per room, not once
               per Canvas mount — a reused instance never re-announced the new
-              room and left the loading card up forever. */}
-          <SceneReady key={room.id} onReady={handleReady} onMetrics={onMetrics}/>
+              room and left the loading card up forever. The key must differ from
+              CameraRig's: two siblings sharing one key is a React hazard that
+              can duplicate or omit a child. */}
+          <SceneReady key={`ready-${room.id}`} onReady={handleReady} onMetrics={onMetrics}/>
         </Suspense>
         <SceneWatchdog onState={(state) => setSceneStalled(state === 'stalled')} />
         <PerformanceGuard />
