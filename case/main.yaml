@@ -2517,8 +2517,8 @@ clues:
     name: The Wendigo Mask
     description: A wendigo mask on his bed. Decorated, with beautiful lace tied around the horns.
   - id: c_mask_owner
-    name: The Big Bad's Mask
-    description: There was only one person with a decorated mask on the podium — The Big Bad.
+    name: The Leader's Mask
+    description: There was only one person with a decorated mask on the podium — The Leader, Tanush.
   - id: c_lua_files
     name: Lua Procurement Logs
     description: Industrial solvents, specialised alkaloid reagents and pharmaceutical binders, sold in separate peptide packs. The amount had reached a level high only in the last year — and it was transported to Nigeria.
@@ -3059,10 +3059,10 @@ puzzles:
     kind: text
     prompt: There was only one person with a decorated mask on the podium.
     answers:
-      - the big bad
-      - big bad
+      - the leader
       - leader
-    success: The Big Bad. A decorated mask, beautiful lace tied around the horns — left on his own bed. Why was it here, how was it here? Was it the police? Did he do the wrong thing by taking all the evidence to the police?
+      - tanush
+    success: The Leader — Tanush. A decorated mask, beautiful lace tied around the horns — left on his own bed. Why was it here, how was it here? Was it the police? Did he do the wrong thing by taking all the evidence to the police?
     grants:
       - c_mask_owner
     requires:

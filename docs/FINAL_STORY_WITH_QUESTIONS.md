@@ -439,7 +439,7 @@ ACT 7:
 
 The mask is decorated too, with beautiful lace tied around the horns. 
 Q.There was only one person with a decorated mask on the podium.
-Ans : The Big Bad 
+Ans : The Leader — Tanush
 
 
 Was it the police ? Did he do the wrong thing by taking all the evidence to the police ?

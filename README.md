@@ -109,6 +109,7 @@ vercel.json             Build command and function configuration
 | `npm run build:case` | Merge, validate and compile `src/generated/case.js` |
 | `npm run validate:case` | Validate the compiled case without writing |
 | `npm run test:engine` | Pure rule tests against a fixture case |
+| `npm run test:llm` | Interrogation pool: key rotation, model failover, limits and budgets |
 | `npm run test:campaign` | Full campaign walk: every act, puzzle, gate and ending |
 | `npm run test:penalties` | Penalty rules end-to-end: fee, cap, restart cost, practice, leaderboard order |
 | `npm run test:event` | 70 concurrent team sessions, event gates and timers |
@@ -124,7 +125,7 @@ vercel.json             Build command and function configuration
 ### Testing
 
 ```sh
-npm run test:engine && npm run test:campaign && npm run test:penalties
+npm run test:engine && npm run test:llm && npm run test:campaign && npm run test:penalties
 npm run test:event && npm run test:assets && npm run test:scenes
 npm run build
 ```
@@ -180,7 +181,8 @@ Everything is optional in local development. Production needs the first three.
 | `FULLSCREEN_ENFORCE` | Force fullscreen enforcement on/off (default: on for event mode / team-code play) |
 | `EXIT_GRACE_MS` / `EXIT_MAX_STRIKES` | Grace window to return before a strike (10000); strikes before disqualification (3) |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google sign-in (optional sign-in method) |
-| `LLM_BASE_URL` / `LLM_API_KEY` / `LLM_MODEL` / `LLM_FALLBACK_MODELS` | Optional live AI suspects |
+| `OPENCODE_API_KEY` / `LLM_API_KEYS` | Live AI suspects: one OpenCode Console key, or a pooled key list rotated on usage limits. Only this key is needed — the endpoint defaults to `https://opencode.ai/inference/v1` with the free model pool (`LLM_BASE_URL`, `LLM_MODEL`, `LLM_MODELS`, `LLM_FALLBACK_MODELS` override it) |
+| `LLM_FIRST_TOKEN_MS` / `LLM_TURN_BUDGET_MS` / `LLM_COOLDOWN_MS` / `LLM_MAX_CONCURRENT` / `LLM_MAX_ATTEMPTS` | Interrogation pool tuning for large events; a limited or unreachable pool falls back to the hardcoded case answers instead of stalling |
 
 `.env.example` documents the full surface.
 

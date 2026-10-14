@@ -12,6 +12,7 @@
     "build:case": "node scripts/merge-case.mjs && node scripts/build-case.mjs",
     "validate:case": "node scripts/build-case.mjs --check",
     "test:engine": "node scripts/run-engine-tests.mjs",
+    "test:llm": "node scripts/test-llm.mjs",
     "test:scenes": "node scripts/measure-actors.mjs && node scripts/test-scene-staging.mjs",
     "test:assets": "node scripts/test-environment-assets.mjs",
     "test:campaign": "npm run build:case && node scripts/test-campaign.mjs",

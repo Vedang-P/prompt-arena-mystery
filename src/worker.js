@@ -6,6 +6,7 @@ import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import { streamSSE } from 'hono/streaming';
 import { caseData, getCharacter } from './case.js';
 import {
+  buildMessages,
   chapterCheckpoint,
   canAdvanceAct,
   canonicalAnswer,
@@ -25,7 +26,7 @@ import {
   unlockedFactList,
   WRONG_ANSWER_PENALTY_CAP,
 } from './engine.js';
-import { makeLLM } from './llm.js';
+import { makeLLM, llmConfigured } from './llm.js';
 import { createSession, hashCode, readSession } from './auth.js';
 
 const app = new Hono();
@@ -99,7 +100,7 @@ app.get('/api/health', (c) =>
       codePepperIsExample: envString(c.env.CODE_PEPPER) === DEV_CODE_PEPPER,
       eventMode: isTruthy(c.env.EVENT_MODE),
       codeLogin: isTruthy(c.env.ALLOW_CODE_LOGIN),
-      llm: Boolean(c.env.LLM_BASE_URL && c.env.LLM_API_KEY && c.env.LLM_MODEL),
+      llm: llmConfigured(c.env),
       adminConfigured: Boolean(c.env.ADMIN_PASSWORD),
       fullscreenEnforced: fullscreenEnforced(c.env),
     },
@@ -669,7 +670,7 @@ app.get('/api/state', async (c) => {
     practice: !!parseJsonObject(auth.progress.flags).practice,
     eventStarted: true,
     paused: false,
-    llm: !!(c.env.LLM_API_KEY && c.env.LLM_BASE_URL && c.env.LLM_MODEL),
+    llm: llmConfigured(c.env),
     ...publicCase({ act, discovered, solvedPuzzles }),
     act,
     discovered,
@@ -1158,12 +1159,16 @@ app.post('/api/interrogate', async (c) => {
     }
   }
 
-  // The interrogation is deterministic: the authored keywords plus the 70%
-  // similarity gate decide whether a lead is revealed. Any other question
-  // cycles the character's deflection lines instead of leaking information.
+  // The authored ladder is the floor of the game: canonical answers are the
+  // case's real leads and are always served from the hardcoded data, so the
+  // story never depends on the model pool. The live suspects (the opencode
+  // pool) answer everything else; when the pool is limited, timing out or
+  // unreachable the same ladder (canonical, snub, deflection) answers instead
+  // of leaving the team waiting on a dead stream.
   const canned = !repeat && !noise ? canonicalAnswer(characterId, question) : null;
   const source = canned ? 'canonical' : repeat ? 'snub' : 'deflect';
   const final = canned ?? deflection(characterId, (priorFallbacks?.n ?? 0) + 1, repeat);
+  const llm = !canned && !repeat && !noise ? makeLLM(c.env, () => {}) : null;
 
   return streamSSE(c, async (stream) => {
     let clientGone = false;
@@ -1179,16 +1184,53 @@ app.post('/api/interrogate', async (c) => {
       }
     };
 
-    await send('meta', { character: characterId });
-    await send('reset', { text: final });
+    await send('meta', { character: characterId, live: !!llm });
+
+    let storedText = final;
+    let storedSource = source;
+    if (llm) {
+      let text = '';
+      let completed = false;
+      try {
+        const rows = await c.env.DB.prepare(
+          'SELECT role, content FROM messages WHERE team_id = ? AND character = ? ORDER BY id DESC LIMIT 14'
+        )
+          .bind(auth.teamId, characterId)
+          .all();
+        const history = [...rows.results].reverse();
+        const lastRow = history[history.length - 1];
+        if (lastRow?.role === 'player' && lastRow.content === question) history.pop();
+        const messages = buildMessages(
+          characterId,
+          parseJsonArray(auth.progress.discovered),
+          history,
+          question
+        );
+        for await (const delta of llm.stream(messages, { maxTokens: 220, temperature: 0.75 })) {
+          text += delta;
+          await send('delta', { text: delta });
+        }
+        completed = true;
+      } catch {
+        // A limited or unreachable pool degrades to the authored turn.
+      }
+      if (completed && text.trim().length >= 2) {
+        storedText = text.trim();
+        storedSource = 'llm';
+      } else {
+        await send('reset', { text: final });
+      }
+    } else {
+      await send('reset', { text: final });
+    }
 
     await c.env.DB.prepare(
       'INSERT INTO messages(team_id, character, role, content, source) VALUES (?,?,?,?,?)'
     )
-      .bind(auth.teamId, characterId, 'npc', final, source)
+      .bind(auth.teamId, characterId, 'npc', storedText, storedSource)
       .run();
 
-    await send('done', { source });
+    await send('done', { source: storedSource });
   });
 });
 
@@ -1523,7 +1565,7 @@ async function adminOverview(env) {
       graceMs: exitGraceMs(env),
       windowMs: exitWindowMs(env),
       maxStrikes: maxExitStrikes(env),
-      llm: !!(env.LLM_API_KEY && env.LLM_BASE_URL && env.LLM_MODEL),
+      llm: llmConfigured(env),
       admin: adminUsername(env),
     },
     serverTime: new Date(now).toISOString(),
@@ -1574,7 +1616,7 @@ app.get('/api/admin/session', async (c) => {
     graceMs: exitGraceMs(c.env),
     windowMs: exitWindowMs(c.env),
     maxStrikes: maxExitStrikes(c.env),
-    llm: !!(c.env.LLM_API_KEY && c.env.LLM_BASE_URL && c.env.LLM_MODEL),
+    llm: llmConfigured(c.env),
   });
 });
 
