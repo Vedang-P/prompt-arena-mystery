@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {AnimationMixer,Box3,PerspectiveCamera,Raycaster,Vector3} from 'three';
 import {caseData} from '../src/case.js';
-import {locationFor,storyCast,placeCast,wideShot,roomWideShot,captureShot,cinematicPhaseFor,maskVisibleFor} from '../client/src/SceneStaging.js';
+import {locationFor,storyCast,placeCast,wideShot,roomWideShot,captureShot,crowdShot,cinematicPhaseFor,maskVisibleFor} from '../client/src/SceneStaging.js';
 import {createFootContact} from '../client/src/FootContact.js';
 import {PARK,BEDROOM,SAMEER_BED,DETAIL_ANCHORS,HOME_STAIRS,HOME_UPPER_DOORWAY,HOME_BEDROOM,backWallPanels,DESK_TOP,FIELD,FIELD_TRACKS,ROOM_VIEWS,updateFieldBackpackOrbit,updateHospitalSecurityOrbit,HOSPITAL_BED,HOSPITAL_BED_GROUP,HOSPITAL_RITUAL_CROWD} from '../client/src/SceneLayout.js';
 import {loadGeometry} from './gltf-geometry.mjs';
@@ -33,6 +33,19 @@ assert(canvassers.every(c=>{
   const off=Math.atan2(Math.sin(c.rot-yaw),Math.cos(c.rot-yaw));
   return Math.abs(off)<.35;
 }),'Every canvasser must square up to Sameer');
+// The blitz must read as a bombardment, not a room-wide tableau: the shared
+// 'crowd' shot is a medium over-the-shoulder frame that keeps every canvasser
+// legible around Sameer.
+for(const index of [1,2,3])assert.equal(act2.intro[index].shot,'crowd',`Act 2 intro line ${index} must use the NGO blitz shot`);
+const blitzCast=placeCast('cyber_cafe',ngoSwarm),crowd=crowdShot(blitzCast);
+const crowdCamera=new PerspectiveCamera(39,16/9,.1,100);
+crowdCamera.position.set(...crowd.at);crowdCamera.lookAt(new Vector3(...crowd.center));crowdCamera.updateMatrixWorld();
+assert(Math.hypot(crowd.at[0]-crowd.center[0],crowd.at[2]-crowd.center[2])<4,'The NGO blitz must stay a medium shot, not a room-wide');
+for(const c of blitzCast){
+  const height=measurements[c.character]?.idle?.height??1.85;
+  const head=new Vector3(c.at[0],(c.y??0)+height*.92,c.at[1]).project(crowdCamera);
+  assert(Math.abs(head.x)<.96&&Math.abs(head.y)<.96,`${c.character} is cropped out of the NGO blitz frame`);
+}
 assert(storyCast(act2,'intro','cyber_cafe',4).some(c=>c.character==='ramu'),'Ramu must appear when Sameer reaches the dosa corner');
 assert.equal(locationFor(act3,'outro',0),'ngo_archive','The overheard call must stage in the archive room');
 assert.equal(locationFor(act3,'outro',act3.outro.length-1),'ngo_archive','The overheard call must stay in the archive room until Sameer hides');

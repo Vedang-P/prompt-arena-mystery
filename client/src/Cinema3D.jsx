@@ -7,7 +7,7 @@ const SceneEnvironment=lazy(()=>import('./Scene.jsx').then(({RoomEnvironment,Roo
 import { useSettings } from './Settings.jsx';
 import { SceneLoading, SceneWatchdog, WorldBoundary, SceneReady, SceneRecoveryCard } from './WorldBoundary.jsx';
 import PerformanceGuard from './PerformanceGuard.jsx';
-import { placeCast, roomWideShot, captureShot } from './SceneStaging.js';
+import { placeCast, roomWideShot, captureShot, crowdShot } from './SceneStaging.js';
 import { createRenderer } from './renderer.js';
 const CLOSE={close_parth:'parth',close_mother:'mother',close_officer:'officer'};
 // Errors thrown inside the canvas root do not reach boundaries outside the
@@ -49,9 +49,11 @@ function ShotCamera({roomId,shot,cast,speaker,paused,cinematicPhase}) {
   const angle=(person?.rot??0)-(deskPortrait ? .55 : 0),portrait=!!person&&shot!=='wide',distance=portrait?1.82:6.2;
   const cameraAt=portrait?[center[0]+Math.sin(angle)*distance+.12,center[1]+.12,center[2]+Math.cos(angle)*distance]:roomId==='police_station'?[4.3,2.6,6.3]:[.35,2.4,7.2];
   if(!portrait&&roomId==='police_station')center.splice(0,3,0,1.15,-.8);
+  const crowd=shot==='crowd'&&cast.length>1?crowdShot(cast):null;
   const target=new Vector3(...center),desired=new Vector3(...cameraAt),animated=new Vector3();
   useFrame(({camera},dt)=>{
-    if(!portrait){const wide=roomWideShot(roomId,cast,camera.aspect);target.set(...wide.center);desired.set(...wide.at);}
+    if(crowd){target.set(...crowd.center);desired.set(...crowd.at);}
+    else if(!portrait){const wide=roomWideShot(roomId,cast,camera.aspect);target.set(...wide.center);desired.set(...wide.at);}
     if(cinematicPhase==='capture'||cinematicPhase==='departure'){
       const sceneShot=captureShot(camera.aspect);
       target.set(...sceneShot.center);desired.set(...sceneShot.at);

@@ -39,7 +39,7 @@ export default function CinematicStory({ story, act, characters, onDone, busy, i
     window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key);
   });
   return <div className="story-overlay cinematic-story" role="dialog" aria-modal="true" aria-label={`${title} cinematic`} data-scene-ready={readyRoom===sceneReadyKey}>
-    <div className="story-world"><Cinema actId={act.id} sceneId={sceneId} cinematicPhase={cinematicPhase} cast={cast} shot={index % 3 === 0 ? 'wide' : line?.speaker === 'narrator' ? 'two' : 'portrait'} speaker={line?.speaker} paused={paused} onReady={()=>setReadyRoom(sceneReadyKey)} ending={act.id === 'act8' && story.after === 'outro'} /></div>
+    <div className="story-world"><Cinema actId={act.id} sceneId={sceneId} cinematicPhase={cinematicPhase} cast={cast} shot={line?.shot ?? (index % 3 === 0 ? 'wide' : line?.speaker === 'narrator' ? 'two' : 'portrait')} speaker={line?.speaker} paused={paused} onReady={()=>setReadyRoom(sceneReadyKey)} ending={act.id === 'act8' && story.after === 'outro'} /></div>
     <div className="cinema-bar top" /><div className="cinema-bar bottom" />
     <header className="story-scene-title"><div><span className="eyebrow">{act.kicker} · {story.after === 'intro' ? 'Opening' : story.after === 'scene' ? 'Scene' : 'Closing'}</span><h2>{title}</h2></div><LogoutButton disabled={busy}/></header>
     <div className="cinema-footer"><div className="cinematic-caption" key={index}><span className="eyebrow">{names[line?.speaker] ?? (line?.speaker === 'voice' ? 'Unknown voice' : 'Sameer’s story')}</span><p>{line?.text}</p></div>

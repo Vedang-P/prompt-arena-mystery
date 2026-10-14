@@ -73,17 +73,20 @@ export function storyCast(act,kind,sceneId,index=0) {
       {character:'veer',at:[-1.5,-.9],rot:1.091,pose:'idle',staged:true},
     ];
   }
-  // The NGO blitz: the canvassers crowd Sameer in a tight arc at the counter —
-  // the pamphlet pusher in front of him, the one at his side reading his
-  // wallet, the one pressing in at his back — each squared up to him (yaw is
-  // atan2 of the direction to Sameer), so the group reads as a swarm rather
-  // than a queue. Ramu only appears for the dosa-corner beat that follows.
+  // The NGO blitz: the canvassers crowd Sameer at the shopfront entrance — the
+  // pamphlet pusher squared up in front of him in the doorway, the one reading
+  // his wallet leaning in at his side, the third pressing in at his back (story:
+  // "bombarded at the entrance"). Each faces him (yaw is atan2 of the direction
+  // to Sameer), so the group reads as a swarm rather than a queue. Cinema3D's
+  // 'crowd' shot frames the cluster over the pusher's shoulder so it is legible
+  // at medium size instead of a room-wide tableau. Ramu only appears for the
+  // dosa-corner beat that follows.
   if(act.id==='act2'&&kind==='intro'&&sceneId==='cyber_cafe'&&index>=1&&index<=3)
     return [
-      {character:'sameer',at:[-3.15,3.4],rot:-2.1,pose:'idle',staged:true},
-      {character:'veer',at:[-3.0,2.95],rot:-.322,pose:'idle',staged:true},
-      {character:'enakshi',at:[-2.5,3.9],rot:-2.226,pose:'idle',staged:true},
-      {character:'tanush',at:[-3.45,4.15],rot:2.761,pose:'idle',staged:true},
+      {character:'sameer',at:[-2.3,4.0],rot:0,pose:'idle',staged:true},
+      {character:'veer',at:[-2.3,4.55],rot:Math.PI,pose:'idle',staged:true},
+      {character:'enakshi',at:[-3.05,4.25],rot:1.89,pose:'idle',staged:true},
+      {character:'tanush',at:[-2.15,3.4],rot:-.245,pose:'idle',staged:true},
     ];
   const capture=act.id==='act3'&&kind==='outro'&&sceneId==='ngo_hq';
   const discovery=act.id==='act4'&&kind==='outro'&&sceneId==='hospital';
@@ -136,6 +139,22 @@ export function wideShot(cast,aspect=16/9) {
   const tan=Math.tan(39*Math.PI/360);
   const distance=Math.max(5.7,halfWidth/(tan*Math.max(.25,aspect)*.8)+depth,1.55/(tan*.82)+depth);
   return {center,at:[center[0]+.25,center[1]+distance*.16,center[2]+distance]};
+}
+
+// A medium profile shot for the Act 2 NGO blitz: the camera stands off to the
+// side of the doorway so Sameer and the canvasser squared up in front of him
+// are both seen face-on — the swarm, and the stretched NGO smiles from the
+// story, read at a legible size instead of a room-wide tableau.
+export function crowdShot(cast){
+  const a=cast[0],b=cast[1]??cast[0];
+  const dx=b.at[0]-a.at[0],dz=b.at[1]-a.at[1],len=Math.hypot(dx,dz)||1;
+  const ux=dx/len,uz=dz/len,sx=uz,sz=-ux;
+  const mid=[(a.at[0]+b.at[0])/2,(a.at[1]+b.at[1])/2];
+  const distance=3.0;
+  return {
+    center:[mid[0]+ux*.5,1.32,mid[1]+uz*.5],
+    at:[mid[0]+sx*distance+ux*.5,1.62,mid[1]+sz*distance+uz*.5],
+  };
 }
 
 export function roomWideShot(roomId,cast,aspect=16/9) {
