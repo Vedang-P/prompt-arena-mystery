@@ -22,7 +22,10 @@ assert.equal(locationFor(act2,'intro',2),'cyber_cafe','The pamphlet beat must st
 assert.equal(locationFor(act2,'intro',3),'cyber_cafe','The wallet beat must stay at the shop');
 assert.equal(locationFor(act2,'intro',4),'cyber_cafe','The café scene must accompany the café narration');
 assert.equal(locationFor(act2,'intro',5),'sameer_room','He must be back in his room when he stumbles home');
-assert.equal(storyCast(act2,'intro','cyber_cafe',1).length,1,'The NGO bombardment must stage Sameer alone at the shopfront');
+const ngoSwarm=storyCast(act2,'intro','cyber_cafe',1);
+assert.equal(ngoSwarm.length,4,'The NGO bombardment must stage Sameer with the three canvassers');
+assert(ngoSwarm.filter(c=>c.character!=='sameer').every(c=>c.staged),'The canvassers must read as staged extras');
+assert(ngoSwarm.filter(c=>c.character!=='sameer').every(c=>Math.abs(Math.abs(c.rot)-Math.PI)<0.7),'The canvassers must keep their backs to the camera');
 assert(storyCast(act2,'intro','cyber_cafe',4).some(c=>c.character==='ramu'),'Ramu must appear when Sameer reaches the dosa corner');
 assert.equal(locationFor(act3,'outro',0),'ngo_archive','The overheard call must stage in the archive room');
 assert.equal(locationFor(act3,'outro',act3.outro.length-1),'ngo_archive','The overheard call must stay in the archive room until Sameer hides');
@@ -305,4 +308,9 @@ assert(hospitalBearings>=20,`Hospital label guard must stay exercised by the orb
 assert.equal(BEDROOM.laptop[1],DESK_TOP);assert.equal(BEDROOM.lamp[1],DESK_TOP);
 const source=await fs.readFile('client/src/Scene.jsx','utf8');
 assert.equal((source.match(/<BedroomWorkstation paused=/g)??[]).length,2,'Both bedroom kits must share the fan and workstation');
-console.log(`${scenes.length} campaign cinematic cues checked; ${projections} full-body projections, capture shots on five aspect ratios, gazebo roof on four, 300 seated frames, hospital label guard on four aspects across ${hospitalBearings} on-camera orbit bearings, shared fan/workstation checked.`);
+// Ramu's shop keeps both sides dressed in every act: the Act 1 cassette lookup
+// ("the shopkeeper screaming at him to pay for the device") and the Act 2 CD
+// visit happen at the manager's desk, so an act-2 pre-choice gate stripped the
+// workstations while their markers stayed anchored to the missing furniture.
+assert(!source.includes('cyberVisible'),'Ramu’s Cyber Cafe must keep its cyber side dressed in every act');
+console.log(`${scenes.length} campaign cinematic cues checked; ${projections} full-body projections, capture shots on five aspect ratios, gazebo roof on four, 300 seated frames, hospital label guard on four aspects across ${hospitalBearings} on-camera orbit bearings, shared fan/workstation, cyber cafe dressing checked.`);

@@ -10,7 +10,6 @@ acts:
     title: "The Concert"
     entry_room: concert
     rooms: [concert, workshop, ngo_hq, ngo_archive, sameer_room]
-    objective: "Follow Veer and the Perigee NGO. Find out what Parth was doing there."
     intro:
       - { speaker: narrator, text: "Sameer is in the concert. There is not much crowd, but the vibes are good — he wishes there was a water station around, or maybe food stalls. It's really just a temporary stage propped up; the lights are cool though." }
       - { speaker: narrator, text: "The band is a mix of industrial rock and electronic dance. They all have voice modifiers and rely on heavy synthesizers. He honestly enjoys the music — he should search it up later." }
@@ -35,7 +34,6 @@ acts:
     title: "Shashdhar"
     entry_room: ngo_archive
     rooms: [ngo_archive, sameer_room, hospital]
-    objective: "Escape the archive, then find the hospital the man from the ambulance was taken to."
     outro:
       - { speaker: narrator, text: "Parth was alive." }
     complete: { clues: [c_janitor, c_ritual], puzzles: [p_hide, p_delve, p_hospital, p_security_pin, p_parth_alive] }
@@ -46,7 +44,6 @@ acts:
     title: "The Big Bad"
     entry_room: tanush_office
     rooms: [tanush_office, enakshi_house, sameer_room]
-    objective: "Expose the cult. Gather proof from the Big Bad's office and from Enakshi's house."
     intro:
       - { speaker: narrator, text: "Holy shit, Parth was alive. Sameer wanted to dance, he wanted to scream; he honestly felt a wave of numbness go over him. He had been panicking so much — and all for naught. Parth was alive; maybe starving, but still healthy. He wasn't covered with bruises and burns. That was more than enough." }
       - { speaker: narrator, text: "He can't act like a fool right now. He has no idea who Parth is against and who he is allied with; one wrong move and it could be his skin being burned." }

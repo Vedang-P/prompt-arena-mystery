@@ -995,16 +995,15 @@ function AbandonedFieldRoom({ room, hot }) {
 }
 
 function CyberCafeRoom({room,hot,paused=false}) {
- // Act 2 starts at Ramu's Dosa Corner side of the shop: the workstations, the
- // cassette player and the cyber-café dressing would tip the laptop-vs-cafe
- // choice before Sameer makes it, so they only appear after that decision
- // (or on the fried-laptop path, where he has to come back to use a machine).
- const state=hot?.state??{};
- const cyberVisible=state.act!=='act2'||(state.solvedPuzzles??[]).includes('p_cd_mode')||(state.discovered??[]).includes('c_laptop_fried');
+ // The shop always presents both sides: the dosa corner and the cyber café.
+ // The Act 1 cassette lookup ("the shopkeeper screaming at him to pay for the
+ // device") and the Act 2 CD visit both happen at the manager's desk, so hiding
+ // the workstations until the laptop-vs-cafe choice left the room bare while
+ // its markers stayed anchored to the missing furniture.
  return <group>
   <Shell width={13} depth={11} height={3.4} tint="#92958b" painted/>
   <Floor width={13} depth={11} repeat={[6,5]} color="#aab5ac" tiled/>
-  {cyberVisible&&[-3.1,-.35,2.4].map((x,i)=><ComputerStation key={x} position={[x,0,-3.45]} number={i+1} deskTint={['#8a6446','#73563d','#92704e'][i]}/>)}
+  {[-3.1,-.35,2.4].map((x,i)=><ComputerStation key={x} position={[x,0,-3.45]} number={i+1} deskTint={['#8a6446','#73563d','#92704e'][i]}/>)}
   <DetailProp asset="counter" position={[-3.9,0,2]} rotation={[0,Math.PI/2,0]}/>
   <DetailProp asset="CashRegister_01" position={[-3.8,1.1275,1.05]} scale={.6} rotation={[0,Math.PI/2,0]}/>
   <DetailProp asset="vintage_electric_kettle" position={[-3.9,1.1275,2.7]} scale={.85}/>
@@ -1019,7 +1018,7 @@ function CyberCafeRoom({room,hot,paused=false}) {
   <WallSign position={[3.2,2.35,5.42]} width={1.2} height={.42} title="CAFÉ SEATING" lines={['PLEASE TAKE A TABLE']}/>
   {/* Manager's workstation: the desk opens towards the room (-x) so the chair
       tucks into the knee-hole; every item is placed in the desk's own frame. */}
-  {cyberVisible&&<group position={[4.7,0,-2.3]} rotation={[0,-Math.PI/2,0]}>
+  <group position={[4.7,0,-2.3]} rotation={[0,-Math.PI/2,0]}>
     <DetailProp asset="metal_office_desk"/>
     <DetailProp asset="monitor" position={[-.35,.7875,-.18]}/>
     <DetailProp asset="keyboard" position={[-.35,.7875,.18]}/>
@@ -1029,13 +1028,13 @@ function CyberCafeRoom({room,hot,paused=false}) {
     <DetailProp asset="portable_cassette_player" position={[-.8,.7875,0]} scale={1.4}/>
     <DetailProp asset="binder_notebook" position={[.1,.7875,.02]} scale={.65}/>
     <DetailProp asset="office_chair" position={[0,0,.78]} rotation={[0,Math.PI,0]} height={1.168*.49035/.618}/>
-  </group>}
-  {cyberVisible&&<ShelfContents position={[5.65,0,1.3]} rotation={[0,-Math.PI/2,0]}/>}
+  </group>
+  <ShelfContents position={[5.65,0,1.3]} rotation={[0,-Math.PI/2,0]}/>
   <DetailProp asset="cardboard_box_01" position={[5.5,0,3.2]}/>
   <DetailProp asset="cardboard_box_01" position={[5.5,.342,3.2]} scale={.8}/>
-  {cyberVisible&&<WallSign position={[0,2.55,-5.42]} width={4.4} height={1.0} title="RAMU'S CYBER CAFÉ" lines={['INTERNET • PRINTING • SCANNING']}/>}
+  <WallSign position={[0,2.55,-5.42]} width={4.4} height={1.0} title="RAMU'S CYBER CAFÉ" lines={['INTERNET • PRINTING • SCANNING']}/>
   <WallSign position={[-6.42,2,2]} rotation={[0,Math.PI/2,0]} width={2} height={1.05} title="DOSA CORNER" lines={['PLAIN DOSA   ₹40','MASALA DOSA   ₹60']}/>
-  {cyberVisible&&<WallSign position={[5,2.4,-5.42]} width={1.3} height={.65} title="HOUSE RULES" lines={['SAVE YOUR WORK','ASK RAMU FOR HELP']}/>}
+  <WallSign position={[5,2.4,-5.42]} width={1.3} height={.65} title="HOUSE RULES" lines={['SAVE YOUR WORK','ASK RAMU FOR HELP']}/>
   <WallSign position={[-3.5,2.5,-5.42]} width={1.55} height={.58} title="RAMU'S DOSA CORNER" lines={['FRESH BATTER • FILTER COFFEE']}/>
   <DetailProp asset="wall_clock" position={[-4.8,2.55,-5.4]} height={.4}/>
   <CeilingFan position={[-1.9,3.15,-2]} paused={paused}/><CeilingFan position={[2.7,3.15,-2]} paused={paused}/>
@@ -1043,7 +1042,7 @@ function CyberCafeRoom({room,hot,paused=false}) {
   <Window position={[-6.44,1.8,-1.2]} rotation={[0,Math.PI/2,0]} width={2.2} height={1.6} moon={false}/>
   <DetailProp asset="potted_plant_02" position={[-5.5,0,4.3]} height={1.1}/>
   {/* The phone line leaves the wall jack, crosses the floor and climbs to the router. */}
-  {cyberVisible&&<Cable points={[[6.42,.85,-1.9],[6.42,.12,-1.9],[5.6,.055,-2.0],[5.2,.055,-2.1],[5.16,.5,-2.2],[5.04,.9,-2.22]]}/>}
+  <Cable points={[[6.42,.85,-1.9],[6.42,.12,-1.9],[5.6,.055,-2.0],[5.2,.055,-2.1],[5.16,.5,-2.2],[5.04,.9,-2.22]]}/>
   <pointLight position={[0,2.25,-1.7]} color="#f1d8b8" intensity={5} distance={12}/>
   <pointLight position={[-4,2.1,2]} color="#ffd09a" intensity={7} distance={6}/>
   <pointLight position={[2.3,2.2,2.7]} color="#ffc47d" intensity={4} distance={6}/>
@@ -1676,31 +1675,42 @@ function ExploreKeys({ disabled, bounds }) {
   const { camera, controls } = useThree();
   const keys = useRef(new Set());
   useEffect(() => {
+    // Keys are stored lowercased: with Shift held the browser reports "W", and
+    // a keyup for "W" would otherwise leave the earlier "w" stuck in the set —
+    // the camera then sprints on its own until the window loses focus.
     const down = (e) => {
       if (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || e.target.closest('[role="dialog"]')) return;
-      if (['w','a','s','d','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) { keys.current.add(e.key); e.preventDefault(); }
+      const key = e.key.toLowerCase();
+      if (['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(key)) { keys.current.add(key); e.preventDefault(); }
     };
-    const up = (e) => keys.current.delete(e.key);
+    const up = (e) => keys.current.delete(e.key.toLowerCase());
     const clear = () => keys.current.clear();
     window.addEventListener('keydown', down); window.addEventListener('keyup', up); window.addEventListener('blur', clear);
     return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); window.removeEventListener('blur', clear); };
   }, []);
   useFrame((_, delta) => {
+    if(import.meta.env.DEV) window.__paCamera=()=>({x:Number(camera.position.x.toFixed(3)),z:Number(camera.position.z.toFixed(3))});
     if (disabled || !controls || !keys.current.size || document.querySelector('[role="dialog"], .story-overlay, .modal-backdrop')) return;
     const forward = new THREE.Vector3(); camera.getWorldDirection(forward); forward.y = 0; forward.normalize();
     const right = new THREE.Vector3().crossVectors(forward, camera.up).normalize();
     const step = new THREE.Vector3();
     for (const key of keys.current) {
-      if (['w','ArrowUp'].includes(key)) step.add(forward);
-      if (['s','ArrowDown'].includes(key)) step.sub(forward);
-      if (['a','ArrowLeft'].includes(key)) step.sub(right);
-      if (['d','ArrowRight'].includes(key)) step.add(right);
+      if (['w','arrowup'].includes(key)) step.add(forward);
+      if (['s','arrowdown'].includes(key)) step.sub(forward);
+      if (['a','arrowleft'].includes(key)) step.sub(right);
+      if (['d','arrowright'].includes(key)) step.add(right);
     }
     if (step.lengthSq() === 0) return;
     step.normalize().multiplyScalar(Math.min(delta, 0.05) * 2.5);
+    // Clamp instead of block: the camera slides along the envelope's edge and a
+    // front-view start outside it snaps in on the first step — walking can
+    // never carry the camera through a wall or out of the room.
     const next = camera.position.clone().add(step);
-    if (next.x < -bounds.x || next.x > bounds.x || next.z < bounds.zMin || next.z > bounds.zMax) return;
-    camera.position.add(step); controls.target.add(step); controls.update();
+    next.x = Math.max(-bounds.x, Math.min(bounds.x, next.x));
+    next.z = Math.max(bounds.zMin, Math.min(bounds.zMax, next.z));
+    const moved = next.clone().sub(camera.position);
+    if (moved.lengthSq() === 0) return;
+    camera.position.copy(next); controls.target.add(moved); controls.update();
   });
   return null;
 }

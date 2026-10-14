@@ -11,7 +11,6 @@ acts:
     title: "Poornima"
     entry_room: sameer_room
     rooms: [sameer_room, hospital, police_station]
-    objective: "Get real proof from Shashdhar Hospital — before Poornima ends."
     intro:
       - { speaker: narrator, text: "Sameer sees the light shining through the curtains. He was awake the entire night in terror." }
       - { speaker: narrator, text: "He has tried everything, and yet he hasn't come close to trying to expose the cult. He has a repository of information, yet none of it can be legally traced back to the cult." }
@@ -28,7 +27,6 @@ acts:
     title: "The Mask"
     entry_room: sameer_room
     rooms: [sameer_room, hospital, enakshi_house]
-    objective: "The cult left its mask on your bed. Find out how they follow people — then decide."
     intro:
       - { speaker: narrator, text: "The mask is decorated too, with beautiful lace tied around the horns. Why was it here, how was it here? Was it the police? Did he do the wrong thing by taking all the evidence to the police?" }
       - { speaker: narrator, text: "Before he could fall into a spiral, he hears the door knock. Sameer peeked through — it was Veer. He looked unarmed, but Sameer kept his trusty hammer with him. He opened the door." }
@@ -53,7 +51,6 @@ acts:
     title: "The Revelation"
     entry_room: hospital
     rooms: [hospital, tanush_office]
-    objective: "The mask is on your face now. See the revelation through to its end."
     intro:
       - { speaker: narrator, text: "Sameer looked around — the noises were too loud. He started yelling nonsense; he couldn't hear himself. It was getting humid. Colours bombarded him, the leader's voice the only thing to focus on. It was as if he was stoking the flame of barbarism in the room." }
       - { speaker: narrator, text: "He went towards the podium, towards his thread of sanity. Up front, he saw Veer go to the stage. The leader gestured to him." }

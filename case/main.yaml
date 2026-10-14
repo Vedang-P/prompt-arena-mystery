@@ -374,7 +374,6 @@ acts:
       - abandoned_field
       - cyber_cafe
       - parth_home
-    objective: Search Parth's room, follow the coordinates to the field, then trace the cassettes and Vihaan.
     intro:
       - speaker: narrator
         text: Sameer goes to Parth's home. He meets Parth's mother — she looks as if she hasn't slept at all since the day her son went missing. She still smiles at him, with a lot of effort.
@@ -463,7 +462,6 @@ acts:
       - ngo_hq
       - ngo_archive
       - sameer_room
-    objective: Follow Veer and the Perigee NGO. Find out what Parth was doing there.
     intro:
       - speaker: narrator
         text: Sameer is in the concert. There is not much crowd, but the vibes are good — he wishes there was a water station around, or maybe food stalls. It's really just a temporary stage propped up; the lights are cool though.
@@ -505,7 +503,6 @@ acts:
       - ngo_archive
       - sameer_room
       - hospital
-    objective: Escape the archive, then find the hospital the man from the ambulance was taken to.
     outro:
       - speaker: narrator
         text: Parth was alive.
@@ -528,7 +525,6 @@ acts:
       - tanush_office
       - enakshi_house
       - sameer_room
-    objective: Expose the cult. Gather proof from the Big Bad's office and from Enakshi's house.
     intro:
       - speaker: narrator
         text: Holy shit, Parth was alive. Sameer wanted to dance, he wanted to scream; he honestly felt a wave of numbness go over him. He had been panicking so much — and all for naught. Parth was alive; maybe starving, but still healthy. He wasn't covered with bruises and burns. That was more than enough.
@@ -570,7 +566,6 @@ acts:
       - sameer_room
       - hospital
       - police_station
-    objective: Get real proof from Shashdhar Hospital — before Poornima ends.
     intro:
       - speaker: narrator
         text: Sameer sees the light shining through the curtains. He was awake the entire night in terror.
@@ -598,7 +593,6 @@ acts:
       - sameer_room
       - hospital
       - enakshi_house
-    objective: The cult left its mask on your bed. Find out how they follow people — then decide.
     intro:
       - speaker: narrator
         text: The mask is decorated too, with beautiful lace tied around the horns. Why was it here, how was it here? Was it the police? Did he do the wrong thing by taking all the evidence to the police?
@@ -647,7 +641,6 @@ acts:
     rooms:
       - hospital
       - tanush_office
-    objective: The mask is on your face now. See the revelation through to its end.
     intro:
       - speaker: narrator
         text: Sameer looked around — the noises were too loud. He started yelling nonsense; he couldn't hear himself. It was getting humid. Colours bombarded him, the leader's voice the only thing to focus on. It was as if he was stoking the flame of barbarism in the room.

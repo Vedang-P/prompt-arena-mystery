@@ -194,7 +194,6 @@ acts:
     title: "The Room"
     entry_room: parth_room
     rooms: [parth_room, abandoned_field, cyber_cafe, parth_home]
-    objective: "Search Parth's room, follow the coordinates to the field, and find out who Vihaan is."
     intro:
       - { speaker: narrator, text: "Sameer goes to Parth's home. He meets Parth's mother — she looks as if she hasn't slept at all since the day her son went missing. She still smiles at him, with a lot of effort." }
       - { speaker: narrator, text: "Small talk first — the neighbours, the tea, the rain — while a rock sits in his throat the whole time." }

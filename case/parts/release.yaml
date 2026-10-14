@@ -1,7 +1,6 @@
 # Playability fixes. The authored nine-act story and ending remain intact.
 acts:
   - id: act1
-    objective: "Search Parth's room, follow the coordinates to the field, then trace the cassettes and Vihaan."
     complete:
       clues: [c_reports, c_email, c_coords, c_sedan, c_backpack, c_mixtape, c_vihaan, c_videos]
       puzzles: [p_morse, p_laptop, p_email, p_cassette, p_drums]
