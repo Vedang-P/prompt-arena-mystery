@@ -1323,9 +1323,9 @@ function HospitalDispatch({room,hot}) {
  return <group>
   <Shell width={12} depth={14} height={4.2} tint="#8e9997" painted/>
   <Floor width={12} depth={14} repeat={[4,4]} color="#8e9895" tiled/>
-  <mesh position={[-2,1.65,-6.93]}><planeGeometry args={[4.3,3.3]}/><meshStandardMaterial color="#465654" metalness={.35} roughness={.65}/></mesh>
-  {Array.from({length:14},(_,i)=><mesh key={i} position={[-2,.15+i*.23,-6.89]}><boxGeometry args={[4.3,.018,.018]}/><meshStandardMaterial color="#73817c" metalness={.4}/></mesh>)}
-  <WallSign position={[-2,3.55,-6.9]} width={3.5} height={1.15} title="SHASHDHAR / LOADING BAY"/>
+  <mesh position={[-2,1.45,-6.93]}><planeGeometry args={[4.3,2.9]}/><meshStandardMaterial color="#465654" metalness={.35} roughness={.65}/></mesh>
+  {Array.from({length:13},(_,i)=><mesh key={i} position={[-2,.15+i*.21,-6.89]}><boxGeometry args={[4.3,.018,.018]}/><meshStandardMaterial color="#73817c" metalness={.4}/></mesh>)}
+  <WallSign position={[-2,3.6,-6.9]} width={3.5} height={1.15} title="SHASHDHAR / LOADING BAY"/>
   <DoorOpening position={[4.2,0,-6.75]} label="SERVICE LIFT / STAFF"/>
   <DetailProp asset="cargo_van" position={[-3,0,-2.2]} height={2.2} rotation={[0,Math.PI/2,0]}/>
   {/* Cargo is staged between the shutter and the van's rear; the loaded dolly
