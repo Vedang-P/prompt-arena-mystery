@@ -2700,9 +2700,11 @@ puzzles:
       - c_apogee
   - id: p_registration
     kind: email
-    prompt: Veer sends him the link for member registration. It doesn't ask for much — just an email and an OTP. He joins as a volunteer.
-    answers: []
+    prompt: Veer sends him the link for member registration. It doesn't ask for much — just an email and an OTP. He needs the address he actually owns — the one from his sent mail.
+    answers:
+      - sameer@gotmail.com
     success: 'The registration goes through. A volunteer confirms his membership and sends the address of the upcoming workshop: "Hutting, 3rd cross, DJ Halli." He has a gut feeling that all that is happening to him has a reason and a rhyme — including the fact that he lost his phone charger a couple of days ago.'
+    fail_message: The OTP never arrives. That isn't his inbox — he has to sign up with the address from his sent mail.
     grants:
       - c_workshop_address
   - id: p_fare
@@ -2765,7 +2767,7 @@ puzzles:
     answers:
       - Stay hidden
     fail_message: Veer catches a glimpse of him running — he starts yelling. This was the wrong decision; he had to go quickly before the rest of those freaks were alerted. He found the exit just in time to escape.
-    success: Too risky. Veer enters the room and goes for the desk — shoot, he left the system on, he should have run. Veer rummaged through it, but thankfully Sameer had closed all the tabs. Veer looked around and then left. Sameer ran towards the nearest exit, hid near the trash cans, and peeked through.
+    success: Too risky. Veer enters the room and goes for the desk — shoot, he left the system on, he should have run. Veer rummaged through it, but thankfully Sameer had closed all the tabs. Veer looked around and then left. Sameer ran towards the nearest exit, hid near the trash cans, and peeked through. Wait — the man was familiar. One of the people who went missing during the full moon, struggling and frantically calling for help. Two people — maybe nurses — tied him up and loaded him into an ambulance that left, talking about taking him to some hospital.
     grants:
       - c_ambulance
   - id: p_delve

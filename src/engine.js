@@ -97,8 +97,10 @@ export function discover(discoveredValue, clueId) {
   return { ok: true, clue: publicClue(clueId), discovered: [...after], newlyUnlocked };
 }
 
-// A fictional address only needs to look like one; a missing TLD must not
-// block the story ("sameer@mail" is fine).
+// An email puzzle that authors accepted addresses accepts only those — any
+// other address is a wrong answer and costs the penalty. Without authored
+// answers, a fictional address only needs to look like one; a missing TLD
+// must not block the story ("sameer@mail" is fine).
 const EMAIL_ANSWER = /^[^@\s]+@[^@\s]+$/;
 
 /** Lowercase, strip punctuation (spaces, "@" and "." survive), collapse whitespace. */
@@ -132,7 +134,11 @@ export function publicEnding(endingId) {
 
 function answerMatches(puzzle, raw) {
   const answer = String(raw ?? '');
-  if (puzzle.kind === 'email') return EMAIL_ANSWER.test(answer.trim());
+  if (puzzle.kind === 'email') {
+    const accepted = (puzzle.answers ?? []).map(normalizeAnswer);
+    if (!accepted.length) return EMAIL_ANSWER.test(answer.trim());
+    return accepted.includes(normalizeAnswer(answer));
+  }
 
   const normalized = normalizeAnswer(answer);
   if (!normalized) return false;
@@ -335,7 +341,7 @@ export function chapterCheckpoint(actId) {
           }
           if (h.type === 'puzzle' && !solvedPuzzles.includes(h.puzzle) && puzzleGate(act.id, solvedPuzzles, discovered, h.puzzle).ok) {
             const puzzle = getPuzzle(h.puzzle);
-            const answer = puzzle.kind === 'email' ? 'practice@example.invalid' : puzzle.answers[0];
+            const answer = puzzle.kind === 'email' ? (puzzle.answers?.[0] ?? 'practice@example.invalid') : puzzle.answers[0];
             const result = solvePuzzle(solvedPuzzles, discovered, h.puzzle, answer);
             if (result.ok && result.correct) { discovered = result.discovered; solvedPuzzles = result.solvedPuzzles; changed = true; }
           }

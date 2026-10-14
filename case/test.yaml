@@ -149,6 +149,12 @@ puzzles:
     kind: email
     prompt: "Leave an email for the archive."
     success: "The archive accepts your details."
+  - id: p_register
+    kind: email
+    prompt: "The archive sends a one-time code to the address on record."
+    answers: [sameer@example.com]
+    success: "The archive confirms the code."
+    fail_message: "No code arrives. That address is not on record."
 
 acts:
   - id: act0

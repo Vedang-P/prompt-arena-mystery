@@ -236,6 +236,18 @@ test('email puzzles accept any address-looking value and reject the rest', () =>
   assert.deepEqual(noAt.solvedPuzzles, []);
 });
 
+test('an email puzzle with authored answers accepts only those addresses', () => {
+  const good = solvePuzzle([], [], 'p_register', ' Sameer@Example.COM ');
+  assert.equal(good.correct, true);
+  assert.equal(good.penalty, 0);
+  assert.ok(good.solvedPuzzles.includes('p_register'));
+  const wrong = solvePuzzle([], [], 'p_register', 'someone.else@example.com');
+  assert.equal(wrong.correct, false);
+  assert.equal(wrong.penalty, 1);
+  assert.equal(wrong.message, 'No code arrives. That address is not on record.');
+  assert.deepEqual(wrong.solvedPuzzles, []);
+});
+
 test('option_endings ends the run and marks the puzzle solved', () => {
   const stop = solvePuzzle([], [], 'p_ending', 'Stop');
   assert.equal(stop.ok, true);
@@ -345,7 +357,7 @@ test('public case leaks no answers, grants, endings internals, or fact text', ()
     assert.ok(!json.includes(leak), `publicCase leaked "${leak}"`);
   }
   const pub = publicCase();
-  assert.equal(pub.puzzles.length, 5);
+  assert.equal(pub.puzzles.length, 6);
   assert.ok(pub.puzzles.every((pz) => pz.answers === undefined && pz.grants === undefined));
   assert.ok(pub.endings.some((e) => e.id === 'ending_cult' && !e.body));
   assert.ok(pub.acts.some((a) => a.kicker === 'Act I' && a.complete && a.complete.puzzles.includes('p_risky')));

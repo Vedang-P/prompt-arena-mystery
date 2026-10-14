@@ -217,7 +217,7 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 | p_veer_1 | choice | No, but I have donated some money to them | options [Yes, I'm part of it, No, but I have donated some money to them] |
 | p_veer_2 | choice | Foster scientific temper, empowering the youth | options [Foster scientific temper, empowering the youth, Teach astronomy to tourists] |
 | p_band_name | text | apogee | grants c_apogee |
-| p_registration | email | any email | grants c_workshop_address; placeholder "you@example.com" |
+| p_registration | email | sameer@gotmail.com | grants c_workshop_address; the address on the act-1 sent-mail evidence; any other address is a wrong answer and costs the penalty |
 | p_destination | text | hutting 3rd cross dj halli, hutting, 3rd cross dj halli, dj halli | requires c_workshop_address; the auto driver's question |
 | p_fare | choice | 230 | options [100, 200, 230, Walk away]; requires p_destination |
 | p_ascension | code | ascension | the folder opens: .avi files, an extension he has never seen |
@@ -259,9 +259,10 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 | p_where | text | dead, parth is dead | act8; requires p_saved |
 | p_wrong | text | lose, i would lose, game over | act8; required for complete |
 
-Normalization: lowercase, strip punctuation, collapse whitespace. `email` kind accepts any
-string matching /^[^@\s]+@[^@\s]+\.[^@\s]+$/. Choice accepts the option string or its
-letter (A/B/C…).
+Normalization: lowercase, strip punctuation, collapse whitespace. With no authored answers, `email`
+kind accepts any string matching /^[^@\s]+@[^@\s]+$/; with authored answers, only those addresses
+are accepted (normalized) and any other address is a wrong answer that costs the penalty. Choice
+accepts the option string or its letter (A/B/C…).
 
 ## 4. Engine API (W4, `src/engine.js`)
 

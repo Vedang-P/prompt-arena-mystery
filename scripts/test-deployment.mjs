@@ -63,7 +63,7 @@ for (const act of caseData.acts.slice(1)) {
         }
         if (h.type === 'puzzle' && !state.solvedPuzzles.includes(h.puzzle) && puzzleGate(act.id, state.solvedPuzzles, state.discovered, h.puzzle).ok) {
           const p = caseData.puzzles.find((x) => x.id === h.puzzle);
-          const result = await call(`/api/puzzles/${p.id}/solve`, { answer: p.kind === 'email' ? 'deployment-check@example.invalid' : p.answers[0] });
+          const result = await call(`/api/puzzles/${p.id}/solve`, { answer: p.answers?.[0] ?? 'deployment-check@example.invalid' });
           assert(result.correct, p.id);
           state = await call('/api/state');
           changed = true;
