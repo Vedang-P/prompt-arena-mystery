@@ -5,8 +5,19 @@ process.env.SQLITE_PATH = join(tmpdir(), `moon-test-${crypto.randomUUID()}.db`);
 const { default: app } = await import('../src/worker.js');
 const { getEnv } = await import('../lib/vercel-env.js');
 const { caseData } = await import('../src/case.js');
-const { chapterCheckpoint, canAdvanceAct, puzzleGate, clueGate } = await import('../src/engine.js');
+const { chapterCheckpoint, canAdvanceAct, puzzleGate, clueGate, solvePuzzle } = await import('../src/engine.js');
 const env = await getEnv();
+// Authored emails are exact: only Sameer's own address opens the Act 1 folder
+// and the Act 3 NGO sign-up — near misses like gmail.com never pass.
+assert.equal(solvePuzzle([], ['c_reports'], 'p_email', 'sameer@gmail.com').correct, false, 'gmail.com must not send the folder');
+assert.equal(solvePuzzle([], ['c_reports'], 'p_email', 'sameer@gotmail.com').correct, true, "Sameer's own address must send the folder");
+assert.equal(solvePuzzle([], [], 'p_registration', 'sameer@gmail.com').correct, false, 'gmail.com must not sign up');
+assert.equal(solvePuzzle([], [], 'p_registration', 'sameer@gotmail.com').correct, true, "Sameer's own address must sign up");
+// "Anything else — like a video or recording?" — the pen camera, the spiral CD
+// and the cassette/mixtape are all evidence the station accepts.
+for (const answer of ['the pen camera recording', 'the spiral cd', 'the copper spiral cd', 'the cassette', 'cassette tape', 'the mixtape']) {
+  assert.equal(solvePuzzle([], [], 'p_police_video', answer).correct, true, `p_police_video must accept "${answer}"`);
+}
 for (const [act,solved,discovered,puzzle,missingClue] of [
   ['act1',[],['c_diary'],'p_morse','c_laptop_locked'],
   ['act3',['p_registration'],[],'p_fare','c_workshop_address'],
