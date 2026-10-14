@@ -237,7 +237,7 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 | p_connection | text | perigee, apogee, perigee and apogee, apogee and perigee | success notes the bonus for both; either order accepted |
 | p_exposed | text | email, the email, sending the files to himself | requires p_connection; triggers c_voice3; the sent-mail evidence image carries his address |
 | p_fullmoon | text | missing people, people going missing, disappearances | grants c_pen_camera |
-| p_voice_hq | text | ngo headquarters, the headquarters, the ngo | requires c_ritual2 |
+| p_voice_hq | text | ngo headquarters, the headquarters, the ngo, the archive rooms (and the archive room forms) | requires c_ritual2 |
 | p_tanush | text | tanush | requires p_voice_hq |
 | p_box | text | holy blade, the holy blade, blade | requires p_tanush |
 | p_taken_in | scene | — | the accusation at home plays out (crowd, officer, ride) and lands the player at the police station (`lands_in`) |
