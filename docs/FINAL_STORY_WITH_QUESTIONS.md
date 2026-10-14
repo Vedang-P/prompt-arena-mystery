@@ -437,7 +437,7 @@ ACT 7:
 
 
 
-The mask is decorated too, with beautiful lace tied around the horns. 
+He goes home and finds the mask on his bed — decorated too, with beautiful lace tied around the horns. 
 Q.There was only one person with a decorated mask on the podium.
 Ans : The Leader — Tanush
 

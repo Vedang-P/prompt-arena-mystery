@@ -149,7 +149,7 @@ Why are people around? A police officer takes him to the police station, apparen
 As he is put into a chair, he tells them about everything he found. He shares the information obtained from her home, including financial details, the recruitment count, and the cult's operational domains. The police are shocked at not only how organised the information is but also the dates. They are able to trace at least 5 missing cases to the cult. They hound him a bit more about where he got it, and he explains it came from the archive rooms in the NGO headquarters. When asked if he has video or audio evidence, he provides the pen camera recording.
 The police take in all of this and mark it.The officers tell him that they will comb over this all and may call him anytime this week. Sameer agrees and is let out of the station. He goes home, on his bed , a wendigo mask is kept.
 ACT 7:
-The mask is decorated too, with beautiful lace tied around the horns. It clearly belonged to the Big Bad. Was it the police ? Did he do the wrong thing by taking all the evidence to the police ?
+He goes home and finds the mask on his bed — decorated too, with beautiful lace tied around the horns. It clearly belonged to the Big Bad. Was it the police ? Did he do the wrong thing by taking all the evidence to the police ?
 He looks at the mask, why was it here, how was it here ?
 Before he could fall into a spiral, he hears a knock on the door. Sameer peeked through, it was Veer, he looked unarmed but Sameer kept his trusty hammer with him. He opened the door.
 Veer looked frazzled, scared and angry. “How the hell did you know about us ? You couldn’t keep your nose from sniffing about”
