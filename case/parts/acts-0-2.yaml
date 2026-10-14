@@ -748,6 +748,7 @@ clues:
   - id: c_email
     name: "Email to himself"
     description: "Sent to his own inbox: \"Fwd: missing-person reports — keep this safe. — S\", the whole folder attached. If anyone ever reads his sent items, he's finished."
+    page: "/assets/pictures/evidence_email.jpg"
     requires: [c_reports]
     grants: []
   - id: c_coords

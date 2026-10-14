@@ -2313,6 +2313,7 @@ clues:
   - id: c_email
     name: Email to himself
     description: "Sent to his own inbox: \"Fwd: missing-person reports — keep this safe. — S\", the whole folder attached. If anyone ever reads his sent items, he's finished."
+    page: /assets/pictures/evidence_email.jpg
     requires:
       - c_reports
     grants: []
@@ -2706,6 +2707,7 @@ puzzles:
   - id: p_registration
     kind: email
     prompt: Veer sends him the link for member registration. It doesn't ask for much — just an email and an OTP. He needs the address he actually owns — the one from his sent mail.
+    evidence: /assets/pictures/evidence_email.jpg
     answers:
       - sameer@gotmail.com
     success: 'The registration goes through. A volunteer confirms his membership and sends the address of the upcoming workshop: "Hutting, 3rd cross, DJ Halli." He has a gut feeling that all that is happening to him has a reason and a rhyme — including the fact that he lost his phone charger a couple of days ago.'
@@ -2888,11 +2890,12 @@ puzzles:
   - id: p_exposed
     kind: text
     prompt: Just as he is about to go to sleep, a notification arrives — another voice note, in a different modified voice, this time mocking. What could have exposed his investigation of the cult?
+    evidence: /assets/pictures/evidence_email.jpg
     answers:
       - email
       - the email
       - sending the files to himself
-    success: The email — the financial files he sent to himself. That is how they found him. Cats play with rats before swallowing them, and the cult has been playing with him all along.
+    success: The email — the folder he sent to himself. That is how they found him. Cats play with rats before swallowing them, and the cult has been playing with him all along.
     fail_message: That's not it. Whatever exposed him was something he sent out himself, that night.
     requires:
       puzzles:

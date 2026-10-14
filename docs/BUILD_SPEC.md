@@ -219,7 +219,7 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 | p_veer_1 | choice | No, but I have donated some money to them | options [Yes, I'm part of it, No, but I have donated some money to them] |
 | p_veer_2 | choice | Foster scientific temper, empowering the youth | options [Foster scientific temper, empowering the youth, Teach astronomy to tourists] |
 | p_band_name | text | apogee | grants c_apogee |
-| p_registration | email | sameer@gotmail.com | grants c_workshop_address; the address on the act-1 sent-mail evidence; any other address is a wrong answer and costs the penalty |
+| p_registration | email | sameer@gotmail.com | grants c_workshop_address; the sent-mail evidence image carries the address; any other address is a wrong answer and costs the penalty |
 | p_destination | text | hutting 3rd cross dj halli, hutting, 3rd cross dj halli, dj halli | requires c_workshop_address; the auto driver's question |
 | p_fare | scene | — | the auto conversation plays as a story scene after p_destination; no question, resolves the lead and unlocks the workshop travel |
 | p_ascension | code | ascension | the folder opens: .avi files, an extension he has never seen |
@@ -234,7 +234,7 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 | p_knowledge | text | handbook, the handbook | grants c_tablet_data |
 | p_tablet_content | choice | Chants, schedules, and holy blade maintenance | options [Chants, schedules, and holy blade maintenance, Financial records, The full member list]; grants c_recruits + c_finance; Lua Pharmaceuticals only named once the records are found |
 | p_connection | text | perigee, apogee, perigee and apogee, apogee and perigee | success notes the bonus for both; either order accepted |
-| p_exposed | text | email, the email, sending the files to himself | requires p_connection; triggers c_voice3 |
+| p_exposed | text | email, the email, sending the files to himself | requires p_connection; triggers c_voice3; the sent-mail evidence image carries his address |
 | p_fullmoon | text | missing people, people going missing, disappearances | grants c_pen_camera |
 | p_voice_hq | text | ngo headquarters, the headquarters, the ngo | requires c_ritual2 |
 | p_tanush | text | tanush | requires p_voice_hq |
