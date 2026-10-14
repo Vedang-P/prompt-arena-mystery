@@ -878,8 +878,9 @@ puzzles:
     kind: email
     prompt: "The folder of reports and posters sits open on the laptop. If he is going to keep digging, he needs his own copy — somewhere only he can open. He opens his mail and types his own address."
     evidence: "/assets/pictures/evidence_email.jpg"
-    answers: []
+    answers: [sameer@gotmail.com]
     success: "Sent. The folder lands in his own inbox, attachments and all — \"Fwd: missing-person reports, keep this safe.\" If anyone ever reads his sent items, he's finished."
+    fail_message: "The send button hesitates — that is not his inbox. His own address is right there in the photograph."
     grants: [c_email]
     requires: { clues: [c_reports] }
 
