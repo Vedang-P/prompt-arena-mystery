@@ -106,7 +106,7 @@ export const ROOM_VIEWS={
 export const ROOM_BOUNDS={
  gazebo:{x:14,zMin:-12,zMax:10},
  abandoned_field:{x:16,zMin:-14,zMax:8},
- concert:{x:12,zMin:-12,zMax:8},
+ concert:{x:12,zMin:-7.3,zMax:8},
  workshop:{x:12,zMin:-12,zMax:8},
  parth_home:{x:7,zMin:-10,zMax:6},
  police_station:{x:6.5,zMin:-5.5,zMax:5.5},
@@ -129,6 +129,10 @@ export const DETAIL_ANCHORS = {
  abandoned_field:{af_sedan:carPoint([2.31,.705,0]),af_backpack:carPoint([FIELD.seat[0],FIELD.seat[1]+.327,FIELD.seat[2]])},
  cyber_cafe:{cc_dosa:[-3.9,1.15,1.85],cc_cassette:[4.7,.92,-3.1]},
  workshop:{ws_snacks:[.1,.877,-2.2]},
+ // The concert's clues sit on their own props: the backstage board on the
+ // fence, the registration board on its stand, and the whole auto sequence
+ // grouped at the parked car's near side so the labels never overlap in air.
+ concert:{cc_backstage:[-4.49,.62,-2.53],cc_registration:[4.09,.7,-.97],cc_destination:[-4.5,.05,2.42],cc_fare:[-4.5,.05,2.42],cc_to_workshop:[-4.5,.05,2.42]},
  ngo_archive:{na_system:[2.9,.89,-1.6],na_playback:[2.9,.89,-1.6],na_blade:[2.9,.89,-1.6],na_wall:[-5.9,1.5,.8],na_plea:[-5.9,1.5,.8],na_hide:[0,.2,3.9],na_delve:[0,.2,3.9]},
  tanush_office:{to_drug_report:[-.05,DESK_TOP,-1.35],to_drawer:[-.2,.48,-1.5],to_tablet:[.55,DESK_TOP,-1.5],to_handbook:[1,DESK_TOP,-1.5],to_timetable:[-1.9,1.7,-4.93],
   h8_office_clue:[.2,.5,.6],h8_office:[4.5,.9,.1],h8_years:[-1.9,1.5,-4.7],h8_burn:[1.45,DESK_TOP,-1.4],h8_rooms:[4.2,1.5,-4.4],h8_why:[6.44,1.5,-2.3],h8_found:[.4,1,-2.65],h8_saved:[3,.55,.1],h8_where:[-4.3,.95,-4.2],h8_wrong:[.55,DESK_TOP,-1.6]},

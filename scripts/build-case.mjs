@@ -193,6 +193,21 @@ for (const pz of c.puzzles ?? []) {
     }
     if (pz.options !== undefined) err(`${where}: scene puzzles have no options — the scene plays itself out`);
     if (pz.answers !== undefined) err(`${where}: scene puzzles have no answers — the scene plays itself out`);
+    if (pz.cast !== undefined) {
+      if (!Array.isArray(pz.cast)) {
+        err(`${where}: cast must be a list of { character, at?, rot? }`);
+      } else {
+        for (const cst of pz.cast) {
+          if (!charIds.has(cst?.character)) err(`${where}: cast unknown character "${cst?.character}"`);
+          if (cst?.at !== undefined && (!Array.isArray(cst.at) || cst.at.length !== 2 || !cst.at.every(Number.isFinite))) {
+            err(`${where}: cast "${cst?.character}" at must be [x, z]`);
+          }
+          if (cst?.rot !== undefined && !Number.isFinite(cst.rot)) {
+            err(`${where}: cast "${cst?.character}" rot must be a number`);
+          }
+        }
+      }
+    }
   }
   // A scene can hand the player straight to the room it lands in (the arrest
   // ride ends at the police station) instead of returning them to the room

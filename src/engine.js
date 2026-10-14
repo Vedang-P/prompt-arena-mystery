@@ -126,6 +126,7 @@ export function publicPuzzle(puzzleId) {
     evidence: puzzle.evidence ?? null,
     options: puzzle.options ?? null,
     lines: puzzle.lines ?? null,
+    cast: puzzle.cast ?? null,
     requires: puzzle.requires ?? null,
     solvedHint: puzzle.solvedHint ?? null,
     lands_in: puzzle.lands_in ?? null,

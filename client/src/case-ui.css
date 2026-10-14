@@ -2,7 +2,16 @@
    Everything interactive (interview, evidence, accusation, settings, chapters,
    leaderboard, entry, toasts, in-game HUD) shares the notebook's design
    language: dark slate panels, brass accents, Inter, one button family.
-   Loaded after investigation.css so the notebook primitives are the baseline. */
+   Loaded after investigation.css so the notebook primitives are the baseline.
+
+   The interview HUD is the one cinematic surface: it speaks in the game's
+   story fonts (Cinzel titles, Playfair names, EB Garamond voice), which are
+   declared here because this stylesheet also loads on /play where the title
+   card's site.css is absent. */
+@font-face{font-family:'Cinzel';src:url('/fonts/cinzel-latin-700-normal.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:'Playfair Display';src:url('/fonts/playfair-display-latin-600-normal.woff2') format('woff2');font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:'EB Garamond';src:url('/fonts/eb-garamond-latin-400-normal.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'EB Garamond';src:url('/fonts/eb-garamond-latin-600-normal.woff2') format('woff2');font-weight:600;font-style:normal;font-display:swap}
 
 /* ---------- shared panel pieces ---------- */
 .case-reading-scroll{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:22px 30px}
@@ -27,16 +36,19 @@
 .app.talking :is(.hud-top,.chapter-progress,.next-chapter,.notebook-toggle){display:none}
 /* In-scene labels (drei <Html>) would float over the interview. */
 .app.talking .scene-layer :is(.hotspot,.object-actions){display:none}
-.talk-hud{position:fixed;inset:0;z-index:60;pointer-events:none;outline:none;color:#f1ece0;font-family:'Josefin Sans',Inter,sans-serif;background:radial-gradient(ellipse 60% 70% at 100% 100%,#000000b8 0,#0000 100%),linear-gradient(to top,#000000b3 0,#0000 40%),linear-gradient(to bottom,#00000080 0,#0000 24%)}
+.talk-hud{position:fixed;inset:0;z-index:60;pointer-events:none;outline:none;color:#f1ece0;font-family:'EB Garamond',Georgia,serif;background:radial-gradient(ellipse 60% 70% at 100% 100%,#000000b8 0,#0000 100%),linear-gradient(to top,#000000b3 0,#0000 40%),linear-gradient(to bottom,#00000080 0,#0000 24%)}
 .talk-hud button,.talk-hud input,.talk-log{pointer-events:auto}
-.talk-hud :is(h2,h3,p,span,button,input){font-family:inherit}
+/* event.css pins every element to Inter with !important; the interview HUD is
+   the story surface and keeps the game's Cinzel/Playfair/Garamond voice. */
+.talk-hud,.talk-hud :is(h1,h2,h3,h4,p,span,strong,em,small,b,i,label,div,button,input){font-family:'EB Garamond',Georgia,serif!important}
 .talk-hud button{cursor:pointer}
 .talk-hud button:disabled{cursor:default;opacity:.45}
-.talk-hud button:focus-visible,.talk-hud input:focus-visible{outline:2px solid #d4b67c;outline-offset:3px}
+.talk-hud button:focus-visible{outline:2px solid #d4b67c;outline-offset:3px}
+.talk-hud .talk-ask input:focus,.talk-hud .talk-ask input:focus-visible{outline:none}
 .talk-hud :is(h2,h3,p){text-shadow:0 1px 3px #000,0 0 22px #000a}
 .talk-location{position:absolute;top:4.5vh;left:3.4vw;max-width:60vw}
-.talk-location h2{margin:0;font-weight:400;font-size:clamp(28px,3.8vw,64px);line-height:1;letter-spacing:.03em;text-transform:uppercase}
-.talk-location p{margin:.35em 0 0;font-size:clamp(17px,2vw,34px);line-height:1;letter-spacing:.03em;text-transform:uppercase;color:#ece6d8d9}
+.talk-location h2{margin:0;font-family:'Cinzel',Georgia,serif!important;font-weight:700;font-size:clamp(26px,3.4vw,56px);line-height:1.04;letter-spacing:.04em;text-transform:uppercase;text-shadow:0 2px 4px #000,0 0 30px #000b}
+.talk-location p{margin:.4em 0 0;font-family:'EB Garamond',Georgia,serif!important;font-weight:600;font-size:clamp(15px,1.6vw,27px);line-height:1;letter-spacing:.16em;text-transform:uppercase;color:#ece6d8cc}
 .talk-leave{position:absolute;top:4vh;right:3vw;width:clamp(64px,5.6vw,108px);padding:6px;background:none;border:0}
 .talk-leave svg{display:block;width:100%;fill:#ffffff14;stroke:#ffffffa6;stroke-width:1.6;stroke-linejoin:round;filter:drop-shadow(0 1px 3px #000c)}
 .talk-leave:hover svg{stroke:#e8d5aa;fill:#d4b67c22}
@@ -48,25 +60,28 @@
 .talk-line.player{align-self:flex-start;margin-right:6%}
 .talk-portrait{flex:none;width:clamp(40px,2.9vw,56px);aspect-ratio:1;object-fit:cover;background:linear-gradient(160deg,#3a4a52,#0d1519);box-shadow:0 2px 10px #0009}
 .talk-bubble{min-width:0}
-.talk-speaker{display:block;font-size:clamp(10px,.62vw,12px);line-height:1.2;letter-spacing:.02em;text-transform:uppercase;color:#f1ece0e0;text-shadow:0 1px 2px #000}
-.talk-text{margin:.15em 0 0;font-size:clamp(15px,1.1vw,21px);line-height:1.3;white-space:pre-line}
+.talk-speaker{display:block;font-size:clamp(11px,.72vw,13px);line-height:1.2;letter-spacing:.18em;text-transform:uppercase;font-weight:600;color:#f1ece0d9;text-shadow:0 1px 2px #000}
+.talk-text{margin:.2em 0 0;font-size:clamp(17px,1.2vw,23px);line-height:1.35;white-space:pre-line;text-shadow:0 1px 3px #000,0 0 22px #000a}
 .talk-typing{display:flex;gap:5px;margin:.4em 0 0;justify-content:flex-end}
 .talk-typing i{width:6px;height:6px;border-radius:50%;background:#f1ece0;animation:talk-dot 1.2s infinite}
 .talk-typing i:nth-child(2){animation-delay:.15s}
 .talk-typing i:nth-child(3){animation-delay:.3s}
 @keyframes talk-dot{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
 .talk-name{position:absolute;right:3vw;bottom:4vh;text-align:right;max-width:40vw}
-.talk-name h3{margin:0;font-weight:400;font-size:clamp(34px,3.6vw,68px);line-height:.95;letter-spacing:.02em;text-transform:uppercase}
-.talk-name p{margin:.3em 0 0;font-size:clamp(12px,.85vw,15px);letter-spacing:.04em;text-transform:uppercase;color:#e9e3d6b3}
-.talk-input{position:absolute;left:2.6vw;bottom:4vh;width:min(46vw,720px);display:flex;flex-direction:column;gap:10px}
-.talk-error{margin:0;color:#f0b4a0;font-size:14px}
-.talk-ask{display:flex;align-items:stretch;height:clamp(54px,4.4vw,76px);background:#0c1317e6;border:1px solid #ffffff3d;box-shadow:0 12px 34px #0009}
-.talk-ask:focus-within{border-color:#d4b67c}
-.talk-ask input{flex:1;min-width:0;border:0;background:none;color:#f1ece0;font-size:clamp(17px,1.45vw,26px);padding:0 clamp(14px,1vw,22px);outline:none}
-.talk-ask input::placeholder{color:#f1ece099}
-.talk-ask button{flex:none;min-width:clamp(72px,5vw,104px);border:0;border-left:1px solid #ffffff3d;background:#d4b67c;color:#141e23;font-size:clamp(14px,1.05vw,20px);font-weight:600;letter-spacing:.1em;text-transform:uppercase}
+.talk-name h3{margin:0;font-family:'Playfair Display',Georgia,serif!important;font-weight:600;font-size:clamp(32px,3.4vw,64px);line-height:.95;letter-spacing:.015em;text-transform:uppercase;text-shadow:0 2px 4px #000,0 0 30px #000b}
+.talk-name p{margin:.35em 0 0;font-size:clamp(12px,.85vw,15px);letter-spacing:.14em;text-transform:uppercase;color:#e9e3d6b3}
+.talk-input{position:absolute;left:3vw;bottom:4vh;width:min(44vw,640px);display:flex;flex-direction:column;gap:10px}
+.talk-error{margin:0;color:#f0b4a0;font-size:15px;letter-spacing:.02em}
+/* One brass focus ring around the whole ask field — input and OK read as a
+   single control. The input itself never draws an outline of its own. */
+.talk-ask{display:flex;align-items:stretch;height:clamp(54px,3.9vw,66px);background:#0c1317f0;border:1px solid #ffffff47;box-shadow:0 14px 40px #0009;transition:border-color .16s ease,box-shadow .16s ease}
+.talk-ask:focus-within{border-color:#d4b67c;box-shadow:0 0 0 1px #d4b67c,0 14px 44px #000a}
+.talk-ask input{flex:1 1 auto;min-width:0;width:100%;height:100%;display:block;border:0;background:none;color:#f1ece0;font-size:clamp(17px,1.3vw,22px);line-height:1;padding:0 clamp(18px,1.2vw,26px);outline:none;caret-color:#d4b67c}
+.talk-ask input::placeholder{color:#f1ece0a6;letter-spacing:.01em}
+.talk-ask button{flex:none;display:grid;place-items:center;min-width:clamp(84px,6vw,118px);padding:0 clamp(16px,1.1vw,24px);border:0;border-left:1px solid #ffffff47;background:#d4b67c;color:#141e23;font-family:'Cinzel',Georgia,serif!important;font-weight:700;font-size:clamp(13px,1vw,17px);letter-spacing:.14em;text-transform:uppercase;transition:background-color .16s ease,border-color .16s ease}
+.talk-ask:focus-within button{border-left-color:#d4b67c}
 .talk-ask button:not(:disabled):hover{background:#e6cb93}
-.talk-ask button:disabled{background:#242e33;color:#f1ece059}
+.talk-ask button:disabled{background:#16232a;color:#d4b67c73;border-left-color:#ffffff2e}
 
 /* ---------- accusation ---------- */
 .accusation-body{padding-bottom:8px}

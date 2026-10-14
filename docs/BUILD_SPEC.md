@@ -87,6 +87,7 @@ puzzles:
                                # choice answers must equal an option string (or its letter)
                                # scene puzzles take no answers — the scene plays itself out
     lines: [{ speaker, text }] # scene only: the conversation, auto-played as a story scene
+    cast: [{ character, at: [x,z], rot?, wearingMask? }]  # scene only: who stands in it (optional)
     success: string            # narrative shown on the correct answer
     grants: [clue_id]          # clues granted when solved correctly
     requires: { clues: [], puzzles: [] }

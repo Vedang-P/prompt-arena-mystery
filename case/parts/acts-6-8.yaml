@@ -604,6 +604,9 @@ puzzles:
       - { speaker: narrator, text: "He catches stray conversations: the story is that he has murdered Enakshi. A police officer takes him by the arm and pulls him away." }
       - { speaker: sameer, text: "\"I didn't do anything — I didn't do anything! Please—\"" }
       - { speaker: narrator, text: "The police drag him off as he pleads his innocence. At the station, the fluorescent lights wash over him as they put him in a chair across the desk." }
+    cast:
+      - { character: sameer, at: [-0.1, 1.0], rot: 2.9 }
+      - { character: officer, at: [1.3, 1.6], rot: -2.6 }
     success: "The police drag him off as he pleads his innocence. At the station, they put him in a chair across the desk — should he tell them about what he found?"
     requires: { clues: [c_arrest] }
     lands_in: police_station
@@ -800,6 +803,9 @@ puzzles:
       - { speaker: narrator, text: "Parth and him are outside the room. Sameer feels nauseous — the lights are too bright and the colours are still taunting him. He squints and looks at Parth. Somehow, he got worse: his eyes looked sunken and his skin like paper." }
       - { speaker: parth, text: "\"You came! You're going to love this place. It's busy a few days but is usually better when there are no events. The people are pretty fun!\"" }
       - { speaker: narrator, text: "Sameer looks at Parth — his eyes looked so hollow. Sameer was about to say something when the doors burst open. The leader came out, red-faced. He grabs both boys and drags them into the office." }
+    cast:
+      - { character: sameer, at: [0.35, 1.4], rot: 3.1416, wearingMask: true }
+      - { character: parth, at: [1.6, 2.7], rot: -2.6 }
     success: "The leader drags both boys into the office."
     grants: [c_parth2]
     requires: { puzzles: [p_spiral] }
@@ -837,6 +843,10 @@ puzzles:
       - { speaker: leader, text: "\"He has potential. Nishkara would be pleased with such a gift.\"" }
       - { speaker: narrator, text: "Sameer's splitting headache grew. He spotted a scented candle in the office and grabbed it. The leader dropped Parth and tried to grab him; Sameer bent and escaped the leader's hand." }
       - { speaker: narrator, text: "He burns one of the books on fire and lets it fall on the carpet. Parth's head is banged on the table corner — it is stained red. He doesn't get up." }
+    cast:
+      - { character: sameer, at: [-1.7, 0.9], rot: 0.6 }
+      - { character: parth, at: [-0.3, 1.3], rot: 0.1 }
+      - { character: leader, at: [1.7, 1.2], rot: -0.5 }
     success: "The office catches fire. Sameer runs with the burning book."
     requires: { puzzles: [p_years] }
 

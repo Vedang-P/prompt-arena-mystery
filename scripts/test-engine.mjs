@@ -261,7 +261,9 @@ test('scene puzzles resolve without an answer and expose their lines', () => {
   assert.equal(pub.options, null);
   assert.equal(pub.lines.length, 2);
   assert.equal(pub.lines[0].speaker, 'narrator');
-  assert.equal(pub.lands_in, 'cellar', 'a scene exposes the room it lands the player in');
+  assert.equal(pub.cast.length, 1);
+  assert.equal(pub.cast[0].character, 'butler');
+  assert.deepEqual(pub.cast[0].at, [-0.8, 1.2]);
   for (const leak of ['answers', 'grants', 'success', 'fail_message', 'option_endings']) {
     assert.equal(pub[leak], undefined, `publicPuzzle leaked "${leak}"`);
   }

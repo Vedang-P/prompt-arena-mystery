@@ -3,7 +3,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import { Vector3 } from 'three';
 import Actor from './Actor.jsx';
-const SceneEnvironment=lazy(()=>import('./Scene.jsx').then(({RoomEnvironment,RoomLighting})=>({default:({roomId,quality,cinematicPhase,paused,actId})=><><RoomLighting roomId={roomId} quality={quality} cinematicPhase={cinematicPhase}/><RoomEnvironment roomId={roomId} paused={paused} storyAct={actId} cinematicPhase={cinematicPhase}/></>})));
+const SceneEnvironment=lazy(()=>import('./Scene.jsx').then(({RoomEnvironment,RoomLighting})=>({default:({roomId,quality,cinematicPhase,paused,actId,cast})=><><RoomLighting roomId={roomId} quality={quality} cinematicPhase={cinematicPhase}/><RoomEnvironment roomId={roomId} paused={paused} storyAct={actId} cinematicPhase={cinematicPhase} cast={cast}/></>})));
 import { useSettings } from './Settings.jsx';
 import { SceneLoading, SceneWatchdog, WorldBoundary, SceneReady, SceneRecoveryCard } from './WorldBoundary.jsx';
 import PerformanceGuard from './PerformanceGuard.jsx';
@@ -86,7 +86,7 @@ export default function Cinema({sceneId='gazebo',shot='wide',cast=[],speaker,end
       <color attach="background" args={[sceneId==='abandoned_field'||cinematicNight?'#26394e':'#10171c']}/><fog attach="fog" args={[sceneId==='gazebo'?'#9bafa5':backdrop,28,85]}/>
       <SceneErrorBoundary resetKey={`${sceneId}:${cinematicPhase??'default'}`} onFail={handleFail}>
         <Suspense fallback={null}>
-          <SceneEnvironment roomId={sceneId} quality={quality} cinematicPhase={cinematicPhase} paused={paused} actId={actId}/>
+          <SceneEnvironment roomId={sceneId} quality={quality} cinematicPhase={cinematicPhase} paused={paused} actId={actId} cast={cast}/>
           <spotLight position={[0,4,5]} angle={.7} penumbra={1} color="#ffdfbe" intensity={24} distance={13}/>
           {people.map(c=><group key={c.character} position={[c.at[0],c.y,c.at[1]]} rotation={[c.rotationX??0,c.rot??0,0]}><Actor character={c.character} pose={c.pose} footLift={c.footLift} paused={paused} speaking={c.character===speaker} wearingMask={c.wearingMask} holdingMask={c.holdingMask}/></group>)}
           <SceneReady key={`${sceneId}:${cinematicPhase??'default'}`} onReady={handleReady}/>

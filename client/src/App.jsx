@@ -592,6 +592,12 @@ export default function App() {
     // A scene plays in the room its hotspot stands in, not always the act's
     // entry room: the burning office is not the ward it started in.
     const sceneRoom = state.rooms.find((r) => (r.hotspots ?? []).some((h) => h.type === 'puzzle' && h.puzzle === puzzleId));
+    // The author can name the scene's cast with room marks; entries with an
+    // explicit pair are staged exactly, the rest fall to the room's own marks.
+    const authored = (puzzle.cast ?? []).filter((member) => state.characters.some((c) => c.id === member.character));
+    const sceneCast = authored.length
+      ? authored.map((member) => (member.at ? { ...member, staged: true } : member))
+      : [{ character: 'sameer' }];
     puzzleRequest.current = null;
     setPuzzleSpot(null);
     setPuzzleResult(null);
@@ -605,7 +611,7 @@ export default function App() {
       title: label ?? currentAct?.title,
       doneLabel: 'Finish scene →',
       backdrop: sceneRoom?.id ?? currentAct?.entry_room,
-      cast: [{ character: 'sameer' }],
+      cast: sceneCast,
     });
     return true;
   };
@@ -1037,7 +1043,7 @@ export default function App() {
         penalties={state.penalties ?? 0}
         elapsedSeconds={state.elapsedSeconds}
         team={state.team}
-        onReplay={() => setPhase('menu')}
+        onReplay={() => window.location.assign('/')}
         onRestart={() => setRestartOpen(true)}
       />{state.dev && <DevPanel
         state={state}
@@ -1073,7 +1079,7 @@ export default function App() {
           <p className="login-hint">The leaderboard is watching you.</p>
           <div className="solved-actions">
             <button className="btn brass" onClick={() => setRestartOpen(true)}>Restart the case ↺</button>
-            <button className="btn ghost" onClick={() => setPhase('menu')}>Back to the title</button>
+            <button className="btn ghost" onClick={() => window.location.assign('/')}>Back to the title</button>
           </div>
         </div>
         {state.dev && <DevPanel

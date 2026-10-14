@@ -161,6 +161,8 @@ puzzles:
     lines:
       - { speaker: narrator, text: "The lamp gutters. Footsteps cross the cellar floor." }
       - { speaker: butler, text: "You should not have followed me down here." }
+    cast:
+      - { character: butler, at: [-0.8, 1.2], rot: 0.5 }
     success: "The scene plays out; nothing is asked of the detective."
     lands_in: cellar
 

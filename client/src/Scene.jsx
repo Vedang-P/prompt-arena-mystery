@@ -1058,21 +1058,29 @@ function ConcertRoom({room,hot}) {
   <TerrainSurface width={40} depth={36}/>
   <group position={[0,0,-5.5]}>
    <mesh position={[0,.4,0]} castShadow receiveShadow><boxGeometry args={[13,.8,4.5]}/><meshStandardMaterial color="#352d25" roughness={.85}/></mesh>
-   <mesh position={[0,3.1,-2.12]}><planeGeometry args={[13,4.6]}/><meshStandardMaterial color="#25333b" roughness={.9}/></mesh>
-   <WallSign position={[0,3.55,-2.08]} width={5} height={1.2} title="APOGEE" lines={['LIVE / A PERIGEE EVENT']} background="#21343d"/>
+   {/* Solid backdrop: a wall box, not a plane, so the set keeps its back when
+       the camera swings behind the stage instead of opening onto the void. */}
+   <mesh position={[0,3.1,-2.14]} castShadow receiveShadow><boxGeometry args={[13,4.6,.12]}/><meshStandardMaterial color="#25333b" roughness={.9}/></mesh>
+   <WallSign position={[0,3.55,-2.06]} width={5} height={1.2} title="APOGEE" lines={['LIVE / A PERIGEE EVENT']} background="#21343d"/>
    {[-5.8,5.8].map(x=><mesh key={x} position={[x,2.2,-1.8]}><boxGeometry args={[.16,4.4,.16]}/><meshStandardMaterial color="#787e83" metalness={.7}/></mesh>)}
    <mesh position={[0,4.35,-1.8]}><boxGeometry args={[11.8,.16,.16]}/><meshStandardMaterial color="#787e83" metalness={.7}/></mesh>
    {[-5.2,-2.6,0,2.6,5.2].map((x,i)=><TrussLight key={x} position={[x,4.1,-1.75]} color={['#ffdab0','#b5a0f8','#88c9e8','#efb786','#bb98e8'][i]}/>)}
    <DetailProp asset="amplifier" position={[-3.5,.8,-.7]} scale={1.7}/>
    <DetailProp asset="amplifier" position={[3.5,.8,-.7]} scale={1.7}/>
    <DetailProp asset="mic_stand" position={[0,.8,.8]} height={1.65}/>
-   <DetailProp asset="microphone" position={[0,2.43,.8]} scale={1.1} rotation={[Math.PI/2,0,0]}/>
+   {/* The mic sits in the boom's clip at its measured tip (0.34, 1.61 in the
+       stand's own frame), aligned with the boom axis so it never floats. */}
+   <DetailProp asset="microphone" position={[.214,2.357,.8]} rotation={[0,0,-1.184]} scale={1.1}/>
    <DetailProp asset="metal_office_desk" position={[2.8,.8,-.15]}/>
    <DetailProp asset="synthesizer" position={[2.8,1.5875,-.15]} scale={1.8}/>
-   <DetailProp asset="drum_pad" position={[-2.6,1.5875,-.15]} scale={1.4}/>
+   {/* The drum throne stands on the stage floor where a player would sit —
+       parked at desk height it hovered with its tripod in the air. */}
+   <DetailProp asset="drum_pad" position={[-2.6,.8,-1.35]} scale={1.4}/>
    <DetailProp asset="metal_office_desk" position={[-2.6,.8,-.15]}/>
-   {[-2.4,2.4].map(x=><DetailProp key={x} asset="stage_monitor" position={[x,.8,1.65]} height={.5}/>)}
-   <Cable points={[[0,.81,.8],[1.2,.81,.9],[3.2,.81,.8],[4.5,.81,-.9]]}/>
+   {/* Wedges angle upstage at the performers, not out at the crowd. */}
+   {[-2.4,2.4].map(x=><DetailProp key={x} asset="stage_monitor" position={[x,.8,1.65]} rotation={[0,Math.PI,0]} height={.5}/>)}
+   {/* The mic line runs to the right amplifier instead of ending on bare boards. */}
+   <Cable points={[[0,.81,.8],[1.2,.81,.9],[2.6,.81,.55],[3.3,.81,-.35],[3.5,.81,-.62]]}/>
   </group>
   {[-6.8,6.8].map(x=><DetailProp key={x} asset="amplifier" position={[x,0,-3.5]} height={1.6}/>)}
   {[-1,1].flatMap(side=>[0,1,2,3].map(i=><CrowdBlob key={`${side}-${i}`} position={[side*(4+i%2),0,-.6+Math.floor(i/2)*1.7]} scale={.97}/>))}
@@ -1092,6 +1100,9 @@ function ConcertRoom({room,hot}) {
     <WallSign position={[0,1.35,.028]} width={1.15} height={.5} title="PERIGEE" lines={['MEMBER REGISTRATION']}/>
   </group>
   {[-8.5,8.5].map(x=><group key={x}><DetailProp asset="street_lamp_01" position={[x,0,2.5]} height={3.8}/><pointLight position={[x,3.1,2.5]} color="#f6cc91" intensity={12} distance={10}/></group>)}
+  {/* The parked auto that carries Sameer to the workshop — its driver side is
+      where the fare and travel markers cluster (see DETAIL_ANCHORS.concert). */}
+  <DetailProp asset="sedan_detailed" position={[-4.6,0,3.6]}/>
   <WindTree position={[-10,0,-7]} height={6}/><WindTree position={[10,0,-7]} height={6}/>
   <pointLight position={[0,4.3,-3.8]} color="#c2cef4" intensity={30} distance={14}/>
   <HotspotMarkers room={room} hot={hot}/>
@@ -1205,7 +1216,7 @@ function NgoArchiveRoom({room,hot}) {
  </group>;
 }
 
-function HospitalRoom({room,hot,actId,phase,paused=false}) {
+function HospitalRoom({room,hot,actId,phase,paused=false,cast=[]}) {
  if(actId==='act8'&&String(phase??'').startsWith('ending_'))return <HospitalEndingRoom phase={phase} paused={paused}/>;
  // Acts 7/8 share one ceremony tableau: the masked crowd rings the altar and
  // the leader (staged by the cinematic) officiates behind it. Act 7's own
@@ -1213,6 +1224,8 @@ function HospitalRoom({room,hot,actId,phase,paused=false}) {
  const ceremony=phase==='ceremony';
  const ritual=['act6','act8'].includes(actId)||ceremony;
  const cargo=actId==='act7'&&!ceremony;
+ // The cinematic owns whoever it stages; the room fills in the rest of the crowd.
+ const staged=new Set(cast.map((member)=>member.character));
  if(cargo)return <HospitalDispatch room={room} hot={hot}/>;
  return <group>
   <Shell width={16} depth={10} height={3.4} tint="#b9c6c5" painted/>
@@ -1248,7 +1261,7 @@ function HospitalRoom({room,hot,actId,phase,paused=false}) {
    {HOSPITAL_BED_GROUP.map((member)=><group key={member.character} position={[member.at[0],0,member.at[1]]} rotation={[0,member.rot,0]}><Actor character={member.character} pose="idle" wearingMask/></group>)}
   </group>}
   {ritual&&<group>
-   {HOSPITAL_RITUAL_CROWD.filter((member)=>!(ceremony&&member.officiant)).map((member,i)=><group key={`${member.character}-${i}`} position={[member.at[0],0,member.at[1]]} rotation={[0,member.rot,0]}><Actor character={member.character} pose="idle" wearingMask/></group>)}
+   {HOSPITAL_RITUAL_CROWD.filter((member)=>!(staged.has(member.character)||(ceremony&&member.officiant))).map((member,i)=><group key={`${member.character}-${i}`} position={[member.at[0],0,member.at[1]]} rotation={[0,member.rot,0]}><Actor character={member.character} pose="idle" wearingMask/></group>)}
   </group>}
   <WallSign position={[-7.93,2,1]} rotation={[0,Math.PI/2,0]} width={1.8} height={.55} title="WARD 03" lines={['KEEP THE CORRIDOR CLEAR']}/>
   <WallSign position={[7.93,2,1]} rotation={[0,-Math.PI/2,0]} width={1.8} height={.55} title="SECURITY" lines={['AUTHORISED STAFF ONLY']}/>
@@ -1438,10 +1451,10 @@ const ROOM_KITS = {
 // The campaign and every cinematic share the same fully modelled environments.
 // The service-yard capture plays behind the NGO headquarters, not the venue.
 const CAPTURE_ROOMS = new Set(['concert', 'ngo_hq']);
-export function RoomEnvironment({ roomId, room = null, hot = null, paused=false,storyAct,cinematicPhase }) {
+export function RoomEnvironment({ roomId, room = null, hot = null, paused=false,storyAct,cinematicPhase,cast=[] }) {
   const Kit = CAPTURE_ROOMS.has(roomId)&&['capture','departure'].includes(cinematicPhase)?ConcertCaptureRoom:(ROOM_KITS[roomId] ?? SameerRoomScene);
   const empty = { id: roomId, hotspots: [] };
-  return <Kit room={room ?? empty} hot={hot ?? { state: { discovered: [] }, solvedPuzzles: [] }} paused={paused} actId={storyAct??hot?.state?.act} phase={cinematicPhase}/>;
+  return <Kit room={room ?? empty} hot={hot ?? { state: { discovered: [] }, solvedPuzzles: [] }} paused={paused} actId={storyAct??hot?.state?.act} phase={cinematicPhase} cast={cast}/>;
 }
 export function RoomLighting({ roomId, quality = 'high',cinematicPhase }) {
   const cinematicNight=CAPTURE_ROOMS.has(roomId)&&['capture','departure'].includes(cinematicPhase);
