@@ -10,12 +10,20 @@ const scenes=[];
 for(const act of caseData.acts){
   for(const beat of act.beats??[])for(const line of beat.lines)scenes.push({room:beat.room,cast:beat.cast,line});
   for(const kind of ['intro','outro'])for(const [index,line] of (act[kind]??[]).entries()){
-    const room=locationFor(act,kind,index);scenes.push({room,cast:storyCast(act,kind,room),line});
+    const room=locationFor(act,kind,index);scenes.push({room,cast:storyCast(act,kind,room,index),line});
   }
 }
 const measurements=JSON.parse(await fs.readFile('.asset-cache/actor-measurements.json','utf8'));
 const act2=caseData.acts.find(act=>act.id==='act2'),act3=caseData.acts.find(act=>act.id==='act3'),act4=caseData.acts.find(act=>act.id==='act4'),act7=caseData.acts.find(act=>act.id==='act7'),act8=caseData.acts.find(act=>act.id==='act8');
+// The Act 2 opening: the bedroom only frames the reflection and the crash;
+// the store entrance where the NGO swarms Sameer is the shopfront.
+assert.equal(locationFor(act2,'intro',1),'cyber_cafe','The NGO bombardment must stage at the shop, not the bedroom');
+assert.equal(locationFor(act2,'intro',2),'cyber_cafe','The pamphlet beat must stay at the shop');
+assert.equal(locationFor(act2,'intro',3),'cyber_cafe','The wallet beat must stay at the shop');
 assert.equal(locationFor(act2,'intro',4),'cyber_cafe','The café scene must accompany the café narration');
+assert.equal(locationFor(act2,'intro',5),'sameer_room','He must be back in his room when he stumbles home');
+assert.equal(storyCast(act2,'intro','cyber_cafe',1).length,1,'The NGO bombardment must stage Sameer alone at the shopfront');
+assert(storyCast(act2,'intro','cyber_cafe',4).some(c=>c.character==='ramu'),'Ramu must appear when Sameer reaches the dosa corner');
 assert.equal(locationFor(act3,'outro',0),'ngo_archive','The overheard call must stage in the archive room');
 assert.equal(locationFor(act3,'outro',act3.outro.length-1),'ngo_archive','The overheard call must stay in the archive room until Sameer hides');
 assert.match(act3.outro.at(-1).text,/He hid under the desk/,'Act 3 must close on Sameer hiding under the desk');
@@ -99,7 +107,7 @@ for(const aspect of [390/520,676/490,1280/720,1920/1080]){
   }
 }
 assert(measurements.ramu?.idle,"Ramu's Rocketbox actor must be included in the contact measurements");
-const cafeCast=placeCast('cyber_cafe',storyCast(act2,'intro','cyber_cafe'));
+const cafeCast=placeCast('cyber_cafe',storyCast(act2,'intro','cyber_cafe',4));
 assert(cafeCast.some(c=>c.character==='ramu'),'The café cinematic must stage Ramu');
 assert(Math.hypot(cafeCast[0].at[0]-cafeCast[1].at[0],cafeCast[0].at[1]-cafeCast[1].at[1])>1.5,'Sameer and Ramu must have room to face one another');
 let projections=0;

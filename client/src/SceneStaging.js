@@ -9,7 +9,7 @@ export function seatContact(character,seatY,floorY){
 export function locationFor(act, kind, index) {
   const scenes = {
     act1:{intro:['parth_home','parth_home','parth_home','parth_home','parth_home','parth_home','parth_room'],outro:['parth_home','parth_home']},
-    act2:{intro:['sameer_room','sameer_room','sameer_room','sameer_room','cyber_cafe','sameer_room','sameer_room'],outro:['sameer_room','sameer_room','sameer_room']},
+    act2:{intro:['sameer_room','cyber_cafe','cyber_cafe','cyber_cafe','cyber_cafe','sameer_room','sameer_room'],outro:['sameer_room','sameer_room','sameer_room']},
     // The overheard call, the plea and the hiding under the desk all happen in
     // the archive room; Act IV picks up at the door.
     act3:{intro:['concert'],outro:['ngo_archive']},
@@ -48,6 +48,11 @@ export function storyCast(act,kind,sceneId,index=0) {
       {character:'veer',at:[-1.5,-.9],rot:1.091,pose:'idle',staged:true},
     ];
   }
+  // The NGO blitz plays at the shopfront before Sameer ever reaches the
+  // counter: the store beats stage him alone, and Ramu only appears for the
+  // dosa-corner beat that follows.
+  if(act.id==='act2'&&kind==='intro'&&sceneId==='cyber_cafe'&&index<4)
+    return [{character:'sameer',pose:'idle'}];
   const capture=act.id==='act3'&&kind==='outro'&&sceneId==='ngo_hq';
   const discovery=act.id==='act4'&&kind==='outro'&&sceneId==='hospital';
   const companion=discovery?'parth':sceneId==='parth_home'?'mother':sceneId==='cyber_cafe'?'ramu':sceneId==='police_station'?'officer':sceneId==='tanush_office'?'tanush':act.id==='act8'?'leader':capture?null:(act.id==='act7'&&kind==='intro')||sceneId==='concert'?'veer':null;
