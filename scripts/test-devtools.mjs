@@ -61,6 +61,24 @@ state = await (await call('/api/state', devCookie)).json();
 assert.equal(state.devRoom, 'hospital');
 assert.equal((await call('/api/dev/room', devCookie, { room: 'nowhere' })).status, 400, 'unknown room rejected');
 
+// An act jump clears the parked room so the client opens the act's own entry.
+assert.equal((await call('/api/dev/act', devCookie, { act: 'act3' })).status, 200);
+assert.equal((await (await call('/api/state', devCookie)).json()).devRoom, null, 'act jump clears the parked room');
+
+// Dev sessions solve and discover anything anywhere: no act gates, no requires,
+// any character interviewable, and every act completable without its checklist.
+assert.equal((await call('/api/dev/act', devCookie, { act: 'act1' })).status, 200);
+const solvedAnywhere = await (await call('/api/puzzles/p_tablet/solve', devCookie, { answer: '1607' })).json();
+assert.equal(solvedAnywhere.correct, true, 'dev solves a puzzle outside its act');
+const discoveredAnywhere = await (await call('/api/clues/c_coords/discover', devCookie, {})).json();
+assert(discoveredAnywhere.discovered.includes('c_coords'), 'dev discovers a clue whose requirements are unmet');
+const interview = await call('/api/interrogate', devCookie, { character: 'leader', text: 'hello' });
+assert.equal(interview.status, 200, 'dev interviews any character in any act');
+const devCanAdvance = await (await call('/api/state', devCookie)).json();
+assert.equal(devCanAdvance.canAdvance.ok, true, 'dev can always advance');
+const completed = await (await call('/api/act/complete', devCookie, { act: 'act1' })).json();
+assert.equal(completed.act, 'act2', 'dev completes an act without its checklist');
+
 const bulk = await (await call('/api/dev/bulk', devCookie, { mode: 'all' })).json();
 assert.equal(bulk.discovered.length, caseData.clues.length);
 assert.equal(bulk.solvedPuzzles.length, caseData.puzzles.length);

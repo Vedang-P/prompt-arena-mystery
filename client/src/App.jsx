@@ -284,6 +284,7 @@ export default function App() {
       // A dev session may have parked a room server-side (the sandbox panel's
       // room jump). Honour it once per change, even outside the act's rooms.
       const parkedRoom = data.dev && data.devRoom && data.rooms?.some((r) => r.id === data.devRoom) ? data.devRoom : null;
+      if (!parkedRoom) parkedRoomRef.current = null;
       if (parkedRoom && parkedRoomRef.current !== parkedRoom) {
         parkedRoomRef.current = parkedRoom;
         setRoomId(parkedRoom);
@@ -1016,6 +1017,14 @@ export default function App() {
             <button className="btn ghost" onClick={() => setPhase('menu')}>Back to the title</button>
           </div>
         </div>
+        {state.dev && <DevPanel
+          state={state}
+          roomId={roomId}
+          onJumpRoom={(id) => setRoomId(id)}
+          onReload={() => loadGame('game')}
+          onPlayIntro={() => playDevStory('intro')}
+          onPlayOutro={() => playDevStory('outro')}
+        />}
         {overlays}
         {fsGate}
       </div>
@@ -1030,12 +1039,18 @@ export default function App() {
         act={currentAct}
         characters={state.characters}
         busy={actBusy}
-        onLeaderboard={()=>setLeaderboardOpen(true)}
         onComplete={() => finishAct(currentAct.id)}
         nextActKicker={next?.kicker}
         nextActTitle={next?.title}
         endLabel={next ? (next.type === 'cinematic' ? 'Continue' : 'Enter') : undefined}
-      />{fsGate}</>
+      />{state.dev && <DevPanel
+        state={state}
+        roomId={roomId}
+        onJumpRoom={(id) => setRoomId(id)}
+        onReload={() => loadGame('game')}
+        onPlayIntro={() => playDevStory('intro')}
+        onPlayOutro={() => playDevStory('outro')}
+      />}{fsGate}</>
     );
   }
 

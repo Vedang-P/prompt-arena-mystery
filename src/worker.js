@@ -681,7 +681,7 @@ app.get('/api/state', async (c) => {
     solvedPuzzles,
     penalties,
     unlocked: unlockedFactList(discovered),
-    canAdvance: canAdvanceAct(auth.progress.solved_puzzles, discovered, act),
+    canAdvance: auth.dev ? { ok: true, missing: { clues: [], puzzles: [] }, dev: true } : canAdvanceAct(auth.progress.solved_puzzles, discovered, act),
     ending: auth.progress.ending ? publicEnding(auth.progress.ending) : null,
     score: discovered.length + solvedPuzzles.length - penalties,
     hintsUsed: auth.progress.hints_used,
@@ -861,8 +861,9 @@ app.post('/api/act/complete', async (c) => {
   const actIndex = acts.findIndex((a) => a.id === actId);
   if (actIndex > currentIndex) return c.json({ error: 'act_locked', current }, 409);
 
-  // Interactive acts unlock only once their complete.clues/complete.puzzles are done.
-  if (act.type === 'interactive') {
+  // Interactive acts unlock only once their complete.clues/complete.puzzles are
+  // done — dev sessions complete any act they like.
+  if (act.type === 'interactive' && !auth.dev) {
     const discovered = parseJsonArray(auth.progress.discovered);
     const gate = canAdvanceAct(auth.progress.solved_puzzles, discovered, actId);
     if (!gate.ok) {
@@ -912,11 +913,12 @@ app.post('/api/clues/:id/discover', async (c) => {
   if (error) return error;
   const clueId = c.req.param('id');
   const discovered = parseJsonArray(auth.progress.discovered);
+  // Dev sessions walk the whole case: gates are advisory, not blocking.
   const gate = clueGate(auth.progress.act ?? 'act0', auth.progress.solved_puzzles, discovered, clueId);
-  if (!gate.ok && gate.error === 'locked') {
+  if (!auth.dev && !gate.ok && gate.error === 'locked') {
     return c.json({ error: 'locked', missing: gate.missing }, 409);
   }
-  const result = discover(discovered, clueId);
+  const result = discover(discovered, clueId, { force: !!auth.dev });
   if (!result.ok) {
     return c.json({ error: result.error }, result.error === 'locked' ? 409 : 404);
   }
@@ -946,11 +948,12 @@ app.post('/api/puzzles/:id/solve', async (c) => {
   const discovered = parseJsonArray(auth.progress.discovered);
   const solvedPuzzles = parseJsonArray(auth.progress.solved_puzzles);
 
-  // A puzzle is only solvable from the act that offers it, once its requires are met.
+  // A puzzle is only solvable from the act that offers it, once its requires are
+  // met — except for a dev session, which may solve anything anywhere.
   const gate = puzzleGate(auth.progress.act ?? 'act0', auth.progress.solved_puzzles, discovered, puzzleId);
   if (!gate.ok) {
     if (gate.error === 'unknown_puzzle') return c.json({ error: 'unknown_puzzle' }, 404);
-    return c.json({ error: 'not_ready', missing: gate.missing ?? null }, 403);
+    if (!auth.dev) return c.json({ error: 'not_ready', missing: gate.missing ?? null }, 403);
   }
 
   // Wrong answers are charged from a per-clue counter (flags.wrongAttempts) so
@@ -1054,7 +1057,7 @@ app.get('/api/characters/:id/history', async (c) => {
   if (error) return error;
   const characterId = c.req.param('id');
   if (!getCharacter(characterId)) return c.json({ error: 'unknown_character' }, 404);
-  if (!characterAvailable(characterId, auth.progress.act ?? 'act0')) return c.json({ error: 'not_available' }, 403);
+  if (!auth.dev && !characterAvailable(characterId, auth.progress.act ?? 'act0')) return c.json({ error: 'not_available' }, 403);
   // The newest 100 turns matter, not the oldest: reordering DESC then flipping
   // keeps long conversations complete instead of losing everything recent.
   const rows = await c.env.DB.prepare(
@@ -1076,7 +1079,7 @@ app.post('/api/interrogate', async (c) => {
   const text = String(body.text || '').trim().slice(0, 600);
   const reqId = String(body.reqId || '').slice(0, 64) || null;
   if (!getCharacter(characterId) || !text) return c.json({ error: 'bad_request' }, 400);
-  if (!characterAvailable(characterId, auth.progress.act ?? 'act0')) {
+  if (!auth.dev && !characterAvailable(characterId, auth.progress.act ?? 'act0')) {
     return c.json({ error: 'not_available' }, 403);
   }
 
@@ -1426,10 +1429,14 @@ app.post('/api/dev/act', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const act = String(body.act ?? '');
   if (!(caseData.acts ?? []).some((a) => a.id === act)) return c.json({ error: 'unknown_act' }, 400);
+  // An act jump opens the act's own entry room: the parked room is cleared so
+  // the client does not land back in the room it visited before the jump.
+  const flags = { ...parseJsonObject(auth.progress.flags), dev: true };
+  delete flags.devRoom;
   await c.env.DB.prepare(
-    "UPDATE progress SET act = ?, started_at = CASE WHEN started_at IS NULL AND ? != 'act0' THEN datetime('now') ELSE started_at END WHERE team_id = ?"
+    "UPDATE progress SET act = ?, flags = ?, started_at = CASE WHEN started_at IS NULL AND ? != 'act0' THEN datetime('now') ELSE started_at END WHERE team_id = ?"
   )
-    .bind(act, act, auth.teamId)
+    .bind(act, JSON.stringify(flags), act, auth.teamId)
     .run();
   return c.json({ ok: true, act });
 });

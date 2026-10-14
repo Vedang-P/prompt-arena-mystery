@@ -29,9 +29,14 @@ It opens the sandbox panel:
 - **Rooms** — jump to any of the 14 rooms at any time, across acts. The room is
   parked server-side (`flags.devRoom`), so the jump survives a reload. Room
   tabs and travel restrictions do not apply to dev sessions, and every hotspot
-  in a room is visible regardless of act or requirements.
+  in a room is visible regardless of act or requirements. An act jump clears
+  the parked room, so the new act opens on its own entry room.
 - **Clues** — the full clue registry with toggles per clue, plus
-  *Reveal everything* / *Clear everything*.
+  *Reveal everything* / *Clear everything*. On the server the dev session is
+  ungated everywhere: clues discover with unmet requirements, puzzles solve
+  outside their act, any character can be interviewed in any act, and acts
+  complete without their checklists (the "Continue to next act" button is
+  always offered).
 - **Puzzles** — the full puzzle registry with toggles per puzzle and the answer
   keys shown inline (answers never leave the server for normal sessions).
 - **Tools** — replay the act intro/outro, set penalties, reset the sandbox

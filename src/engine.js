@@ -67,7 +67,7 @@ export const publicClue = (clueId) => {
   return clue ? { id: clue.id, name: clue.name, description: clue.description, page: clue.page ?? null } : null;
 };
 
-export function discover(discoveredValue, clueId) {
+export function discover(discoveredValue, clueId, { force = false } = {}) {
   const clue = getClue(clueId);
   if (!clue) return { ok: false, error: 'unknown_clue' };
   if (!getCluePlacement(clueId)) return { ok: false, error: 'unplaced_clue' };
@@ -84,7 +84,7 @@ export function discover(discoveredValue, clueId) {
   }
 
   const missing = (clue.requires ?? []).filter((r) => !before.has(r));
-  if (missing.length) return { ok: false, error: 'locked', missing };
+  if (missing.length && !force) return { ok: false, error: 'locked', missing };
 
   const after = new Set(before);
   after.add(clueId);

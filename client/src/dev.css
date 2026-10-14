@@ -1,7 +1,7 @@
 /* Developer sandbox: floating panel for DEV_TEAM_CODE sessions. */
-.dev-toggle{position:fixed;left:14px;bottom:14px;z-index:260;background:#0e1d24;border:1px solid #3e5358;color:#d4b67c;font:600 11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;padding:9px 13px;border-radius:5px;cursor:pointer;box-shadow:0 8px 26px #0008;max-width:44vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dev-toggle{position:fixed;left:14px;bottom:14px;z-index:80;background:#0e1d24;border:1px solid #3e5358;color:#d4b67c;font:600 11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;padding:9px 13px;border-radius:5px;cursor:pointer;box-shadow:0 8px 26px #0008;max-width:44vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dev-toggle:hover{background:#14252d;border-color:#d4b67c}
-.dev-panel{position:fixed;left:14px;bottom:14px;z-index:260;width:min(430px,92vw);max-height:min(72vh,640px);display:flex;flex-direction:column;background:#0b171d;border:1px solid #3e5358;border-radius:8px;box-shadow:0 18px 60px #000a;color:#cfdbd6;font-size:12px}
+.dev-panel{position:fixed;left:14px;bottom:14px;z-index:80;width:min(430px,92vw);max-height:min(72vh,640px);display:flex;flex-direction:column;background:#0b171d;border:1px solid #3e5358;border-radius:8px;box-shadow:0 18px 60px #000a;color:#cfdbd6;font-size:12px}
 .dev-head{display:flex;justify-content:space-between;align-items:start;gap:10px;padding:12px 14px 10px;border-bottom:1px solid #26363c}
 .dev-kicker{margin:0 0 3px;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#d4b67c}
 .dev-head h2{margin:0;font-size:15px;font-weight:600;color:#ececde}
