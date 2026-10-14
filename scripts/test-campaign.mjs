@@ -18,6 +18,16 @@ assert.equal(solvePuzzle([], [], 'p_registration', 'sameer@gotmail.com').correct
 for (const answer of ['the pen camera recording', 'the spiral cd', 'the copper spiral cd', 'the cassette', 'cassette tape', 'the mixtape']) {
   assert.equal(solvePuzzle([], [], 'p_police_video', answer).correct, true, `p_police_video must accept "${answer}"`);
 }
+// "This was ______" — the voice from the headquarters surfaces as Tanush, who
+// is also just "the leader"; every wording of that lands.
+for (const answer of ['tanush', 'it was tanush', 'tanush the leader', 'leader', 'the leader', 'it was the leader', 'the cult leader']) {
+  assert.equal(solvePuzzle([], [], 'p_tanush', answer).correct, true, `p_tanush must accept "${answer}"`);
+}
+// "Where did he hear about Nigeria again?" — plural and singular pamphlets are
+// the same recollection, so the answer lands however the team words it.
+for (const answer of ['pamphlet', 'the ngo pamphlet', 'pamphlets', 'the pamphlets', 'ngo pamphlets', 'the ngo pamphlets', 'workshop pamphlets', 'the ngo workshop pamphlets']) {
+  assert.equal(solvePuzzle([], ['c_lua_files'], 'p_nigeria', answer).correct, true, `p_nigeria must accept "${answer}"`);
+}
 for (const [act,solved,discovered,puzzle,missingClue] of [
   ['act1',[],['c_diary'],'p_morse','c_laptop_locked'],
   ['act3',['p_registration'],[],'p_fare','c_workshop_address'],

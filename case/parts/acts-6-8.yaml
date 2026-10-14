@@ -113,6 +113,7 @@ rooms:
         type: character
         character: veer
         label: "The doorbell — Veer"
+        requires: { puzzles: [p_mask_owner] }
         position: [3.6, 0.6, 2.6]
       - id: sameer_room_a7_follow
         act: act7
@@ -221,7 +222,7 @@ rooms:
         type: puzzle
         puzzle: p_hand_owner
         label: "The hand on his neck"
-        position: [1.8, 1.2, 3.2]
+        position: [0, 1.05, -2.1]
       # Act VIII
       - id: h8_veer_death
         act: act8
@@ -617,6 +618,11 @@ puzzles:
       - "tanush"
       - "it was tanush"
       - "tanush the leader"
+      - "leader"
+      - "the leader"
+      - "it was the leader"
+      - "the cult leader"
+      - "cult leader"
     success: "Tanush. He feels both elation and dread. He checks if the camera is recording — it is."
     requires: { puzzles: [p_voice_hq] }
 
@@ -788,6 +794,13 @@ puzzles:
       - "workshop pamphlet"
       - "ngo workshop pamphlet"
       - "the ngo workshop pamphlet"
+      - "pamphlets"
+      - "the pamphlets"
+      - "ngo pamphlets"
+      - "the ngo pamphlets"
+      - "workshop pamphlets"
+      - "ngo workshop pamphlets"
+      - "the ngo workshop pamphlets"
     success: "The NGO pamphlet! Perigee had hosted a huge workshop in Nigeria just a year ago. He looked up the aftermath — an article on the second page of Google, connecting the same dots he was about to connect. This was the journalist's last article. He tries not to think about what happened to her."
     grants: [c_article]
     requires: { clues: [c_lua_files] }
