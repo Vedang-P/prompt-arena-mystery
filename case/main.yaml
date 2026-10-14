@@ -3390,7 +3390,7 @@ puzzles:
         - c_disguise
   - id: p_hand_owner
     kind: text
-    prompt: Sameer had enough of this. How dare he be mocked after all this — he had some dignity. He turned around. Of course he knew this was a waste of oxygen. It was ____
+    prompt: He doesn't dare turn. There is a voice with the hand. "My my, I thought you would be smarter than this Sameer." The deep voice chuckled behind him, even though there was no joke. He felt the temperature around him drop, his heartbeat steadily rising. The person didn't remove his hand, he just fixed his grip. "What, don't recognise me?" the man mocked. Sameer had enough of this. How dare he be mocked after all this — he had some dignity. He turned around. Of course he knew this was a waste of oxygen. It was ____
     answers:
       - tanush
       - the leader
