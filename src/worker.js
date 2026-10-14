@@ -601,28 +601,59 @@ app.post('/api/login', async (c) => {
 // ---------- game state ----------
 
 // Reopen the case from Act 0. The run keeps its start time (the event clock
-// never stops) and takes a fixed penalty so a restart cannot beat a clean run.
-// Practice restarts are free, and the per-clue wrong-answer counters reset.
+// never stops) and takes a fixed penalty so a restart cannot beat a clean run —
+// except once the run has already ended (an authored ending or a solved case),
+// where the next attempt starts free instead of looping back into the ending.
+// A finished run may also resume (`from: 'recent'`) at the act it ended on with
+// the same prior-act checkpoint practice starts get, for a much heavier penalty:
+// skipping the acts already cleared must never out-score playing straight.
+// Practice restarts are always free, and every restart resets the per-clue
+// wrong-answer counters.
 const RESTART_PENALTY = 10;
+const RESUME_PENALTY = 25;
 
 app.post('/api/restart', async (c) => {
   const { auth, error } = await requireActiveTeam(c);
   if (error) return error;
+  const body = await c.req.json().catch(() => ({}));
   const flags = parseJsonObject(auth.progress.flags);
-  const penalty = flags.practice ? 0 : RESTART_PENALTY;
+  const ended = Boolean(auth.progress.ending) || !!Number(auth.progress.solved ?? 0);
+  const acts = caseData.acts ?? [];
+  const current = acts.find((a) => a.id === auth.progress.act) ?? null;
+  const currentIndex = current ? acts.indexOf(current) : 0;
+  const resumeAct = body.from === 'recent' && ended && currentIndex > 0 ? current : null;
+  const penalty = flags.practice ? 0 : resumeAct ? RESUME_PENALTY : ended ? 0 : RESTART_PENALTY;
   const nextFlags = { ...flags, wrongAttempts: {} };
+  const checkpoint = resumeAct ? chapterCheckpoint(resumeAct.id) : { discovered: [], solvedPuzzles: [] };
   await c.env.DB.prepare(
-    "UPDATE progress SET act = 'act0', discovered = '[]', solved_puzzles = '[]', penalties = penalties + ?, hints_used = 0, accusation = NULL, ending = NULL, solved = 0, solved_at = NULL, flags = ? WHERE team_id = ?"
+    'UPDATE progress SET act = ?, discovered = ?, solved_puzzles = ?, penalties = penalties + ?, hints_used = 0, accusation = NULL, ending = NULL, solved = 0, solved_at = NULL, flags = ? WHERE team_id = ?'
   )
-    .bind(penalty, JSON.stringify(nextFlags), auth.teamId)
+    .bind(
+      resumeAct?.id ?? 'act0',
+      JSON.stringify(checkpoint.discovered),
+      JSON.stringify(checkpoint.solvedPuzzles),
+      penalty,
+      JSON.stringify(nextFlags),
+      auth.teamId
+    )
     .run();
   const row = await c.env.DB.prepare('SELECT penalties FROM progress WHERE team_id = ?')
     .bind(auth.teamId)
     .first();
   await c.env.DB.prepare('INSERT INTO events(team_id, type, detail) VALUES (?,?,?)')
-    .bind(auth.teamId, 'restart', JSON.stringify({ penalty, practice: !!flags.practice }))
+    .bind(
+      auth.teamId,
+      'restart',
+      JSON.stringify({ penalty, practice: !!flags.practice, from: resumeAct ? 'recent' : 'act0', act: resumeAct?.id ?? 'act0' })
+    )
     .run();
-  return c.json({ ok: true, penalty, penalties: Number(row?.penalties ?? 0) });
+  return c.json({
+    ok: true,
+    penalty,
+    penalties: Number(row?.penalties ?? 0),
+    from: resumeAct ? 'recent' : 'act0',
+    act: resumeAct?.id ?? 'act0',
+  });
 });
 
 app.get('/api/state', async (c) => {
@@ -654,6 +685,8 @@ app.get('/api/state', async (c) => {
     maxStrikes: maxExitStrikes(c.env),
     graceMs: exitGraceMs(c.env),
     windowMs: exitWindowMs(c.env),
+    restartPenalty: RESTART_PENALTY,
+    resumePenalty: RESUME_PENALTY,
     fullscreen: fullscreenEnforced(c.env),
     exempt: !!Number(auth.progress.exempt ?? 0),
     pendingExit: auth.progress.pending_exit_at

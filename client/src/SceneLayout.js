@@ -40,6 +40,21 @@ export function updateFieldBackpackOrbit({screenDx,screenDy,viewportWidth},wasOv
  const shiftY=screenDy>0?separation:-separation;
  return {overlapping,shiftY};
 }
+// The hospital's security-panel label runs along the same corridor sight line as
+// the theatre column (the operating-theatre clue stacked above the office-door
+// travel), so it can sit on top of that stack. Push the security label clear of
+// the column in CSS pixels only while the projected boxes overlap, with
+// hysteresis so a grazing orbit keeps its arrangement instead of flickering.
+export function updateHospitalSecurityOrbit({screenDx,screenDy,viewportWidth},wasOverlapping){
+ const verticalGap=Math.abs(screenDy);
+ const horizontalLimit=viewportWidth<=700?170:210;
+ const overlapping=wasOverlapping
+  ?screenDx<horizontalLimit+48&&verticalGap<112
+  :screenDx<horizontalLimit&&verticalGap<84;
+ const separation=overlapping?Math.max(0,96-verticalGap):0;
+ const shiftY=screenDy>0?separation:-separation;
+ return {overlapping,shiftY};
+}
 export const FIELD_BACKGROUND_BUILDING={position:[-7,.006,-34],height:6.2,tint:'#626a72'};
 export const FIELD_OVERGROWTH=Array.from({length:36},(_,i)=>{
   const side=i%2?-1:1;
@@ -91,9 +106,10 @@ export const DETAIL_ANCHORS = {
  cyber_cafe:{cc_dosa:[-3.9,1.15,1.85],cc_cassette:[4.7,.92,-3.1]},
  workshop:{ws_snacks:[.1,.877,-2.2]},
  ngo_archive:{na_system:[2.9,.89,-1.6],na_playback:[2.9,.89,-1.6],na_blade:[2.9,.89,-1.6],na_wall:[-5.9,1.5,.8],na_plea:[-5.9,1.5,.8],na_hide:[0,.2,3.9],na_delve:[0,.2,3.9]},
- tanush_office:{to_drug_report:[-.05,DESK_TOP,-1.35],to_drawer:[-.2,.48,-1.5],to_tablet:[.55,DESK_TOP,-1.5],to_handbook:[1,DESK_TOP,-1.5],to_timetable:[-1.9,1.7,-4.93]},
+ tanush_office:{to_drug_report:[-.05,DESK_TOP,-1.35],to_drawer:[-.2,.48,-1.5],to_tablet:[.55,DESK_TOP,-1.5],to_handbook:[1,DESK_TOP,-1.5],to_timetable:[-1.9,1.7,-4.93],
+  h8_office_clue:[.2,.5,.6],h8_office:[4.5,.9,.1],h8_years:[-1.9,1.5,-4.7],h8_burn:[1.45,DESK_TOP,-1.4],h8_rooms:[4.2,1.5,-4.4],h8_why:[6.44,1.5,-2.3],h8_found:[.4,1,-2.65],h8_saved:[3,.55,.1],h8_where:[-4.3,.95,-4.2],h8_wrong:[.55,DESK_TOP,-1.6]},
  enakshi_house:{eh_door:[.8,1.1,-4.2],eh_tablet:[.2,.55,-.4],eh_tablet_content:[.2,.55,-.4],eh_window:[-5.05,1.35,-1.4]},
- hospital:{h4_backdoor:[-5.8,1.2,-4.4],h4_theatre:[5.8,1.3,-4.4],h4_security:[4.7,1.35,-2.2],h4_crowd:[-4.5,.9,-1.1],h4_to_tanush_office:[5.8,.2,-4.4],h6_crowd:[0,.9,-2.1],h6_voice_hq:[0,.9,-2.1],h6_tanush:[0,.9,-2.1],h6_box:[1,.89,-2.1],h6_sacrifice:[0,.9,-2.1],h6_parth_meet:[-2,1,-2],h7_trucks:[-3,.7,-2.2],h7_worker:[3.8,.85,-2.8],h7_floor:[4.2,1.2,-6.75],h8_refer:[0,1,-2.1],h8_spiral:[0,1,-2.1],h8_veer_death:[-2,.9,-2.1],h8_parth2:[-5.8,1.1,-4.4],h8_to_office:[5.8,.2,-4.4]},
+ hospital:{h4_backdoor:[-5.8,1.2,-4.4],h4_theatre:[5.8,1.3,-4.4],h4_security:[4.7,1.35,-2.2],h4_crowd:[-4.5,.9,-1.1],h4_to_tanush_office:[5.8,.2,-4.4],h6_crowd:[0,.9,-2.1],h6_voice_hq:[0,.9,-2.1],h6_tanush:[0,.9,-2.1],h6_box:[1,.89,-2.1],h6_sacrifice:[0,.9,-2.1],h6_parth_meet:[-2,1,-2],h7_trucks:[-3,.7,-2.2],h7_worker:[3.8,.85,-2.8],h7_floor:[4.2,1.2,-6.75],h8_refer:[0,1,-2.1],h8_spiral:[0,1,-2.1],h8_veer_death:[-2,.9,-2.1],h8_escape:[-5.8,1.1,-4.4],h8_to_office:[5.8,.2,-4.4]},
  sameer_room:{sr_voicenote:[2.8,DESK_TOP+.14,-1.5],sr_cd_choice:[2.8,DESK_TOP+.14,-1.5],sr_instalitre:[2.8,DESK_TOP+.14,-1.5],sr_ticket:[2.8,DESK_TOP+.14,-1.5],sr4_listings:[2.8,DESK_TOP+.14,-1.5],sr5_connection:[2.8,DESK_TOP+.14,-1.5],sr5_voice_note:[2.8,DESK_TOP+.14,-1.5],sr5_exposed:[2.8,DESK_TOP+.14,-1.5],sameer_room_a6_fullmoon:[2.8,DESK_TOP+.14,-1.5],sameer_room_a7_follow:[2.8,DESK_TOP+.14,-1.5],sameer_room_a7_lua:[-3.8,1.285,-3.05],sameer_room_a7_nigeria:[-3.8,1.285,-3.05],sameer_room_a7_mask:[SAMEER_BED.center[0],SAMEER_BED.surfaceY+.018,SAMEER_BED.center[2]],sameer_room_a7_continue:[2.8,DESK_TOP+.14,-1.5]},
- police_station:{police_station_a6_arrest:[-.43,DESK_TOP,-1.05],police_station_a6_tell:[.15,DESK_TOP,-.9],police_station_a6_info:[.15,DESK_TOP,-.9],police_station_a6_where:[.15,DESK_TOP,-.9],police_station_a6_video:[.15,DESK_TOP,-.9]},
+ police_station:{police_station_a6_tell:[.15,DESK_TOP,-.9],police_station_a6_info:[.15,DESK_TOP,-.9],police_station_a6_where:[.15,DESK_TOP,-.9],police_station_a6_video:[.15,DESK_TOP,-.9]},
 };

@@ -505,6 +505,9 @@ export default function App() {
   const openScene = (puzzleId, label) => {
     const puzzle = state.puzzles?.find((p) => p.id === puzzleId);
     if (!puzzle?.lines?.length) return false;
+    // A scene plays in the room its hotspot stands in, not always the act's
+    // entry room: the burning office is not the ward it started in.
+    const sceneRoom = state.rooms.find((r) => (r.hotspots ?? []).some((h) => h.type === 'puzzle' && h.puzzle === puzzleId));
     puzzleRequest.current = null;
     setPuzzleSpot(null);
     setPuzzleResult(null);
@@ -517,6 +520,7 @@ export default function App() {
       kicker: currentAct?.kicker,
       title: label ?? currentAct?.title,
       doneLabel: 'Continue',
+      backdrop: sceneRoom?.id ?? currentAct?.entry_room,
       cast: [{ character: 'sameer' }],
     });
     return true;
@@ -807,21 +811,23 @@ export default function App() {
     else setNotice({ title: 'Finish this chapter first', body: currentAct.objective });
   };
 
-  const restartCase = async () => {
+  const restartCase = async (from = 'act0') => {
     if (loginBusy) return;
     setRestartOpen(false);
     setLoginBusy(true);
     try {
-      const restarted = await restartRun();
+      const restarted = await restartRun(from);
       clearIntros(); closeStory(); setRoomId(null); setChats({}); setEvidence(null);
       setActiveChar(null); setPuzzleSpot(null); setWon(null); setAccuseResult(null); setPhase('game');
       await loadGame('game');
       setNotice({
         kicker: 'Case reopened',
-        title: 'A fresh start',
+        title: restarted?.from === 'recent' ? `Back to ${restarted.act ?? 'the last act'}` : 'A fresh start',
         body: restarted?.penalty
           ? `${restarted.penalty} penalties added. The clock has not stopped.`
-          : 'Practice restart — no penalty. The clock keeps running.',
+          : state?.practice
+            ? 'Practice restart — no penalty. The clock keeps running.'
+            : 'No penalty added. The clock keeps running.',
       });
     } catch {
       setNotice({ title: 'Could not restart', body: 'Please try again.' });
@@ -833,7 +839,15 @@ export default function App() {
     {leaderboardOpen && <Leaderboard team={state?.team} onClose={()=>setLeaderboardOpen(false)} />}
     {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
     {chaptersOpen && <ChapterSelect acts={state?.acts ?? []} onSelect={beginPractice} onClose={() => setChaptersOpen(false)} busy={loginBusy} practice={state?.practice} onCampaign={returnCampaign} />}
-    {restartOpen && <RestartConfirm onClose={() => setRestartOpen(false)} onConfirm={restartCase} busy={loginBusy} />}
+    {restartOpen && <RestartConfirm
+      onClose={() => setRestartOpen(false)}
+      onConfirm={restartCase}
+      busy={loginBusy}
+      ended={Boolean(state?.ending || state?.solved)}
+      recent={currentAct ? { kicker: currentAct.kicker, title: currentAct.title } : null}
+      restartCost={state?.practice || state?.ending || state?.solved ? 0 : state?.restartPenalty ?? 10}
+      resumeCost={state?.practice ? 0 : state?.resumePenalty ?? 25}
+    />}
     {/* Notices and the deploy chip live above every phase, not just the room:
         a failed cinematic save or chapter start must still say so. */}
     {notice && !evidence && <Notice notice={notice} onClose={() => setNotice(null)} />}
@@ -891,8 +905,15 @@ export default function App() {
   }
 
   if (phase === 'login' || phase === 'menu') {
+    // A finished run never resumes into its own ending: the title offers the
+    // restart choices instead, or the game would loop on the ending card.
+    const resumeOrReopen = () => {
+      if (state?.ending || state?.solved) { setRestartOpen(true); return; }
+      setPhase('loading');
+      loadGame('game');
+    };
     return <>{audio}<TitleScreen config={authConfig} state={state} busy={loginBusy} error={loginError}
-      onGuest={beginGuest} onResume={() => { setPhase('loading'); loadGame('game'); }}
+      onGuest={beginGuest} onResume={resumeOrReopen} onRestart={() => setRestartOpen(true)}
       onLeaderboard={()=>setLeaderboardOpen(true)} onDevLogin={handleDevLogin} onSettings={() => setSettingsOpen(true)} onChapters={() => setChaptersOpen(true)} />{overlays}</>;
   }
 

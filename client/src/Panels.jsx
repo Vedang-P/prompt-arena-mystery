@@ -231,24 +231,40 @@ export function PuzzleModal(props) {
   return <PuzzleWorkbench {...props} />;
 }
 
-export function RestartConfirm({ onClose, onConfirm, busy }) {
+export function RestartConfirm({ onClose, onConfirm, busy, ended, recent, restartCost = 0, resumeCost = 0 }) {
   const panelRef = useRef(null);
   useCaseDialog(panelRef, onClose);
+  const recentLabel = [recent?.kicker, recent?.title].filter(Boolean).join(' · ') || 'the latest act';
   return <div className="case-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-    <section className="case-panel restart-panel" ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Restart the case">
+    <section className="case-panel restart-panel" ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Reopen the case">
       <header className="case-panel-head">
-        <div><p className="case-eyebrow">Reopen the case</p><h2>Start again from Act 0?</h2></div>
+        <div>
+          <p className="case-eyebrow">{ended ? 'The case has ended' : 'Reopen the case'}</p>
+          <h2>{ended ? 'How will you play it again?' : 'Start again from Act 0?'}</h2>
+        </div>
         <button className="case-close" onClick={onClose} aria-label="Close restart dialog">×</button>
       </header>
       <div className="case-reading-scroll">
-        <p className="case-reading-text">Everything collected so far is cleared — evidence, resolved leads, the accusation — and the story begins again at the prologue.</p>
-        <p className="case-reading-text">A restart adds <strong>10 penalties</strong> to your score in an event run (practice restarts are free), and the event clock keeps running. The notebook cannot be recovered.</p>
+        {ended ? <>
+          <p className="case-reading-text"><strong>From Act 0</strong> — a clean run through the whole story with no new penalty. The notebook is wiped and the event clock keeps running.</p>
+          <p className="case-reading-text"><strong>Resume {recentLabel}</strong> — keep everything the earlier acts taught you and step back in where the case ended, for <strong>{resumeCost ? `${resumeCost} penalties` : 'free'}</strong>.{resumeCost === 0 ? ' Practice runs are never charged.' : ' Skipping the cleared acts is never cheap.'}</p>
+        </> : <>
+          <p className="case-reading-text">Everything collected so far is cleared — evidence, resolved leads, the accusation — and the story begins again at the prologue.</p>
+          <p className="case-reading-text">A restart adds <strong>{restartCost} penalties</strong> to your score in an event run (practice restarts are free), and the event clock keeps running. The notebook cannot be recovered.</p>
+        </>}
       </div>
       <footer className="case-panel-foot">
         <p>This cannot be undone</p>
         <div className="case-footer-actions">
-          <button className="case-button" onClick={onClose}>Keep my progress</button>
-          <button className="case-button primary" onClick={onConfirm} disabled={busy}>{busy ? 'Reopening…' : 'Restart from Act 0 ↺'}</button>
+          <button className="case-button" onClick={onClose}>{ended ? 'Not now' : 'Keep my progress'}</button>
+          {ended && (
+            <button className="case-button" onClick={() => onConfirm('recent')} disabled={busy}>
+              {busy ? 'Reopening…' : `Resume ${recent?.kicker ?? 'recent act'} — ${resumeCost ? `+${resumeCost} ↺` : 'free ↺'}`}
+            </button>
+          )}
+          <button className="case-button primary" onClick={() => onConfirm('act0')} disabled={busy}>
+            {busy ? 'Reopening…' : restartCost ? `From Act 0 — +${restartCost} ↺` : 'From Act 0 — free ↺'}
+          </button>
         </div>
       </footer>
     </section>

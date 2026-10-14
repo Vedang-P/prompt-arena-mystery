@@ -37,6 +37,17 @@ export function storyCast(act,kind,sceneId,index=0) {
     const position=index<2?[0,-4.8]:index===4?[0,2.4]:[1.1,.8];
     return [{character:'sameer',at:position,rot:index<2?Math.PI:index<4?Math.PI/2:0,pose:index===4?'fall':'idle',rotationX:index===4?Math.PI/2:index===0?-.12:0}];
   }
+  // Act 7 opens on the mask at Sameer's bed: he studies it alone until the
+  // narration names Veer at the knock. From then on the two stand face to face
+  // by the bed — Sameer never turns his back on his visitor, and the bedroom
+  // (not the desk or a generic home) frames the visit.
+  if(act.id==='act7'&&kind==='intro'&&sceneId==='sameer_room'){
+    if(index<1)return [{character:'sameer',at:[-1.35,-.6],rot:-2.048,pose:'idle',staged:true}];
+    return [
+      {character:'sameer',at:[.9,.35],rot:-2.051,pose:'idle',staged:true},
+      {character:'veer',at:[-1.5,-.9],rot:1.091,pose:'idle',staged:true},
+    ];
+  }
   const capture=act.id==='act3'&&kind==='outro'&&sceneId==='ngo_hq';
   const discovery=act.id==='act4'&&kind==='outro'&&sceneId==='hospital';
   const companion=discovery?'parth':sceneId==='parth_home'?'mother':sceneId==='cyber_cafe'?'ramu':sceneId==='police_station'?'officer':sceneId==='tanush_office'?'tanush':act.id==='act8'?'leader':capture?null:(act.id==='act7'&&kind==='intro')||sceneId==='concert'?'veer':null;
@@ -51,12 +62,15 @@ export function storyCast(act,kind,sceneId,index=0) {
 }
 // All acts use these furniture-relative marks. Standing actors never inherit a
 // seated origin; the raised gazebo and chair seats have explicit surfaces.
+// Cinematic beats marked `staged` already carry room-space marks of their own
+// (Act 7's bed-side confrontation) and keep them instead of a furniture default.
 export function placeCast(sceneId,cast) {
   const people=[...cast];
   if(sceneId==='police_station'&&people.some(c=>c.character==='mother'))
     for(const character of ['sameer','officer'])if(!people.some(c=>c.character===character))people.push({character});
   return people.map((c,i)=>{
     const base={...c,pose:c.pose??'idle',at:c.at??[(i-.5)*1.8,1],rot:c.rot??0,y:.003,footLift:0};
+    if(c.staged)return base;
     if(sceneId==='gazebo')return base.pose==='sit'
       ? {...base,at:[PARK.seat[0]+(c.character==='sameer'?-.5:.5),PARK.seat[1]],rot:0,...seatContact(c.character,PARK.seatY,PARK.deckY)}
       : {...base,at:people.length===1?PARK.waiting:[i?1.15:-1.15,.15],y:PARK.deckY+.003};

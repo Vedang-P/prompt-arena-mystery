@@ -81,6 +81,29 @@ rooms:
         label: "Back to Shashdhar"
         requires: { puzzles: [p_fullmoon] }
         position: [-3.6, 0.2, 3.6]
+      # The accusation lands at home first: the crowd outside, the police, the
+      # ride to the station. The scene in between unlocks the station travel.
+      - id: sameer_room_a6_arrest
+        act: act6
+        type: clue
+        clue: c_arrest
+        label: "People around his home"
+        requires: { clues: [c_parth_meet] }
+        position: [4.8, 1.35, -1.6]
+      - id: sameer_room_a6_taken
+        act: act6
+        type: puzzle
+        puzzle: p_taken_in
+        label: "A police officer takes him away"
+        requires: { clues: [c_arrest] }
+        position: [4.8, 1.35, -1.6]
+      - id: sameer_room_a6_police
+        act: act6
+        type: travel
+        to: police_station
+        label: "Taken to the police station"
+        requires: { puzzles: [p_taken_in] }
+        position: [3.6, 0.2, 3.6]
       # Act VII
       - id: sameer_room_a7_mask
         act: act7
@@ -168,11 +191,12 @@ rooms:
         label: "A face in the crowd"
         requires: { clues: [c_sacrifice] }
         position: [3.6, 1.2, -2.6]
-      - id: h6_exit_police
+      - id: h6_exit_home
         act: act6
         type: travel
-        to: police_station
-        label: "Stunned, he floats home..."
+        to: sameer_room
+        label: "Somehow he reaches home, mind blank"
+        requires: { clues: [c_parth_meet] }
         position: [-3.6, 0.3, 3.6]
       # Act VII
       - id: h7_trucks
@@ -221,12 +245,11 @@ rooms:
         puzzle: p_spiral
         label: "Spirals tattooed around his finger"
         position: [-2.6, 1.0, 3.6]
-      - id: h8_parth2
+      - id: h8_escape
         act: act8
-        type: clue
-        clue: c_parth2
-        label: "Parth outside the door"
-        requires: { puzzles: [p_spiral] }
+        type: puzzle
+        puzzle: p_escape
+        label: "Something grabs his hand at the door"
         position: [2.6, 1.1, -3.6]
       - id: h8_to_office
         act: act8
@@ -244,13 +267,6 @@ rooms:
         character: officer
         label: "Officer Rao"
         position: [3.6, 0.7, -3.5]
-      - id: police_station_a6_arrest
-        act: act6
-        type: clue
-        clue: c_arrest
-        label: "The story: he murdered Enakshi"
-        requires: { clues: [c_parth_meet] }
-        position: [-3.5, 0.9, -3.5]
       - id: police_station_a6_tell
         act: act6
         type: puzzle
@@ -297,6 +313,12 @@ rooms:
         puzzle: p_years
         label: "How long has he been here?"
         position: [2.6, 1.1, 3.6]
+      - id: h8_burn
+        act: act8
+        type: puzzle
+        puzzle: p_burn
+        label: "The scented candle"
+        position: [3.0, 0.9, 2.4]
       - id: h8_rooms
         act: act8
         type: puzzle
@@ -538,6 +560,20 @@ puzzles:
     success: "The holy blade. Sameer felt sick to his core thinking about what was going to happen."
     requires: { puzzles: [p_tanush] }
 
+  # The accusation and the ride to the station play out as a scene: the exhibit
+  # is logged at home, then the police take him away before the station opens.
+  - id: p_taken_in
+    kind: scene
+    prompt: "People around his home. A police officer takes him away."
+    lines:
+      - { speaker: narrator, text: "Somehow he reaches home, his mind blank — and stops. There are people around his home." }
+      - { speaker: sameer, text: "\"Wait, what — why is everyone here?\"" }
+      - { speaker: narrator, text: "He catches stray conversations: the story is that he has murdered Enakshi. A police officer takes him by the arm and pulls him away." }
+      - { speaker: sameer, text: "\"I didn't do anything — I didn't do anything! Please—\"" }
+      - { speaker: narrator, text: "The police drag him off as he pleads his innocence. At the station, the fluorescent lights wash over him as they put him in a chair across the desk." }
+    success: "The police drag him off as he pleads his innocence. At the station, they put him in a chair across the desk — should he tell them about what he found?"
+    requires: { clues: [c_arrest] }
+
   - id: p_tell
     kind: choice
     prompt: "As he is put into a chair, he wonders — should he tell them about what he found?"
@@ -684,6 +720,20 @@ puzzles:
     success: "Fibonacci spirals — or golden spirals."
     requires: { puzzles: [p_refer] }
 
+  - id: p_escape
+    kind: scene
+    prompt: "The leader calls him up — something grabs his hand at the door."
+    lines:
+      - { speaker: leader, text: "\"Sameer, come up! We all want to see you. Why must you be so shy!\"" }
+      - { speaker: narrator, text: "The voice bounces around his head. He doesn't want to go up — he is pushed up. The leader clasps his shoulders; Sameer pushes him off and jumps back into the crowd. Someone's hand is probably crushed. Past him would have cared, probably." }
+      - { speaker: narrator, text: "He reaches the door — something grabs his hand. His head hurts as he turns it around. It's Parth. Parth says something; the monkeys are too loud, he can't hear shit. He somehow opens the door." }
+      - { speaker: narrator, text: "Parth and him are outside the room. Sameer feels nauseous — the lights are too bright and the colours are still taunting him. He squints and looks at Parth. Somehow, he got worse: his eyes looked sunken and his skin like paper." }
+      - { speaker: parth, text: "\"You came! You're going to love this place. It's busy a few days but is usually better when there are no events. The people are pretty fun!\"" }
+      - { speaker: narrator, text: "Sameer looks at Parth — his eyes looked so hollow. Sameer was about to say something when the doors burst open. The leader came out, red-faced. He grabs both boys and drags them into the office." }
+    success: "The leader drags both boys into the office."
+    grants: [c_parth2]
+    requires: { puzzles: [p_spiral] }
+
   - id: p_office
     kind: text
     prompt: "The leader drags both boys into the office and Sameer collapses onto the floor. How did the office look again?"
@@ -707,18 +757,31 @@ puzzles:
     success: "\"You've barely been here for 5 years, old man — you haven't done shit.\" The leader looked at him, then looked at Parth."
     requires: { clues: [c_office], puzzles: [p_office] }
 
+  - id: p_burn
+    kind: scene
+    prompt: "The leader grabs Parth by the collar — there is a scented candle in the office."
+    lines:
+      - { speaker: leader, text: "\"You know child, you remind me a lot of myself. I was also young and rash.\"" }
+      - { speaker: sameer, text: "\"And stupid.\"" }
+      - { speaker: narrator, text: "The leader grabbed Parth by the collar. He flailed around like a dying fish. Sameer panicked — he shouldn't have said that." }
+      - { speaker: leader, text: "\"He has potential. Nishkara would be pleased with such a gift.\"" }
+      - { speaker: narrator, text: "Sameer's splitting headache grew. He spotted a scented candle in the office and grabbed it. The leader dropped Parth and tried to grab him; Sameer bent and escaped the leader's hand." }
+      - { speaker: narrator, text: "He burns one of the books on fire and lets it fall on the carpet. Parth's head is banged on the table corner — it is stained red. He doesn't get up." }
+    success: "The office catches fire. Sameer runs with the burning book."
+    requires: { puzzles: [p_years] }
+
   - id: p_rooms
     kind: text
-    prompt: "He runs with the book to other rooms. Which other room did he visit, other than the leader's or sacrifice room?"
+    prompt: "Sameer runs on with the burning book. Which other room did he visit, other than the leader's office or the sacrifice room?"
     answers:
       - "security room"
       - "the security room"
     success: "The security room. He runs over there throwing pages near the switchboards and wherever the flames would be big. The leader tries his best to catch him, but he fails. He reaches the end of the corridor and climbs on the window frame."
-    requires: { puzzles: [p_years] }
+    requires: { puzzles: [p_burn] }
 
   - id: p_why
     kind: text
-    prompt: "Why did he start doing all of this?"
+    prompt: "What was the point of all of this?"
     answers:
       - "to find parth"
       - "find parth"

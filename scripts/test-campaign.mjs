@@ -36,7 +36,7 @@ let state = await call('/api/state');
 assert.equal(state.act, 'act0');
 assert.equal(state.acts.length, 9);
 assert.equal(state.rooms.length, 14);
-assert.equal(state.puzzles.length, 55);
+assert.equal(state.puzzles.length, 58);
 assert(state.puzzles.every((p) => !('answers' in p) && !('grants' in p)));
 assert(state.endings.every((e) => !('body' in e)));
 await call('/api/puzzles/p_floor/solve', { answer: '3' }, 403);
@@ -79,10 +79,10 @@ for (const act of caseData.acts.slice(1)) {
 state = await call('/api/state');
 assert.equal(state.ending.id, 'ending_main');
 assert.match(state.ending.body, /now disappear/i);
-// 54 of 55: the café route skips p_cd_watch, which only exists on the laptop path.
-assert.equal(state.solvedPuzzles.length, 54);
+// 57 of 58: the café route skips p_cd_watch, which only exists on the laptop path.
+assert.equal(state.solvedPuzzles.length, 57);
 assert.equal(state.penalties, 0);
-assert.equal(state.score, state.discovered.length + 54);
+assert.equal(state.score, state.discovered.length + 57);
 const campaignSave = JSON.stringify(state);
 for (const act of caseData.acts) {
   mode = 'campaign';
@@ -112,8 +112,35 @@ mode = 'campaign';
 const preserved = await call('/api/state');
 assert.equal(preserved.team, JSON.parse(campaignSave).team);
 assert.equal(preserved.ending.id, 'ending_main');
-assert.equal(preserved.solvedPuzzles.length, 54);
+assert.equal(preserved.solvedPuzzles.length, 57);
 console.log('PASS both endings, practice isolation, durable reload, score, and leaderboard');
+// A finished run must never loop back into its ending: resuming reopens the act
+// it ended on (prior acts restored from the practice checkpoint) for the heavy
+// resume penalty, and a full Act 0 restart after an ending is free.
+const resumed = await call('/api/restart', { from: 'recent' });
+assert.equal(resumed.penalty, 25);
+assert.equal(resumed.act, 'act8');
+let reopened = await call('/api/state');
+assert.equal(reopened.act, 'act8');
+assert.equal(reopened.ending, null);
+assert.equal(reopened.solved, false);
+assert.equal(reopened.penalties, 25);
+assert.deepEqual(reopened.discovered, chapterCheckpoint('act8').discovered);
+assert.deepEqual(reopened.solvedPuzzles, chapterCheckpoint('act8').solvedPuzzles);
+// Both natural endings are already covered above; force the ending back on to
+// prove the free Act 0 restart is gated on a finished run.
+await env.DB.prepare(
+  "UPDATE progress SET act = 'act7', ending = 'ending_cult', solved = 1 WHERE team_id = (SELECT id FROM teams WHERE name = ?)"
+).bind(JSON.parse(campaignSave).team).run();
+const free = await call('/api/restart', { from: 'act0' });
+assert.equal(free.penalty, 0, 'a restart after an ending is free');
+reopened = await call('/api/state');
+assert.equal(reopened.act, 'act0');
+assert.equal(reopened.ending, null);
+assert.equal(reopened.solved, false);
+assert.deepEqual(reopened.discovered, []);
+assert.equal(reopened.penalties, 25, 'a free restart keeps the penalties already spent');
+console.log('PASS post-ending restart: free Act 0 or resume the ending act for 25');
 // The laptop path must not skip the cyber cafe: it fries the laptop and the
 // footage only arrives once the CD is played at Ramu's.
 await call('/api/guest', {});

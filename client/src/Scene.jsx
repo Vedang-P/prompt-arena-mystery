@@ -1,7 +1,7 @@
 import './styles-scene.css';
 import { CinemaProp, ParkGround, WindTree, CeilingFan } from './CinemaAssets.jsx';
 import {DetailProp,InstancedDetailScatter,TerrainSurface,WallSign,Cable,ComputerStation,ShelfContents,FencePanel} from './EnvironmentDetails.jsx';
-import { BEDROOM, SAMEER_BED, HOME_STAIRS, HOME_UPPER_DOORWAY, HOME_BEDROOM, backWallPanels, POLICE, HOSPITAL_BED, DESK_TOP, DESK_SEAT, PARTH_ANCHORS, PARK, DETAIL_ANCHORS,FIELD,FIELD_TRACKS,FIELD_BACKGROUND_BUILDING,FIELD_OVERGROWTH,ROOM_VIEWS,ROOM_BOUNDS,updateFieldBackpackOrbit } from './SceneLayout.js';
+import { BEDROOM, SAMEER_BED, HOME_STAIRS, HOME_UPPER_DOORWAY, HOME_BEDROOM, backWallPanels, POLICE, HOSPITAL_BED, DESK_TOP, DESK_SEAT, PARTH_ANCHORS, PARK, DETAIL_ANCHORS,FIELD,FIELD_TRACKS,FIELD_BACKGROUND_BUILDING,FIELD_OVERGROWTH,ROOM_VIEWS,ROOM_BOUNDS,updateFieldBackpackOrbit,updateHospitalSecurityOrbit } from './SceneLayout.js';
 import DemonMask from './DemonMask.jsx';
 import {seatContact} from './SceneStaging.js';
 import Actor from './Actor.jsx';
@@ -431,22 +431,29 @@ function HotspotMarkers({ room, hot }) {
     const anchors=room.id==='parth_room'?PARTH_ANCHORS:DETAIL_ANCHORS[room.id]??{};
     const characters=(room.hotspots??[]).filter(h=>h.type==='character');
     for(const h of room.hotspots??[]){if(h.type==='character')continue;const position=anchors[h.id]??hotspotPosition(h,0);const key=position[0]+':'+position[2];if(!groups.has(key))groups.set(key,{position,hotspots:[]});groups.get(key).hotspots.push(h);}
-    return <>{characters.map(h=>{const officer=room.id==='police_station'&&h.character==='officer';return <CharacterHotspot key={h.id} hotspot={h} position={officer?[POLICE.officer[0],DESK_SEAT-.4915,POLICE.officer[1]]:hotspotPosition(h)} hot={hot} pose={officer?'sit':'idle'} rotation={h.rotation??[0,0,0]}/>;})}{[...groups.entries()].map(([key,group])=><AnchoredHotspot key={key} {...group} hot={hot} avoidLabelOverlap={room.id==='abandoned_field'&&group.hotspots.some(h=>h.id==='af_backpack')}/>)}</>;
+    return <>{characters.map(h=>{const officer=room.id==='police_station'&&h.character==='officer';return <CharacterHotspot key={h.id} hotspot={h} position={officer?[POLICE.officer[0],DESK_SEAT-.4915,POLICE.officer[1]]:hotspotPosition(h)} hot={hot} pose={officer?'sit':'idle'} rotation={h.rotation??[0,0,0]}/>;})}{[...groups.entries()].map(([key,group])=>{
+      // Only guard a label against a partner the room is actually rendering:
+      // before the theatre clue appears (or in a later act without it) the
+      // security label sits alone and must keep its authored place.
+      const fieldBackpack=room.id==='abandoned_field'&&group.hotspots.some(h=>h.id==='af_backpack');
+      const hospitalSecurity=room.id==='hospital'&&group.hotspots.some(h=>h.id==='h4_security')&&room.hotspots.some(h=>h.id==='h4_theatre');
+      const labelGuard=fieldBackpack?{partner:DETAIL_ANCHORS.abandoned_field.af_sedan,update:updateFieldBackpackOrbit}:hospitalSecurity?{partner:DETAIL_ANCHORS.hospital.h4_theatre,update:updateHospitalSecurityOrbit}:null;
+      return <AnchoredHotspot key={key} {...group} hot={hot} labelGuard={labelGuard}/>;
+    })}</>;
   }
 }
 
-function AnchoredHotspot({hotspots,position,hot,avoidLabelOverlap=false}) {
+function AnchoredHotspot({hotspots,position,hot,labelGuard=null}) {
   const [orbitShiftY,setOrbitShiftY]=useState(0),wasOverlapping=useRef(false),appliedShiftY=useRef(0);
   const {size}=useThree();
-  const sedanLabel=useRef(new THREE.Vector3()),backpackLabel=useRef(new THREE.Vector3());
+  const guardPartner=useRef(new THREE.Vector3()),guardSelf=useRef(new THREE.Vector3());
   useFrame(({camera})=>{
-    if(!avoidLabelOverlap)return;
-    const sedan=DETAIL_ANCHORS.abandoned_field.af_sedan;
-    sedanLabel.current.set(sedan[0],sedan[1]+.28,sedan[2]).project(camera);
-    backpackLabel.current.set(position[0],position[1]+.28,position[2]).project(camera);
-    const next=updateFieldBackpackOrbit({
-      screenDx:Math.abs(sedanLabel.current.x-backpackLabel.current.x)*size.width/2,
-      screenDy:(sedanLabel.current.y-backpackLabel.current.y)*size.height/2,
+    if(!labelGuard)return;
+    guardPartner.current.set(labelGuard.partner[0],labelGuard.partner[1]+.28,labelGuard.partner[2]).project(camera);
+    guardSelf.current.set(position[0],position[1]+.28,position[2]).project(camera);
+    const next=labelGuard.update({
+      screenDx:Math.abs(guardPartner.current.x-guardSelf.current.x)*size.width/2,
+      screenDy:(guardPartner.current.y-guardSelf.current.y)*size.height/2,
       viewportWidth:size.width,
     },wasOverlapping.current);
     wasOverlapping.current=next.overlapping;

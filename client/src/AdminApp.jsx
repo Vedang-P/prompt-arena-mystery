@@ -153,7 +153,7 @@ const eventDetailText = (ev) => {
     case 'admin_strikes':
       return `${d.from} → ${d.to}`;
     case 'restart':
-      return `+${d.penalty} penalties`;
+      return `${d.from === 'recent' ? `resumed ${d.act ?? 'act'} · ` : ''}+${d.penalty} penalties`;
     default:
       return '';
   }

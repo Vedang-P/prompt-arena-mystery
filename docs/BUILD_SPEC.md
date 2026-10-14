@@ -123,7 +123,7 @@ must treat puzzle `requires` as gating; dead-content warnings count puzzle grant
 | act5 | interactive | The Big Bad | tanush_office | tanush_office, enakshi_house, sameer_room | puzzles: [p_exposed] |
 | act6 | interactive | Poornima | sameer_room | sameer_room, hospital, police_station | puzzles: [p_police_video] |
 | act7 | interactive | The Mask | sameer_room | sameer_room, hospital, enakshi_house | puzzles: [p_hand_owner, p_floor] |
-| act8 | interactive | The Revelation | hospital | hospital, tanush_office | clues: [c_office]; puzzles: [p_office, p_found, p_saved] |
+| act8 | interactive | The Revelation | hospital | hospital, tanush_office | clues: [c_office]; puzzles: [p_refer, p_spiral, p_escape, p_office, p_years, p_burn, p_rooms, p_why, p_found, p_saved, p_where, p_wrong] |
 
 Commands: `kicker` "Act 0".."Act VIII". Act 0 keeps its existing scenes/beats (fix text
 per the final script: "Sameer pleaded", mother line, "And then he ran off. Weird.").
@@ -191,7 +191,7 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 | c_ritual2 | hospital crowd hotspot (act6) | c_pen_camera | wendigo masks, the Shiniest mask |
 | c_sacrifice | hospital podium hotspot (act6) | p_box | the carving, the vial, the convulsion |
 | c_parth_meet | hospital crowd hotspot #2 (act6) | c_sacrifice | he yanks Parth out |
-| c_arrest | police_station lobby hotspot | c_parth_meet | "he murdered Ekanshi" |
+| c_arrest | sameer_room window hotspot (act6) | c_parth_meet | people around his home; "he murdered Ekanshi"; he is dragged to the station |
 | c_mask | grant of p_police_video | — | a wendigo mask on his bed |
 | c_mask_owner | grant of p_mask_owner | — | only the Shiniest mask is decorated |
 | c_lua_files | grant of p_lua | — | procurement, Nigeria shipments |
@@ -200,7 +200,7 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 | c_disguise | hospital lone-worker hotspot | c_trucks | knocked out, clothes taken |
 | c_caught | grant of p_floor | — | the hand on his neck |
 | c_veer_death | hospital stage hotspot (act8) | c_caught | Veer's neck snaps |
-| c_parth2 | hospital stage hotspot #2 (act8) | p_spiral | Parth's hollow eyes |
+| c_parth2 | grant of p_escape (act8) | p_spiral | Parth's hollow eyes outside the door |
 | c_office | tanush_office hotspot (act8) | — | plush carpets, mahogany |
 
 ### Puzzles → answer keys (player-facing prompt is authored by W1–W3)
@@ -239,6 +239,7 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 | p_voice_hq | text | ngo headquarters, the headquarters, the ngo | requires c_ritual2 |
 | p_tanush | text | tanush | requires p_voice_hq |
 | p_box | text | holy blade, the holy blade, blade | requires p_tanush |
+| p_taken_in | scene | — | the accusation at home plays out (crowd, officer, ride); after it, the police-station travel opens |
 | p_tell | choice | Tell them everything | options [Tell them everything, Stay silent]; requires c_parth_meet |
 | p_police_info | choice | Financial information, recruitment numbers, and domains | options [Financial information, recruitment numbers, and domains, The names of every member, The hospital's location] |
 | p_police_where | text | ngo headquarters, the archive rooms, archive rooms in ngo headquarters | requires p_police_info |
@@ -252,9 +253,11 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 | p_hand_owner | text | tanush, the leader, leader | requires p_floor; the hand on his neck |
 | p_refer | text | you, sameer, me | act8; requires c_veer_death |
 | p_spiral | text | fibonacci, golden spiral, fibonacci spiral | act8; requires p_refer |
+| p_escape | scene | — | act8; the escape and Parth outside the door play as a story scene; requires p_spiral; grants c_parth2 |
 | p_office | text | plush carpets and mahogany furniture, plush carpets, mahogany furniture | requires c_office |
 | p_years | text | 5, five, 5 years, five years | requires p_office |
-| p_rooms | text | security room, the security room | act8 |
+| p_burn | scene | — | act8; the scented candle and the burning book play as a story scene; requires p_years |
+| p_rooms | text | security room, the security room | act8; requires p_burn |
 | p_why | text | to find parth, find parth | act8; required for complete |
 | p_found | text | yes, i did, he did | requires p_why |
 | p_saved | text | no, no he was not, he was not | requires p_found |

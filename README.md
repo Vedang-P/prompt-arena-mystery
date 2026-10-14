@@ -9,7 +9,7 @@
 | Story | 9 acts — an opening prologue and eight playable chapters |
 | Locations | 14 fully modelled rooms and outdoor sets |
 | Cast | 9 animated characters |
-| Content | 54 clues, 48 puzzles, 37 unlockable facts, 2 endings |
+| Content | 56 clues, 58 puzzles, 37 unlockable facts, 2 endings |
 | Audio | 3 music cues, ambient beds, a diegetic cafe radio |
 | Runtime | React 19 + Vite + three.js; Hono on Node 22; Postgres (SQLite in local development) |
 
@@ -56,6 +56,9 @@ before scoring).
 - **Reopening the case** from Act 0 costs a flat **10 penalties** in a campaign run. In
   practice it is free, and either way the event clock keeps running. A restart clears the
   per-clue wrong-answer counters but keeps the penalties already spent.
+- **After an ending**, the case never loops back into itself: the title offers **Act 0 again
+  with no new penalty**, or **resuming the act where the run ended** (with the earlier
+  acts' evidence restored) for a heavy **25 penalties**. The clock keeps running either way.
 - **Ranking**: solved teams first, by earliest solve; everyone else by score, then fewest
   penalties. The live board shows penalties, and the admin board can adjust them ±.
 - Authors do not set penalties per puzzle any more — `scripts/build-case.mjs` rejects a

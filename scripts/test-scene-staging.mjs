@@ -4,7 +4,7 @@ import {AnimationMixer,Box3,PerspectiveCamera,Raycaster,Vector3} from 'three';
 import {caseData} from '../src/case.js';
 import {locationFor,storyCast,placeCast,wideShot,roomWideShot,captureShot,cinematicPhaseFor} from '../client/src/SceneStaging.js';
 import {createFootContact} from '../client/src/FootContact.js';
-import {PARK,BEDROOM,SAMEER_BED,DETAIL_ANCHORS,HOME_STAIRS,HOME_UPPER_DOORWAY,HOME_BEDROOM,backWallPanels,DESK_TOP,FIELD,FIELD_TRACKS,ROOM_VIEWS,updateFieldBackpackOrbit} from '../client/src/SceneLayout.js';
+import {PARK,BEDROOM,SAMEER_BED,DETAIL_ANCHORS,HOME_STAIRS,HOME_UPPER_DOORWAY,HOME_BEDROOM,backWallPanels,DESK_TOP,FIELD,FIELD_TRACKS,ROOM_VIEWS,updateFieldBackpackOrbit,updateHospitalSecurityOrbit} from '../client/src/SceneLayout.js';
 import {loadGeometry} from './gltf-geometry.mjs';
 const scenes=[];
 for(const act of caseData.acts){
@@ -47,6 +47,32 @@ assert(maskPickup.holdingMask,'Sameer must pick up the mask when the closing nar
 const maskHotspot=caseData.rooms.find(r=>r.id==='sameer_room').hotspots.find(h=>h.id==='sameer_room_a7_mask');
 assert.deepEqual(maskHotspot.position,[-2.8,.705,-1.35],'The Act 7 mask clue must be positioned on Sameer’s bed');
 assert.deepEqual(DETAIL_ANCHORS.sameer_room.sameer_room_a7_mask,[SAMEER_BED.center[0],SAMEER_BED.surfaceY+.018,SAMEER_BED.center[2]],'The mask marker must share its measured bed surface anchor');
+// Act 7 opening: Veer must not be on stage before the narration names him; he
+// arrives with the knock and the two stand face to face in the bedroom — not
+// Sameer sitting at his desk with his back turned — so the room, not a generic
+// home or office, frames the visit.
+const maskBeatCast=placeCast('sameer_room',storyCast(act7,'intro','sameer_room',0));
+assert.equal(maskBeatCast.length,1,'Veer must not appear before his name is mentioned');
+const maskBeatSameer=maskBeatCast[0];
+const turn=(a,b)=>Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)));
+const maskHeading=Math.atan2(SAMEER_BED.center[0]-maskBeatSameer.at[0],SAMEER_BED.center[2]-maskBeatSameer.at[1]);
+assert(turn(maskBeatSameer.rot,maskHeading)<.3,'Sameer must face the mask on his bed before the knock');
+const visitCast=placeCast('sameer_room',storyCast(act7,'intro','sameer_room',1));
+const visitSameer=visitCast.find(c=>c.character==='sameer'),visitVeer=visitCast.find(c=>c.character==='veer');
+assert(visitSameer&&visitVeer,'Veer must arrive once the narration names him');
+const visitHeading=Math.atan2(visitVeer.at[0]-visitSameer.at[0],visitVeer.at[1]-visitSameer.at[1]);
+assert(turn(visitSameer.rot,visitHeading)<.2,'Sameer must face Veer during the Act 7 opening');
+assert(turn(visitVeer.rot,visitHeading+Math.PI)<.2,'Veer must face Sameer during the Act 7 opening');
+assert(Math.hypot(visitVeer.at[0]-visitSameer.at[0],visitVeer.at[1]-visitSameer.at[1])>1.5,'The pair must have room to face one another');
+const inside=(p,rect)=>p[0]>rect[0]&&p[0]<rect[1]&&p[1]>rect[2]&&p[1]<rect[3];
+for(const c of [maskBeatSameer,visitSameer,visitVeer])
+  for(const [name,rect] of [['bed',[-3.65,-1.95,-2.445,-.255]],['desk',[2.326,3.274,-2.5,-.5]],['chair',[1.429,2.131,-1.85,-1.15]],['bedside cabinet',[-1.856,-1.244,-2.276,-1.724]]])
+    assert(!inside(c.at,rect),`An Act 7 opening actor intersects the ${name}`);
+for(const aspect of [1280/600,1920/780,390/520,844/220]){
+  const shot=wideShot(visitCast,aspect),camera=new PerspectiveCamera(39,aspect,.1,100);
+  camera.position.set(...shot.at);camera.lookAt(new Vector3(...shot.center));camera.updateMatrixWorld();
+  for(const c of visitCast){const p=new Vector3(c.at[0],c.y,c.at[1]).project(camera);assert(Math.abs(p.x)<.88&&Math.abs(p.y)<.9,`The Act 7 opening pair is cropped at ${aspect}`);}
+}
 // The service-yard capture set stays wired for the capture/departure phase —
 // keep its staging and framing regression-checked for whichever act stages it next.
 const captureCast=placeCast('ngo_hq',storyCast(act3,'outro','ngo_hq'));
@@ -185,7 +211,54 @@ for(let angle=-Math.PI;angle<Math.PI;angle+=Math.PI/12)for(const [width,height] 
   if(overlap.overlapping)assert(Math.abs(adjustedBagY-carY)>=63.5,`Field clue labels remain vertically overlapped after orbit ${angle} at ${width}x${height}: ${JSON.stringify({gap:Math.abs(adjustedBagY-carY),shift:overlap.shiftY,dx:Math.abs(points[0].x-points[1].x)*width/2,dy:Math.abs(points[0].y-points[1].y)*height/2})}`);
   else assert(Math.abs(points[0].x-points[1].x)*width/2>=horizontalLimit||Math.abs(points[0].y-points[1].y)*height/2>=56,`Field clue labels overlap after orbit ${angle} at ${width}x${height}`);
 }
+// The hospital security-panel label runs along the same corridor sight line as
+// the theatre column (the operating-theatre clue stacked above the office-door
+// travel). Keep it pushed clear of the stack, with hysteresis and viewport
+// bounds, and exercise the guard across orbits and portrait/desktop aspects.
+const hospitalView=ROOM_VIEWS.hospital,hospitalHotspots=DETAIL_ANCHORS.hospital;
+const hospitalLabelPoint=(id)=>new Vector3(...hospitalHotspots[id]).add(new Vector3(0,.28,0));
+const projectHospitalSecurityLabels=(camera,width,height,wasOverlapping=false)=>{
+  const theatre=hospitalLabelPoint('h4_theatre').project(camera),security=hospitalLabelPoint('h4_security').project(camera);
+  return updateHospitalSecurityOrbit({screenDx:Math.abs(theatre.x-security.x)*width/2,screenDy:(theatre.y-security.y)*height/2,viewportWidth:width},wasOverlapping);
+};
+let securityOverlap=false;
+for(const [screenDx,screenDy,expected] of [[60,20,true],[150,60,true],[400,140,false],[60,20,true]]){
+  const next=updateHospitalSecurityOrbit({screenDx,screenDy,viewportWidth:1280},securityOverlap);
+  assert.equal(next.overlapping,expected,'Hospital security label overlap hysteresis must enter, hold, exit and re-enter consistently');
+  assert.equal(Math.abs(next.shiftY)>0,expected,'Hospital security label offset must follow overlap state');
+  securityOverlap=next.overlapping;
+}
+for(const aspect of [390/520,676/715,1280/720,1920/1080]){
+  const width=aspect*720,height=720;
+  const camera=new PerspectiveCamera(hospitalView.fov,aspect,.1,100);
+  camera.position.set(...hospitalView.at);camera.lookAt(new Vector3(...hospitalView.look));camera.updateMatrixWorld();
+  const layout=projectHospitalSecurityLabels(camera,width,height);
+  const points=['h4_theatre','h4_security'].map(hospitalLabelPoint).map(p=>p.project(camera));
+  assert(points.every(p=>Math.abs(p.x)<1&&Math.abs(p.y)<1),`Hospital clue labels must stay within the player camera at ${aspect}`);
+  const gapY=Math.abs(points[0].y-points[1].y)*height/2+Math.abs(layout.shiftY);
+  const horizontalLimit=width<=700?170:210;
+  assert(layout.overlapping?gapY>=95.5:Math.abs(points[0].x-points[1].x)*width/2>=horizontalLimit||Math.abs(points[0].y-points[1].y)*height/2>=84,`Hospital clue labels overlap at ${aspect}`);
+  const adjustedSecurityY=(1-points[1].y)*height/2+layout.shiftY;
+  assert(adjustedSecurityY>=24&&adjustedSecurityY<=height-24,`Hospital security label moves outside the viewport at ${aspect}`);
+}
+const hospitalLook=new Vector3(...hospitalView.look),hospitalBase=new Vector3(...hospitalView.at).sub(hospitalLook);
+let hospitalBearings=0;
+for(let angle=-Math.PI/3;angle<=Math.PI/3+1e-6;angle+=Math.PI/12)for(const [width,height] of [[390,520],[676,715],[1280,720],[1920,1080]]){
+  const aspect=width/height,c=Math.cos(angle),s=Math.sin(angle),camera=new PerspectiveCamera(hospitalView.fov,aspect,.1,100);
+  camera.position.set(hospitalLook.x+hospitalBase.x*c+hospitalBase.z*s,hospitalView.at[1],hospitalLook.z-hospitalBase.x*s+hospitalBase.z*c);
+  camera.lookAt(hospitalLook);camera.updateMatrixWorld();
+  const points=['h4_theatre','h4_security'].map(hospitalLabelPoint).map(p=>p.project(camera));
+  if(!points.every(p=>Math.abs(p.x)<1&&Math.abs(p.y)<1))continue;
+  hospitalBearings++;
+  const layout=projectHospitalSecurityLabels(camera,width,height);
+  const adjustedSecurityY=(1-points[1].y)*height/2+layout.shiftY;
+  assert(adjustedSecurityY>=24&&adjustedSecurityY<=height-24,`Hospital security label leaves the viewport after orbit ${angle} at ${width}x${height}`);
+  const horizontalLimit=width<=700?170:210;
+  if(layout.overlapping)assert(Math.abs(points[0].y-points[1].y)*height/2+Math.abs(layout.shiftY)>=95.5,`Hospital clue labels remain vertically overlapped after orbit ${angle} at ${width}x${height}: ${JSON.stringify({dy:Math.abs(points[0].y-points[1].y)*height/2,shift:layout.shiftY,dx:Math.abs(points[0].x-points[1].x)*width/2})}`);
+  else assert(Math.abs(points[0].x-points[1].x)*width/2>=horizontalLimit||Math.abs(points[0].y-points[1].y)*height/2>=84,`Hospital clue labels overlap after orbit ${angle} at ${width}x${height}`);
+}
+assert(hospitalBearings>=20,`Hospital label guard must stay exercised by the orbit sweep (${hospitalBearings} bearings on camera)`);
 assert.equal(BEDROOM.laptop[1],DESK_TOP);assert.equal(BEDROOM.lamp[1],DESK_TOP);
 const source=await fs.readFile('client/src/Scene.jsx','utf8');
 assert.equal((source.match(/<BedroomWorkstation paused=/g)??[]).length,2,'Both bedroom kits must share the fan and workstation');
-console.log(`${scenes.length} campaign cinematic cues checked; ${projections} full-body projections, capture shots on five aspect ratios, gazebo roof on four, 300 seated frames, shared fan/workstation checked.`);
+console.log(`${scenes.length} campaign cinematic cues checked; ${projections} full-body projections, capture shots on five aspect ratios, gazebo roof on four, 300 seated frames, hospital label guard on four aspects across ${hospitalBearings} on-camera orbit bearings, shared fan/workstation checked.`);

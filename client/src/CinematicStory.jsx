@@ -12,7 +12,7 @@ export default function CinematicStory({ story, act, characters, onDone, busy, i
   const last = index >= story.lines.length - 1;
   const title = story.title ?? act.title;
   const names = Object.fromEntries(characters.map((c) => [c.id, c.name]));
-  const sceneId = locationFor(act, story.after, index);
+  const sceneId = story.backdrop ?? locationFor(act, story.after, index);
   const cinematicPhase=cinematicPhaseFor(act,story.after,sceneId,index);
   const sceneReadyKey=`${sceneId}:${cinematicPhase??'default'}`;
   const cast = useMemo(()=>story.cast ?? storyCast(act,story.after,sceneId,index),[act.id,index,sceneId,story.after,story.cast]);
