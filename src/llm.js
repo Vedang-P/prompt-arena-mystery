@@ -4,27 +4,37 @@
 // AbortController, so it runs in Workers and in Node tests alike.
 
 const OPENCODE_BASE = 'https://opencode.ai/inference/v1';
+const OPENCODE_GO_BASE = 'https://opencode.ai/inference/go/v1';
+const USER_AGENT = 'prompt-arena-mystery/1.1';
 
-// Free OpenCode Console models that speak /chat/completions. Ordered by
-// observed reliability so the strongest route is tried first.
-export const OPENCODE_FREE_MODELS = [
-  'nemotron-3-ultra-free',
-  'nemotron-3.5-lightning-free',
-  'ling-3.1-flash-free',
-  'ling-3.0-flash-fin-free',
-  'mimo-v2.6-flash-free',
-  'mimo-v2.5-free',
+// Go's unlimited free models come first for the event, then the cheap fast
+// models included in the Go plan as extra capacity. The Go API expects an
+// identifying user agent and a stable session per conversation (sent below).
+export const OPENCODE_GO_MODELS = [
   'cat-jam-free',
-  'space-bunny-free',
   'longcat-2.5-preview-free',
   'step-5-preview-free',
-  'exo-free',
+  'space-bunny',
+  'mimo-v2.6-flash',
+  'glm-5.3-flash',
+  'deepseek-v4.1-flash',
+];
+
+// Console free models, for deployments using a pay-as-you-go Console key.
+export const OPENCODE_FREE_MODELS = [
   'big-pickle',
+  'ling-3.1-flash-free',
+  'cat-jam-free',
+  'mimo-v2.6-flash-free',
+  'nemotron-3.5-lightning-free',
+  'longcat-2.5-preview-free',
+  'step-5-preview-free',
+  'space-bunny-free',
 ];
 
 const DEFAULTS = {
-  firstTokenMs: 6000,
-  turnBudgetMs: 15000,
+  firstTokenMs: 7000,
+  turnBudgetMs: 22000,
   cooldownMs: 60_000,
   maxCooldownMs: 15 * 60_000,
   maxAttempts: 6,
@@ -47,19 +57,33 @@ const parseMs = (value, fallback, min, max) => {
 };
 
 export function llmConfig(env = {}) {
-  const keys = dedupe([
-    ...splitList(env.LLM_API_KEYS),
-    ...splitList(env.LLM_API_KEY),
-    ...splitList(env.OPENCODE_API_KEY),
-  ]);
+  const goKeys = dedupe(splitList(env.OPENCODE_GO_API_KEY));
+  const consoleKeys = dedupe(splitList(env.OPENCODE_API_KEY));
+  const explicitKeys = dedupe([...splitList(env.LLM_API_KEYS), ...splitList(env.LLM_API_KEY)]);
   const explicitBase = String(env.LLM_BASE_URL || '').replace(/\/+$/, '');
-  const base = explicitBase || (keys.length ? OPENCODE_BASE : '');
+  let base = explicitBase;
+  let keys;
+  if (explicitBase) {
+    const isOpencode = /opencode\.ai\/inference/.test(explicitBase) || !explicitBase;
+    keys = dedupe([...explicitKeys, ...(isOpencode ? [...goKeys, ...consoleKeys] : [])]);
+  } else if (goKeys.length) {
+    base = OPENCODE_GO_BASE;
+    keys = explicitKeys.length ? explicitKeys : goKeys;
+  } else if (consoleKeys.length) {
+    base = OPENCODE_BASE;
+    keys = explicitKeys.length ? explicitKeys : consoleKeys;
+  } else {
+    keys = explicitKeys;
+  }
   const models = dedupe([
     ...splitList(env.LLM_MODELS),
     ...splitList(env.LLM_MODEL),
     ...splitList(env.LLM_FALLBACK_MODELS),
   ]);
-  if (base === OPENCODE_BASE && !models.length) models.push(...OPENCODE_FREE_MODELS);
+  if (!models.length) {
+    if (base === OPENCODE_GO_BASE) models.push(...OPENCODE_GO_MODELS);
+    else if (base === OPENCODE_BASE) models.push(...OPENCODE_FREE_MODELS);
+  }
   const extraHeaders = Object.fromEntries(
     String(env.LLM_EXTRA_HEADERS || '')
       .split('|')
@@ -75,6 +99,7 @@ export function llmConfig(env = {}) {
     keys,
     models,
     extraHeaders,
+    userAgent: String(env.LLM_USER_AGENT || '').trim() || USER_AGENT,
     firstTokenMs: parseMs(env.LLM_FIRST_TOKEN_MS, DEFAULTS.firstTokenMs, 1500, 30000),
     turnBudgetMs: parseMs(env.LLM_TURN_BUDGET_MS, DEFAULTS.turnBudgetMs, 3000, 60000),
     cooldownMs: parseMs(env.LLM_COOLDOWN_MS, DEFAULTS.cooldownMs, 5000, DEFAULTS.maxCooldownMs),
@@ -135,6 +160,7 @@ export function makeLLM(env, onEvent = () => {}) {
   if (!cfg.base || !cfg.keys.length || !cfg.models.length) return null;
   const { base, keys, models } = cfg;
   const limiter = limiterFor(base, cfg.maxConcurrent);
+  const fallbackSession = `pa-${Math.random().toString(36).slice(2, 10)}`;
   let preferred = null;
   let rr = -1;
 
@@ -209,6 +235,7 @@ export function makeLLM(env, onEvent = () => {}) {
     const remaining = Math.max(1000, deadline - Date.now());
     const firstTokenMs = Math.min(cfg.firstTokenMs, remaining);
     const totalMs = Math.min(opts.timeoutMs ?? cfg.turnBudgetMs, remaining);
+    const session = opts.session ?? fallbackSession;
     const controller = new AbortController();
     const firstToken = setTimeout(
       () => controller.abort(new Error('first_token_timeout')),
@@ -221,6 +248,8 @@ export function makeLLM(env, onEvent = () => {}) {
         headers: {
           'content-type': 'application/json',
           authorization: `Bearer ${key}`,
+          'user-agent': cfg.userAgent,
+          'x-opencode-session': String(session).slice(0, 128),
           ...cfg.extraHeaders,
         },
         body: JSON.stringify({
@@ -272,6 +301,7 @@ export function makeLLM(env, onEvent = () => {}) {
             const text = (data?.choices?.[0]?.message?.content ?? '').trim();
             if (!text) throw new Error('llm_empty');
             preferred = model;
+            onEvent({ type: 'llm_ok', model });
             return text;
           } finally {
             done();
@@ -336,7 +366,12 @@ export function makeLLM(env, onEvent = () => {}) {
                 }
               }
             }
+            // A stream that yields nothing usable is a failed attempt: a model
+            // that spends its whole budget on reasoning must not answer with
+            // silence — the pool moves to the next route instead.
+            if (!yielded) throw new Error('llm_empty');
             preferred = model;
+            onEvent({ type: 'llm_ok', model });
             return;
           } finally {
             done();

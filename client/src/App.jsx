@@ -6,6 +6,7 @@ import { SettingsPanel } from './Settings.jsx';
 import Soundtrack from './Soundtrack.jsx';
 import Leaderboard from './Leaderboard.jsx';
 const ActDirector = lazy(() => import('./ActDirector.jsx'));
+import DevPanel from './DevPanel.jsx';
 import LogoutButton from './LogoutButton.jsx';
 import FullscreenGate, { DisqualifiedScreen, tryEnterFullscreen } from './FullscreenGate.jsx';
 import {
@@ -102,6 +103,7 @@ export default function App() {
   const devPuzzle = useMemo(() => devParams.get('puzzle'), [devParams]);
   const devRoom = useMemo(() => devParams.get('room'), [devParams]);
   const devPuzzleOpened = useRef(false);
+  const parkedRoomRef = useRef(null);
 
   const currentAct = useMemo(
     () => state?.acts?.find((a) => a.id === state.act) ?? state?.acts?.[0] ?? null,
@@ -154,6 +156,7 @@ export default function App() {
     const actIndex = new Map((state.acts ?? []).map((a, i) => [a.id, i]));
     const currentIndex = actIndex.get(state.act) ?? 0;
     const available = (h) => {
+      if (state.dev) return true;
       if (h.act && h.act !== state.act) return false;
       const ownReq = h.type === 'puzzle' ? state.puzzles?.find((p) => p.id === h.puzzle)?.requires : null;
       if ((ownReq?.clues ?? []).some((id) => !discovered.has(id)) || (ownReq?.puzzles ?? []).some((id) => !solved.has(id))) return false;
@@ -194,6 +197,7 @@ export default function App() {
         }
       }
     }
+    if (state.dev) for (const room of state.rooms ?? []) reachable.add(room.id);
     return reachable;
   }, [state, currentAct, visitedRooms, displayRooms, actRooms]);
 
@@ -277,6 +281,15 @@ export default function App() {
       setDqInfo(null);
       const act = data.acts?.find((a) => a.id === data.act);
       const actRoomIds = act?.rooms?.length ? act.rooms : data.rooms.map((r) => r.id);
+      // A dev session may have parked a room server-side (the sandbox panel's
+      // room jump). Honour it once per change, even outside the act's rooms.
+      const parkedRoom = data.dev && data.devRoom && data.rooms?.some((r) => r.id === data.devRoom) ? data.devRoom : null;
+      if (parkedRoom && parkedRoomRef.current !== parkedRoom) {
+        parkedRoomRef.current = parkedRoom;
+        setRoomId(parkedRoom);
+        setPhase(destination === 'menu' ? 'menu' : data.solved ? 'solved' : 'game');
+        return true;
+      }
       const entry =
         (devRoom && actRoomIds.includes(devRoom) ? devRoom : null) ??
         act?.entry_room ??
@@ -416,18 +429,21 @@ export default function App() {
     };
   }, []);
 
-  // Keep the active room inside the current act's tab list.
+  // Keep the active room inside the current act's tab list (dev sessions roam free).
   useEffect(() => {
     if (!state || !actRooms.length) return;
+    if (state.dev) return;
     if (actRooms.some((r) => r.id === roomId)) return;
     const entry = currentAct?.entry_room;
     setRoomId(entry && actRooms.some((r) => r.id === entry) ? entry : actRooms[0].id);
   }, [state, actRooms, roomId, currentAct]);
 
   // Play each interactive act's intro once per session, before its first room view.
+  // Dev sessions skip the auto-play (the sandbox panel can replay any cinematic).
   useEffect(() => {
     if (!state || !currentAct || phase !== 'game' || story || state.ending || devBeat || devPuzzle)
       return;
+    if (state.dev) return;
     if (currentAct.type !== 'interactive' || !currentAct.intro?.length) return;
     const key = `pa-intro-${currentAct.id}`;
     if (sessionStorage.getItem(key)) return;
@@ -499,6 +515,23 @@ export default function App() {
       clearNextIntro(currentAct.id);
       finishAct(currentAct.id);
     }
+  };
+
+  // Developer sandbox: replay the current act's cinematics on demand (dev
+  // sessions skip auto-played intros, so this is the way back to them).
+  const playDevStory = (kind) => {
+    const lines = kind === 'intro' ? currentAct?.intro : currentAct?.outro;
+    if (!lines?.length || story) return;
+    setStory({
+      key: `pa-dev-${kind}-${currentAct.id}-${Date.now()}`,
+      after: kind,
+      actId: currentAct.id,
+      lines,
+      kicker: currentAct.kicker,
+      title: currentAct.title,
+      backdrop: currentAct.backdrop,
+      doneLabel: kind === 'intro' ? 'Begin' : 'Continue',
+    });
   };
 
   // A scene puzzle is not a question: its modal is the story overlay, and
@@ -1037,6 +1070,14 @@ export default function App() {
         </div>
       </header>
       <div className="chapter-progress" aria-label="Campaign progress">{state.acts.map((a, i) => <span key={a.id} className={a.id === state.act ? 'current' : i < state.acts.findIndex((x) => x.id === state.act) ? 'done' : ''} title={a.title}>{i}</span>)}</div>
+      {state.dev && <DevPanel
+        state={state}
+        roomId={roomId}
+        onJumpRoom={(id) => { setRoomId(id); setEvidence(null); setPuzzleSpot(null); setActiveChar(null); }}
+        onReload={() => loadGame('game')}
+        onPlayIntro={() => playDevStory('intro')}
+        onPlayOutro={() => playDevStory('outro')}
+      />}
       {advanceReady && <button className="next-chapter" onClick={advanceAct} disabled={actBusy || !!story}>{actBusy ? 'Saving…' : currentAct.id === 'act8' ? 'Finish the case →' : 'Continue to next act →'}</button>}
       {!activeChar && <>
         {!exploreOpen && <button className="explore-toggle" onClick={() => setExploreOpen(true)}>Explore this room ↗</button>}
@@ -1119,7 +1160,6 @@ export default function App() {
       {activePuzzle && (
         <PuzzleModal
           team={state.team}
-          relatedClues={(activePuzzle.requires?.clues ?? []).filter(id => state.discovered.includes(id)).map(id => state.clues.find(c => c.id === id)).filter(Boolean)}
           puzzle={{ ...activePuzzle, title: puzzleSpot?.label }}
           solved={(state.solvedPuzzles ?? []).includes(activePuzzle.id)}
           penalties={state.penalties ?? 0}

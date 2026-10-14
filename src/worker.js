@@ -235,6 +235,7 @@ async function requireTeam(c, { settle = true } = {}) {
     teamName: row.name,
     row,
     progress,
+    dev: !!parseJsonObject(row.flags).dev,
     strikes: settlement.strikes,
     disqualified: settlement.disqualified,
     blocked: settlement.disqualified ? 'disqualified' : null,
@@ -665,9 +666,12 @@ app.get('/api/state', async (c) => {
   const solvedPuzzles = parseJsonArray(auth.progress.solved_puzzles);
   const penalties = Number(auth.progress.penalties ?? 0);
   const act = auth.progress.act ?? 'act0';
+  const flags = parseJsonObject(auth.progress.flags);
   return c.json({
     team: auth.teamName,
-    practice: !!parseJsonObject(auth.progress.flags).practice,
+    practice: !!flags.practice,
+    dev: !!auth.dev,
+    devRoom: auth.dev ? (flags.devRoom ?? null) : null,
     eventStarted: true,
     paused: false,
     llm: llmConfigured(c.env),
@@ -1166,8 +1170,9 @@ app.post('/api/interrogate', async (c) => {
   // interview never stalls on a dead stream.
   const canned = !repeat && !noise ? canonicalAnswer(characterId, question) : null;
   const snub = repeat || noise;
+  const actId = auth.progress.act ?? 'act0';
   const fallbackSource = canned ? 'canonical' : snub ? 'snub' : 'deflect';
-  const fallbackText = canned ?? deflection(characterId, (priorFallbacks?.n ?? 0) + 1, snub);
+  const fallbackText = canned ?? deflection(characterId, (priorFallbacks?.n ?? 0) + 1, snub, actId);
   const llm = !repeat && !noise ? makeLLM(c.env, () => {}) : null;
 
   return streamSSE(c, async (stream) => {
@@ -1203,20 +1208,27 @@ app.post('/api/interrogate', async (c) => {
           characterId,
           parseJsonArray(auth.progress.discovered),
           history,
-          question
+          question,
+          actId
         );
-        for await (const delta of llm.stream(messages, { maxTokens: 220, temperature: 0.75 })) {
+        for await (const delta of llm.stream(messages, {
+          maxTokens: 480,
+          temperature: 0.75,
+          session: `pa-${auth.teamId}-${characterId}`,
+        })) {
           text += delta;
           await send('delta', { text: delta });
         }
       } catch {
         // A limited or unreachable pool degrades to the authored turn.
       }
-      const reply = text.trim();
+      const rawReply = text.trim();
+      const reply = tidyReply(rawReply);
       // A stream that died mid-sentence would otherwise be stored truncated:
       // only a reply that reads as finished is kept, everything else swaps in
       // the authored answer.
       if (reply && /([.!?…"')\]])\s*$/.test(reply)) {
+        if (reply !== rawReply) await send('reset', { text: reply });
         storedText = reply;
         storedSource = 'llm';
       } else {
@@ -1235,6 +1247,29 @@ app.post('/api/interrogate', async (c) => {
     await send('done', { source: storedSource });
   });
 });
+
+// Live replies are streamed as they arrive; a stray stage direction or a
+// runaway paragraph is tidied once (asterisk actions dropped, lines joined)
+// and swapped in with a reset, so the chat HUD always reads like dialogue.
+const tidyReply = (raw) => {
+  let text = String(raw)
+    .replace(/\*[^*\n]{1,120}\*/g, ' ')
+    .replace(/([.!?…])(?=[A-Za-z])/g, '$1 ')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\s*\n\s*/g, ' ')
+    .trim();
+  if (text.length > 520) {
+    const cut = text.slice(0, 520);
+    const lastStop = Math.max(
+      cut.lastIndexOf('. '),
+      cut.lastIndexOf('! '),
+      cut.lastIndexOf('? '),
+      cut.lastIndexOf('… ')
+    );
+    if (lastStop > 120) text = cut.slice(0, lastStop + 1);
+  }
+  return text;
+};
 
 // ---------- accusation ----------
 
@@ -1269,7 +1304,12 @@ app.post('/api/accuse', async (c) => {
     try {
       // The platform kills this function at 60s: the judge gets a small budget
       // so a slow model chain still lands on the deterministic fallback in time.
-      const out = await llm.complete(judgeMessages(method, motive), { temperature: 0, maxTokens: 200, timeoutMs: 20000 });
+      const out = await llm.complete(judgeMessages(method, motive), {
+        temperature: 0,
+        maxTokens: 200,
+        timeoutMs: 20000,
+        session: `pa-${auth.teamId}-judge`,
+      });
       const parsed = parseJudge(out);
       if (parsed) {
         checks = parsed;
@@ -1314,6 +1354,7 @@ app.get('/api/leaderboard', async (c) => {
             p.hints_used, COALESCE(p.penalties, 0) AS penalties
      FROM progress p JOIN teams t ON t.id = p.team_id
      WHERE COALESCE(p.flags, '{}') NOT LIKE '%"practice":true%'
+     AND COALESCE(p.flags, '{}') NOT LIKE '%"dev":true%'
      AND t.name != 'Instructor preview'
      AND COALESCE(t.disqualified, 0) = 0
      ${isTruthy(c.env.EVENT_MODE) ? `AND COALESCE(p.flags, '{}') LIKE '%"eventEntered":true%'` : ''}
@@ -1333,6 +1374,151 @@ app.get('/api/leaderboard', async (c) => {
   // Do not re-sort here or the penalty tiebreak silently disappears.
   c.header('Cache-Control', 'public, max-age=0, s-maxage=5');
   return c.json({ teams, serverTime: new Date(now).toISOString() });
+});
+
+// ---------- developer sandbox ----------
+// A dev team (seeded from DEV_TEAM_CODE) gets the whole case at once: every act,
+// room, clue and puzzle is reachable, and these routes edit its save directly.
+// Every route is hard-scoped to a dev session — there is no admin cookie, and
+// no other team can call them. The dev team never appears on the leaderboard
+// and is exempt from fullscreen enforcement.
+
+const isDevSession = (auth) => !!auth?.dev;
+const devDenied = (auth, c) => (isDevSession(auth) ? null : c.json({ error: 'not_dev' }, 403));
+
+async function requireDev(c) {
+  const { auth, error } = await requireActiveTeam(c);
+  if (error) return { error };
+  const denied = devDenied(auth, c);
+  if (denied) return { error: denied };
+  return { auth };
+}
+
+async function writeDevProgress(c, auth, patch) {
+  const discovered = new Set(patch.discovered ?? parseJsonArray(auth.progress.discovered));
+  const solved = new Set(patch.solved ?? parseJsonArray(auth.progress.solved_puzzles));
+  await c.env.DB.prepare('UPDATE progress SET discovered = ?, solved_puzzles = ? WHERE team_id = ?')
+    .bind(JSON.stringify([...discovered]), JSON.stringify([...solved]), auth.teamId)
+    .run();
+  return { discovered: [...discovered], solvedPuzzles: [...solved] };
+}
+
+// The catalogue is everything the panel needs to draw itself: acts, rooms and
+// the full clue/puzzle registries — including puzzle answer keys, which never
+// leave the server for a normal session.
+app.get('/api/dev/catalog', async (c) => {
+  const { auth, error } = await requireDev(c);
+  if (error) return error;
+  void auth;
+  return c.json({
+    acts: (caseData.acts ?? []).map((a) => ({ id: a.id, kicker: a.kicker ?? a.id, title: a.title, type: a.type, entry_room: a.entry_room ?? null, rooms: a.rooms ?? a.scenes ?? [] })),
+    rooms: (caseData.rooms ?? []).map((r) => ({ id: r.id, name: r.name })),
+    clues: (caseData.clues ?? []).map((cl) => ({ id: cl.id, name: cl.name })),
+    puzzles: (caseData.puzzles ?? []).map((p) => ({ id: p.id, kind: p.kind, answers: p.answers ?? [] })),
+  });
+});
+
+// Jump straight to any act: no completion gates, no intro replay (the client
+// skips act intros for dev sessions; the panel can replay one on demand).
+app.post('/api/dev/act', async (c) => {
+  const { auth, error } = await requireDev(c);
+  if (error) return error;
+  const body = await c.req.json().catch(() => ({}));
+  const act = String(body.act ?? '');
+  if (!(caseData.acts ?? []).some((a) => a.id === act)) return c.json({ error: 'unknown_act' }, 400);
+  await c.env.DB.prepare(
+    "UPDATE progress SET act = ?, started_at = CASE WHEN started_at IS NULL AND ? != 'act0' THEN datetime('now') ELSE started_at END WHERE team_id = ?"
+  )
+    .bind(act, act, auth.teamId)
+    .run();
+  return c.json({ ok: true, act });
+});
+
+// Remember the room the client should open next (rooms live in the client, but
+// this keeps the jump across reloads and devices).
+app.post('/api/dev/room', async (c) => {
+  const { auth, error } = await requireDev(c);
+  if (error) return error;
+  const body = await c.req.json().catch(() => ({}));
+  const room = String(body.room ?? '');
+  if (!(caseData.rooms ?? []).some((r) => r.id === room)) return c.json({ error: 'unknown_room' }, 400);
+  const flags = { ...parseJsonObject(auth.progress.flags), dev: true, devRoom: room };
+  await c.env.DB.prepare('UPDATE progress SET flags = ? WHERE team_id = ?')
+    .bind(JSON.stringify(flags), auth.teamId)
+    .run();
+  return c.json({ ok: true, room });
+});
+
+// Toggle one clue or puzzle. Solving a puzzle on also carries its own grants
+// (usually clue ids) so a single click leaves the save in a coherent state.
+app.post('/api/dev/toggle', async (c) => {
+  const { auth, error } = await requireDev(c);
+  if (error) return error;
+  const body = await c.req.json().catch(() => ({}));
+  const kind = body.kind === 'puzzle' ? 'puzzle' : 'clue';
+  const id = String(body.id ?? '');
+  const on = body.on !== false;
+  const knownClues = new Set((caseData.clues ?? []).map((cl) => cl.id));
+  const knownPuzzles = new Set((caseData.puzzles ?? []).map((p) => p.id));
+  const known = kind === 'puzzle' ? knownPuzzles.has(id) : knownClues.has(id);
+  if (!known) return c.json({ error: `unknown_${kind}` }, 404);
+  const discovered = new Set(parseJsonArray(auth.progress.discovered));
+  const solved = new Set(parseJsonArray(auth.progress.solved_puzzles));
+  if (on) {
+    (kind === 'puzzle' ? solved : discovered).add(id);
+    if (kind === 'puzzle') {
+      const puzzle = (caseData.puzzles ?? []).find((p) => p.id === id);
+      for (const grant of puzzle?.grants ?? []) {
+        if (knownClues.has(grant)) discovered.add(grant);
+        else if (knownPuzzles.has(grant)) solved.add(grant);
+      }
+    }
+  } else {
+    (kind === 'puzzle' ? solved : discovered).delete(id);
+  }
+  const result = await writeDevProgress(c, auth, { discovered, solved });
+  return c.json({ ok: true, ...result });
+});
+
+// Bulk switches for the panel: everything on, or everything off.
+app.post('/api/dev/bulk', async (c) => {
+  const { auth, error } = await requireDev(c);
+  if (error) return error;
+  const body = await c.req.json().catch(() => ({}));
+  const all = body.mode === 'none' ? false : true;
+  const result = await writeDevProgress(c, auth, {
+    discovered: all ? (caseData.clues ?? []).map((cl) => cl.id) : [],
+    solved: all ? (caseData.puzzles ?? []).map((p) => p.id) : [],
+  });
+  return c.json({ ok: true, mode: all ? 'all' : 'none', ...result });
+});
+
+// Back to a clean sandbox: act 0, nothing found, no penalties, dev flags kept.
+app.post('/api/dev/reset', async (c) => {
+  const { auth, error } = await requireDev(c);
+  if (error) return error;
+  await c.env.DB.prepare(
+    "UPDATE progress SET act = 'act0', discovered = '[]', solved_puzzles = '[]', penalties = 0, hints_used = 0, accusation = NULL, ending = NULL, solved = 0, solved_at = NULL, started_at = NULL, flags = ? WHERE team_id = ?"
+  )
+    .bind(JSON.stringify({ dev: true }), auth.teamId)
+    .run();
+  await c.env.DB.prepare(
+    'UPDATE teams SET disqualified = 0, disqualified_at = NULL, disqualify_reason = NULL, exit_strikes = 0, pending_exit_at = NULL, pending_exit_kind = NULL, exempt = 1 WHERE id = ?'
+  )
+    .bind(auth.teamId)
+    .run();
+  return c.json({ ok: true });
+});
+
+app.post('/api/dev/penalties', async (c) => {
+  const { auth, error } = await requireDev(c);
+  if (error) return error;
+  const body = await c.req.json().catch(() => ({}));
+  const value = Math.max(0, Math.min(9999, Math.trunc(Number(body.value ?? 0) || 0)));
+  await c.env.DB.prepare('UPDATE progress SET penalties = ? WHERE team_id = ?')
+    .bind(value, auth.teamId)
+    .run();
+  return c.json({ ok: true, penalties: value });
 });
 
 // ---------- admin control room ----------

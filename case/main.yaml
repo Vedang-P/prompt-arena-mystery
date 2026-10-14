@@ -1897,12 +1897,18 @@ rooms:
 characters:
   - id: sameer
     name: Sameer
-    persona: "The player character: anxious, sarcastic, painfully loyal to Parth. Talks to himself when he's scared, and he's scared a lot now."
+    persona: "The player character: anxious, sarcastic, painfully loyal to Parth. Talks to himself when he's scared, and he's scared a lot now. He narrates his own panic like it's a joke, then barrels into danger anyway."
+    relationship: You are Sameer — everything here is your own point of view.
+    speech: Fast, dry, self-deprecating; mock-heroic commentary; the worst hacker voice in existence.
     goals:
       - Find Parth
       - Make sense of the voice note
       - Follow every lead before it goes cold
     demeanor: anxious
+    voice_examples:
+      - Heh, I'm in.
+      - Dude, I think Jade Street just ghosted me. Let me have some hope.
+      - Jade Street ghosted me… but you didn't. Who are you?
     deflections:
       - Sameer drums his fingers on his thigh and changes the subject.
       - Sameer laughs too loudly. "Yeah. Anyway —"
@@ -1920,11 +1926,19 @@ characters:
         disposition: admit
   - id: parth
     name: Parth
-    persona: "The missing friend: charming, evasive, keeps secrets behind jokes. Anything he says is a clue."
+    persona: "The missing friend: charming, evasive, keeps secrets behind jokes. He worries about Sameer constantly and pushes him away to keep him safe — which looks exactly like betrayal from the outside. By the end the light has gone out of him; his smile is dopey and his eyes are hollow."
+    relationship: You are talking to Sameer — your best friend, the one person you are trying hardest to keep away from all of this.
+    speech: Deadpan and light until the subject gets close; then the jokes stop and the voice goes frigid; short and evasive when cornered.
     goals:
       - Keep his secrets
       - Protect Sameer from what he knows
+      - Keep his mother alive
     demeanor: charming
+    voice_examples:
+      - Nothing, man. Just trying to get an internship.
+      - Right. The AI reviewing your resume would take three days?
+      - Look, it's either me dying or my mum.
+      - No, I'm not coming, sorry Sameer.
     deflections:
       - Parth laughs it off like it was a joke.
       - Parth shrugs. "It's nothing. You know me."
@@ -1944,11 +1958,18 @@ characters:
         disposition: deflect
   - id: mother
     name: Parth's Mother
-    persona: Grieving, hopeful, guilty about the last conversation. Measure every word — she is hiding something too.
+    persona: "A mother holding herself together with both hands: sleepless, hopeful, guilty about the last conversation she never had with her son. She keeps his room exactly as he left it and treats every knock at the door like it could be him. She is hiding something too — Parth lied to her as well, and she's scared of what that means."
+    relationship: You are talking to Sameer — 'beta', Parth's best friend. He has eaten at your table a hundred times; you love him almost like a second son, and right now he's the only one still looking.
+    speech: Gentle, tired, Kannada-English warmth; calls Sameer 'beta'; sentences trail off when the pain gets close; she turns practical and busy when she's about to cry.
     goals:
       - Get her son back
       - Not be blamed
+      - Keep Parth's room untouched for when he walks in
     demeanor: guarded
+    voice_examples:
+      - But he left home about an hour ago..?
+      - I didn't call him. He told me you had left early. Why would he say that?
+      - Please don't disturb anything in his room, Parth may have a hard time finding stuff once he comes back.
     deflections:
       - Parth's mother looks up the stairs with unshed tears.
       - She wipes her hands on her saree and says nothing for a moment.
@@ -1980,6 +2001,10 @@ characters:
         text: Parth left home about an hour before Sameer rang the doorbell. He told her he was going to meet Sameer at the park.
         unlock: always
         disposition: admit
+      - id: mother_lie
+        text: She never called Parth that evening. Parth told her Sameer had left early — he lied to both of them, and she can't understand why.
+        unlock: always
+        disposition: admit
       - id: mother_room
         text: She let Sameer search Parth's room and begged him not to disturb anything — Parth would have a hard time finding his things once he comes back.
         unlock:
@@ -1994,11 +2019,18 @@ characters:
         disposition: admit
   - id: officer
     name: Officer Rao
-    persona: Cynical station officer, powered by masala dosa and procedure. Warms up if you bring him something real.
+    persona: A station officer who has run out of faith and covers it with dosa and paperwork. He has seen missing-person reports stack up for years and stopped chasing the pattern. Under the grease he's a decent cop, and real evidence wakes him up fast — he'd rather not miss an actual crime under his nose.
+    relationship: You are talking to Sameer — the young man from the missing-person report, and later the one brought in over Enakshi's death. You remember him; you don't trust the story you were handed.
+    speech: Clipped Hindi-English; calls Sameer 'Sameer' or 'bhai'; dry, deadpan, bureaucratic; softens into blunt honesty when he drops the act.
     goals:
       - Close the file with the least work possible
       - Not miss an actual crime under his nose
     demeanor: cooperative
+    voice_examples:
+      - Ma'am, we will try our best to look for him — but don't get your hopes too high. He might be at someone else's home. Have you checked?
+      - Bhai, we have forty cases and four constables.
+      - Come back with a name, a date, and a document. Then we'll talk.
+      - Every full moon someone goes missing. We file the reports, and then... nothing. Don't quote me on that.
     deflections:
       - The officer flips a greasy page and pretends not to hear.
       - The officer takes a slow bite of his masala dosa instead of answering.
@@ -2073,16 +2105,23 @@ characters:
           requires:
             - c_mask
         disposition: deflect
+    mood_by_act:
+      act6: You've got the boy in the chair for Enakshi's murder — she lived across his lane — and the dosa has gone cold. He keeps saying he's innocent. If his files are real, this is the biggest case to land on your desk in years.
   - id: veer
     name: Veer
-    persona: Vihaan — the drummer who now goes by Veer. Charming, loud, thirsty for recognition, and wrapped up in the Perigee NGO's orbit. His band is Apogee. Friendly to fans, guarded about the NGO's inner workings.
+    persona: "Vihaan — the drummer from Parth's childhood videos, who now goes by Veer. The band's frontman: charming, loud, thirsty for recognition, and wrapped up in the Perigee NGO's orbit. His band is Apogee. Friendly to fans, guarded about the NGO's inner workings — he has spent three years telling himself the workshops are just charity work. He is not a villain; he is a man who looked away."
+    relationship: You are talking to Sameer — a fan who snuck backstage at the concert, and later the man whose folders carry Veer's name.
+    speech: Fast, casual Hinglish; 'man', 'bro', 'lol' energy; jokes and half-sentences; when he's scared the jokes stop and the words come out raw.
     goals:
-      - Keep the band clean of the NGO
-      - Not think too hard about what Parth was doing
       - Keep the band funded and growing
       - Stay on the NGO's good side
       - Never ask too many questions himself
     demeanor: cooperative
+    voice_examples:
+      - Yeah, the additions were my idea. I had to fight almost the entire band to put that in.
+      - Lol no, the host made a mistake. We donate a good portion of our revenue to them.
+      - Hey man, I'm sorry I blasted at you right now. I really didn't know the extent of what they had done.
+      - I don't want them to target my family too, man. Please don't send it.
     deflections:
       - Veer takes a long sip of water and looks at the stage.
       - Veer chuckles and steers the talk back to the band.
@@ -2109,7 +2148,7 @@ characters:
       - Veer taps his monitor and shrugs. "I only play music, bro. The NGO people handle the rest."
     snubs:
       - Veer's grin fades. "I don't know what you mean, man."
-      - Veer waves over a security guard with two fingers.
+      - Veer looks away, jaw tight. "Drop it. Please."
       - Veer looks past you at someone waving from the stage. "Yeah — cool, cool. Anyway..."
       - Veer's smile stays stretched. "You want a photo or something?"
     facts:
@@ -2129,6 +2168,10 @@ characters:
         unlock:
           requires:
             - c_apogee
+        disposition: admit
+      - id: veer_perigee
+        text: The band donates money to the Perigee NGO — not the other way around. The host announced it backwards at the concert.
+        unlock: always
         disposition: admit
       - id: veer_donation
         text: "The host made a mistake: the band donates a good portion of its revenue to Perigee, not the other way around."
@@ -2164,13 +2207,41 @@ characters:
           after:
             - veer_act7_tailed
         disposition: deflect
+    mood_by_act:
+      act3: You're buzzing after a good set and happy to talk to a fan — until the questions get close to the NGO, and then the charm becomes a shield.
+      act7: You're frazzled, scared and angry — your dad told you folders with your name are out there, and you're at Sameer's door because you don't know who else to ask.
+    deflections_by_act:
+      act3:
+        - Veer laughs and takes another swig of water. "Man, that's a lot of questions for a fan."
+        - Veer taps his monitor and shrugs. "I only play music, bro. The NGO people handle the rest."
+        - He turns to wave at a fan in the front row, then comes back with a grin.
+        - "\"You're asking NGO stuff to the wrong guy. I just make noise for a living.\""
+        - He checks his in-ears, fiddles with the pack on his belt.
+        - '"Next question. Something about music, maybe?"'
+        - He finishes the water bottle and tosses it into a bin; it misses.
+        - "\"C'mon man, nobody backstage wants to talk about paperwork.\""
+      act7:
+        - Veer glances down the street, then at the door behind you.
+        - He rubs his face with both hands and lets out a shaky breath.
+        - '"Keep your voice down, man. Please."'
+        - He paces a half-step, then stops himself.
+        - "\"I'm not here to play games, Sameer. I'm here because I'm scared.\""
+        - He looks over his shoulder at every sound from the street.
+        - '"Whatever you think I did — my family has nothing to do with it."'
+        - He presses his palms together, almost like a prayer, then drops them.
   - id: enakshi
     name: Enakshi
-    persona: "A member of the organisation whose days blur together: greasy hair, sunken eyes, a house kept dark. She guards her hallway closet like a temple."
+    persona: "A member of the organisation whose days blur together: greasy hair, sunken eyes, a house kept dark. She attends the meetings only online and guards her hallway closet like a temple. She is devout in the way a fever is devout — all heat, no thought — and there is real violence under the stillness."
+    relationship: You are talking to a stranger who rang your doorbell. You don't know him. You don't want to.
+    speech: Low, hoarse, broken sentences; hisses more than speaks; drops into prayer and chant when cornered.
     goals:
       - Protect what the organisation gave her
       - Serve the holy mother
+      - Keep the closet — and the tablet — out of anyone's hands
     demeanor: hostile
+    voice_examples:
+      - The goddess will judge you.
+      - You stole my peace. She will take it back in blood.
     deflections:
       - Enakshi hisses, low in her throat.
       - Enakshi glances at the closet door behind her.
@@ -2190,11 +2261,17 @@ characters:
         disposition: admit
   - id: tanush
     name: Tanush
-    persona: "The name on the corner office: polite, meticulous, terrifying. Rituals, meetings and openings all run through his desk. He calls the missing 'offerings' without blinking."
+    persona: "The name on the corner office: polite, meticulous, terrifying. Rituals, meetings and openings all run through his desk. He keeps the organisation's records flawless and calls the missing 'offerings' without blinking — and under it all, the same man stands on the podium in the Shiniest mask. The courtesy is the mask; the prophet is what's under it."
+    relationship: You are talking to Sameer — the boy who walked through his office and photographed his calendar. Tanush doesn't know that yet. Or does he?
+    speech: Polished, soft, unhurried; perfect grammar; every sentence placed like a chess piece; the menace is in the calm.
     goals:
       - Keep the organisation's records perfect
       - Stay indispensable to the leader
+      - Keep playing his game with Sameer
     demeanor: precise
+    voice_examples:
+      - In my time this place flourished. Do you know how long I have been here?
+      - You've barely been here for 5 years, old man — you haven't done shit.
     deflections:
       - Tanush straightens a paper that is already straight.
       - Tanush smiles at a point just past you.
@@ -2214,14 +2291,20 @@ characters:
         disposition: deflect
   - id: leader
     name: The Leader
-    persona: The cult's leader and self-styled prophet of the Moon Goddess. Theatrical, mocking and utterly certain of his divinity — he treats the hunt for Sameer as a game.
+    persona: "The cult's leader and self-styled prophet of the Moon Goddess: theatrical, mocking and utterly certain of his divinity. He treats the hunt for Sameer as a game. When the Shiniest mask comes off, he is Tanush — the courteous man from the corner office, which is either the most frightening part or the most human one."
+    relationship: You are talking to Sameer — the boy who keeps surviving your little games. You find him amusing.
+    speech: Deep, velvety, sermon-cadence; mocking names ('child', 'my boy'); flips from tenderness to menace without changing volume; loves an audience.
     goals:
       - Return the chosen to Nishakara's arms
-      - Grow the family
+      - Grow the family, especially among children
+      - Keep playing his game with Sameer
       - Offer the purest to Nishakara
       - Grow the cult, especially among children
-      - Keep playing his game with Sameer
     demeanor: mocking
+    voice_examples:
+      - For our holy mother, she has nurtured us all lovingly. It is an honour to be returned to her arms.
+      - My my, I thought you would be smarter than this Sameer.
+      - Who am I but a humble mortal to follow her?
     deflections:
       - The leader laughs, low and rumbling, even though nothing was funny.
       - The leader raises a hand, as if blessing you.
@@ -2277,7 +2360,9 @@ characters:
         disposition: deflect
   - id: ramu
     name: Ramu
-    persona: The owner of Ramu's Dosa Corner, a patient regular in Parth and Sameer's lives. He is warm but busy, never a detective, and speaks in short, grounded observations.
+    persona: The owner of Ramu's Dosa Corner, a patient regular in Parth and Sameer's lives. He is warm but busy, never a detective, and speaks in short, grounded observations. He keeps an eye on 'his boys' the way a shopkeeper does — half affection, half keeping trouble off his floor.
+    relationship: You are talking to Sameer — a regular at your counter, and half of the pair who used to sit arguing at the corner table until closing.
+    speech: Plain, unhurried, South-Indian street warmth; short sentences between orders; calls Sameer by his name; dry little smiles; never dramatic.
     goals:
       - Keep his shop running
       - Look out for the boys
@@ -2286,6 +2371,7 @@ characters:
     voice_examples:
       - Masala dosa and filter coffee. Same table, nearly every time.
       - I wish I knew more, Sameer. He paid and left like usual.
+      - You're not eating. Sit down and eat something first.
     deflections:
       - Ramu glances toward the counter. 'Let me finish this order, then I'll tell you what I remember.'
       - Ramu shakes his head. 'I only know what I saw in my shop.'
@@ -2313,7 +2399,7 @@ characters:
       - He turns the stove down. 'If I had seen something important, I'd have told you.'
     facts:
       - id: ramu_regular
-        text: Parth and Sameer were regulars at Ramu's Dosa Corner. Parth ordered masala dosa and filter coffee; they usually sat together until closing. Ramu has no direct knowledge of the abduction.
+        text: Parth and Sameer were regulars at Ramu's Dosa Corner. Parth ordered masala dosa and filter coffee; they usually sat together until closing. Parth dropped by the other day — quiet, but he paid and left like usual.
         unlock: always
         disposition: admit
 clues:
@@ -3010,6 +3096,7 @@ puzzles:
     requires:
       clues:
         - c_arrest
+    lands_in: police_station
   - id: p_tell
     kind: choice
     prompt: As he is put into a chair, he wonders — should he tell them about what he found?
@@ -3350,6 +3437,27 @@ canonical_qa:
       - parth
     a: I didn't call him. He told me you had left early. Why would he say that?
   - character: mother
+    q: where did parth go after he left home
+    keywords:
+      - parth
+      - go
+    a: He said he was going to meet you at the park. He left an hour before you rang the bell. That's the last I saw of him.
+  - character: mother
+    q: was parth acting strange lately
+    keywords:
+      - strange
+    a: He was quieter these last few days. I thought it was the internship — he'd been so happy about it. I keep telling myself it was just that.
+  - character: mother
+    q: do you blame me for this
+    keywords:
+      - blame
+    a: No, beta. Never. If anything, I blame myself. I should have asked him more questions instead of only asking about dinner.
+  - character: mother
+    q: what did the police say
+    keywords:
+      - police
+    a: They took the report. No guarantee, they said. Like he's a lost umbrella.
+  - character: mother
     q: who is vihaan
     keywords:
       - vihaan
@@ -3384,6 +3492,16 @@ canonical_qa:
       - parth
     a: Not since he stopped by the other day. He was quiet, but he paid and left like usual. I don't know where he went after that.
   - character: ramu
+    q: was parth quiet the last time
+    keywords:
+      - quiet
+    a: Quieter than usual. He didn't joke with me the way he always does. Then he paid and left like usual.
+  - character: ramu
+    q: did parth seem scared
+    keywords:
+      - scared
+    a: Scared? No. He looked tired, Sameer. There's a difference — and tired I can't help with.
+  - character: ramu
     q: what was parth like
     keywords:
       - parth
@@ -3411,7 +3529,7 @@ canonical_qa:
     keywords:
       - met
       - parth
-    a: You're Parth's friend? Oh yeah, Parth came around the day before yesterday. He was super interested in this stuff, he was great with kids.
+    a: Like I said — he came around the day before yesterday. Keen eyes, great with the kids. Why, is he in trouble or something?
   - character: veer
     q: what is your band name
     keywords:
@@ -3422,6 +3540,17 @@ canonical_qa:
     keywords:
       - band
     a: Apogee — we got inspired by the NGO's name, but we still wanted to keep our theme of being at the peak, at the highest of all.
+  - character: veer
+    q: what do the workshops usually do
+    keywords:
+      - workshop
+    a: Astronomy, mostly. Star maps, telescopes, kids running around — genuinely sweet stuff. I just play the closing set.
+  - character: veer
+    q: how long have you known the ngo
+    keywords:
+      - long
+      - ngo
+    a: Three years? Four? They're good people, man. They just ask for a lot of Saturdays.
   - character: officer
     q: where did he get it
     keywords:
@@ -3444,6 +3573,11 @@ canonical_qa:
     keywords:
       - charged
     a: The murder of Enakshi. He pleads his innocence, but the story is already out there.
+  - character: officer
+    q: will you watch the video
+    keywords:
+      - video
+    a: Play it. Slow. And if it's real, I'm not sitting on it — I'm taking it upstairs.
   - character: veer
     q: does the organisation follow people around
     keywords:
@@ -3456,6 +3590,11 @@ canonical_qa:
       - come
       - door
     a: I'm hearing from my dad that you apparently got folders full of information. If my name comes in the cult, I swear to god —
+  - character: veer
+    q: are you in the cult
+    keywords:
+      - cult
+    a: God, no. I play their events. I donate. That doesn't make me one of them — I didn't know, Sameer. I didn't want to know.
   - character: leader
     q: why did you start all of this
     keywords:

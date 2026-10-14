@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { CaseImage, useCaseDialog } from './InvestigationUI.jsx';
 
 const TYPES = { text: 'Written clue', code: 'Access code', email: 'In-game email', choice: 'Decision', scene: 'Scene' };
-export default function PuzzleWorkbench({ puzzle, team, solved, penalties = 0, onSolve, onClose, busy, result, clueLabels = {}, relatedClues = [] }) {
+export default function PuzzleWorkbench({ puzzle, team, solved, penalties = 0, onSolve, onClose, busy, result, clueLabels = {} }) {
   const [answer, setAnswer] = useState(''), [expanded, setExpanded] = useState(false), [last, setLast] = useState(null);
   const root = useRef(), imageButton = useRef();
   const draftKey = `arena-answer:${team}:${puzzle?.id}`;
@@ -21,10 +21,11 @@ export default function PuzzleWorkbench({ puzzle, team, solved, penalties = 0, o
   const submit = e => { e.preventDefault(); if (!busy && !settled && answer.trim()) { setLast(answer); onSolve(answer.trim()); } };
   const wrong = result && !result.correct && !result.alreadySolved;
   // A rejected answer must never read like a solved one: without an authored
-  // fail message, say plainly that the answer did not hold.
+  // fail message, say plainly that the answer did not hold — and send the
+  // player to their own notebook rather than repeating the evidence here.
   const feedbackMessage = result?.message
     || (wrong
-      ? 'Not quite. Re-read the evidence and try a different answer.'
+      ? 'Not quite. Open your notebook and re-check the evidence, then try a different answer.'
       : puzzle.solvedHint || 'This clue is resolved. Your discoveries are saved in the notebook.');
   const grants = (result?.grants ?? []).map(id => clueLabels[id] ?? id);
   const collapse = () => { setExpanded(false); requestAnimationFrame(() => imageButton.current?.focus()); };
@@ -37,7 +38,6 @@ export default function PuzzleWorkbench({ puzzle, team, solved, penalties = 0, o
           <section className="workbench-answer"><div className="case-section-label"><span>{puzzle.evidence ? '02 / Investigate' : 'Your next lead'}</span><span>{settled ? 'Recorded' : 'In progress'}</span></div><p className="case-prompt">{puzzle.prompt}</p>
             {scene && <div className="case-scene-lines">{(puzzle.lines ?? []).map((line, index) => <p key={index}><span>{line.speaker === 'narrator' ? 'Narration' : line.speaker === 'voice' ? 'Unknown voice' : line.speaker}</span>{line.text}</p>)}</div>}
             {puzzle.kind === 'email' && <p className="case-muted">Use a fictional address. This form belongs to the story and sends no email.</p>}
-            {wrong && relatedClues.map(clue => <details className="case-reference" key={clue.id}><summary>From your notebook · {clue.name}</summary><p>{clue.description}</p></details>)}
             <div className={`case-feedback ${wrong ? 'retry' : 'complete'}`} role="status" aria-live="polite">
               {(result || settled) && <><p className="case-eyebrow">{wrong ? (settled ? '✕ Outcome recorded' : '✕ Try another approach') : (result?.alreadySolved ? '✓ Already resolved' : '✓ Correct')}</p><p>{feedbackMessage}</p>{result?.penalty > 0 && <small>+{result.penalty} penalty — a wrong answer costs 1, up to {result.penaltyCap ?? 3} per clue.</small>}{result?.penalty === 0 && result?.penaltyCap !== undefined && wrong && <small>No further penalty — this clue has reached its cap of {result.penaltyCap}.</small>}{grants.length > 0 && <div className="case-grants"><span>Added to notebook</span>{grants.map(label => <strong key={label}>{label}</strong>)}</div>}</>}
             </div>

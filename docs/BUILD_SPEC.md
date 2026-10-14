@@ -333,9 +333,9 @@ App (W6):
   the lead on its last line; `travel` -> `setRoomId(to)`; `character` -> existing dialogue.
 - PuzzleModal: prompt, evidence image, text/code/email input OR option buttons, and a scene
   transcript with a Continue button as a fallback;
-  shows success narrative / fail message and the wrong-answer penalty; the
-  "From your notebook" references only appear after a wrong attempt; solved puzzles show a
-  check in the Notebook.
+  shows success narrative / fail message and the wrong-answer penalty. The question box must
+  never quote the notebook: the player closes the panel, reads their own collected evidence
+  in the Notebook, and returns — no clue text or answer is repeated inside a puzzle.
 - Act flow: when act changes and `act.intro` exists, play StoryOverlay once (per act id).
   HUD "Advance act" button visible when `state.canAdvance.ok`, plays `act.outro` then
   `completeAct(act.id)`. `?beat=` dev param and Act 0 behave as today.

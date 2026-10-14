@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { makeLLM, llmConfig, llmConfigured, OPENCODE_FREE_MODELS } from '../src/llm.js';
+import { makeLLM, llmConfig, llmConfigured, OPENCODE_FREE_MODELS, OPENCODE_GO_MODELS } from '../src/llm.js';
 
 const calls = [];
 let handler = () => {};
@@ -13,7 +13,14 @@ const server = http.createServer((req, res) => {
     try {
       json = JSON.parse(body);
     } catch {}
-    calls.push({ model: json.model, key: req.headers.authorization, stream: json.stream, path: req.url });
+    calls.push({
+      model: json.model,
+      key: req.headers.authorization,
+      userAgent: req.headers['user-agent'],
+      session: req.headers['x-opencode-session'],
+      stream: json.stream,
+      path: req.url,
+    });
     handler(json, req, res);
   });
 });
@@ -26,6 +33,11 @@ const sse = (res, text) => {
   for (const part of text.match(/.{1,5}/gs) ?? []) {
     res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: part } }] })}\n\n`);
   }
+  res.write('data: [DONE]\n\n');
+  res.end();
+};
+const emptyStream = (res) => {
+  res.writeHead(200, { 'content-type': 'text/event-stream' });
   res.write('data: [DONE]\n\n');
   res.end();
 };
@@ -49,6 +61,26 @@ test('opencode keys default to the free model pool', () => {
   assert.equal(llmConfigured({ OPENCODE_API_KEY: 'sk-test' }), true);
   assert.equal(llmConfigured({}), false);
   assert.equal(llmConfigured({ OPENCODE_API_KEY: 'sk-test', LLM_MODEL: '' }), true);
+});
+
+test('a go key defaults to the go endpoint and pool', () => {
+  const cfg = llmConfig({ OPENCODE_GO_API_KEY: 'go-key' });
+  assert.equal(cfg.base, 'https://opencode.ai/inference/go/v1');
+  assert.deepEqual(cfg.keys, ['go-key']);
+  assert.deepEqual(cfg.models, OPENCODE_GO_MODELS);
+  const both = llmConfig({ OPENCODE_API_KEY: 'console', OPENCODE_GO_API_KEY: 'go-key' });
+  assert.equal(both.base, 'https://opencode.ai/inference/go/v1');
+  assert.deepEqual(both.keys, ['go-key']);
+});
+
+test('requests identify the agent and carry the conversation session', async () => {
+  const env = { LLM_BASE_URL: baseFor('identity'), LLM_API_KEY: 'k1', LLM_MODEL: 'm1', LLM_TURN_BUDGET_MS: '4000' };
+  calls.length = 0;
+  handler = (json, req, res) => sse(res, 'Fine.');
+  const llm = makeLLM(env);
+  for await (const _ of llm.stream([{ role: 'user', content: 'hi' }], { session: 'pa-7-mother' })) void _;
+  assert.equal(calls[0].userAgent, 'prompt-arena-mystery/1.1');
+  assert.equal(calls[0].session, 'pa-7-mother');
 });
 
 test('explicit configuration still wins', () => {
@@ -106,6 +138,24 @@ test('falls over to the next model on a 5xx', async () => {
   assert.equal(text, 'Beta speaking.');
   assert.ok(calls.some((c) => c.model === 'alpha'));
   assert.ok(calls.some((c) => c.model === 'beta'));
+});
+
+test('a model that streams nothing fails over instead of answering with silence', async () => {
+  const env = {
+    LLM_BASE_URL: baseFor('silent'),
+    LLM_API_KEY: 'k1',
+    LLM_MODEL: 'reasoner',
+    LLM_FALLBACK_MODELS: 'talker',
+    LLM_TURN_BUDGET_MS: '4000',
+  };
+  calls.length = 0;
+  handler = (json, req, res) => (json.model === 'reasoner' ? emptyStream(res) : sse(res, 'Fine.'));
+  const llm = makeLLM(env);
+  let text = '';
+  for await (const delta of llm.stream([{ role: 'user', content: 'hi' }])) text += delta;
+  assert.equal(text, 'Fine.');
+  assert.ok(calls.some((c) => c.model === 'reasoner'));
+  assert.ok(calls.some((c) => c.model === 'talker'));
 });
 
 test('a fully limited pool throws quickly so the authored fallback can play', async () => {

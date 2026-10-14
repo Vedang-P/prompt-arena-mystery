@@ -1,0 +1,42 @@
+/* Developer sandbox: floating panel for DEV_TEAM_CODE sessions. */
+.dev-toggle{position:fixed;left:14px;bottom:14px;z-index:260;background:#0e1d24;border:1px solid #3e5358;color:#d4b67c;font:600 11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;padding:9px 13px;border-radius:5px;cursor:pointer;box-shadow:0 8px 26px #0008;max-width:44vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dev-toggle:hover{background:#14252d;border-color:#d4b67c}
+.dev-panel{position:fixed;left:14px;bottom:14px;z-index:260;width:min(430px,92vw);max-height:min(72vh,640px);display:flex;flex-direction:column;background:#0b171d;border:1px solid #3e5358;border-radius:8px;box-shadow:0 18px 60px #000a;color:#cfdbd6;font-size:12px}
+.dev-head{display:flex;justify-content:space-between;align-items:start;gap:10px;padding:12px 14px 10px;border-bottom:1px solid #26363c}
+.dev-kicker{margin:0 0 3px;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#d4b67c}
+.dev-head h2{margin:0;font-size:15px;font-weight:600;color:#ececde}
+.dev-head small{display:block;font-size:10px;color:#8fa9a4;margin-top:3px;font-weight:400}
+.dev-close{background:none;border:0;color:#9fb3ae;font-size:20px;line-height:1;cursor:pointer}
+.dev-tabs{display:flex;gap:2px;padding:6px 8px;border-bottom:1px solid #26363c;flex:none}
+.dev-tabs button{flex:1;background:none;border:0;border-bottom:2px solid transparent;color:#8fa9a4;font-size:11px;padding:7px 2px;cursor:pointer}
+.dev-tabs button.active{color:#e8d5aa;border-bottom-color:#d4b67c}
+.dev-body{flex:1;min-height:0;overflow:auto;padding:8px}
+.dev-list{display:flex;flex-direction:column;gap:4px}
+.dev-actions{display:flex;gap:6px;margin-bottom:6px}
+.dev-actions button{flex:1;background:#14252d;border:1px solid #3e5358;color:#cfe0d8;font-size:11px;padding:7px 8px;border-radius:4px;cursor:pointer}
+.dev-actions button:hover{border-color:#d4b67c;color:#e8d5aa}
+.dev-actions button.danger{border-color:#a4534a;color:#e8b3ac}
+.dev-actions button:disabled{opacity:.5;cursor:default}
+.dev-actions input{width:90px;background:#14252d;border:1px solid #3e5358;border-radius:4px;color:#d5dfd6;font-size:11px;padding:6px 8px}
+.dev-row{display:flex;gap:10px;align-items:start;width:100%;text-align:left;background:none;border:1px solid transparent;border-radius:5px;color:#cfdbd6;padding:8px 9px;cursor:pointer}
+.dev-row:hover{background:#ffffff06}
+.dev-row.on{background:#d4b67c0d;border-color:#a68f5c44}
+.dev-row.active{border-color:#d4b67c66}
+.dev-check{color:#d4b67c;font-size:12px;line-height:1.4;width:14px;flex:none}
+.dev-row-text{flex:1;min-width:0}
+.dev-row-text strong{display:block;font-weight:500;font-size:12px;color:#e3e8da}
+.dev-row-text small{display:block;color:#7f9894;font-size:10px;margin-top:2px}
+.dev-row-text em{display:block;color:#9fb3ae;font-size:10px;font-style:normal;margin-top:3px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.dev-act-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.dev-act-grid button{display:flex;flex-direction:column;gap:2px;text-align:left;background:#14252d;border:1px solid #3e5358;border-radius:5px;color:#cfdbd6;padding:9px 10px;cursor:pointer}
+.dev-act-grid button.active{border-color:#d4b67c;color:#e8d5aa}
+.dev-act-grid strong{font-size:11px;color:#d4b67c}
+.dev-act-grid span{font-size:12px;color:#e3e8da}
+.dev-act-grid small{font-size:9px;color:#7f9894}
+.dev-state{margin-top:8px;border:1px solid #26363c;border-radius:5px;padding:8px}
+.dev-state summary{font-size:11px;color:#9fb3ae;cursor:pointer}
+.dev-state pre{margin:8px 0 0;font-size:10px;color:#b9cdc4;white-space:pre-wrap}
+.dev-note{margin:8px 2px 2px;font-size:10px;color:#8fa9a4;line-height:1.6}
+.dev-note kbd{border:1px solid #3e5358;border-radius:3px;padding:1px 4px;font-size:9px;color:#cfdbd6}
+.dev-foot{flex:none;border-top:1px solid #26363c;padding:8px 10px}
+.dev-foot input{width:100%;background:#14252d;border:1px solid #3e5358;border-radius:4px;color:#d5dfd6;font-size:11px;padding:7px 9px}

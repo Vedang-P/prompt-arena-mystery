@@ -139,3 +139,17 @@ export const heartbeat = (fullscreen = false) =>
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ fullscreen: !!fullscreen }),
   }).then(json);
+
+// Developer sandbox: available only to the dev team session (DEV_TEAM_CODE).
+export const devCatalog = () => request('/api/dev/catalog', { cache: 'no-store' }).then(json);
+export const devAct = (act) =>
+  request('/api/dev/act', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ act }) }).then(json);
+export const devRoom = (room) =>
+  request('/api/dev/room', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ room }) }).then(json);
+export const devToggle = (kind, id, on) =>
+  request('/api/dev/toggle', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kind, id, on }) }).then(json);
+export const devBulk = (mode) =>
+  request('/api/dev/bulk', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ mode }) }).then(json);
+export const devReset = () => request('/api/dev/reset', { method: 'POST' }).then(json);
+export const devPenalties = (value) =>
+  request('/api/dev/penalties', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ value }) }).then(json);

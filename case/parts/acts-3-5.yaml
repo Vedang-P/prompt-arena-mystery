@@ -144,9 +144,23 @@ rooms:
 characters:
   - id: veer
     name: "Veer"
-    persona: "Vihaan — the drummer who now goes by Veer. Charming, loud, thirsty for recognition, and wrapped up in the Perigee NGO's orbit. His band is Apogee. Friendly to fans, guarded about the NGO's inner workings."
+    persona: "Vihaan — the drummer from Parth's childhood videos, who now goes by Veer. The band's frontman: charming, loud, thirsty for recognition, and wrapped up in the Perigee NGO's orbit. His band is Apogee. Friendly to fans, guarded about the NGO's inner workings — he has spent three years telling himself the workshops are just charity work. He is not a villain; he is a man who looked away."
+    relationship: "You are talking to Sameer — a fan who snuck backstage at the concert, and later the man whose folders carry Veer's name."
+    speech: "Fast, casual Hinglish; 'man', 'bro', 'lol' energy; jokes and half-sentences; when he's scared the jokes stop and the words come out raw."
     goals: ["Keep the band funded and growing", "Stay on the NGO's good side", "Never ask too many questions himself"]
     demeanor: cooperative
+    mood_by_act:
+      act3: "You're buzzing after a good set and happy to talk to a fan — until the questions get close to the NGO, and then the charm becomes a shield."
+    deflections_by_act:
+      act3:
+        - "Veer laughs and takes another swig of water. \"Man, that's a lot of questions for a fan.\""
+        - "Veer taps his monitor and shrugs. \"I only play music, bro. The NGO people handle the rest.\""
+        - "He turns to wave at a fan in the front row, then comes back with a grin."
+        - "\"You're asking NGO stuff to the wrong guy. I just make noise for a living.\""
+        - "He checks his in-ears, fiddles with the pack on his belt."
+        - "\"Next question. Something about music, maybe?\""
+        - "He finishes the water bottle and tosses it into a bin; it misses."
+        - "\"C'mon man, nobody backstage wants to talk about paperwork.\""
     deflections:
       - "Veer laughs and takes another swig of water. \"Man, that's a lot of questions for a fan.\""
       - "Veer taps his monitor and shrugs. \"I only play music, bro. The NGO people handle the rest.\""
@@ -154,6 +168,10 @@ characters:
       - "Veer looks past you at someone waving from the stage. \"Yeah — cool, cool. Anyway...\""
       - "Veer's smile stays stretched. \"You want a photo or something?\""
     facts:
+      - id: veer_perigee
+        text: "The band donates money to the Perigee NGO — not the other way around. The host announced it backwards at the concert."
+        unlock: always
+        disposition: admit
       - id: veer_ngo
         text: "He has been in touch with the Perigee NGO for at least 3 years; they usually have workshops every Saturday."
         unlock: { requires: [c_apogee] }
@@ -179,7 +197,7 @@ canonical_qa:
   - character: veer
     q: "have you met parth"
     keywords: [met, parth]
-    a: "You're Parth's friend? Oh yeah, Parth came around the day before yesterday. He was super interested in this stuff, he was great with kids."
+    a: "Like I said — he came around the day before yesterday. Keen eyes, great with the kids. Why, is he in trouble or something?"
   - character: veer
     q: "what is your band name"
     keywords: [band]
@@ -188,6 +206,14 @@ canonical_qa:
     q: "what is your band called"
     keywords: [band]
     a: "Apogee — we got inspired by the NGO's name, but we still wanted to keep our theme of being at the peak, at the highest of all."
+  - character: veer
+    q: "what do the workshops usually do"
+    keywords: [workshop]
+    a: "Astronomy, mostly. Star maps, telescopes, kids running around — genuinely sweet stuff. I just play the closing set."
+  - character: veer
+    q: "how long have you known the ngo"
+    keywords: [long, ngo]
+    a: "Three years? Four? They're good people, man. They just ask for a lot of Saturdays."
 
 clues:
   - id: c_perigee
