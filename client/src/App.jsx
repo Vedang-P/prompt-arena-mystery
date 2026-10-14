@@ -145,7 +145,8 @@ export default function App() {
   }, [state]);
 
   // Hotspots whose requires are unmet stay hidden so later-act content can't be
-  // teased early. Rooms themselves remain in the tab list; only hotspots filter.
+  // teased early. A room appears in the tab list only once it is reachable —
+  // the tabs reveal themselves with the leads.
   const displayRooms = useMemo(() => {
     if (!state) return [];
     const discovered = new Set(state.discovered ?? []);
@@ -1068,20 +1069,16 @@ export default function App() {
 
       {!activeChar && (
         <footer className="room-tabs">
-          {actRooms.map((r) => {
-            const open = reachableRooms.has(r.id);
-            return (
-              <button
-                key={r.id}
-                className={`tab ${r.id === roomId ? 'active' : ''}`}
-                onClick={() => travel(r.id)}
-                disabled={!open}
-                title={open ? r.name : `${r.name} — no way in yet`}
-              >
-                {r.name}
-              </button>
-            );
-          })}
+          {actRooms.filter((r) => reachableRooms.has(r.id)).map((r) => (
+            <button
+              key={r.id}
+              className={`tab ${r.id === roomId ? 'active' : ''}`}
+              onClick={() => travel(r.id)}
+              title={r.name}
+            >
+              {r.name}
+            </button>
+          ))}
         </footer>
       )}
 

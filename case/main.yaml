@@ -2925,6 +2925,7 @@ puzzles:
   - id: p_exposed
     kind: text
     prompt: Just as he is about to go to sleep, a notification arrives — another voice note, in a different modified voice, this time mocking. What could have exposed his investigation of the cult?
+    evidence: /assets/pictures/evidence_email.jpg
     answers:
       - email
       - emails

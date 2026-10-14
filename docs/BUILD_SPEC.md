@@ -324,7 +324,8 @@ DEFAULT 0`, `ending TEXT`. Keep `db:local` + `seed.sql` working (PANDA-7K2).
 `client/src/api.js` (W6) adds `solvePuzzle(id, answer)` -> POST above.
 
 App (W6):
-- Rooms tabs = `currentAct.rooms ?? state.rooms.map(r=>r.id)` mapped to rooms.
+- Rooms tabs = the reachable rooms among `currentAct.rooms ?? state.rooms.map(r=>r.id)`;
+  an unreachable room stays out of the tab list until a lead opens it.
 - Hotspots: `clue` -> existing notice; `puzzle` -> PuzzleModal (pass `state.solvedPuzzles`);
   a `scene` puzzle -> the story overlay (CinematicStory) plays the conversation and records
   the lead on its last line; `travel` -> `setRoomId(to)`; `character` -> existing dialogue.
