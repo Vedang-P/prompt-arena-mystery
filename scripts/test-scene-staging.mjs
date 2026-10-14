@@ -70,7 +70,10 @@ for(const member of HOSPITAL_RITUAL_CROWD){
   assert(Math.hypot(member.at[0],member.at[1]+2.1)<2.4,`${member.character} must ring the altar`);
   assert(angleOff(member,[0,-2.1])<0.2,`${member.character} must face the altar`);
 }
+assert(HOSPITAL_RITUAL_CROWD.filter(m=>!m.officiant).length>=7,'The ritual needs a crowd around the sacrifice, not a handful of stand-ins');
 assert(HOSPITAL_RITUAL_CROWD.some(m=>m.character==='parth'),'Parth must stand masked in the ritual crowd');
+assert(HOSPITAL_RITUAL_CROWD.some(m=>m.character==='tanush'),'Tanush must stand in the ritual crowd');
+assert(HOSPITAL_RITUAL_CROWD.some(m=>m.character==='sameer'&&m.mask===false),'Sameer must witness the sacrifice bare-faced among the masked crowd');
 assert(HOSPITAL_RITUAL_CROWD.some(m=>m.officiant),'The leader must officiate behind the altar');
 // Acts 7–8 must follow the story: Act 7 closes inside the ritual with the
 // leader's speech (never the loading bay), Act 8 opens with Sameer already

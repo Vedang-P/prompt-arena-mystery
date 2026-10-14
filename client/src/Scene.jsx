@@ -1248,14 +1248,16 @@ function HospitalRoom({room,hot,actId,phase,paused=false,cast=[]}) {
   {/* The story's people, staged where it puts them. Act 4: Parth on the ward
       bed while the group that was injecting him rings it (the cinematic's own
       discovery phase brings its Parth, so the room only stages its own when
-      the camera is not already inside this moment). Acts 6/8: the masked crowd
-      around the altar, the leader officiating, Parth masked in the crowd. */}
+      the camera is not already inside this moment). Acts 6/8: a crowd of
+      masked onlookers rings the altar and its sacrifice, the leader officiates
+      behind it, Tanush and Parth stand masked in the crowd and Sameer keeps
+      his bare face as the witness (a member's mask:false renders him so). */}
   {actId==='act4'&&<group>
    {phase!=='discovery'&&<group position={[HOSPITAL_BED.center[0]+.89,HOSPITAL_BED.mattressY+.15,HOSPITAL_BED.center[2]]}><Actor character="parth" pose="lie"/></group>}
-   {HOSPITAL_BED_GROUP.map((member)=><group key={member.character} position={[member.at[0],0,member.at[1]]} rotation={[0,member.rot,0]}><Actor character={member.character} pose="idle" wearingMask/></group>)}
+   {HOSPITAL_BED_GROUP.map((member)=><group key={member.character} position={[member.at[0],0,member.at[1]]} rotation={[0,member.rot,0]}><Actor character={member.character} pose="idle" wearingMask={member.mask!==false}/></group>)}
   </group>}
   {ritual&&<group>
-   {HOSPITAL_RITUAL_CROWD.filter((member)=>!(staged.has(member.character)||(ceremony&&member.officiant))).map((member,i)=><group key={`${member.character}-${i}`} position={[member.at[0],0,member.at[1]]} rotation={[0,member.rot,0]}><Actor character={member.character} pose="idle" wearingMask/></group>)}
+   {HOSPITAL_RITUAL_CROWD.filter((member)=>!(staged.has(member.character)||(ceremony&&member.officiant))).map((member,i)=><group key={`${member.character}-${i}`} position={[member.at[0],0,member.at[1]]} rotation={[0,member.rot,0]}><Actor character={member.character} pose="idle" wearingMask={member.mask!==false}/></group>)}
   </group>}
   <WallSign position={[-7.93,2,1]} rotation={[0,Math.PI/2,0]} width={1.8} height={.55} title="WARD 03" lines={['KEEP THE CORRIDOR CLEAR']}/>
   <WallSign position={[7.93,2,1]} rotation={[0,-Math.PI/2,0]} width={1.8} height={.55} title="SECURITY" lines={['AUTHORISED STAFF ONLY']}/>

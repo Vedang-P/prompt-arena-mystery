@@ -248,7 +248,7 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 | p_mask_owner | text | the leader, leader, tanush | requires c_mask; grants c_mask_owner |
 | p_veer_mask | text | wendigo, wendigo mask, mask | requires p_mask_owner |
 | p_lua | text | lua pharmaceuticals and selenocide, lua pharmaceuticals, selenocide | requires p_veer_mask; grants c_lua_files |
-| p_nigeria | text | pamphlet, the pamphlet, ngo pamphlet | requires p_lua; grants c_article |
+| p_nigeria | text | pamphlet(s), the pamphlet(s), ngo pamphlet(s), workshop pamphlet(s), ngo workshop pamphlet(s) | requires p_lua; grants c_article |
 | p_continue | choice | Continue | options [Continue, Stop]; option_endings {Stop: ending_cult} |
 | p_floor | text | third floor, 3rd floor, third, 3rd, three, 3 (floor 3 / floor three too) | requires c_disguise; grants c_caught |
 | p_hand_owner | text | tanush, the leader, leader | requires p_floor; the hand on his neck |
