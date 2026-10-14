@@ -103,15 +103,16 @@ export function discover(discoveredValue, clueId, { force = false } = {}) {
 // must not block the story ("sameer@mail" is fine).
 const EMAIL_ANSWER = /^[^@\s]+@[^@\s]+$/;
 
-/** Lowercase, strip punctuation (spaces, "@" and "." survive inside tokens),
- *  drop sentence-ending periods, collapse whitespace. */
+/** Lowercase, treat punctuation as word breaks (commas, slashes, hyphens), keep
+ *  "@" and "." inside tokens for addresses, drop sentence-ending periods,
+ *  collapse whitespace. */
 export function normalizeAnswer(text) {
   return String(text ?? '')
     .toLowerCase()
-    .replace(/[^a-z0-9 @.]/g, '')
-    .replace(/\s+/g, ' ')
+    .replace(/[^a-z0-9 @.]+/g, ' ')
     .replace(/\.+$/, '')
     .replace(/\.(?= )/g, '')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
@@ -138,27 +139,71 @@ export function publicEnding(endingId) {
   return ending ? { id: ending.id, title: ending.title, body: ending.body } : null;
 }
 
+// Forgiveness budget for typed answers: a guess still counts as an authored
+// answer when every content word of that answer appears in it (tiny typos
+// forgiven, filler words ignored) with at most a couple of extra words. When
+// coverage is partial, a token cosine threshold absorbs reordering and looser
+// rephrasing. Wrong options that merely mention a right one cannot pass,
+// because they must *cover* an authored answer — not sample from it.
+const ANSWER_SIMILARITY = 0.72;
+
+function answerTokens(text) {
+  return talkTokens(text).filter((token) => !TALK_FILLERS.has(token));
+}
+
+/** True when two spellings differ by only a small slip (codes, single names). */
+function wholeStringClose(guess, reference) {
+  const a = guess.replace(/[^a-z0-9@.]/g, '');
+  const b = reference.replace(/[^a-z0-9@.]/g, '');
+  if (!a || !b) return false;
+  const cap = Math.min(2, Math.floor(Math.min(a.length, b.length) / 4));
+  return editDistance(a, b, cap) <= cap;
+}
+
+function fuzzyAnswerMatch(guess, reference) {
+  if (wholeStringClose(guess, reference)) return true;
+  const refTokens = [...new Set(answerTokens(reference))];
+  if (!refTokens.length) return false;
+  const guessTokens = answerTokens(guess);
+  const used = new Set();
+  let covered = 0;
+  for (const ref of refTokens) {
+    const idx = guessTokens.findIndex((token, i) => !used.has(i) && talkTokenClose(token, ref));
+    if (idx === -1) break;
+    used.add(idx);
+    covered += 1;
+  }
+  if (covered === refTokens.length) {
+    const extra = guessTokens.length - covered;
+    return extra <= Math.max(2, Math.ceil(refTokens.length * 0.5)) || talkTokenCosine(guess, reference) >= ANSWER_SIMILARITY;
+  }
+  // A partial wording is still the same answer only when it reads close.
+  return refTokens.length > 1 && talkTokenCosine(guess, reference) >= ANSWER_SIMILARITY;
+}
+
 function answerMatches(puzzle, raw) {
   const answer = String(raw ?? '');
+  const normalized = normalizeAnswer(answer);
+  const accepted = [...new Set((puzzle.answers ?? []).map(normalizeAnswer).filter(Boolean))];
+
   if (puzzle.kind === 'email') {
-    const accepted = (puzzle.answers ?? []).map(normalizeAnswer);
     if (!accepted.length) return EMAIL_ANSWER.test(answer.trim());
-    return accepted.includes(normalizeAnswer(answer));
+    if (accepted.includes(normalized)) return true;
+    // A one- or two-character slip in an authored address still reaches it.
+    return accepted.some((ref) => wholeStringClose(normalized, ref));
   }
 
-  const normalized = normalizeAnswer(answer);
   if (!normalized) return false;
-  const accepted = new Set((puzzle.answers ?? []).map(normalizeAnswer));
-  if (accepted.has(normalized)) return true;
+  if (accepted.includes(normalized)) return true;
   if (puzzle.kind === 'choice') {
     // A letter stands for the option at that index — accepted only when that
     // option is itself one of the authored answers.
     const options = (puzzle.options ?? []).map((o) => normalizeAnswer(o));
     for (let i = 0; i < options.length; i += 1) {
-      if (normalized === String.fromCharCode(97 + i) && accepted.has(options[i])) return true;
+      if (normalized === String.fromCharCode(97 + i) && accepted.includes(options[i])) return true;
     }
   }
-  return false;
+  return accepted.some((ref) => fuzzyAnswerMatch(normalized, ref));
 }
 
 const grantedFrom = (ids, before) =>

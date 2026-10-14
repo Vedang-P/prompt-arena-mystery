@@ -113,8 +113,8 @@ rooms:
     scene: hospital
     hotspots:
       - { id: h4_backdoor, act: act4, type: clue, clue: c_janitor, label: "Janitor's backdoor", position: [-3, 0, -1.8] }
-      - { id: h4_theatre, act: act4, type: clue, clue: c_ritual, label: "Third-floor operating theatre", position: [0, 0.6, -3], requires: { clues: [c_janitor] } }
-      - { id: h4_security, act: act4, type: puzzle, puzzle: p_security_pin, label: "Security control panel", position: [2.6, 0.6, -1.4] }
+      - { id: h4_security, act: act4, type: puzzle, puzzle: p_security_pin, label: "Security control panel", position: [2.6, 0.6, -1.4], requires: { clues: [c_janitor] } }
+      - { id: h4_theatre, act: act4, type: clue, clue: c_ritual, label: "Third-floor operating theatre", position: [0, 0.6, -3], requires: { clues: [c_cameras] } }
       - { id: h4_crowd, act: act4, type: puzzle, puzzle: p_parth_alive, label: "A group surrounding a person", position: [-1.6, 0.4, 1.2], requires: { clues: [c_cameras] } }
       - { id: h4_to_tanush_office, act: act4, type: travel, to: tanush_office, label: "The office door", position: [3, 0, 1.8], requires: { clues: [c_parth_alive] } }
 
@@ -256,7 +256,7 @@ clues:
   - id: c_ritual
     name: "Third-floor theatre"
     description: "The room smelled of bleach. A few people surrounded an operating table — the man stuffed into the ambulance. Muffled mid-scream, an injection, then screams in pure agony. One of them chants and ceremoniously opens a carved box of thick incense sticks. Sameer flinches when one touches flesh. A tapestry with the same symbol as the abandoned sedan hangs nearby — the NGO is a cult."
-    requires: [c_janitor]
+    requires: [c_cameras]
   - id: c_cameras
     name: "Security room"
     description: "The control panel opens other rooms of the hospital without travelling. He saw things that cannot be described without raising the PG rating of this game."
@@ -310,7 +310,7 @@ puzzles:
   - id: p_band_name
     kind: text
     prompt: "Sameer thought — what was their band name again?"
-    answers: ["apogee"]
+    answers: ["apogee", "the apogee", "apogee band", "the band apogee", "band called apogee"]
     success: "Apogee — of course. \"The point of the Moon's orbit farthest from Earth,\" Veer explains. \"Perigee is where it is closest. We wanted to keep our theme of being at the peak, at the highest of all.\" Sameer's mind was racing: he may have stumbled into a gold mine of clues."
     grants: [c_apogee]
   - id: p_registration
@@ -350,7 +350,7 @@ puzzles:
   - id: p_destination
     kind: text
     prompt: "He plans to go to the workshop and finds an auto. \"Where do you want to go, sir?\""
-    answers: ["hutting 3rd cross dj halli", "hutting", "3rd cross dj halli", "dj halli"]
+    answers: ["hutting 3rd cross dj halli", "hutting 3rd cross", "hutting dj halli", "3rd cross dj halli", "3rd cross", "dj halli", "hutting", "the workshop", "workshop", "the workshop at hutting", "hutting 3rd cross dj halli bangalore"]
     success: "\"Hutting, 3rd cross, DJ Halli.\" The volunteer's message had the address."
     requires: { clues: [c_workshop_address] }
     fail_message: "The driver waits. Sameer digs out the volunteer's message and reads the address again."
@@ -380,7 +380,7 @@ puzzles:
   - id: p_security_pin
     kind: text
     prompt: "He turns left and finds what he thinks is a security room. The control panel is locked, and a note is taped to it: \"vykpmng vykpmng nkvvng ____\". The panel wants the missing word."
-    answers: ["uvct", "star"]
+    answers: ["uvct", "star", "the star", "uvct star", "star sign", "the star sign"]
     success: "Each letter is shifted two places ahead: vykpmng becomes twinkle, nkvvng becomes little, uvct becomes star. Twinkle twinkle little star. The panel unlocks — he can check out other rooms of the hospital without travelling."
     grants: [c_cameras]
   - id: p_parth_alive

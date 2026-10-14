@@ -545,6 +545,12 @@ puzzles:
       - "missing people"
       - "people going missing"
       - "disappearances"
+      - "missing persons"
+      - "people missing"
+      - "people are missing"
+      - "people disappeared"
+      - "people go missing"
+      - "disappearance"
     success: "People going missing. Determination replaces anxiety — he doesn't want more people screaming in pain because of this rotten cult. He finds a pen camera on his desk, Parth's gift, and leaves for the hospital."
     grants: [c_pen_camera]
 
@@ -577,6 +583,8 @@ puzzles:
     prompt: "This was ______"
     answers:
       - "tanush"
+      - "it was tanush"
+      - "tanush the leader"
     success: "Tanush. He feels both elation and dread. He checks if the camera is recording — it is."
     requires: { puzzles: [p_voice_hq] }
 
@@ -708,6 +716,9 @@ puzzles:
       - "wendigo"
       - "wendigo mask"
       - "mask"
+      - "the wendigo mask"
+      - "the mask"
+      - "wendigo design"
     success: "Veer hesitated. \"I mean — I've heard some being tailed around. Usually the aftermath is messy. If there is something like that happening, I suggest that you step down. It's not worth it man.\""
     requires: { puzzles: [p_mask_owner] }
 
@@ -729,6 +740,10 @@ puzzles:
       - "pamphlet"
       - "the pamphlet"
       - "ngo pamphlet"
+      - "the ngo pamphlet"
+      - "workshop pamphlet"
+      - "ngo workshop pamphlet"
+      - "the ngo workshop pamphlet"
     success: "The NGO pamphlet! Perigee had hosted a huge workshop in Nigeria just a year ago. He looked up the aftermath — an article on the second page of Google, connecting the same dots he was about to connect. This was the journalist's last article. He tries not to think about what happened to her."
     grants: [c_article]
     requires: { clues: [c_lua_files] }
@@ -787,6 +802,10 @@ puzzles:
       - "fibonacci"
       - "golden spiral"
       - "fibonacci spiral"
+      - "fibonacci sequence"
+      - "fibonacci series"
+      - "golden ratio"
+      - "golden curve"
     success: "Fibonacci spirals — or golden spirals."
     requires: { puzzles: [p_refer] }
 
@@ -853,6 +872,10 @@ puzzles:
     answers:
       - "security room"
       - "the security room"
+      - "security"
+      - "the security office"
+      - "security office"
+      - "the security desk"
     success: "The security room. He runs over there throwing pages near the switchboards and wherever the flames would be big. The leader tries his best to catch him, but he fails. He reaches the end of the corridor and climbs on the window frame."
     requires: { puzzles: [p_burn] }
 
@@ -862,6 +885,9 @@ puzzles:
     answers:
       - "to find parth"
       - "find parth"
+      - "finding parth"
+      - "to find him"
+      - "find him"
     success: "To find Parth. He gazes at the burning room — the leader's face melted, muscle fibers charred."
     requires: { puzzles: [p_rooms] }
 
@@ -872,6 +898,11 @@ puzzles:
       - "yes"
       - "i did"
       - "he did"
+      - "yeah"
+      - "yep"
+      - "yes he did"
+      - "i found him"
+      - "he found him"
     success: "Yes. He found him."
     fail_message: "Focus. After all of this — yes, he found him."
     requires: { puzzles: [p_why] }
@@ -883,6 +914,11 @@ puzzles:
       - "no"
       - "no he was not"
       - "he was not"
+      - "not saved"
+      - "he was not saved"
+      - "no they did not"
+      - "they did not save him"
+      - "unable to save him"
     success: "No. He was unable to save him."
     fail_message: "No — the truth of it: he could not save him."
     requires: { puzzles: [p_found] }
@@ -893,6 +929,12 @@ puzzles:
     answers:
       - "dead"
       - "parth is dead"
+      - "he is dead"
+      - "parth was dead"
+      - "he was dead"
+      - "died"
+      - "parth died"
+      - "he died"
     success: "Dead. Parth's head was banged on the table corner, stained red. He didn't get up."
     requires: { puzzles: [p_saved] }
 
@@ -903,6 +945,11 @@ puzzles:
       - "lose"
       - "i would lose"
       - "game over"
+      - "he would lose"
+      - "would lose"
+      - "losing"
+      - "he loses"
+      - "it would be a loss"
     success: "I would lose. The game has ended — Sameer can leave, before it restarts, he can go back to his life. Sameer closes his eyes, he breathes."
     requires: { puzzles: [p_where] }
 

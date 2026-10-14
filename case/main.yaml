@@ -1470,6 +1470,18 @@ rooms:
           - -3
           - 0
           - -1.8
+      - id: h4_security
+        act: act4
+        type: puzzle
+        puzzle: p_security_pin
+        label: Security control panel
+        position:
+          - 2.6
+          - 0.6
+          - -1.4
+        requires:
+          clues:
+            - c_janitor
       - id: h4_theatre
         act: act4
         type: clue
@@ -1481,16 +1493,7 @@ rooms:
           - -3
         requires:
           clues:
-            - c_janitor
-      - id: h4_security
-        act: act4
-        type: puzzle
-        puzzle: p_security_pin
-        label: Security control panel
-        position:
-          - 2.6
-          - 0.6
-          - -1.4
+            - c_cameras
       - id: h4_crowd
         act: act4
         type: puzzle
@@ -2531,7 +2534,7 @@ clues:
     name: Third-floor theatre
     description: The room smelled of bleach. A few people surrounded an operating table — the man stuffed into the ambulance. Muffled mid-scream, an injection, then screams in pure agony. One of them chants and ceremoniously opens a carved box of thick incense sticks. Sameer flinches when one touches flesh. A tapestry with the same symbol as the abandoned sedan hangs nearby — the NGO is a cult.
     requires:
-      - c_janitor
+      - c_cameras
   - id: c_cameras
     name: Security room
     description: The control panel opens other rooms of the hospital without travelling. He saw things that cannot be described without raising the PG rating of this game.
@@ -2813,6 +2816,10 @@ puzzles:
     prompt: Sameer thought — what was their band name again?
     answers:
       - apogee
+      - the apogee
+      - apogee band
+      - the band apogee
+      - band called apogee
     success: "Apogee — of course. \"The point of the Moon's orbit farthest from Earth,\" Veer explains. \"Perigee is where it is closest. We wanted to keep our theme of being at the peak, at the highest of all.\" Sameer's mind was racing: he may have stumbled into a gold mine of clues."
     grants:
       - c_apogee
@@ -2871,9 +2878,16 @@ puzzles:
     prompt: He plans to go to the workshop and finds an auto. "Where do you want to go, sir?"
     answers:
       - hutting 3rd cross dj halli
-      - hutting
+      - hutting 3rd cross
+      - hutting dj halli
       - 3rd cross dj halli
+      - 3rd cross
       - dj halli
+      - hutting
+      - the workshop
+      - workshop
+      - the workshop at hutting
+      - hutting 3rd cross dj halli bangalore
     success: "\"Hutting, 3rd cross, DJ Halli.\" The volunteer's message had the address."
     requires:
       clues:
@@ -2919,6 +2933,10 @@ puzzles:
     answers:
       - uvct
       - star
+      - the star
+      - uvct star
+      - star sign
+      - the star sign
     success: "Each letter is shifted two places ahead: vykpmng becomes twinkle, nkvvng becomes little, uvct becomes star. Twinkle twinkle little star. The panel unlocks — he can check out other rooms of the hospital without travelling."
     grants:
       - c_cameras
@@ -3023,6 +3041,12 @@ puzzles:
       - missing people
       - people going missing
       - disappearances
+      - missing persons
+      - people missing
+      - people are missing
+      - people disappeared
+      - people go missing
+      - disappearance
     success: People going missing. Determination replaces anxiety — he doesn't want more people screaming in pain because of this rotten cult. He finds a pen camera on his desk, Parth's gift, and leaves for the hospital.
     grants:
       - c_pen_camera
@@ -3056,6 +3080,8 @@ puzzles:
     prompt: This was ______
     answers:
       - tanush
+      - it was tanush
+      - tanush the leader
     success: Tanush. He feels both elation and dread. He checks if the camera is recording — it is.
     requires:
       puzzles:
@@ -3207,6 +3233,9 @@ puzzles:
       - wendigo
       - wendigo mask
       - mask
+      - the wendigo mask
+      - the mask
+      - wendigo design
     success: Veer hesitated. "I mean — I've heard some being tailed around. Usually the aftermath is messy. If there is something like that happening, I suggest that you step down. It's not worth it man."
     requires:
       puzzles:
@@ -3231,6 +3260,10 @@ puzzles:
       - pamphlet
       - the pamphlet
       - ngo pamphlet
+      - the ngo pamphlet
+      - workshop pamphlet
+      - ngo workshop pamphlet
+      - the ngo workshop pamphlet
     success: The NGO pamphlet! Perigee had hosted a huge workshop in Nigeria just a year ago. He looked up the aftermath — an article on the second page of Google, connecting the same dots he was about to connect. This was the journalist's last article. He tries not to think about what happened to her.
     grants:
       - c_article
@@ -3295,6 +3328,10 @@ puzzles:
       - fibonacci
       - golden spiral
       - fibonacci spiral
+      - fibonacci sequence
+      - fibonacci series
+      - golden ratio
+      - golden curve
     success: Fibonacci spirals — or golden spirals.
     requires:
       puzzles:
@@ -3402,6 +3439,10 @@ puzzles:
     answers:
       - security room
       - the security room
+      - security
+      - the security office
+      - security office
+      - the security desk
     success: The security room. He runs over there throwing pages near the switchboards and wherever the flames would be big. The leader tries his best to catch him, but he fails. He reaches the end of the corridor and climbs on the window frame.
     requires:
       puzzles:
@@ -3412,6 +3453,9 @@ puzzles:
     answers:
       - to find parth
       - find parth
+      - finding parth
+      - to find him
+      - find him
     success: To find Parth. He gazes at the burning room — the leader's face melted, muscle fibers charred.
     requires:
       puzzles:
@@ -3423,6 +3467,11 @@ puzzles:
       - yes
       - i did
       - he did
+      - yeah
+      - yep
+      - yes he did
+      - i found him
+      - he found him
     success: Yes. He found him.
     fail_message: Focus. After all of this — yes, he found him.
     requires:
@@ -3435,6 +3484,11 @@ puzzles:
       - no
       - no he was not
       - he was not
+      - not saved
+      - he was not saved
+      - no they did not
+      - they did not save him
+      - unable to save him
     success: No. He was unable to save him.
     fail_message: "No — the truth of it: he could not save him."
     requires:
@@ -3446,6 +3500,12 @@ puzzles:
     answers:
       - dead
       - parth is dead
+      - he is dead
+      - parth was dead
+      - he was dead
+      - died
+      - parth died
+      - he died
     success: Dead. Parth's head was banged on the table corner, stained red. He didn't get up.
     requires:
       puzzles:
@@ -3457,6 +3517,11 @@ puzzles:
       - lose
       - i would lose
       - game over
+      - he would lose
+      - would lose
+      - losing
+      - he loses
+      - it would be a loss
     success: I would lose. The game has ended — Sameer can leave, before it restarts, he can go back to his life. Sameer closes his eyes, he breathes.
     requires:
       puzzles:

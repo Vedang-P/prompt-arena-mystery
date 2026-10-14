@@ -145,12 +145,13 @@ test('conclusion matching tolerates phrasing', () => {
   assert.equal(conclusionMatches('a totally different motive', reference), false);
 });
 
-test('normalizeAnswer lowercases, strips punctuation, and collapses spaces', () => {
+test('normalizeAnswer lowercases, treats punctuation as word breaks, and collapses spaces', () => {
   assert.equal(normalizeAnswer('  The   LEDGER!! '), 'the ledger');
-  assert.equal(normalizeAnswer('OC-1808'), 'oc1808');
+  assert.equal(normalizeAnswer('OC-1808'), 'oc 1808');
   assert.equal(normalizeAnswer('Sameer@Example.COM'), 'sameer@example.com');
   assert.equal(normalizeAnswer('The archive rooms in the NGO headquarters.'), 'the archive rooms in the ngo headquarters');
   assert.equal(normalizeAnswer('the ngo. headquarters'), 'the ngo headquarters');
+  assert.equal(normalizeAnswer('Hutting,3rd cross,DJ Halli'), 'hutting 3rd cross dj halli');
 });
 
 test('a text puzzle accepts a normalized answer and grants its clues', () => {
@@ -172,6 +173,21 @@ test('a wrong text answer applies the penalty and does not solve', () => {
   assert.deepEqual(result.solvedPuzzles, []);
   assert.deepEqual(result.discovered, []);
   assert.deepEqual(result.grants, []);
+});
+
+test('answers forgive punctuation, typos, extra words, and word order', () => {
+  assert.equal(solvePuzzle([], [], 'p_ash', 'the,ledger').correct, true);
+  assert.equal(solvePuzzle([], [], 'p_ash', 'the ldeger').correct, true);
+  assert.equal(solvePuzzle([], [], 'p_ash', 'ledgr').correct, true);
+  assert.equal(solvePuzzle([], [], 'p_ash', 'i think it was the ledger actually').correct, true);
+  assert.equal(solvePuzzle([], [], 'p_ash', 'the ledger, i think').correct, true);
+  assert.equal(solvePuzzle([], [], 'p_ash', 'the cat').correct, false);
+});
+
+test('forgiving matching never accepts the wrong option of a near-miss choice', () => {
+  assert.equal(solvePuzzle([], [], 'p_play', 'Put it back').correct, false);
+  assert.equal(solvePuzzle([], [], 'p_play', 'B').correct, false);
+  assert.equal(solvePuzzle([], [], 'p_play', 'play it please').correct, true);
 });
 
 test('wrong answers cost a small capped fee per clue', () => {
