@@ -16,7 +16,13 @@ export const HOME_STAIRS={top:2.8,landingY:2.73,landingCenter:[4.7,-2.865],landi
 // The measured stair landing reaches the back wall. Keep an unobstructed
 // doorway aligned to it and continue the upper floor into Parth's room.
 export const HOME_UPPER_DOORWAY={centerX:4.55,bottomY:HOME_STAIRS.top,width:1.72,height:1.86};
-export const HOME_BEDROOM={centerX:4.325,centerZ:-7.65,width:4.35,depth:4.4,ceilingY:5.65,bed:[5.5,HOME_STAIRS.top,-7.7],shelf:[3.05,HOME_STAIRS.top,-7.65],nightstand:[4.1,HOME_STAIRS.top,-8.6],box:[6,HOME_STAIRS.top,-9.05]};
+// Parth's bedroom furniture stands against the measured walls: bed.glb is
+// 1.7 wide by 2.19 deep with its headboard at -z, so the bed head sits on the
+// rear wall (inner face z=-9.69) and its side on the right wall (x=6.34); the
+// bedside cabinet stands between the bed head and the rear wall; the tall
+// bookshelf is rotated so its front faces +x and runs along the left wall
+// (x=2.31); the box fills the rear-left corner.
+export const HOME_BEDROOM={centerX:4.325,centerZ:-7.65,width:4.35,depth:4.4,ceilingY:5.65,bed:[5.48,HOME_STAIRS.top,-8.58],shelf:[2.61,HOME_STAIRS.top,-7.6],shelfRotation:[0,Math.PI/2,0],nightstand:[4.37,HOME_STAIRS.top,-9.46],box:[2.62,HOME_STAIRS.top,-9.4]};
 export function backWallPanels(width,height,opening){
   if(!opening)return [{centerX:0,centerY:height/2,width,height}];
   const left=-width/2,right=width/2,doorLeft=opening.centerX-opening.width/2,doorRight=opening.centerX+opening.width/2;
@@ -66,7 +72,7 @@ export const ROOM_VIEWS={
  abandoned_field:{at:[-2.9,2.25,4.9],look:[-.8,.9,-1.4],fov:68},
  concert:{at:[0,1.85,5.7],look:[0,1.5,-3],fov:62},
  workshop:{at:[0,1.8,5.2],look:[0,1.1,-2.2],fov:64},
- parth_home:{at:[1.55,2.4,5.05],look:[1.45,2.25,-1.45],fov:94},
+ parth_home:{at:[4.3,4.5,-1.2],look:[4.3,3.35,-8.4],fov:70},
  police_station:{at:[.3,1.7,3.5],look:[0,1.3,-1.8],fov:64},
  sameer_room:{at:[.2,2.05,3.55],look:[0,1.25,-1.45],fov:88},
  parth_room:{at:[.2,2.05,3.55],look:[0,1.25,-1.45],fov:88},

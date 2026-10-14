@@ -61,6 +61,11 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--gold); outline-
    accepts input, so a stuck scene can always be stepped past or reloaded. */
 .scene-loader-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 14px; }
 .scene-loader-action { pointer-events: auto; cursor: pointer; padding: 9px 13px; border: 1px solid #5b6f92; background: #16263c; color: #d9e3f2; font: 10px Arial, sans-serif; letter-spacing: .06em; }
+/* A stage that never lights up keeps a small escape chip on screen — a black
+   canvas must always offer its own recovery instead of staying unexplained. */
+.scene-recovery-chip { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 90; cursor: pointer; padding: 9px 15px; border: 1px solid #8a6f4d; border-radius: 4px; background: #1c1509e8; color: #e8d5aa; font: 11px Arial, sans-serif; letter-spacing: .05em; box-shadow: 0 8px 26px #0009; }
+.scene-recovery-chip:hover { background: #2a1f0d; border-color: #d4b67c; }
+.world-fallback-detail { font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; color: #8fa3bd; max-width: 460px; margin: 2px auto 10px !important; word-break: break-word; }
 .scene-loader-action:hover { border-color: #c0a675; color: #f0dcb2; }
 .scene-loader-action.ghost { background: transparent; }
 @keyframes scene-loader-slide { from { transform: translateX(-110%); } to { transform: translateX(400%); } }

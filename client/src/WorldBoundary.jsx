@@ -93,7 +93,9 @@ export function SceneLoading({ label = 'Opening the scene', onDismiss, expireMs 
     window.addEventListener('keydown',key);
     return()=>window.removeEventListener('keydown',key);
   },[]);
-  if(expired)return null;
+  // The card must never leave a black stage unexplained: once it expires a small
+  // chip stays behind so the player can always bring the scene back.
+  if(expired)return <button className="scene-recovery-chip" onClick={()=>window.location.reload()}>Scene not responding — reload ↺</button>;
   const known=total>0;
   const pct=known?Math.max(0,Math.min(100,Math.round(progress))):null;
   return <div className="scene-loader" role="status" aria-live="polite" aria-label={label}>
@@ -110,6 +112,24 @@ export function SceneLoading({ label = 'Opening the scene', onDismiss, expireMs 
       </div>}
     </div>
   </div>;
+}
+
+// One card for every terminal 3D failure — a dead context, a scene that keeps
+// throwing, a boot that never arrives. It always says what happened and offers
+// the three recoveries, so a black stage is never a dead end.
+export function SceneRecoveryCard({ detail = null }) {
+  return (
+    <div className="world-fallback" role="alert">
+      <p>The 3D view could not start on this device.</p>
+      <p>Your case is saved. You can still play with the Explore list — or bring the stage back:</p>
+      {detail && <p className="world-fallback-detail">{detail}</p>}
+      <div className="world-fallback-actions">
+        <button className="btn ghost" onClick={() => window.location.reload()}>Reload scene</button>
+        <button className="btn ghost" onClick={recoverLowGraphics}>Reload on lowest graphics</button>
+        <button className="btn ghost" onClick={clearCachesAndReload}>Clear cache &amp; reload</button>
+      </div>
+    </div>
+  );
 }
 
 // One missing texture or model used to reject the whole room's Suspense tree and
@@ -145,10 +165,10 @@ async function clearCachesAndReload() {
   window.location.reload();
 }
 export class WorldBoundary extends Component {
-  state = { failed: false, terminal: false, webgl: false, retries: 0 };
+  state = { failed: false, terminal: false, webgl: false, retries: 0, detail: null };
   static getDerivedStateFromError(error) {
     const webgl = error?.code === 'webgl_unavailable';
-    return { failed: true, terminal: webgl, webgl };
+    return { failed: true, terminal: webgl, webgl, detail: String(error?.message ?? error ?? 'unknown error').slice(0, 160) };
   }
   componentDidCatch(error) { console.error('scene_error', error.message); }
   componentDidMount() {
@@ -164,17 +184,7 @@ export class WorldBoundary extends Component {
   }
   render() {
     if (this.state.terminal) {
-      return (
-        <div className="world-fallback">
-          <p>{this.state.webgl ? 'The 3D view could not start on this device.' : 'The 3D view kept failing to start.'}</p>
-          <p>Your case is saved. You can still play with the Explore list — or bring the stage back:</p>
-          <div className="world-fallback-actions">
-            <button className="btn ghost" onClick={() => window.location.reload()}>Reload scene</button>
-            <button className="btn ghost" onClick={recoverLowGraphics}>Reload on lowest graphics</button>
-            <button className="btn ghost" onClick={clearCachesAndReload}>Clear cache &amp; reload</button>
-          </div>
-        </div>
-      );
+      return <SceneRecoveryCard detail={this.state.detail} />;
     }
     if (this.state.failed) return <SceneLoading label="Reconnecting the scene" />;
     return this.props.children;

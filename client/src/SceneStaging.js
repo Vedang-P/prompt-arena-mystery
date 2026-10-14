@@ -6,6 +6,15 @@ export function seatContact(character,seatY,floorY){
   const y=seatY-(SEAT[character]??.48);
   return {y,footLift:Math.max(0,floorY-y-(SITTING_SOLE[character]??0)+.003)};
 }
+// The wendigo mask is a physical prop, not just a hotspot marker: it lies on
+// the bed whenever its clue hotspot is available in the room — act 7 onward,
+// or any dev session that reveals every hotspot — with the story phases as the
+// last word (the reveal shows it; once it is taken, it never comes back).
+export function maskVisibleFor({hotspots=[],act=null,phase=null}={}) {
+  if(phase==='mask_taken')return false;
+  if(phase==='mask_reveal')return true;
+  return hotspots.some(h=>h.puzzle==='p_mask_owner')||act==='act7'||act==='act8';
+}
 export function locationFor(act, kind, index) {
   const scenes = {
     act1:{intro:['parth_home','parth_home','parth_home','parth_home','parth_home','parth_home','parth_room'],outro:['parth_home','parth_home']},

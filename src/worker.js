@@ -34,6 +34,11 @@ const app = new Hono();
 const RATE_MIN_MS = 1500;
 const RATE_WINDOW_MS = 60_000;
 const RATE_WINDOW_MAX = 12;
+// One live interview per team: a second overlapping request is refused so a
+// scripted client cannot drain the model pool. The guard expires on its own in
+// case a stream dies without cleanup.
+const LIVE_CHAT_MS = 45_000;
+const liveChats = new Map();
 
 // ---------- event control (fullscreen enforcement) ----------
 // A team that leaves the arena gets a window to come back. The window is the
@@ -1115,6 +1120,11 @@ app.post('/api/interrogate', async (c) => {
 
   const now = Date.now();
   const p = auth.progress;
+  // One interview at a time per team: overlapping requests are the cheapest way
+  // to burn pooled model quota, so they are refused before any slot is spent.
+  const chatKey = String(auth.teamId);
+  const liveSince = liveChats.get(chatKey);
+  if (liveSince && now - liveSince < LIVE_CHAT_MS) return c.json({ error: 'slow_down' }, 429);
   // A dedup hit is a retry of a turn that never received its reply: it must not
   // spend a rate-limit slot, and its question is the stored one, not the body
   // a flaky client resent.
@@ -1176,9 +1186,34 @@ app.post('/api/interrogate', async (c) => {
   const actId = auth.progress.act ?? 'act0';
   const fallbackSource = canned ? 'canonical' : snub ? 'snub' : 'deflect';
   const fallbackText = canned ?? deflection(characterId, (priorFallbacks?.n ?? 0) + 1, snub, actId);
-  const llm = !repeat && !noise ? makeLLM(c.env, () => {}) : null;
+  // A per-team daily budget caps what one scripted or over-chatty team can
+  // spend; past the cap the authored ladder still answers, so play continues
+  // and the pool survives the event.
+  const flags = parseJsonObject(auth.progress.flags);
+  const day = new Date().toISOString().slice(0, 10);
+  const chatUsedToday = flags.chatDay === day ? Number(flags.chatCount ?? 0) : 0;
+  const dailyMax = numEnv(c.env.LLM_TEAM_DAILY_MAX, 300);
+  const overDailyCap = !repeat && !noise && chatUsedToday >= dailyMax;
+  if (!repeat && !noise) {
+    const nextFlags = {
+      ...flags,
+      chatDay: day,
+      chatCount: overDailyCap ? chatUsedToday : chatUsedToday + 1,
+    };
+    try {
+      await c.env.DB.prepare('UPDATE progress SET flags = ? WHERE team_id = ?')
+        .bind(JSON.stringify(nextFlags), auth.teamId)
+        .run();
+    } catch {
+      // Chat must never fail because the counter could not be written.
+    }
+  }
+  const llm = !repeat && !noise && !overDailyCap ? makeLLM(c.env, () => {}) : null;
+  const startedAt = Date.now();
+  liveChats.set(chatKey, startedAt);
 
   return streamSSE(c, async (stream) => {
+    try {
     let clientGone = false;
 
     // A dropped client must not lose the stored turn, so write failures are
@@ -1215,7 +1250,7 @@ app.post('/api/interrogate', async (c) => {
           actId
         );
         for await (const delta of llm.stream(messages, {
-          maxTokens: 480,
+          maxTokens: 320,
           temperature: 0.75,
           session: `pa-${auth.teamId}-${characterId}`,
         })) {
@@ -1248,6 +1283,9 @@ app.post('/api/interrogate', async (c) => {
       .run();
 
     await send('done', { source: storedSource });
+    } finally {
+      if (liveChats.get(chatKey) === startedAt) liveChats.delete(chatKey);
+    }
   });
 });
 
@@ -1261,15 +1299,15 @@ const tidyReply = (raw) => {
     .replace(/[ \t]+/g, ' ')
     .replace(/\s*\n\s*/g, ' ')
     .trim();
-  if (text.length > 520) {
-    const cut = text.slice(0, 520);
+  if (text.length > 340) {
+    const cut = text.slice(0, 340);
     const lastStop = Math.max(
       cut.lastIndexOf('. '),
       cut.lastIndexOf('! '),
       cut.lastIndexOf('? '),
       cut.lastIndexOf('… ')
     );
-    if (lastStop > 120) text = cut.slice(0, lastStop + 1);
+    if (lastStop > 80) text = cut.slice(0, lastStop + 1);
   }
   return text;
 };
@@ -1311,6 +1349,7 @@ app.post('/api/accuse', async (c) => {
         temperature: 0,
         maxTokens: 200,
         timeoutMs: 20000,
+        firstTokenMs: 15000,
         session: `pa-${auth.teamId}-judge`,
       });
       const parsed = parseJudge(out);

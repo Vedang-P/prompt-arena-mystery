@@ -3,7 +3,7 @@ import { CinemaProp, ParkGround, WindTree, CeilingFan } from './CinemaAssets.jsx
 import {DetailProp,InstancedDetailScatter,TerrainSurface,WallSign,Cable,ComputerStation,ShelfContents,FencePanel} from './EnvironmentDetails.jsx';
 import { BEDROOM, SAMEER_BED, HOME_STAIRS, HOME_UPPER_DOORWAY, HOME_BEDROOM, backWallPanels, POLICE, HOSPITAL_BED, DESK_TOP, DESK_SEAT, PARTH_ANCHORS, PARK, DETAIL_ANCHORS,FIELD,FIELD_TRACKS,FIELD_BACKGROUND_BUILDING,FIELD_OVERGROWTH,ROOM_VIEWS,ROOM_BOUNDS,updateFieldBackpackOrbit,updateHospitalSecurityOrbit } from './SceneLayout.js';
 import DemonMask from './DemonMask.jsx';
-import {seatContact} from './SceneStaging.js';
+import {seatContact,maskVisibleFor} from './SceneStaging.js';
 import Actor from './Actor.jsx';
 import { useSettings } from './Settings.jsx';
 import { SceneLoading, SceneWatchdog, WorldBoundary, SceneReady, AssetBoundary } from './WorldBoundary.jsx';
@@ -854,7 +854,7 @@ function HomeRoom({room,hot}) {
   <mesh position={[HOME_BEDROOM.centerX+HOME_BEDROOM.width/2-.08,bedroomWallCenter,HOME_BEDROOM.centerZ]} receiveShadow><boxGeometry args={[.16,bedroomWallHeight,HOME_BEDROOM.depth-.15]}/><meshStandardMaterial color="#bcaa91"/></mesh>
   <mesh position={[HOME_BEDROOM.centerX,HOME_BEDROOM.ceilingY,HOME_BEDROOM.centerZ]} rotation-x={Math.PI/2}><planeGeometry args={[HOME_BEDROOM.width,HOME_BEDROOM.depth]}/><meshStandardMaterial color="#c5bda9" roughness={1}/></mesh>
   <Bed position={HOME_BEDROOM.bed}/>
-  <ShelfContents position={HOME_BEDROOM.shelf}/>
+  <ShelfContents position={HOME_BEDROOM.shelf} rotation={HOME_BEDROOM.shelfRotation}/>
   <DetailProp asset="bedside_cabinet" height={.67} position={HOME_BEDROOM.nightstand}/>
   <DetailProp asset="desk_lamp_arm_01" position={[HOME_BEDROOM.nightstand[0],HOME_BEDROOM.nightstand[1]+.67,HOME_BEDROOM.nightstand[2]]} scale={.62}/>
   <DetailProp asset="cardboard_box_01" position={HOME_BEDROOM.box} scale={.7}/>
@@ -911,7 +911,7 @@ function BedroomWorkstation({paused}) {
   </group>;
 }
 function SameerRoomScene({ room, hot, paused=false, phase }) {
-  const maskVisible=phase==='mask_reveal'||(phase!=='mask_taken'&&['act7','act8'].includes(hot.state?.act));
+  const maskVisible=maskVisibleFor({hotspots:room.hotspots,act:hot.state?.act,phase});
   return <group>
     <Shell width={10} depth={8} height={3.2} tint="#786957" painted/>
     <Floor width={10} depth={8} repeat={[5,4]}/>

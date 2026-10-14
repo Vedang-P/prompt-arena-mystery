@@ -1,24 +1,17 @@
-// Pooled provider adapter for OpenAI-compatible /chat/completions endpoints.
-// Multiple API keys and models are tried as one pool, with streaming, per-pair
-// cooldowns on usage limits and a hard per-turn budget. Plain fetch +
-// AbortController, so it runs in Workers and in Node tests alike.
+// Pooled provider adapter for OpenCode Go. The primary route is
+// muse-spark-1.3-contributor on the Responses API, with a pool of API keys
+// spread across conversations, per-key/per-model cooldowns on usage limits and
+// a hard per-turn budget. Chat-completions endpoints are still supported for
+// fallback models. Plain fetch + AbortController, so it runs in Workers and in
+// Node tests alike.
 
 const OPENCODE_BASE = 'https://opencode.ai/inference/v1';
 const OPENCODE_GO_BASE = 'https://opencode.ai/inference/go/v1';
 const USER_AGENT = 'prompt-arena-mystery/1.1';
+const OPENCODE_SESSION_HEADER = 'x-opencode-session';
 
-// Go's unlimited free models come first for the event, then the cheap fast
-// models included in the Go plan as extra capacity. The Go API expects an
-// identifying user agent and a stable session per conversation (sent below).
-export const OPENCODE_GO_MODELS = [
-  'cat-jam-free',
-  'longcat-2.5-preview-free',
-  'step-5-preview-free',
-  'space-bunny',
-  'mimo-v2.6-flash',
-  'glm-5.3-flash',
-  'deepseek-v4.1-flash',
-];
+// The event runs on a pool of Go keys pinned to Muse Spark 1.3 Contributor.
+export const OPENCODE_GO_MODELS = ['muse-spark-1.3-contributor'];
 
 // Console free models, for deployments using a pay-as-you-go Console key.
 export const OPENCODE_FREE_MODELS = [
@@ -32,14 +25,18 @@ export const OPENCODE_FREE_MODELS = [
   'space-bunny-free',
 ];
 
+const RESPONSES_PROTOCOL_MODELS = ['muse-spark-1.3-contributor', 'muse-spark-1.3'];
+
 const DEFAULTS = {
-  firstTokenMs: 7000,
+  firstTokenMs: 9000,
   turnBudgetMs: 22000,
   cooldownMs: 60_000,
   maxCooldownMs: 15 * 60_000,
-  maxAttempts: 6,
-  maxConcurrent: 12,
-  acquireTimeoutMs: 10_000,
+  maxAttempts: 16,
+  maxConcurrent: 32,
+  acquireTimeoutMs: 15_000,
+  maxOutputTokens: 800,
+  reasoningEffort: 'minimal',
 };
 
 const splitList = (value) =>
@@ -50,14 +47,24 @@ const splitList = (value) =>
 
 const dedupe = (list) => list.filter((v, i, all) => all.indexOf(v) === i);
 
-const parseMs = (value, fallback, min, max) => {
+const parseNum = (value, fallback, min, max) => {
   const n = Number.parseInt(value, 10);
   if (!Number.isFinite(n) || n <= 0) return fallback;
   return Math.min(max ?? n, Math.max(min ?? 1, n));
 };
 
+const hash32 = (value) => {
+  let hash = 2166136261;
+  const text = String(value ?? '');
+  for (let i = 0; i < text.length; i++) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+};
+
 export function llmConfig(env = {}) {
-  const goKeys = dedupe(splitList(env.OPENCODE_GO_API_KEY));
+  const goKeys = dedupe([...splitList(env.OPENCODE_GO_API_KEYS), ...splitList(env.OPENCODE_GO_API_KEY)]);
   const consoleKeys = dedupe(splitList(env.OPENCODE_API_KEY));
   const explicitKeys = dedupe([...splitList(env.LLM_API_KEYS), ...splitList(env.LLM_API_KEY)]);
   const explicitBase = String(env.LLM_BASE_URL || '').replace(/\/+$/, '');
@@ -68,7 +75,7 @@ export function llmConfig(env = {}) {
     keys = dedupe([...explicitKeys, ...(isOpencode ? [...goKeys, ...consoleKeys] : [])]);
   } else if (goKeys.length) {
     base = OPENCODE_GO_BASE;
-    keys = explicitKeys.length ? explicitKeys : goKeys;
+    keys = explicitKeys.length ? dedupe([...explicitKeys, ...goKeys]) : goKeys;
   } else if (consoleKeys.length) {
     base = OPENCODE_BASE;
     keys = explicitKeys.length ? explicitKeys : consoleKeys;
@@ -94,18 +101,25 @@ export function llmConfig(env = {}) {
         return split === -1 ? [pair, ''] : [pair.slice(0, split).trim(), pair.slice(split + 1).trim()];
       })
   );
+  const protocolSetting = String(env.LLM_PROTOCOL || '').trim().toLowerCase();
   return {
     base,
     keys,
     models,
     extraHeaders,
     userAgent: String(env.LLM_USER_AGENT || '').trim() || USER_AGENT,
-    firstTokenMs: parseMs(env.LLM_FIRST_TOKEN_MS, DEFAULTS.firstTokenMs, 1500, 30000),
-    turnBudgetMs: parseMs(env.LLM_TURN_BUDGET_MS, DEFAULTS.turnBudgetMs, 3000, 60000),
-    cooldownMs: parseMs(env.LLM_COOLDOWN_MS, DEFAULTS.cooldownMs, 5000, DEFAULTS.maxCooldownMs),
-    maxCooldownMs: parseMs(env.LLM_MAX_COOLDOWN_MS, DEFAULTS.maxCooldownMs, 30_000, 24 * 3600_000),
-    maxAttempts: parseMs(env.LLM_MAX_ATTEMPTS, DEFAULTS.maxAttempts, 1, 24),
-    maxConcurrent: parseMs(env.LLM_MAX_CONCURRENT, DEFAULTS.maxConcurrent, 1, 256),
+    protocol: protocolSetting === 'responses' || protocolSetting === 'chat' ? protocolSetting : null,
+    responsesModels: dedupe([...RESPONSES_PROTOCOL_MODELS, ...splitList(env.LLM_RESPONSES_MODELS)]),
+    maxOutputTokens: parseNum(env.LLM_MAX_OUTPUT_TOKENS, DEFAULTS.maxOutputTokens, 200, 4000),
+    reasoningEffort: ['minimal', 'low', 'medium', 'high'].includes(String(env.LLM_REASONING_EFFORT || '').toLowerCase())
+      ? String(env.LLM_REASONING_EFFORT).toLowerCase()
+      : DEFAULTS.reasoningEffort,
+    firstTokenMs: parseNum(env.LLM_FIRST_TOKEN_MS, DEFAULTS.firstTokenMs, 1500, 30000),
+    turnBudgetMs: parseNum(env.LLM_TURN_BUDGET_MS, DEFAULTS.turnBudgetMs, 3000, 60000),
+    cooldownMs: parseNum(env.LLM_COOLDOWN_MS, DEFAULTS.cooldownMs, 5000, DEFAULTS.maxCooldownMs),
+    maxCooldownMs: parseNum(env.LLM_MAX_COOLDOWN_MS, DEFAULTS.maxCooldownMs, 30_000, 24 * 3600_000),
+    maxAttempts: parseNum(env.LLM_MAX_ATTEMPTS, DEFAULTS.maxAttempts, 1, 32),
+    maxConcurrent: parseNum(env.LLM_MAX_CONCURRENT, DEFAULTS.maxConcurrent, 1, 256),
   };
 }
 
@@ -155,14 +169,29 @@ const retryAfterMs = (res, fallback, cap) => {
   return Math.min(cap, Math.max(500, ms));
 };
 
+const toResponsesInput = (messages) =>
+  messages.map((m) => ({ role: m.role, content: m.content }));
+
+const responsesText = (data) =>
+  (data?.output ?? [])
+    .filter((item) => item?.type === 'message')
+    .flatMap((item) => item?.content ?? [])
+    .filter((part) => part?.type === 'output_text')
+    .map((part) => part?.text ?? '')
+    .join(' ')
+    .trim();
+
 export function makeLLM(env, onEvent = () => {}) {
   const cfg = llmConfig(env);
   if (!cfg.base || !cfg.keys.length || !cfg.models.length) return null;
   const { base, keys, models } = cfg;
+  const keyIndex = new Map(keys.map((key, index) => [key, index]));
   const limiter = limiterFor(base, cfg.maxConcurrent);
   const fallbackSession = `pa-${Math.random().toString(36).slice(2, 10)}`;
   let preferred = null;
-  let rr = -1;
+
+  const protocolFor = (model) =>
+    cfg.protocol ?? (cfg.responsesModels.includes(model) ? 'responses' : 'chat');
 
   async function acquire() {
     if (limiter.active < limiter.limit) {
@@ -174,7 +203,7 @@ export function makeLLM(env, onEvent = () => {}) {
         resolve,
         reject,
         timer: setTimeout(() => {
-          limiter.waiters = limiter.waiters.filter((w) => w !== waiter);
+      limiter.waiters = limiter.waiters.filter((w) => w !== waiter);
           reject(new Error('llm_capacity_timeout'));
         }, DEFAULTS.acquireTimeoutMs),
       };
@@ -192,24 +221,39 @@ export function makeLLM(env, onEvent = () => {}) {
     }
   }
 
-  function attemptList() {
+  // Each conversation keeps a sticky starting key (hash of its session), so the
+  // pool spreads ~evenly across teams and prompt caching stays warm per key.
+  // Failures still fail over across every other key.
+  function attemptList(session) {
     const now = Date.now();
-    const ordered = preferred && models.includes(preferred)
+    const orderedModels = preferred && models.includes(preferred)
       ? [preferred, ...models.filter((m) => m !== preferred)]
       : [...models];
-    const liveModels = ordered.filter((m) => !cooling(base, `model:${m}`, now));
-    const liveKeys = keys.filter((k) => !cooling(base, `key:${k}`, now));
+    const start = keys.length > 1 ? hash32(session ?? fallbackSession) % keys.length : 0;
+    const orderedKeys = [...keys.slice(start), ...keys.slice(0, start)];
+    const liveKeys = orderedKeys.filter((key) => !cooling(base, `key:${key}`, now));
+    const liveModels = orderedModels.filter((model) => !cooling(base, `model:${model}`, now));
     const list = [];
-    for (const model of liveModels) {
-      for (const key of liveKeys) {
+    for (const key of liveKeys) {
+      for (const model of liveModels) {
         if (!cooling(base, `pair:${key}|${model}`, now)) list.push({ model, key });
       }
     }
-    if (list.length > 1) {
-      rr = (rr + 1) % list.length;
-      list.push(...list.splice(0, rr));
+    if (list.length) return list.slice(0, cfg.maxAttempts);
+    // Every pair is cooling. Rather than fail instantly, retry the pairs whose
+    // cooldown expires soonest — a burst of transient first-token timeouts must
+    // never lock the whole pool out while the accounts are healthy.
+    const nowMap = cooldowns.get(base);
+    const late = [];
+    for (const key of orderedKeys) {
+      if (cooling(base, `key:${key}`, now)) continue;
+      for (const model of orderedModels) {
+        if (cooling(base, `model:${model}`, now)) continue;
+        late.push({ model, key, until: nowMap?.get(`pair:${key}|${model}`) ?? 0 });
+      }
     }
-    return list.slice(0, cfg.maxAttempts);
+    late.sort((a, b) => a.until - b.until);
+    return late.slice(0, Math.min(2, cfg.maxAttempts)).map(({ model, key }) => ({ model, key }));
   }
 
   function noteFailure(model, key, error) {
@@ -226,16 +270,24 @@ export function makeLLM(env, onEvent = () => {}) {
       cool(base, `model:${model}`, 5000);
       return;
     }
-    if (String(error?.message ?? '').includes('first_token_timeout')) {
-      cool(base, `pair:${key}|${model}`, 30_000);
+    const message = String(error?.message ?? '');
+    if (message.includes('first_token_timeout') || message === 'llm_timeout') {
+      // Transient provider queueing, not an account limit: cool the pair only
+      // briefly so a burst cannot starve the single-model pool for long.
+      cool(base, `pair:${key}|${model}`, 10_000);
+      return;
+    }
+    if (message === 'llm_empty' || message === 'llm_incomplete') {
+      cool(base, `pair:${key}|${model}`, 20_000);
     }
   }
 
   async function request(model, key, messages, opts, deadline) {
     const remaining = Math.max(1000, deadline - Date.now());
-    const firstTokenMs = Math.min(cfg.firstTokenMs, remaining);
+    const firstTokenMs = Math.min(opts.firstTokenMs ?? cfg.firstTokenMs, remaining);
     const totalMs = Math.min(opts.timeoutMs ?? cfg.turnBudgetMs, remaining);
     const session = opts.session ?? fallbackSession;
+    const protocol = protocolFor(model);
     const controller = new AbortController();
     const firstToken = setTimeout(
       () => controller.abort(new Error('first_token_timeout')),
@@ -243,22 +295,31 @@ export function makeLLM(env, onEvent = () => {}) {
     );
     const total = setTimeout(() => controller.abort(new Error('llm_timeout')), totalMs);
     try {
-      const res = await fetch(`${base}/chat/completions`, {
+      const body = protocol === 'responses'
+        ? {
+            model,
+            input: toResponsesInput(messages),
+            stream: !!opts.stream,
+            max_output_tokens: opts.maxOutputTokens ?? cfg.maxOutputTokens,
+            reasoning: { effort: opts.reasoningEffort ?? cfg.reasoningEffort },
+          }
+        : {
+            model,
+            messages,
+            stream: !!opts.stream,
+            temperature: opts.temperature ?? 0.7,
+            max_tokens: opts.maxTokens ?? 220,
+          };
+      const res = await fetch(`${base}/${protocol === 'responses' ? 'responses' : 'chat/completions'}`, {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
           authorization: `Bearer ${key}`,
           'user-agent': cfg.userAgent,
-          'x-opencode-session': String(session).slice(0, 128),
+          [OPENCODE_SESSION_HEADER]: String(session).slice(0, 128),
           ...cfg.extraHeaders,
         },
-        body: JSON.stringify({
-          model,
-          messages,
-          stream: !!opts.stream,
-          temperature: opts.temperature ?? 0.7,
-          max_tokens: opts.maxTokens ?? 220,
-        }),
+        body: JSON.stringify(body),
         signal: controller.signal,
       });
       if (!res.ok) {
@@ -269,6 +330,7 @@ export function makeLLM(env, onEvent = () => {}) {
       }
       return {
         res,
+        protocol,
         firstTokenDone: () => clearTimeout(firstToken),
         done: () => {
           clearTimeout(firstToken);
@@ -286,7 +348,7 @@ export function makeLLM(env, onEvent = () => {}) {
     await acquire();
     const deadline = Date.now() + Math.max(2000, opts.budgetMs ?? opts.timeoutMs ?? cfg.turnBudgetMs);
     try {
-      const attempts = attemptList();
+      const attempts = attemptList(opts.session);
       if (!attempts.length) throw new Error('llm_pool_exhausted');
       let lastError;
       for (const { model, key } of attempts) {
@@ -295,13 +357,15 @@ export function makeLLM(env, onEvent = () => {}) {
           break;
         }
         try {
-          const { res, done } = await request(model, key, messages, { ...opts, stream: false }, deadline);
+          const { res, protocol, done } = await request(model, key, messages, { ...opts, stream: false }, deadline);
           try {
             const data = await res.json();
-            const text = (data?.choices?.[0]?.message?.content ?? '').trim();
+            const text = protocol === 'responses'
+              ? responsesText(data)
+              : (data?.choices?.[0]?.message?.content ?? '').trim();
             if (!text) throw new Error('llm_empty');
             preferred = model;
-            onEvent({ type: 'llm_ok', model });
+            onEvent({ type: 'llm_ok', model, keyIndex: keyIndex.get(key), session: String(opts.session ?? fallbackSession) });
             return text;
           } finally {
             done();
@@ -309,7 +373,7 @@ export function makeLLM(env, onEvent = () => {}) {
         } catch (e) {
           lastError = e;
           noteFailure(model, key, e);
-          onEvent({ type: 'llm_error', model, detail: String(e?.message ?? e) });
+          onEvent({ type: 'llm_error', model, keyIndex: keyIndex.get(key), session: String(opts.session ?? fallbackSession), detail: String(e?.message ?? e), retryAfterMs: e?.retryAfterMs ?? null });
         }
       }
       throw lastError ?? new Error('llm_unavailable');
@@ -322,7 +386,7 @@ export function makeLLM(env, onEvent = () => {}) {
     await acquire();
     const deadline = Date.now() + Math.max(2000, opts.budgetMs ?? opts.timeoutMs ?? cfg.turnBudgetMs);
     try {
-      const attempts = attemptList();
+      const attempts = attemptList(opts.session);
       if (!attempts.length) throw new Error('llm_pool_exhausted');
       let lastError;
       for (const { model, key } of attempts) {
@@ -332,7 +396,7 @@ export function makeLLM(env, onEvent = () => {}) {
         }
         let yielded = false;
         try {
-          const { res, firstTokenDone, done } = await request(model, key, messages, { ...opts, stream: true }, deadline);
+          const { res, protocol, firstTokenDone, done } = await request(model, key, messages, { ...opts, stream: true }, deadline);
           try {
             const reader = res.body.getReader();
             const decoder = new TextDecoder();
@@ -341,7 +405,6 @@ export function makeLLM(env, onEvent = () => {}) {
             while (!finished) {
               const { value, done: readerDone } = await reader.read();
               if (readerDone) break;
-              firstTokenDone();
               buffer += decoder.decode(value, { stream: true });
               let newline;
               while ((newline = buffer.indexOf('\n')) !== -1) {
@@ -359,10 +422,27 @@ export function makeLLM(env, onEvent = () => {}) {
                 } catch {
                   continue;
                 }
-                const delta = chunk?.choices?.[0]?.delta?.content;
-                if (delta) {
-                  yielded = true;
-                  yield delta;
+                if (protocol === 'responses') {
+                  const type = chunk?.type;
+                  if (type === 'response.output_text.delta' && chunk.delta) {
+                    // The first-token clock measures visible text, not the
+                    // reasoning events that lead up to it.
+                    firstTokenDone();
+                    yielded = true;
+                    yield chunk.delta;
+                  } else if (type === 'response.completed') {
+                    finished = true;
+                    break;
+                  } else if (type === 'response.failed' || type === 'response.incomplete' || type === 'error') {
+                    throw new Error('llm_incomplete');
+                  }
+                } else {
+                  const delta = chunk?.choices?.[0]?.delta?.content;
+                  if (delta) {
+                    firstTokenDone();
+                    yielded = true;
+                    yield delta;
+                  }
                 }
               }
             }
@@ -371,7 +451,7 @@ export function makeLLM(env, onEvent = () => {}) {
             // silence — the pool moves to the next route instead.
             if (!yielded) throw new Error('llm_empty');
             preferred = model;
-            onEvent({ type: 'llm_ok', model });
+            onEvent({ type: 'llm_ok', model, keyIndex: keyIndex.get(key), session: String(opts.session ?? fallbackSession) });
             return;
           } finally {
             done();
@@ -379,7 +459,7 @@ export function makeLLM(env, onEvent = () => {}) {
         } catch (e) {
           lastError = e;
           noteFailure(model, key, e);
-          onEvent({ type: 'llm_error', model, detail: String(e?.message ?? e), yielded });
+          onEvent({ type: 'llm_error', model, keyIndex: keyIndex.get(key), session: String(opts.session ?? fallbackSession), detail: String(e?.message ?? e), yielded, retryAfterMs: e?.retryAfterMs ?? null });
           if (yielded) throw e;
         }
       }

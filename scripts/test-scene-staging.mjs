@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {AnimationMixer,Box3,PerspectiveCamera,Raycaster,Vector3} from 'three';
 import {caseData} from '../src/case.js';
-import {locationFor,storyCast,placeCast,wideShot,roomWideShot,captureShot,cinematicPhaseFor} from '../client/src/SceneStaging.js';
+import {locationFor,storyCast,placeCast,wideShot,roomWideShot,captureShot,cinematicPhaseFor,maskVisibleFor} from '../client/src/SceneStaging.js';
 import {createFootContact} from '../client/src/FootContact.js';
 import {PARK,BEDROOM,SAMEER_BED,DETAIL_ANCHORS,HOME_STAIRS,HOME_UPPER_DOORWAY,HOME_BEDROOM,backWallPanels,DESK_TOP,FIELD,FIELD_TRACKS,ROOM_VIEWS,updateFieldBackpackOrbit,updateHospitalSecurityOrbit} from '../client/src/SceneLayout.js';
 import {loadGeometry} from './gltf-geometry.mjs';
@@ -55,6 +55,16 @@ assert(maskPickup.holdingMask,'Sameer must pick up the mask when the closing nar
 const maskHotspot=caseData.rooms.find(r=>r.id==='sameer_room').hotspots.find(h=>h.id==='sameer_room_a7_mask');
 assert.deepEqual(maskHotspot.position,[-2.8,.705,-1.35],'The Act 7 mask clue must be positioned on Sameer’s bed');
 assert.deepEqual(DETAIL_ANCHORS.sameer_room.sameer_room_a7_mask,[SAMEER_BED.center[0],SAMEER_BED.surfaceY+.018,SAMEER_BED.center[2]],'The mask marker must share its measured bed surface anchor');
+// The physical mask must show whenever its hotspot does: act 7 onward, any
+// dev session that reveals every hotspot, and the reveal cinematic. Only the
+// taken phase removes it.
+assert(maskVisibleFor({hotspots:[maskHotspot],act:'act2'}),'A revealed mask hotspot must show the physical mask (dev sessions)');
+assert(!maskVisibleFor({hotspots:[],act:'act2'}),'No mask hotspot, no mask on the bed');
+assert(maskVisibleFor({hotspots:[],act:'act7'}),'The mask must lie on the bed through Act 7 gameplay');
+assert(maskVisibleFor({hotspots:[],act:'act8'}),'The mask must still lie on the bed in Act 8');
+assert(maskVisibleFor({hotspots:[],act:'act6',phase:'mask_reveal'}),'The reveal phase must force the mask visible');
+assert(!maskVisibleFor({hotspots:[],act:'act6'}),'The mask must not lie on the bed before Act 7');
+assert(!maskVisibleFor({hotspots:[maskHotspot],act:'act7',phase:'mask_taken'}),'Once taken, the mask must never return to the bed');
 // Act 7 opening: Veer must not be on stage before the narration names him; he
 // arrives with the knock and the two stand face to face in the bedroom — not
 // Sameer sitting at his desk with his back turned — so the room, not a generic

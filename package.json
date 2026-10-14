@@ -14,6 +14,7 @@
     "test:engine": "node scripts/run-engine-tests.mjs",
     "test:llm": "node scripts/test-llm.mjs",
     "talk:review": "node scripts/talk-review.mjs",
+    "test:stress": "node scripts/stress-chat.mjs",
     "test:scenes": "node scripts/measure-actors.mjs && node scripts/test-scene-staging.mjs",
     "test:assets": "node scripts/test-environment-assets.mjs",
     "test:campaign": "npm run build:case && node scripts/test-campaign.mjs",

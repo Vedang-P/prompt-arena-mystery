@@ -5,22 +5,37 @@ import { Vector3 } from 'three';
 import Actor from './Actor.jsx';
 const SceneEnvironment=lazy(()=>import('./Scene.jsx').then(({RoomEnvironment,RoomLighting})=>({default:({roomId,quality,cinematicPhase,paused,actId})=><><RoomLighting roomId={roomId} quality={quality} cinematicPhase={cinematicPhase}/><RoomEnvironment roomId={roomId} paused={paused} storyAct={actId} cinematicPhase={cinematicPhase}/></>})));
 import { useSettings } from './Settings.jsx';
-import { SceneLoading, SceneWatchdog, WorldBoundary, SceneReady } from './WorldBoundary.jsx';
+import { SceneLoading, SceneWatchdog, WorldBoundary, SceneReady, SceneRecoveryCard } from './WorldBoundary.jsx';
 import PerformanceGuard from './PerformanceGuard.jsx';
 import { placeCast, roomWideShot, captureShot } from './SceneStaging.js';
 import { createRenderer } from './renderer.js';
 const CLOSE={close_parth:'parth',close_mother:'mother',close_officer:'officer'};
 // Errors thrown inside the canvas root do not reach boundaries outside the
 // Canvas, so the scene tree carries its own boundary. It retries itself in
-// place: a transient scene error must never cost the player the 3D stage.
+// place — and after the retries are spent it shows the recovery card with the
+// reason, so a failing cinematic can never leave a silent black stage.
+const MAX_CINEMA_RETRIES = 3;
 class SceneErrorBoundary extends Component {
-  state={failed:false};
-  static getDerivedStateFromError(){return{failed:true};}
-  componentDidCatch(error){console.error('scene_error',error.message);this.props.onFail?.();}
-  componentDidMount(){this.timer=setInterval(()=>{if(this.state.failed)this.setState({failed:false});},2500);}
+  state={failed:false,terminal:false,retries:0,detail:null};
+  static getDerivedStateFromError(error){return{failed:true,detail:String(error?.message??error??'unknown error').slice(0,160)};}
+  componentDidCatch(error){
+    console.error('scene_error',error.message);
+    // Report the GPU string too: a machine-specific scene failure is otherwise
+    // impossible to tell apart from a driver/context problem.
+    try{const canvas=document.querySelector('canvas');const gl=canvas?.getContext('webgl2')??canvas?.getContext('webgl');if(gl){const info=gl.getExtension('WEBGL_debug_renderer_info');console.error('scene_gpu', info?gl.getParameter(info.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER));}}catch{}
+    this.props.onFail?.();
+  }
+  componentDidMount(){this.timer=setInterval(()=>{
+    if(!this.state.failed||this.state.terminal)return;
+    if(this.state.retries>=MAX_CINEMA_RETRIES)this.setState({terminal:true});
+    else this.setState((s)=>({failed:false,retries:s.retries+1}));
+  },2500);}
   componentWillUnmount(){clearInterval(this.timer);}
-  componentDidUpdate(prevProps){if(this.state.failed&&prevProps.resetKey!==this.props.resetKey)this.setState({failed:false});}
-  render(){return this.state.failed?null:this.props.children;}
+  componentDidUpdate(prevProps){if(prevProps.resetKey!==this.props.resetKey)this.setState({failed:false,terminal:false,retries:0,detail:null});}
+  render(){
+    if(this.state.terminal)return <SceneRecoveryCard detail={this.state.detail}/>;
+    return this.state.failed?null:this.props.children;
+  }
 }
 function ShotCamera({roomId,shot,cast,speaker,paused,cinematicPhase}) {
   const timer=useRef(0),last=useRef('');

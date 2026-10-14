@@ -36,6 +36,20 @@ const sse = (res, text) => {
   res.write('data: [DONE]\n\n');
   res.end();
 };
+const responsesSse = (res, text) => {
+  res.writeHead(200, { 'content-type': 'text/event-stream' });
+  res.write(`event: response.created\ndata: ${JSON.stringify({ type: 'response.created' })}\n\n`);
+  for (const part of text.match(/.{1,6}/gs) ?? []) {
+    res.write(`event: response.output_text.delta\ndata: ${JSON.stringify({ type: 'response.output_text.delta', delta: part })}\n\n`);
+  }
+  res.write(`event: response.completed\ndata: ${JSON.stringify({ type: 'response.completed' })}\n\n`);
+  res.end();
+};
+const responsesFailed = (res) => {
+  res.writeHead(200, { 'content-type': 'text/event-stream' });
+  res.write(`event: response.failed\ndata: ${JSON.stringify({ type: 'response.failed' })}\n\n`);
+  res.end();
+};
 const emptyStream = (res) => {
   res.writeHead(200, { 'content-type': 'text/event-stream' });
   res.write('data: [DONE]\n\n');
@@ -68,6 +82,9 @@ test('a go key defaults to the go endpoint and pool', () => {
   assert.equal(cfg.base, 'https://opencode.ai/inference/go/v1');
   assert.deepEqual(cfg.keys, ['go-key']);
   assert.deepEqual(cfg.models, OPENCODE_GO_MODELS);
+  const pooled = llmConfig({ OPENCODE_GO_API_KEYS: 'k1,k2 k3;k1' });
+  assert.equal(pooled.base, 'https://opencode.ai/inference/go/v1');
+  assert.deepEqual(pooled.keys, ['k1', 'k2', 'k3']);
   const both = llmConfig({ OPENCODE_API_KEY: 'console', OPENCODE_GO_API_KEY: 'go-key' });
   assert.equal(both.base, 'https://opencode.ai/inference/go/v1');
   assert.deepEqual(both.keys, ['go-key']);
@@ -91,35 +108,97 @@ test('explicit configuration still wins', () => {
   assert.equal(llmConfigured({ LLM_BASE_URL: 'https://example.test/v1', LLM_API_KEY: 'a', LLM_MODEL: '' }), false);
 });
 
-test('streams from a model and rotates the key on a usage limit', async () => {
+test('streams muse-spark through the Responses API', async () => {
+  const env = {
+    LLM_BASE_URL: baseFor('responses'),
+    LLM_API_KEY: 'k1',
+    LLM_MODEL: 'muse-spark-1.3-contributor',
+    LLM_TURN_BUDGET_MS: '4000',
+  };
+  calls.length = 0;
+  handler = (json, req, res) => responsesSse(res, 'I only know what I saw.');
+  const llm = makeLLM(env);
+  let text = '';
+  for await (const delta of llm.stream([{ role: 'user', content: 'hi' }], { session: 'pa-1-ramu' })) text += delta;
+  assert.equal(text, 'I only know what I saw.');
+  assert.ok(calls[0].path.endsWith('/responses'), calls[0].path);
+});
+
+test('falls over from the Responses protocol to a chat model', async () => {
+  const env = {
+    LLM_BASE_URL: baseFor('mixed'),
+    LLM_API_KEY: 'k1',
+    LLM_MODEL: 'muse-spark-1.3-contributor',
+    LLM_FALLBACK_MODELS: 'backup',
+    LLM_TURN_BUDGET_MS: '4000',
+  };
+  calls.length = 0;
+  handler = (json, req, res) => (json.model === 'muse-spark-1.3-contributor' ? responsesFailed(res) : sse(res, 'Backup speaking.'));
+  const llm = makeLLM(env);
+  let text = '';
+  for await (const delta of llm.stream([{ role: 'user', content: 'hi' }])) text += delta;
+  assert.equal(text, 'Backup speaking.');
+  assert.ok(calls.some((c) => c.path.endsWith('/responses')));
+  assert.ok(calls.some((c) => c.path.endsWith('/chat/completions')));
+});
+
+test('each conversation keeps a sticky key and sessions spread across the pool', async () => {
+  const env = { LLM_BASE_URL: baseFor('sticky'), LLM_API_KEYS: 'k1,k2,k3', LLM_MODEL: 'good', LLM_TURN_BUDGET_MS: '4000' };
+  calls.length = 0;
+  handler = (json, req, res) => sse(res, 'Fine.');
+  const llm = makeLLM(env);
+  for await (const _ of llm.stream([{ role: 'user', content: 'one' }], { session: 'pa-team-7-ramu' })) void _;
+  const first = calls.at(-1).key;
+  for await (const _ of llm.stream([{ role: 'user', content: 'two' }], { session: 'pa-team-7-ramu' })) void _;
+  assert.equal(calls.at(-1).key, first, 'the same conversation must start on the same key');
+  const used = new Set([first]);
+  for (let i = 0; i < 12; i += 1) {
+    for await (const _ of llm.stream([{ role: 'user', content: 'hi' }], { session: `pa-team-${i}-veer` })) void _;
+    used.add(calls.at(-1).key);
+  }
+  assert.ok(used.size > 1, 'different conversations must spread across keys');
+});
+
+test('rotates to another key when a key hits a usage limit', async () => {
   const env = { LLM_BASE_URL: baseFor('keys'), LLM_API_KEYS: 'k1,k2', LLM_MODEL: 'good', LLM_TURN_BUDGET_MS: '4000' };
   calls.length = 0;
+  let limitedOnce = false;
   handler = (json, req, res) => {
-    if (req.headers.authorization === 'Bearer k1') return limited(res, '30');
+    if (!limitedOnce) {
+      limitedOnce = true;
+      return limited(res, '30');
+    }
     return sse(res, 'Stay out of this, detective.');
   };
   const llm = makeLLM(env);
   let text = '';
-  for await (const delta of llm.stream([{ role: 'user', content: 'hi' }])) text += delta;
+  for await (const delta of llm.stream([{ role: 'user', content: 'hi' }], { session: 'pa-9-officer' })) text += delta;
   assert.equal(text, 'Stay out of this, detective.');
   const tried = calls.filter((c) => c.model === 'good');
   assert.equal(tried.length, 2);
-  assert.equal(tried[0].key, 'Bearer k1');
-  assert.equal(tried[1].key, 'Bearer k2');
+  assert.notEqual(tried[0].key, tried[1].key, 'the retry must use a different key');
 });
 
-test('a cooled pair is skipped on the next turn', async () => {
+test('a cooled key is skipped on the next turn', async () => {
   const env = { LLM_BASE_URL: baseFor('cooldown'), LLM_API_KEYS: 'k1,k2', LLM_MODEL: 'good', LLM_TURN_BUDGET_MS: '4000' };
   calls.length = 0;
-  handler = (json, req, res) => (req.headers.authorization === 'Bearer k1' ? limited(res, '60') : sse(res, 'Fine.'));
+  let limitedOnce = false;
+  handler = (json, req, res) => {
+    if (!limitedOnce) {
+      limitedOnce = true;
+      return limited(res, '60');
+    }
+    return sse(res, 'Fine.');
+  };
   const llm = makeLLM(env);
-  for await (const _ of llm.stream([{ role: 'user', content: 'one' }])) void _;
+  for await (const _ of llm.stream([{ role: 'user', content: 'one' }], { session: 'pa-3-mother' })) void _;
+  const limitedKey = calls[0].key;
   const afterFirst = calls.length;
   let second = '';
-  for await (const delta of llm.stream([{ role: 'user', content: 'two' }])) second += delta;
+  for await (const delta of llm.stream([{ role: 'user', content: 'two' }], { session: 'pa-3-mother' })) second += delta;
   assert.equal(second, 'Fine.');
   assert.equal(calls.length, afterFirst + 1);
-  assert.equal(calls.at(-1).key, 'Bearer k2');
+  assert.notEqual(calls.at(-1).key, limitedKey);
 });
 
 test('falls over to the next model on a 5xx', async () => {
