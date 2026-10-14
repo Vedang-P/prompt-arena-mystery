@@ -30,22 +30,37 @@ try {
   const prep = await page.evaluate(async () => {
     const g = await fetch('/api/guest', { method: 'POST' });
     const p = await fetch('/api/practice', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ act: 'act2' }) });
+    const v = await fetch('/api/puzzles/p_voicenote2/solve', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ answer: 'park' }) });
+    const c = await fetch('/api/clues/c_cd/discover', { method: 'POST' });
     localStorage.setItem('moon-mode', 'practice');
-    return { guest: g.status, practice: p.status };
+    return { guest: g.status, practice: p.status, voicenote: v.status, cd: c.status };
   });
   console.log('prep', JSON.stringify(prep));
-  await page.goto(`${BASE}/play/?resume=1&room=cyber_cafe`, { waitUntil: 'domcontentloaded', timeout: 60000 });
-  await page.waitForSelector('.cinematic-tools, .hud-top', { timeout: 60000 }).catch(() => console.log('[warn] no intro or hud'));
-  for (let i = 0; i < 60; i += 1) {
-    if (!(await page.$('.story-overlay'))) break;
-    await page.evaluate(() => {
-      const btn = [...document.querySelectorAll('.cinematic-tools .btn, .story-buttons .btn')].find((b) => /skip/i.test(b.textContent));
-      if (btn) btn.click();
-      else [...document.querySelectorAll('.cinematic-tools .btn.brass, .story-buttons .btn.brass')][0]?.click();
+  await page.goto(`${BASE}/play/?resume=1`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await sleep(2500);
+  for (let i = 0; i < 80; i += 1) {
+    const info = await page.evaluate(() => {
+      const overlay = document.querySelector('.story-overlay');
+      if (!overlay) return null;
+      const btn = [...overlay.querySelectorAll('.btn')].find((b) => /skip/i.test(b.textContent));
+      const detail = { index: overlay.querySelector('.cinematic-tools span, .cinema-progress')?.textContent?.trim() ?? null, disabled: btn?.disabled ?? null, clicked: false };
+      if (btn && !btn.disabled) { btn.click(); detail.clicked = true; }
+      return detail;
     });
-    await sleep(400);
+    console.log('loop', i, JSON.stringify(info));
+    if (!info) break;
+    await sleep(500);
   }
   await page.waitForSelector('.hud-top', { timeout: 30000 }).catch(() => console.log('[warn] no hud'));
+  const tabs = await page.evaluate(() => [...document.querySelectorAll('.room-tabs .tab')].map((t) => t.textContent.trim()));
+  console.log('tabs', JSON.stringify(tabs));
+  const opened = await page.evaluate(() => {
+    const tab = [...document.querySelectorAll('.room-tabs .tab')].find((t) => /cyber/i.test(t.textContent));
+    if (!tab || tab.disabled) return false;
+    tab.click();
+    return true;
+  });
+  console.log('opened cafe tab', opened);
   await page.waitForFunction(() => /cyber/i.test(document.querySelector('.location-name')?.textContent ?? ''), { timeout: 30000 }).catch(() => console.log('[warn] not in the cyber cafe'));
   await sleep(5000);
   const state = await page.evaluate(() => ({

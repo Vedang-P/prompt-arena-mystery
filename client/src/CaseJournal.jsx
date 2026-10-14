@@ -39,7 +39,7 @@ export default function CaseJournal({ state, onClose }) {
     <section className="case-panel journal-workspace" ref={root} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Case notebook">
       {expanded && visible?.page ? <CaseImage src={visible.page} title={visible.name} expanded onCollapse={collapseImage} /> : <>
         <header className="case-panel-head"><div><p className="case-eyebrow">Prompt Arena / {state.team}</p><h2>Case notebook</h2><p className="case-header-note">Your evidence, connected. Every discovery is saved automatically.</p></div><button className="case-close" onClick={onClose} aria-label="Close notebook">×</button></header>
-        <div className="journal-objective"><span className="case-eyebrow">{act?.kicker} · {act?.title}</span><p>{act?.objective || 'Follow the opening story to begin your investigation.'}</p></div>
+        <div className="journal-objective"><span className="case-eyebrow">{act?.kicker} · {act?.title}</span></div>
         <nav className="case-tabs" aria-label="Notebook sections">{[['Evidence', exhibits.length], ['Statements', statementCount], ['Investigation', resolved.length]].map(([name, count]) => <button key={name} aria-pressed={tab === name} onClick={() => setTab(name)}>{name}<span>{count}</span></button>)}</nav>
         {tab === 'Evidence' && <div className="journal-mobile-browse"><button className="case-button" aria-expanded={browse} onClick={() => setBrowse(v => !v)}>{browse ? '← Read selected exhibit' : `Browse ${exhibits.length} exhibits →`}</button></div>}
         {tab === 'Evidence' && <div className="journal-evidence-layout" data-browse={browse}>

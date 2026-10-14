@@ -6,7 +6,7 @@ import {ambienceFor,musicFor} from './MusicCues.js';
 
 export default function CinematicStory({ story, act, characters, onDone, busy, initialIndex=0, initiallyPaused=false }) {
   const [index, setIndex] = useState(initialIndex);
-  const [paused, setPaused] = useState(initiallyPaused);
+  const [paused] = useState(initiallyPaused);
   const [readyRoom,setReadyRoom]=useState(null);
   const line = story.lines[index];
   const last = index >= story.lines.length - 1;
@@ -43,6 +43,6 @@ export default function CinematicStory({ story, act, characters, onDone, busy, i
     <div className="cinema-bar top" /><div className="cinema-bar bottom" />
     <header className="story-scene-title"><div><span className="eyebrow">{act.kicker} · {story.after === 'intro' ? 'Opening' : story.after === 'scene' ? 'Scene' : 'Closing'}</span><h2>{title}</h2></div><LogoutButton disabled={busy}/></header>
     <div className="cinema-footer"><div className="cinematic-caption" key={index}><span className="eyebrow">{names[line?.speaker] ?? (line?.speaker === 'voice' ? 'Unknown voice' : 'Sameer’s story')}</span><p>{line?.text}</p></div>
-    <div className="cinematic-tools"><span>{String(index + 1).padStart(2, '0')} / {String(story.lines.length).padStart(2, '0')}</span><button className="btn ghost" onClick={() => setPaused((p) => !p)}>{paused ? 'Play' : 'Pause'}</button><button className="btn ghost" onClick={onDone} disabled={busy}>{story.after === 'scene' ? 'Skip scene' : 'Skip cinematic'}</button><button className="btn brass" onClick={advance} disabled={busy}>{busy ? 'Saving…' : last ? story.doneLabel : 'Continue'}</button></div></div>
+    <div className="cinematic-tools"><span>{String(index + 1).padStart(2, '0')} / {String(story.lines.length).padStart(2, '0')}</span><button className="btn ghost" onClick={onDone} disabled={busy}>{story.after === 'scene' ? 'Skip scene' : 'Skip cinematic'}</button><button className="btn brass" onClick={advance} disabled={busy}>{busy ? 'Saving…' : last ? story.doneLabel : 'Continue'}</button></div></div>
   </div>;
 }

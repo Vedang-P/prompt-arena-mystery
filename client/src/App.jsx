@@ -923,7 +923,7 @@ export default function App() {
       setRoomId(to); setEvidence(null); setPuzzleSpot(null); setActiveChar(null);
     }
     else if (advanceReady) advanceAct();
-    else setNotice({ title: 'Finish this chapter first', body: currentAct.objective });
+    else setNotice({ title: 'Finish this chapter first', body: 'Resolve the open leads in this chapter before moving on.' });
   };
 
   const restartCase = async (from = 'act0') => {
@@ -1156,7 +1156,7 @@ export default function App() {
       </div>
 
       <header className="hud-top release-hud">
-        <div className="location"><p className="location-kicker">{currentAct?.kicker} · {currentAct?.title}{state.practice ? ' · Practice' : ''}</p><h1 className="location-name">{room.name}</h1><p className="hud-objective">{currentAct?.objective}</p></div>
+        <div className="location"><p className="location-kicker">{currentAct?.kicker} · {currentAct?.title}{state.practice ? ' · Practice' : ''}</p><h1 className="location-name">{room.name}</h1></div>
         <div className="release-tools">
           <span className="penalty-counter" title="Case penalties">{state.penalties ?? 0} {(state.penalties ?? 0) === 1 ? 'penalty' : 'penalties'}</span>
           {(state.strikes ?? 0) > 0 && <span className="penalty-counter strike-counter" title="Three exits without returning inside the grace window disqualify the team">{state.strikes}/{state.maxStrikes ?? 3} exit strikes</span>}

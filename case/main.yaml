@@ -374,7 +374,6 @@ acts:
       - abandoned_field
       - cyber_cafe
       - parth_home
-    objective: Search Parth's room, follow the coordinates to the field, then trace the cassettes and Vihaan.
     intro:
       - speaker: narrator
         text: Sameer goes to Parth's home. He meets Parth's mother — she looks as if she hasn't slept at all since the day her son went missing. She still smiles at him, with a lot of effort.
@@ -420,14 +419,13 @@ acts:
       - sameer_room
       - gazebo
       - cyber_cafe
-    objective: Chase the park CD, watch the videos, and find out who Veer is.
     intro:
       - speaker: narrator
         text: He felt sick — Parth had a whole life he was only finding out about, one abandoned car's mixtape at a time. He tries to ignore the teeny tiny piece of horribly sickening revelation at the back of his mind — he does this by going to the store to find something to eat.
       - speaker: narrator
         text: He is bombarded at the entrance by someone from a non-profit organisation. One can figure out if a person is from an NGO by a smile that stretches across their face but there is no crinkle near the eye. He tried ignoring, but another person stepped in front of him, the same stretched smile spooking him. He stopped and tiredly signalled them to tell him what they wanted.
       - speaker: narrator
-        text: The one right in front of him pushed a pamphlet into his hands. It was apparently a worldwide NGO working towards the mission of fostering scientific temperament throughout the underprivileged youth — they were going to have a huge astronomy event in a few days. They had quite a few notable achievements, like the largest astronomy workshop organised in Nigeria just a year ago.
+        text: The one right in front of him pushed a pamphlet into his hands. It was apparently Perigee — a worldwide NGO working towards the mission of fostering scientific temperament throughout the underprivileged youth — they were going to have a huge astronomy event in a few days. They had quite a few notable achievements, like the largest astronomy workshop organised in Nigeria just a year ago.
       - speaker: narrator
         text: He is impressed. He opens his wallet to give out 10 rupees. The worker at his side looks into his wallet; Sameer falls for their judgement and pulls out the 50 rupee note. He uses all his interview-larping skills to protect his last 30 rupees and makes a quick exit.
       - speaker: narrator
@@ -464,7 +462,6 @@ acts:
       - ngo_hq
       - ngo_archive
       - sameer_room
-    objective: Follow Veer and the Perigee NGO. Find out what Parth was doing there.
     intro:
       - speaker: narrator
         text: Sameer is in the concert. There is not much crowd, but the vibes are good — he wishes there was a water station around, or maybe food stalls. It's really just a temporary stage propped up; the lights are cool though.
@@ -506,7 +503,6 @@ acts:
       - ngo_archive
       - sameer_room
       - hospital
-    objective: Escape the archive, then find the hospital the man from the ambulance was taken to.
     outro:
       - speaker: narrator
         text: Parth was alive.
@@ -529,7 +525,6 @@ acts:
       - tanush_office
       - enakshi_house
       - sameer_room
-    objective: Expose the cult. Gather proof from the Big Bad's office and from Enakshi's house.
     intro:
       - speaker: narrator
         text: Holy shit, Parth was alive. Sameer wanted to dance, he wanted to scream; he honestly felt a wave of numbness go over him. He had been panicking so much — and all for naught. Parth was alive; maybe starving, but still healthy. He wasn't covered with bruises and burns. That was more than enough.
@@ -571,7 +566,6 @@ acts:
       - sameer_room
       - hospital
       - police_station
-    objective: Get real proof from Shashdhar Hospital — before Poornima ends.
     intro:
       - speaker: narrator
         text: Sameer sees the light shining through the curtains. He was awake the entire night in terror.
@@ -599,7 +593,6 @@ acts:
       - sameer_room
       - hospital
       - enakshi_house
-    objective: The cult left its mask on your bed. Find out how they follow people — then decide.
     intro:
       - speaker: narrator
         text: The mask is decorated too, with beautiful lace tied around the horns. Why was it here, how was it here? Was it the police? Did he do the wrong thing by taking all the evidence to the police?
@@ -648,7 +641,6 @@ acts:
     rooms:
       - hospital
       - tanush_office
-    objective: The mask is on your face now. See the revelation through to its end.
     intro:
       - speaker: narrator
         text: Sameer looked around — the noises were too loud. He started yelling nonsense; he couldn't hear himself. It was getting humid. Colours bombarded him, the leader's voice the only thing to focus on. It was as if he was stoking the flame of barbarism in the room.
@@ -2075,7 +2067,7 @@ characters:
         text: The plate KA01OC1808 belongs to a Vihaan — the sedan was his. It's the only name attached to any of this.
         unlock:
           requires:
-            - c_sedan
+            - c_vihaan
         disposition: admit
       - id: officer_act6_dosa
         text: He is having a masala dosa and flipping through cases with greasy fingers.
@@ -2445,8 +2437,7 @@ clues:
   - id: c_sedan
     name: Silver sedan
     description: A dusty but luxurious silver sedan, parked at the edge of the field. The number plate reads KA01OC1808.
-    grants:
-      - officer_plate
+    grants: []
   - id: c_backpack
     name: Black backpack
     description: "A black backpack on the seat of the car. Inside: a few cassettes, and nothing else."
@@ -2668,8 +2659,10 @@ puzzles:
     kind: email
     prompt: The folder of reports and posters sits open on the laptop. If he is going to keep digging, he needs his own copy — somewhere only he can open. He opens his mail and types his own address.
     evidence: /assets/pictures/evidence_email.jpg
-    answers: []
+    answers:
+      - sameer@gotmail.com
     success: "Sent. The folder lands in his own inbox, attachments and all — \"Fwd: missing-person reports, keep this safe.\" If anyone ever reads his sent items, he's finished."
+    fail_message: The send button hesitates — that is not his inbox. His own address is right there in the photograph.
     grants:
       - c_email
     requires:
@@ -2826,7 +2819,6 @@ puzzles:
   - id: p_registration
     kind: email
     prompt: Veer sends him the link for member registration. It doesn't ask for much — just an email and an OTP. He needs the address he actually owns — the one from his sent mail.
-    evidence: /assets/pictures/evidence_email.jpg
     answers:
       - sameer@gotmail.com
     success: 'The registration goes through. A volunteer confirms his membership and sends the address of the upcoming workshop: "Hutting, 3rd cross, DJ Halli." He has a gut feeling that all that is happening to him has a reason and a rhyme — including the fact that he lost his phone charger a couple of days ago.'
