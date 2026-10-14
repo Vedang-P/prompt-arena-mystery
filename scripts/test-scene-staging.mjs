@@ -4,7 +4,7 @@ import {AnimationMixer,Box3,PerspectiveCamera,Raycaster,Vector3} from 'three';
 import {caseData} from '../src/case.js';
 import {locationFor,storyCast,placeCast,wideShot,roomWideShot,captureShot,cinematicPhaseFor,maskVisibleFor} from '../client/src/SceneStaging.js';
 import {createFootContact} from '../client/src/FootContact.js';
-import {PARK,BEDROOM,SAMEER_BED,DETAIL_ANCHORS,HOME_STAIRS,HOME_UPPER_DOORWAY,HOME_BEDROOM,backWallPanels,DESK_TOP,FIELD,FIELD_TRACKS,ROOM_VIEWS,updateFieldBackpackOrbit,updateHospitalSecurityOrbit} from '../client/src/SceneLayout.js';
+import {PARK,BEDROOM,SAMEER_BED,DETAIL_ANCHORS,HOME_STAIRS,HOME_UPPER_DOORWAY,HOME_BEDROOM,backWallPanels,DESK_TOP,FIELD,FIELD_TRACKS,ROOM_VIEWS,updateFieldBackpackOrbit,updateHospitalSecurityOrbit,HOSPITAL_BED,HOSPITAL_BED_GROUP,HOSPITAL_RITUAL_CROWD} from '../client/src/SceneLayout.js';
 import {loadGeometry} from './gltf-geometry.mjs';
 const scenes=[];
 for(const act of caseData.acts){
@@ -34,6 +34,21 @@ assert(parthDiscovery,'Act 4 discovery must show Parth in the ward');
 assert.equal(parthDiscovery.pose,'lie','Parth must lie on the mattress during the discovery');
 assert(Math.abs(parthDiscovery.y-.15-.84002)<.002,'Parth must rest on the measured hospital mattress surface');
 assert(discoveryCast.find(c=>c.character==='sameer'),'Sameer must be present for the reunion');
+// The hospital tableaux: Act 4 rings the ward bed (Parth on the mattress), and
+// the Act 6/8 ritual rings the altar table. Every staged figure faces the
+// centre it surrounds, so no camera angle ever catches a back-turned group.
+const angleOff=(m,t)=>Math.abs((((Math.atan2(t[0]-m.at[0],t[1]-m.at[1])-m.rot)%(Math.PI*2)+Math.PI*3)%(Math.PI*2))-Math.PI);
+const bedCentre=[HOSPITAL_BED.center[0],HOSPITAL_BED.center[2]];
+for(const member of HOSPITAL_BED_GROUP){
+  assert(Math.hypot(member.at[0]-bedCentre[0],member.at[1]-bedCentre[1])<2.1,`${member.character} must ring the ward bed`);
+  assert(angleOff(member,bedCentre)<0.2,`${member.character} must face the ward bed`);
+}
+for(const member of HOSPITAL_RITUAL_CROWD){
+  assert(Math.hypot(member.at[0],member.at[1]+2.1)<2.4,`${member.character} must ring the altar`);
+  assert(angleOff(member,[0,-2.1])<0.2,`${member.character} must face the altar`);
+}
+assert(HOSPITAL_RITUAL_CROWD.some(m=>m.character==='parth'),'Parth must stand masked in the ritual crowd');
+assert(HOSPITAL_RITUAL_CROWD.some(m=>m.officiant),'The leader must officiate behind the altar');
 const maskCastBefore=storyCast(act8,'intro','hospital',4),maskCastAfter=storyCast(act8,'intro','hospital',5);
 assert(!maskCastBefore.find(c=>c.character==='sameer').wearingMask,'Sameer must not wear the mask before the leader puts it on him');
 assert(maskCastAfter.find(c=>c.character==='sameer').wearingMask,'Sameer must wear the physical mask after the leader puts it on him');

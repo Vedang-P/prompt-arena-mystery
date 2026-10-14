@@ -64,6 +64,19 @@ export default function App() {
     const key = (e) => { if (e.key === 'Escape') { setSettingsOpen(false); setChaptersOpen(false); setLeaderboardOpen(false); setEvidence(null); setNotebookOpen(false); setPuzzleSpot(null); setActiveChar(null); setExploreOpen(false); setAccuseOpen(false); } };
     window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key);
   }, []);
+  useEffect(() => {
+    const guard = (e) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      if (!(e.key === 'a' || e.key === 'A' || e.code === 'KeyA')) return;
+      const t = e.target;
+      if (t instanceof Element && t.closest('input, textarea, select, [contenteditable="true"]')) return;
+      e.preventDefault();
+      e.stopPropagation();
+      window.getSelection()?.removeAllRanges();
+    };
+    window.addEventListener('keydown', guard, true);
+    return () => window.removeEventListener('keydown', guard, true);
+  }, []);
   useEffect(() => () => clearTimeout(accuseTimer.current), []);
   const [state, setState] = useState(null);
   const [roomId, setRoomId] = useState(null);
@@ -92,6 +105,9 @@ export default function App() {
   const [restartOpen, setRestartOpen] = useState(false);
   const [dqInfo, setDqInfo] = useState(null);
   const [dismissedAnn, setDismissedAnn] = useState(null);
+  // Dev sandbox: off, a dev session sees the same act-scoped markers a player
+  // does; on, every hotspot in the room is revealed for inspection.
+  const [devReveal, setDevReveal] = useState(false);
   const accuseTimer = useRef(null);
   const puzzleRequest = useRef(null);
 
@@ -156,7 +172,7 @@ export default function App() {
     const actIndex = new Map((state.acts ?? []).map((a, i) => [a.id, i]));
     const currentIndex = actIndex.get(state.act) ?? 0;
     const available = (h) => {
-      if (state.dev) return true;
+      if (state.dev && devReveal) return true;
       if (h.act && h.act !== state.act) return false;
       const ownReq = h.type === 'puzzle' ? state.puzzles?.find((p) => p.id === h.puzzle)?.requires : null;
       if ((ownReq?.clues ?? []).some((id) => !discovered.has(id)) || (ownReq?.puzzles ?? []).some((id) => !solved.has(id))) return false;
@@ -172,7 +188,7 @@ export default function App() {
       ...room,
       hotspots: (room.hotspots ?? []).filter(available),
     }));
-  }, [state]);
+  }, [state, devReveal]);
 
   const displayState = useMemo(() => ({ ...state, rooms: displayRooms }), [state, displayRooms]);
 
@@ -202,6 +218,9 @@ export default function App() {
   }, [state, currentAct, visitedRooms, displayRooms, actRooms]);
 
   useEffect(() => {
+    // A dev session's parked room outranks the act's entry room; the sandbox
+    // panel clears the park when the dev jumps acts on purpose.
+    if (state?.dev && parkedRoomRef.current) return;
     if (currentAct?.entry_room) setRoomId(currentAct.entry_room);
   }, [currentAct?.id]);
 
@@ -221,12 +240,6 @@ export default function App() {
       ? { id: state.ending }
       : state.ending
     : null;
-
-  const score =
-    state?.score ??
-    (state
-      ? state.discovered.length + (state.solvedPuzzles?.length ?? 0) - (state.penalties ?? 0)
-      : 0);
 
   // The server's canAdvance is the source of truth, but a failed refresh after
   // the last required clue must not leave the Continue button missing forever:
@@ -983,8 +996,8 @@ export default function App() {
     return (
       <div>{audio}{announcement}<EndingCard
         ending={ending}
-        score={score}
         penalties={state.penalties ?? 0}
+        elapsedSeconds={state.elapsedSeconds}
         team={state.team}
         title={state.title}
         onReplay={() => setPhase('menu')}
@@ -1020,6 +1033,8 @@ export default function App() {
         {state.dev && <DevPanel
           state={state}
           roomId={roomId}
+          reveal={devReveal}
+          onReveal={setDevReveal}
           onJumpRoom={(id) => setRoomId(id)}
           onReload={() => loadGame('game')}
           onPlayIntro={() => playDevStory('intro')}
@@ -1046,6 +1061,8 @@ export default function App() {
       />{state.dev && <DevPanel
         state={state}
         roomId={roomId}
+        reveal={devReveal}
+        onReveal={setDevReveal}
         onJumpRoom={(id) => setRoomId(id)}
         onReload={() => loadGame('game')}
         onPlayIntro={() => playDevStory('intro')}
@@ -1088,6 +1105,8 @@ export default function App() {
       {state.dev && <DevPanel
         state={state}
         roomId={roomId}
+        reveal={devReveal}
+        onReveal={setDevReveal}
         onJumpRoom={(id) => { setRoomId(id); setEvidence(null); setPuzzleSpot(null); setActiveChar(null); }}
         onReload={() => loadGame('game')}
         onPlayIntro={() => playDevStory('intro')}

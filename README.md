@@ -111,6 +111,7 @@ vercel.json             Build command and function configuration
 | `npm run test:engine` | Pure rule tests against a fixture case |
 | `npm run test:llm` | Interrogation pool: key rotation, model failover, limits and budgets |
 | `npm run talk:review` | Talks to every interrogable character through the live pool and flags flat, off-voice or rule-leaking replies (`-- --ladder` reviews the authored fallback) |
+| `npm run test:stress` | Event rehearsal: fires N simulated teams at the real pool, wave after wave, and proves every one receives a reply (`-- --teams 100 --waves 2`) |
 | `npm run test:campaign` | Full campaign walk: every act, puzzle, gate and ending |
 | `npm run test:penalties` | Penalty rules end-to-end: fee, cap, restart cost, practice, leaderboard order |
 | `npm run test:event` | 70 concurrent team sessions, event gates and timers |
@@ -128,6 +129,7 @@ vercel.json             Build command and function configuration
 ```sh
 npm run test:engine && npm run test:llm && npm run test:campaign && npm run test:penalties
 npm run test:event && npm run test:assets && npm run test:scenes
+npm run talk:review && npm run test:stress   # live pool: needs OPENCODE_GO_API_KEYS
 npm run build
 ```
 
@@ -182,8 +184,10 @@ Everything is optional in local development. Production needs the first three.
 | `FULLSCREEN_ENFORCE` | Force fullscreen enforcement on/off (default: on for event mode / team-code play) |
 | `EXIT_GRACE_MS` / `EXIT_MAX_STRIKES` | Grace window to return before a strike (10000); strikes before disqualification (3) |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google sign-in (optional sign-in method) |
-| `OPENCODE_GO_API_KEY` / `OPENCODE_API_KEY` / `LLM_API_KEYS` | Live AI suspects. A Go key is recommended: the adapter calls `https://opencode.ai/inference/go/v1` with the Go free models first and per-conversation sessions. `OPENCODE_API_KEY` uses the Console endpoint (its free tier only works from the OpenCode client); `LLM_API_KEYS` pools several keys and rotates them on usage limits; `LLM_BASE_URL` / `LLM_MODEL` / `LLM_MODELS` / `LLM_FALLBACK_MODELS` override everything |
-| `LLM_FIRST_TOKEN_MS` / `LLM_TURN_BUDGET_MS` / `LLM_COOLDOWN_MS` / `LLM_MAX_CONCURRENT` / `LLM_MAX_ATTEMPTS` | Interrogation pool tuning for large events; a limited or unreachable pool falls back to the hardcoded case answers instead of stalling |
+| `OPENCODE_GO_API_KEYS` / `OPENCODE_GO_API_KEY` | Live AI suspects: a pool of OpenCode Go keys running Muse Spark 1.3 Contributor via the Go Responses API. Teams are pinned to keys (stable prompt caching), usage limits and errors fail over across the pool, and the authored answers reply whenever the pool is exhausted |
+| `LLM_MODELS` / `LLM_REASONING_EFFORT` / `LLM_MAX_OUTPUT_TOKENS` | Model and Muse tuning (`muse-spark-1.3-contributor`, `minimal`, `800` by default). `OPENCODE_API_KEY` still selects the Console endpoint with its free pool; `LLM_BASE_URL` / `LLM_MODEL` / `LLM_FALLBACK_MODELS` override everything |
+| `LLM_FIRST_TOKEN_MS` / `LLM_TURN_BUDGET_MS` / `LLM_MAX_CONCURRENT` / `LLM_MAX_ATTEMPTS` | Pool timing and concurrency for 100 teams (9000 / 22000 / 32 / 16) |
+| `LLM_TEAM_DAILY_MAX` | Model answers per team per day (500). Past it, the authored answers reply so play continues |
 
 `.env.example` documents the full surface.
 

@@ -1,7 +1,7 @@
 import './styles-scene.css';
 import { CinemaProp, ParkGround, WindTree, CeilingFan } from './CinemaAssets.jsx';
 import {DetailProp,InstancedDetailScatter,TerrainSurface,WallSign,Cable,ComputerStation,ShelfContents,FencePanel} from './EnvironmentDetails.jsx';
-import { BEDROOM, SAMEER_BED, HOME_STAIRS, HOME_UPPER_DOORWAY, HOME_BEDROOM, backWallPanels, POLICE, HOSPITAL_BED, DESK_TOP, DESK_SEAT, PARTH_ANCHORS, PARK, DETAIL_ANCHORS,FIELD,FIELD_TRACKS,FIELD_BACKGROUND_BUILDING,FIELD_OVERGROWTH,ROOM_VIEWS,ROOM_BOUNDS,updateFieldBackpackOrbit,updateHospitalSecurityOrbit } from './SceneLayout.js';
+import { BEDROOM, SAMEER_BED, HOME_STAIRS, HOME_UPPER_DOORWAY, HOME_BEDROOM, backWallPanels, POLICE, HOSPITAL_BED, HOSPITAL_BED_GROUP, HOSPITAL_RITUAL_CROWD, DESK_TOP, DESK_SEAT, PARTH_ANCHORS, PARK, DETAIL_ANCHORS,FIELD,FIELD_TRACKS,FIELD_BACKGROUND_BUILDING,FIELD_OVERGROWTH,ROOM_VIEWS,ROOM_BOUNDS,updateFieldBackpackOrbit,updateHospitalSecurityOrbit } from './SceneLayout.js';
 import DemonMask from './DemonMask.jsx';
 import {seatContact,maskVisibleFor} from './SceneStaging.js';
 import Actor from './Actor.jsx';
@@ -1076,11 +1076,21 @@ function ConcertRoom({room,hot}) {
   </group>
   {[-6.8,6.8].map(x=><DetailProp key={x} asset="amplifier" position={[x,0,-3.5]} height={1.6}/>)}
   {[-1,1].flatMap(side=>[0,1,2,3].map(i=><CrowdBlob key={`${side}-${i}`} position={[side*(4+i%2),0,-.6+Math.floor(i/2)*1.7]} scale={.97}/>))}
-  <FencePanel position={[-4.5,0,-2.6]} rotation={[0,.2,0]}/>
-   <WallSign position={[-4.5,1.1,-2.42]} width={1.2} height={.45} title="BACKSTAGE" lines={['PASS HOLDERS ONLY']}/>
-   {/* Inside the default frame: at the old x=5 the board was clipped by the
-       right edge of the view, so the membership art looked cropped. */}
-   <WallSign position={[4.1,1.4,-1]} width={1.15} height={.5} title="PERIGEE" lines={['MEMBER REGISTRATION']}/>
+  {/* The fence and its board share one transform, so the board sits flush on
+      the wire instead of hovering in front of a differently-angled fence. */}
+  <group position={[-4.5,0,-2.6]} rotation={[0,.2,0]}>
+    <FencePanel/>
+    <mesh position={[0,1.1,.038]} castShadow><boxGeometry args={[1.3,.55,.03]}/><meshStandardMaterial color="#14202a" roughness={.85}/></mesh>
+    <WallSign position={[0,1.1,.058]} width={1.2} height={.45} title="BACKSTAGE" lines={['PASS HOLDERS ONLY']}/>
+  </group>
+  {/* Freestanding registration board: a weighted base and braced posts keep it
+      planted at the crowd's edge instead of floating over their heads. */}
+  <group position={[4.1,0,-1]} rotation={[0,-.2,0]}>
+    <mesh position={[0,.04,0]} receiveShadow><boxGeometry args={[1.2,.08,.5]}/><meshStandardMaterial color="#2c3337" roughness={.85}/></mesh>
+    {[-.42,.42].map(x=><mesh key={x} position={[x,.715,0]} castShadow><boxGeometry args={[.06,1.27,.06]}/><meshStandardMaterial color="#787e83" metalness={.6} roughness={.4}/></mesh>)}
+    <mesh position={[0,1.35,-.005]} castShadow receiveShadow><boxGeometry args={[1.25,.6,.05]}/><meshStandardMaterial color="#101b1e" roughness={.8}/></mesh>
+    <WallSign position={[0,1.35,.028]} width={1.15} height={.5} title="PERIGEE" lines={['MEMBER REGISTRATION']}/>
+  </group>
   {[-8.5,8.5].map(x=><group key={x}><DetailProp asset="street_lamp_01" position={[x,0,2.5]} height={3.8}/><pointLight position={[x,3.1,2.5]} color="#f6cc91" intensity={12} distance={10}/></group>)}
   <WindTree position={[-10,0,-7]} height={6}/><WindTree position={[10,0,-7]} height={6}/>
   <pointLight position={[0,4.3,-3.8]} color="#c2cef4" intensity={30} distance={14}/>
@@ -1197,8 +1207,13 @@ function NgoArchiveRoom({room,hot}) {
 
 function HospitalRoom({room,hot,actId,phase,paused=false}) {
  if(actId==='act8'&&String(phase??'').startsWith('ending_'))return <HospitalEndingRoom phase={phase} paused={paused}/>;
- const ritual=['act6','act8'].includes(actId),cargo=actId==='act7';
- if(cargo)return <HospitalDispatch room={room} hot={hot} loading={phase==='cargo_loading'}/>;
+ // Acts 7/8 share one ceremony tableau: the masked crowd rings the altar and
+ // the leader (staged by the cinematic) officiates behind it. Act 7's own
+ // gameplay stays in the loading bay, where the cargo beats happen.
+ const ceremony=phase==='ceremony';
+ const ritual=['act6','act8'].includes(actId)||ceremony;
+ const cargo=actId==='act7'&&!ceremony;
+ if(cargo)return <HospitalDispatch room={room} hot={hot}/>;
  return <group>
   <Shell width={16} depth={10} height={3.4} tint="#b9c6c5" painted/>
   <Floor width={16} depth={10} repeat={[8,5]} color="#c8d3ce" tiled/>
@@ -1222,6 +1237,18 @@ function HospitalRoom({room,hot,actId,phase,paused=false}) {
    {[-.85,-.55,.9].map((x,i)=><Candle key={x} position={[x,.877,-2.1]} height={.24+i*.05}/>)}
    <WallSign position={[0,1.65,-4.91]} width={2.2} height={.65} title="PERIGEE" lines={['THE ASCENSION']} background="#493138"/>
    <pointLight position={[0,1.7,-2.1]} color="#dc916e" intensity={5} distance={7}/>
+  </group>}
+  {/* The story's people, staged where it puts them. Act 4: Parth on the ward
+      bed while the group that was injecting him rings it (the cinematic's own
+      discovery phase brings its Parth, so the room only stages its own when
+      the camera is not already inside this moment). Acts 6/8: the masked crowd
+      around the altar, the leader officiating, Parth masked in the crowd. */}
+  {actId==='act4'&&<group>
+   {phase!=='discovery'&&<group position={[HOSPITAL_BED.center[0]+.89,HOSPITAL_BED.mattressY+.15,HOSPITAL_BED.center[2]]}><Actor character="parth" pose="lie"/></group>}
+   {HOSPITAL_BED_GROUP.map((member)=><group key={member.character} position={[member.at[0],0,member.at[1]]} rotation={[0,member.rot,0]}><Actor character={member.character} pose="idle" wearingMask/></group>)}
+  </group>}
+  {ritual&&<group>
+   {HOSPITAL_RITUAL_CROWD.filter((member)=>!(ceremony&&member.officiant)).map((member,i)=><group key={`${member.character}-${i}`} position={[member.at[0],0,member.at[1]]} rotation={[0,member.rot,0]}><Actor character={member.character} pose="idle" wearingMask/></group>)}
   </group>}
   <WallSign position={[-7.93,2,1]} rotation={[0,Math.PI/2,0]} width={1.8} height={.55} title="WARD 03" lines={['KEEP THE CORRIDOR CLEAR']}/>
   <WallSign position={[7.93,2,1]} rotation={[0,-Math.PI/2,0]} width={1.8} height={.55} title="SECURITY" lines={['AUTHORISED STAFF ONLY']}/>
@@ -1296,9 +1323,9 @@ function HospitalDispatch({room,hot,loading=false}) {
  return <group>
   <Shell width={12} depth={14} height={4.2} tint="#8e9997" painted/>
   <Floor width={12} depth={14} repeat={[4,4]} color="#8e9895" tiled/>
-  <mesh position={[-2,1.65,-6.93]}><planeGeometry args={[4.3,3.3]}/><meshStandardMaterial color="#465654" metalness={.35} roughness={.65}/></mesh>
-  {Array.from({length:14},(_,i)=><mesh key={i} position={[-2,.15+i*.23,-6.89]}><boxGeometry args={[4.3,.018,.018]}/><meshStandardMaterial color="#73817c" metalness={.4}/></mesh>)}
-  <WallSign position={[-2,3.55,-6.9]} width={3.5} height={1.15} title="SHASHDHAR / LOADING BAY"/>
+  <mesh position={[-2,1.45,-6.93]}><planeGeometry args={[4.3,2.9]}/><meshStandardMaterial color="#465654" metalness={.35} roughness={.65}/></mesh>
+  {Array.from({length:13},(_,i)=><mesh key={i} position={[-2,.15+i*.21,-6.89]}><boxGeometry args={[4.3,.018,.018]}/><meshStandardMaterial color="#73817c" metalness={.4}/></mesh>)}
+  <WallSign position={[-2,3.6,-6.9]} width={3.5} height={1.15} title="SHASHDHAR / LOADING BAY"/>
   <DoorOpening position={[4.2,0,-6.75]} label="SERVICE LIFT / STAFF"/>
   <DetailProp asset="cargo_van" position={[-3,0,-2.2]} height={2.2} rotation={[0,Math.PI/2,0]}/>
   {loading ? <>
@@ -1321,7 +1348,7 @@ function HospitalDispatch({room,hot,loading=false}) {
   <DetailProp asset="office_chair" position={[3.8,0,-1.65]} height={1.168*DESK_SEAT/.618} rotation={[0,Math.PI,0]}/>
   <DetailProp asset="office_phone" position={[4.4,.7875,-2.8]} scale={.8}/>
   <DetailProp asset="filing_cabinet" position={[5.2,0,-5.6]}/>
-  <WallSign position={[3,2.6,-6.91]} width={2.6} height={.7} title="LUA PHARMACEUTICALS" lines={['SEALED SHIPMENTS / LOG EVERY TRANSFER']}/>
+  <WallSign position={[1.5,2.6,-6.94]} width={2.6} height={.7} title="LUA PHARMACEUTICALS" lines={['SEALED SHIPMENTS / LOG EVERY TRANSFER']}/>
   <Fluorescent position={[-2,4.1,-2]}/><Fluorescent position={[2,4.1,2]}/>
   <pointLight position={[0,2.5,-1]} color="#d5e4dc" intensity={10} distance={14}/>
   <HotspotMarkers room={room} hot={hot}/>
@@ -1391,7 +1418,7 @@ function DoorOpening({position,label}) {
   <mesh position={[.68,1.12,0]}><boxGeometry args={[.12,2.24,.28]}/><meshStandardMaterial color="#4b514e"/></mesh>
   <mesh position={[0,2.28,0]}><boxGeometry args={[1.48,.12,.28]}/><meshStandardMaterial color="#4b514e"/></mesh>
   <mesh position={[0,1.1,-.15]}><planeGeometry args={[1.24,2.2]}/><meshStandardMaterial color="#39403d" roughness={.8}/></mesh>
-  <WallSign position={[0,2.58,.04]} width={1.45} height={.36} title={label}/>
+  <WallSign position={[0,2.56,-.19]} width={1.32} height={.32} title={label}/>
  </group>;
 }
 

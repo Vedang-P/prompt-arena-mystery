@@ -1,6 +1,6 @@
 import {Component,Suspense,useEffect,useLayoutEffect,useMemo,useRef} from 'react';
 import {useGLTF,useTexture} from '@react-three/drei';
-import {Box3,Vector3,RepeatWrapping,SRGBColorSpace,CanvasTexture,CatmullRomCurve3} from 'three';
+import {Box3,Vector3,RepeatWrapping,SRGBColorSpace,CanvasTexture,CatmullRomCurve3,DoubleSide} from 'three';
 import {scatterInstanceMatrix} from './InstanceTransform.js';
 import {useSettings} from './Settings.jsx';
 import {AssetBoundary} from './WorldBoundary.jsx';
@@ -108,7 +108,7 @@ function SignImage({src,width,height}){
   return t;
  },[source,width,height,quality]);
  useEffect(()=>()=>texture.dispose(),[texture]);
- return <meshStandardMaterial map={texture} roughness={.9}/>;
+ return <meshStandardMaterial map={texture} roughness={.9} side={DoubleSide}/>;
 }
 
 function ProceduralSign({title,lines,background,ink,width,height}){
@@ -122,7 +122,7 @@ function ProceduralSign({title,lines,background,ink,width,height}){
   const t=new CanvasTexture(canvas);t.colorSpace=SRGBColorSpace;return t;
  },[title,lines.join('|'),background,ink,width,height]);
  useEffect(()=>()=>texture.dispose(),[texture]);
- return <meshStandardMaterial map={texture} roughness={.9}/>;
+ return <meshStandardMaterial map={texture} roughness={.9} side={DoubleSide}/>;
 }
 
 export function WallSign({position,rotation=[0,0,0],width=1.4,height=.5,title,lines=[],background='#182d30',ink='#e2c78e'}){

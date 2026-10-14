@@ -3,6 +3,7 @@ import CaseJournal from './CaseJournal.jsx';
 import PuzzleWorkbench from './PuzzleWorkbench.jsx';
 import LogoutButton from './LogoutButton.jsx';
 import { useCaseDialog } from './InvestigationUI.jsx';
+import { sendFeedback } from './api.js';
 
 
 export function DialogueOverlay({
@@ -282,7 +283,19 @@ const ENDING_FALLBACK = {
   ],
 };
 
-export function EndingCard({ ending, score, penalties, team, title, onReplay, onRestart }) {
+const formatRunDuration = (seconds) => {
+  const s = Math.max(0, Math.floor(seconds ?? 0));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return h > 0 ? `${h}h ${String(m).padStart(2, '0')}m` : `${m}m ${String(sec).padStart(2, '0')}s`;
+};
+
+export function EndingCard({ ending, penalties, elapsedSeconds, team, title, onReplay, onRestart }) {
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [feedbackBusy, setFeedbackBusy] = useState(false);
+  const [feedbackStatus, setFeedbackStatus] = useState(null);
   if (!ending) return null;
   const fallback = ENDING_FALLBACK[ending.id] ?? ['The case goes cold.'];
   const paragraphs = String(ending.body ?? '')
@@ -292,6 +305,25 @@ export function EndingCard({ ending, score, penalties, team, title, onReplay, on
   const body = paragraphs.length ? paragraphs : fallback;
   const isMain = ending.id === 'ending_main';
   const hasPing = /now disappear/i.test(body.join(' '));
+  const durationLabel =
+    elapsedSeconds === null || elapsedSeconds === undefined
+      ? '—'
+      : formatRunDuration(elapsedSeconds);
+  const submitFeedback = async () => {
+    const message = feedbackText.trim();
+    if (!message || feedbackBusy) return;
+    setFeedbackBusy(true);
+    setFeedbackStatus(null);
+    try {
+      await sendFeedback(message);
+      setFeedbackText('');
+      setFeedbackStatus('saved');
+    } catch {
+      setFeedbackStatus('error');
+    } finally {
+      setFeedbackBusy(false);
+    }
+  };
   return (
     <div className="ending-screen">
       <div className="ending-card">
@@ -311,15 +343,57 @@ export function EndingCard({ ending, score, penalties, team, title, onReplay, on
         </div>
         <div className="ending-stats">
           <span className="ending-stat">
-            Score <b>{score ?? 0}</b>
+            Penalties <b>{penalties ?? 0}</b>
           </span>
           <span className="ending-stat">
-            Penalties <b>{penalties ?? 0}</b>
+            Time taken <b>{durationLabel}</b>
           </span>
         </div>
         <p className="ending-team">
           {title} — Team {team}
         </p>
+        <p className="ending-thanks">Thank you for playing Prompt Arena</p>
+        <div className="ending-feedback">
+          {feedbackStatus === 'saved' ? (
+            <p className="ending-feedback-note" role="status">
+              Thank you — your feedback has been saved for the team.
+            </p>
+          ) : feedbackOpen ? (
+            <div className="ending-feedback-form">
+              <label htmlFor="ending-feedback-text">Tell the team what you thought</label>
+              <textarea
+                id="ending-feedback-text"
+                value={feedbackText}
+                maxLength={2000}
+                rows={4}
+                placeholder="What worked, what didn't, what you'd want next…"
+                onChange={(e) => setFeedbackText(e.target.value)}
+                disabled={feedbackBusy}
+              />
+              <div className="ending-feedback-actions">
+                <button
+                  className="btn ghost"
+                  onClick={() => { setFeedbackOpen(false); setFeedbackStatus(null); }}
+                  disabled={feedbackBusy}
+                >
+                  Cancel
+                </button>
+                <button className="btn brass" onClick={submitFeedback} disabled={feedbackBusy || !feedbackText.trim()}>
+                  {feedbackBusy ? 'Saving…' : 'Send feedback'}
+                </button>
+              </div>
+              {feedbackStatus === 'error' && (
+                <p className="ending-feedback-note error" role="alert">
+                  The feedback could not be saved. Please try again.
+                </p>
+              )}
+            </div>
+          ) : (
+            <button className="btn ghost" onClick={() => setFeedbackOpen(true)}>
+              Leave feedback
+            </button>
+          )}
+        </div>
         {onRestart && (
           <button className="btn brass" onClick={onRestart}>
             Restart the case ↺

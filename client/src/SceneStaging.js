@@ -11,6 +11,7 @@ export function seatContact(character,seatY,floorY){
 // or any dev session that reveals every hotspot — with the story phases as the
 // last word (the reveal shows it; once it is taken, it never comes back).
 export function maskVisibleFor({hotspots=[],act=null,phase=null}={}) {
+  if(String(phase??'').startsWith('ending_'))return false;
   if(phase==='mask_taken')return false;
   if(phase==='mask_reveal')return true;
   return hotspots.some(h=>h.puzzle==='p_mask_owner')||act==='act7'||act==='act8';
@@ -25,8 +26,11 @@ export function locationFor(act, kind, index) {
     act4:{intro:['sameer_room','hospital'],outro:['hospital']},
     act5:{intro:['hospital','hospital','tanush_office'],outro:['sameer_room']},
     act6:{intro:['sameer_room'],outro:['police_station','sameer_room']},
-    act7:{intro:['sameer_room'],outro:['sameer_room','sameer_room','hospital']},
-    act8:{intro:['hospital'],outro:['hospital']},
+    // Act 7 closes inside the ritual: the leader forces the mask on Sameer and
+    // preaches to the crowd. Act 8's last two beats leave the burning hospital
+    // and wake him up in his own room.
+    act7:{intro:['sameer_room'],outro:['hospital']},
+    act8:{intro:['hospital'],outro:['hospital','hospital','sameer_room','sameer_room']},
   }[act.id]?.[kind];
   return scenes?.[Math.min(index,scenes.length-1)] ?? act.entry_room;
 }
@@ -34,17 +38,29 @@ export function cinematicPhaseFor(act,kind,sceneId,index) {
   if(act.id==='act3'&&kind==='outro'&&sceneId==='ngo_hq')return index===0?'capture':'departure';
   if(act.id==='act6'&&kind==='outro'&&sceneId==='sameer_room')return 'mask_reveal';
   if(act.id==='act7'&&kind==='intro'&&sceneId==='sameer_room')return 'mask_reveal';
-  if(act.id==='act7'&&kind==='outro'&&sceneId==='sameer_room')return index===0?'mask_reveal':'mask_taken';
-  if(act.id==='act7'&&kind==='outro'&&sceneId==='hospital')return 'cargo_loading';
-  if(act.id==='act8'&&kind==='outro'&&sceneId==='hospital')return ['ending_fire','ending_fire','ending_phone','ending_voice','ending_fall'][index]??'ending_fall';
+  // Acts 7 and 8 share the ceremony tableau: the masked crowd rings the altar
+  // with the leader officiating, and Sameer stands masked among them.
+  if(sceneId==='hospital'&&((act.id==='act7'&&kind==='outro')||(act.id==='act8'&&kind==='intro')))return 'ceremony';
+  // The fire plays at the corridor window; the waking-up beats are his room in
+  // the morning, not the hospital phone still playing in a burning building.
+  if(act.id==='act8'&&kind==='outro'&&sceneId==='hospital')return 'ending_fire';
+  if(act.id==='act8'&&kind==='outro'&&sceneId==='sameer_room')return 'ending_dawn';
   return null;
 }
 export function storyCast(act,kind,sceneId,index=0) {
-  if(act.id==='act7'&&kind==='outro'&&sceneId==='hospital')
-    return [{character:'sameer',at:[1.9,.85],rot:-Math.PI/2,pose:'idle'}];
+  // The ceremony — Act 7's closing speech and Act 8's opening — stages Sameer
+  // masked at the back of the crowd, with the leader officiating behind the
+  // altar at the room kit's own officiant mark (the kit skips its unmasked
+  // stand-in for this phase so the cinematic owns the leader).
+  if(sceneId==='hospital'&&((act.id==='act7'&&kind==='outro')||(act.id==='act8'&&kind==='intro')))
+    return [
+      {character:'sameer',at:[.35,1.4],rot:Math.PI,pose:'idle',wearingMask:true,staged:true},
+      {character:'leader',at:[0,-3.15],rot:0,pose:'idle',wearingMask:true,staged:true},
+    ];
+  // Act 8's ending: the corridor fire, then Sameer waking in his own room.
   if(act.id==='act8'&&kind==='outro'){
-    const position=index<2?[0,-4.8]:index===4?[0,2.4]:[1.1,.8];
-    return [{character:'sameer',at:position,rot:index<2?Math.PI:index<4?Math.PI/2:0,pose:index===4?'fall':'idle',rotationX:index===4?Math.PI/2:index===0?-.12:0}];
+    if(sceneId==='sameer_room')return [{character:'sameer',at:[.15,1.05],rot:Math.PI,pose:'idle',staged:true}];
+    return [{character:'sameer',at:[0,-4.8],rot:Math.PI,pose:'idle',rotationX:index===0?-.12:0}];
   }
   // Act 7 opens on the mask at Sameer's bed: he studies it alone until the
   // narration names Veer at the knock. From then on the two stand face to face
@@ -64,14 +80,12 @@ export function storyCast(act,kind,sceneId,index=0) {
     return [{character:'sameer',pose:'idle'}];
   const capture=act.id==='act3'&&kind==='outro'&&sceneId==='ngo_hq';
   const discovery=act.id==='act4'&&kind==='outro'&&sceneId==='hospital';
-  const companion=discovery?'parth':sceneId==='parth_home'?'mother':sceneId==='cyber_cafe'?'ramu':sceneId==='police_station'?'officer':sceneId==='tanush_office'?'tanush':act.id==='act8'?'leader':capture?null:(act.id==='act7'&&kind==='intro')||sceneId==='concert'?'veer':null;
+  const companion=discovery?'parth':sceneId==='parth_home'?'mother':sceneId==='cyber_cafe'?'ramu':sceneId==='police_station'?'officer':sceneId==='tanush_office'?'tanush':capture?null:(act.id==='act7'&&kind==='intro')||sceneId==='concert'?'veer':null;
   return ['sameer',...(companion?[companion]:[])].map((character,i)=>({
     character,
     at:capture?[4,3]:discovery?(character==='parth'?[HOSPITAL_BED.center[0]+.89,HOSPITAL_BED.center[2]]:[-2.75,-1.1]):[companion?(i-.5)*1.8:0,1],
     rot:capture?-.7:discovery?(character==='parth'?0:-Math.PI/2):i?-.2:.2,
     pose:discovery&&character==='parth'?'lie':sceneId==='sameer_room'&&character==='sameer'?'sit':'idle',
-    wearingMask:act.id==='act8'&&kind==='intro'&&(character==='leader'||(character==='sameer'&&index>=5)),
-    holdingMask:act.id==='act7'&&kind==='outro'&&character==='sameer'&&index>=1,
   }));
 }
 // All acts use these furniture-relative marks. Standing actors never inherit a

@@ -1,28 +1,4 @@
 {
-  "/assets/signs/door_operating_theatre.jpg": {
-    "sha256": "fc8963b2101dad862d7353eabf67ca239b30654d2fa31a644fda57d3ff2063d9",
-    "w": 1536,
-    "h": 381,
-    "aspect": 4.0315
-  },
-  "/assets/signs/door_private_office.jpg": {
-    "sha256": "39ed1d0c67042ee3fb11320b863de22b2e2b08e259b7ae6c31d54c84fbbcd216",
-    "w": 1536,
-    "h": 381,
-    "aspect": 4.0315
-  },
-  "/assets/signs/door_private.jpg": {
-    "sha256": "3f9ba3e44c97c7445463d5f8fa5fdff222e4eff7ca1aadd0f0962c3b1a170b53",
-    "w": 1536,
-    "h": 381,
-    "aspect": 4.0315
-  },
-  "/assets/signs/door_service_access.jpg": {
-    "sha256": "a9688bb504b21cfb97771679e74ff54f87d42257e4b88ede47517383b83bf9cd",
-    "w": 1536,
-    "h": 381,
-    "aspect": 4.0315
-  },
   "/assets/signs/duty.jpg": {
     "sha256": "899040739e30f10aeb5027ecb3c849cc39a6bd973cc578ded49560e47d8eb646",
     "w": 1536,

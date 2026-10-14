@@ -18,6 +18,9 @@
 .dev-actions button.danger{border-color:#a4534a;color:#e8b3ac}
 .dev-actions button:disabled{opacity:.5;cursor:default}
 .dev-actions input{width:90px;background:#14252d;border:1px solid #3e5358;border-radius:4px;color:#d5dfd6;font-size:11px;padding:6px 8px}
+.dev-check-row{display:flex;gap:8px;align-items:center;background:#14252d;border:1px solid #3e5358;border-radius:4px;color:#cfe0d8;font-size:11px;padding:8px 9px;margin-bottom:6px;cursor:pointer}
+.dev-check-row input{accent-color:#d4b67c;margin:0}
+.dev-check-row:hover{border-color:#d4b67c;color:#e8d5aa}
 .dev-row{display:flex;gap:10px;align-items:start;width:100%;text-align:left;background:none;border:1px solid transparent;border-radius:5px;color:#cfdbd6;padding:8px 9px;cursor:pointer}
 .dev-row:hover{background:#ffffff06}
 .dev-row.on{background:#d4b67c0d;border-color:#a68f5c44}

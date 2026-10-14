@@ -8,7 +8,7 @@ const TABS = [['acts', 'Acts'], ['rooms', 'Rooms'], ['clues', 'Clues'], ['puzzle
 // jump to any act or room, toggle every clue and puzzle (answer keys included),
 // reset the sandbox, and replay the act cinematics on demand. Every switch is
 // applied server-side, so the save the panel edits is the save the game reads.
-export default function DevPanel({ state, roomId, onJumpRoom, onReload, onPlayIntro, onPlayOutro }) {
+export default function DevPanel({ state, roomId, reveal, onReveal, onJumpRoom, onReload, onPlayIntro, onPlayOutro }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState('acts');
   const [catalog, setCatalog] = useState(null);
@@ -96,6 +96,10 @@ export default function DevPanel({ state, roomId, onJumpRoom, onReload, onPlayIn
           <button disabled={!!busy} onClick={onPlayIntro}>Replay act intro</button>
           <button disabled={!!busy} onClick={onPlayOutro}>Play act outro</button>
         </div>
+        <label className="dev-check-row">
+          <input type="checkbox" checked={!!reveal} onChange={(e) => onReveal?.(e.target.checked)} />
+          <span>Reveal every marker (all acts, all requirements)</span>
+        </label>
         <div className="dev-actions">
           <input type="number" min="0" max="9999" value={penaltyDraft} onChange={(e) => setPenaltyDraft(e.target.value)} aria-label="Penalties" />
           <button disabled={!!busy} onClick={setPenalties}>Set penalties</button>
@@ -107,7 +111,7 @@ export default function DevPanel({ state, roomId, onJumpRoom, onReload, onPlayIn
           <summary>Raw state</summary>
           <pre>{JSON.stringify({ act: state?.act, room: roomId, discovered: state?.discovered?.length, solved: state?.solvedPuzzles?.length, penalties: state?.penalties, devRoom: state?.devRoom }, null, 1)}</pre>
         </details>
-        <p className="dev-note">Shortcuts: <kbd>W A S D</kbd> move · <kbd>Space</kbd> pause cinematics · every hotspot in a room is visible for dev sessions, regardless of act or requirements.</p>
+        <p className="dev-note">Shortcuts: <kbd>W A S D</kbd> move · <kbd>Space</kbd> pause cinematics · by default markers follow the current act exactly as a player sees them; tick Reveal every marker to show the whole room.</p>
       </div>}
     </div>
     <footer className="dev-foot">

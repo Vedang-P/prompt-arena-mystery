@@ -34,6 +34,24 @@ export function backWallPanels(width,height,opening){
 export const POLICE = { desk:[0,0,-1.05], chair:[0,0,-2.05], officer:[0,-2.05], sameer:[-.72,.55], mother:[.7,.6] };
 // The imported ward bed's mattress surface was raycast at 0.840 m from its grounded origin.
 export const HOSPITAL_BED = { center:[-4.5,0,-1.1], mattressY:.84002 };
+// The hospital's story tableaux. Act 4: the discovery — Parth lies on the ward
+// bed while the group that was injecting him rings it. Acts 6/8: the ritual —
+// the masked crowd rings the altar table, with the leader officiating behind
+// it and Parth standing masked in the crowd. Every yaw is precomputed to face
+// the centre (atan2 of the direction to it), so the staging reads from the
+// room's orbit and from every cinematic camera.
+export const HOSPITAL_BED_GROUP = [
+  { character: 'tanush', at: [-4.5, -2.05], rot: 0 },
+  { character: 'veer', at: [-4.5, -0.15], rot: Math.PI },
+  { character: 'enakshi', at: [-5.7, -1.1], rot: Math.PI / 2 },
+];
+export const HOSPITAL_RITUAL_CROWD = [
+  { character: 'tanush', at: [-1.5, -0.6], rot: 2.3562 },
+  { character: 'enakshi', at: [-0.8, -0.3], rot: 2.7227 },
+  { character: 'parth', at: [0, -0.2], rot: Math.PI },
+  { character: 'veer', at: [0.8, -0.3], rot: -2.7227 },
+  { character: 'leader', at: [0, -3.15], rot: 0, officiant: true },
+];
 export const FIELD={car:[-1.4,.006,-1.6],yaw:-1.05,seat:[.6,.719,.408]};
 export const FIELD_TRACKS={center:[FIELD.car[0],FIELD.car[2]+1],offset:.58,width:.22,length:3.8};
 export function updateFieldBackpackOrbit({screenDx,screenDy,viewportWidth},wasOverlapping){

@@ -140,6 +140,14 @@ export const heartbeat = (fullscreen = false) =>
     body: JSON.stringify({ fullscreen: !!fullscreen }),
   }).then(json);
 
+// The ending screen's feedback form: the server stores it permanently.
+export const sendFeedback = (message) =>
+  request('/api/feedback', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ message }),
+  }).then(json);
+
 // Developer sandbox: available only to the dev team session (DEV_TEAM_CODE).
 export const devCatalog = () => request('/api/dev/catalog', { cache: 'no-store' }).then(json);
 export const devAct = (act) =>

@@ -8,7 +8,8 @@
 //   RECORDS / 01–05, ARCHIVE POLICY, SHASHDHAR HOSPITAL, PERIGEE / THE
 //   ASCENSION, SECURITY, STAIR B / ROOF ACCESS, WARD 03 / RESTRICTED ACCESS,
 //   SEALED MEDICAL SUPPLIES, LUA PHARMACEUTICALS, SERVICE LIFT / STAFF,
-//   PERIGEE / DIRECTOR TANUSH.
+//   PERIGEE / DIRECTOR TANUSH, OPERATING THEATRE, PRIVATE OFFICE, PRIVATE,
+//   SERVICE ACCESS.
 // `npm run test:signs` locks the reviewed art by hash and aspect so a clipped
 // board can never ship unnoticed again.
 export const SIGN_FILES={
@@ -31,10 +32,6 @@ export const SIGN_FILES={
  "MEMBERSHIP|REGISTER AT RECEPTION|STAFF ACCESS BEYOND THIS POINT":'/assets/signs/sign_membership.jpg',
  "SHASHDHAR / LOADING BAY|":'/assets/signs/sign_loading_bay.jpg',
  "WARD 03|KEEP THE CORRIDOR CLEAR":'/assets/signs/sign_ward03_corridor.jpg',
- "SERVICE ACCESS|":'/assets/signs/door_service_access.jpg',
- "OPERATING THEATRE|":'/assets/signs/door_operating_theatre.jpg',
- "PRIVATE OFFICE|":'/assets/signs/door_private_office.jpg',
  "PERIGEE FOUNDATION|A HIGHER PURPOSE":'/assets/signs/sign_perigee_higher.jpg',
- "PRIVATE|":'/assets/signs/door_private.jpg',
  "THIS WEEK|THURSDAY / HOSPITAL|SATURDAY / WORKSHOP":'/assets/signs/sign_this_week.jpg',
 };

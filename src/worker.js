@@ -88,6 +88,16 @@ const parseStamp = (value) => {
   return Number.isFinite(ms) ? ms : null;
 };
 
+// How long the run took, in seconds. The clock starts when the team leaves the
+// prologue and stops at solved_at; a live run reports the time to now, which is
+// exactly what the ending screen freezes when the case closes.
+const runElapsedSeconds = (progress, now = Date.now()) => {
+  if (!progress || (progress.act ?? 'act0') === 'act0') return 0;
+  const startedMs = parseStamp(progress.started_at);
+  if (startedMs === null) return 0;
+  return Math.max(0, Math.floor(((parseStamp(progress.solved_at) ?? now) - startedMs) / 1000));
+};
+
 app.get('/api/health', (c) =>
   c.json({
     ok: true,
@@ -691,6 +701,9 @@ app.get('/api/state', async (c) => {
     score: discovered.length + solvedPuzzles.length - penalties,
     hintsUsed: auth.progress.hints_used,
     solved: !!auth.progress.solved,
+    startedAt: toIso(auth.progress.started_at),
+    solvedAt: toIso(auth.progress.solved_at),
+    elapsedSeconds: runElapsedSeconds(auth.progress),
     strikes: auth.strikes,
     maxStrikes: maxExitStrikes(c.env),
     graceMs: exitGraceMs(c.env),
@@ -705,6 +718,31 @@ app.get('/api/state', async (c) => {
     announcement: await activeAnnouncement(c.env),
     serverTime: new Date().toISOString(),
   });
+});
+
+// ---------- player feedback ----------
+// The ending screen's feedback form writes straight here. Rows live in their
+// own table, so they survive restarts, resets and disqualifications as a
+// permanent record for the organisers.
+app.post('/api/feedback', async (c) => {
+  const { auth, error } = await requireActiveTeam(c);
+  if (error) return error;
+  const body = await c.req.json().catch(() => ({}));
+  const message = String(body.message ?? '').replace(/\u0000/g, '').trim().slice(0, 2000);
+  if (!message) return c.json({ error: 'empty_feedback' }, 400);
+  await c.env.DB.prepare(
+    'INSERT INTO feedback(team_id, team_name, act, message, penalties, elapsed_seconds) VALUES (?,?,?,?,?,?)'
+  )
+    .bind(
+      auth.teamId,
+      auth.teamName,
+      auth.progress.act ?? 'act0',
+      message,
+      Number(auth.progress.penalties ?? 0),
+      runElapsedSeconds(auth.progress)
+    )
+    .run();
+  return c.json({ ok: true });
 });
 
 // ---------- fullscreen enforcement ----------
@@ -1192,7 +1230,7 @@ app.post('/api/interrogate', async (c) => {
   const flags = parseJsonObject(auth.progress.flags);
   const day = new Date().toISOString().slice(0, 10);
   const chatUsedToday = flags.chatDay === day ? Number(flags.chatCount ?? 0) : 0;
-  const dailyMax = numEnv(c.env.LLM_TEAM_DAILY_MAX, 300);
+  const dailyMax = numEnv(c.env.LLM_TEAM_DAILY_MAX, 500);
   const overDailyCap = !repeat && !noise && chatUsedToday >= dailyMax;
   if (!repeat && !noise) {
     const nextFlags = {
@@ -2122,6 +2160,43 @@ app.get('/api/admin/teams/:id/export', async (c) => {
   });
   const safeName = String(team.name).replace(/[^a-z0-9_-]+/gi, '-').slice(0, 40) || `team-${id}`;
   return csvResponse(c, `prompt-arena-${safeName}-timeline-${stampSlug()}.csv`, header, body);
+});
+
+// Player feedback from the ending screen, newest first — with its CSV twin so
+// the organisers can archive it before the next event reset.
+const FEEDBACK_COLUMNS = 'id, team_id, team_name, act, message, penalties, elapsed_seconds, created_at';
+
+app.get('/api/admin/feedback', async (c) => {
+  if (!(await requireAdmin(c))) return adminUnauthorized(c);
+  const rows = (await c.env.DB.prepare(
+    `SELECT ${FEEDBACK_COLUMNS} FROM feedback ORDER BY id DESC LIMIT 500`
+  ).all()).results;
+  c.header('Cache-Control', 'no-store');
+  return c.json({
+    total: rows.length,
+    entries: rows.map((r) => ({
+      id: r.id,
+      teamId: r.team_id,
+      team: r.team_name ?? null,
+      act: r.act ?? null,
+      message: r.message,
+      penalties: Number(r.penalties ?? 0),
+      elapsedSeconds: Number(r.elapsed_seconds ?? 0),
+      at: toIso(r.created_at),
+    })),
+  });
+});
+
+app.get('/api/admin/export/feedback', async (c) => {
+  if (!(await requireAdmin(c))) return adminUnauthorized(c);
+  const rows = (await c.env.DB.prepare(
+    `SELECT ${FEEDBACK_COLUMNS} FROM feedback ORDER BY id DESC LIMIT 10000`
+  ).all()).results;
+  const header = ['id', 'at', 'team_id', 'team', 'act', 'penalties', 'elapsed_seconds', 'message'];
+  const body = rows.map((r) => [
+    r.id, toIso(r.created_at), r.team_id, r.team_name, r.act, r.penalties, r.elapsed_seconds, r.message,
+  ]);
+  return csvResponse(c, `prompt-arena-feedback-${stampSlug()}.csv`, header, body);
 });
 
 // Create a team with an assigned code (generated when omitted). The plaintext

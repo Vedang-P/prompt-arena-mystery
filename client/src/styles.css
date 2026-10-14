@@ -50,6 +50,16 @@ body {
   font-family: var(--font-body);
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input,
+textarea,
+select,
+[contenteditable='true'] {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 button,
@@ -2204,6 +2214,81 @@ h4 {
 
 .ending-card .btn {
   margin-top: 22px;
+}
+
+.ending-thanks {
+  margin: 20px 0 0;
+  font-size: 12px;
+  letter-spacing: 0.32em;
+  text-indent: 0.32em;
+  text-transform: uppercase;
+  color: #8a6a2a;
+}
+
+.ending-feedback {
+  margin-top: 16px;
+}
+
+.ending-feedback-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+  padding: 16px;
+  text-align: left;
+  border: 1px solid rgba(88, 66, 36, 0.32);
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.ending-feedback-form label {
+  font-size: 10.5px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ink-paper-faint);
+}
+
+.ending-feedback-form textarea {
+  width: 100%;
+  min-height: 88px;
+  resize: vertical;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink-paper);
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(88, 66, 36, 0.4);
+  border-radius: 2px;
+}
+
+.ending-feedback-form textarea::placeholder {
+  color: rgba(58, 44, 24, 0.5);
+}
+
+.ending-feedback-form textarea:focus {
+  outline: 2px solid rgba(138, 106, 42, 0.5);
+  outline-offset: 1px;
+}
+
+.ending-feedback-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.ending-card .ending-feedback-actions .btn {
+  margin-top: 0;
+}
+
+.ending-feedback-note {
+  margin: 8px 0 0;
+  font-size: 13px;
+  font-style: italic;
+  color: #4d3d1f;
+}
+
+.ending-feedback-note.error {
+  color: #6b1f1a;
 }
 
 /* -- google sign-in -- */
