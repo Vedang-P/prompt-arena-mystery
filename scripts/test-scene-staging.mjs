@@ -24,8 +24,15 @@ assert.equal(locationFor(act2,'intro',4),'cyber_cafe','The café scene must acco
 assert.equal(locationFor(act2,'intro',5),'sameer_room','He must be back in his room when he stumbles home');
 const ngoSwarm=storyCast(act2,'intro','cyber_cafe',1);
 assert.equal(ngoSwarm.length,4,'The NGO bombardment must stage Sameer with the three canvassers');
-assert(ngoSwarm.filter(c=>c.character!=='sameer').every(c=>c.staged),'The canvassers must read as staged extras');
-assert(ngoSwarm.filter(c=>c.character!=='sameer').every(c=>Math.abs(Math.abs(c.rot)-Math.PI)<0.7),'The canvassers must keep their backs to the camera');
+const canvassers=ngoSwarm.filter(c=>c.character!=='sameer');
+const sameerAt=ngoSwarm.find(c=>c.character==='sameer').at;
+assert(canvassers.every(c=>c.staged),'The canvassers must read as staged extras');
+assert(canvassers.every(c=>Math.hypot(c.at[0]-sameerAt[0],c.at[1]-sameerAt[1])<1.2),'The canvassers must crowd Sameer in a tight arc, not line up apart');
+assert(canvassers.every(c=>{
+  const yaw=Math.atan2(sameerAt[0]-c.at[0],sameerAt[1]-c.at[1]);
+  const off=Math.atan2(Math.sin(c.rot-yaw),Math.cos(c.rot-yaw));
+  return Math.abs(off)<.35;
+}),'Every canvasser must square up to Sameer');
 assert(storyCast(act2,'intro','cyber_cafe',4).some(c=>c.character==='ramu'),'Ramu must appear when Sameer reaches the dosa corner');
 assert.equal(locationFor(act3,'outro',0),'ngo_archive','The overheard call must stage in the archive room');
 assert.equal(locationFor(act3,'outro',act3.outro.length-1),'ngo_archive','The overheard call must stay in the archive room until Sameer hides');

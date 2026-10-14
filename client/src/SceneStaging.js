@@ -73,17 +73,17 @@ export function storyCast(act,kind,sceneId,index=0) {
       {character:'veer',at:[-1.5,-.9],rot:1.091,pose:'idle',staged:true},
     ];
   }
-  // The NGO blitz: canvassers crowd Sameer at the shopfront — the pamphlet in
-  // front of him, the one at his side eyeing his wallet, the one pressing in
-  // behind. They keep their backs to the camera (the concert crowd's rule), so
-  // the swarm reads without showing faces the story has not introduced yet.
-  // Ramu only appears for the dosa-corner beat that follows.
+  // The NGO blitz: the canvassers crowd Sameer in a tight arc at the counter —
+  // the pamphlet pusher in front of him, the one at his side reading his
+  // wallet, the one pressing in at his back — each squared up to him (yaw is
+  // atan2 of the direction to Sameer), so the group reads as a swarm rather
+  // than a queue. Ramu only appears for the dosa-corner beat that follows.
   if(act.id==='act2'&&kind==='intro'&&sceneId==='cyber_cafe'&&index>=1&&index<=3)
     return [
       {character:'sameer',at:[-3.15,3.4],rot:-2.1,pose:'idle',staged:true},
-      {character:'veer',at:[-3.45,2.5],rot:3.05,pose:'idle',staged:true},
-      {character:'enakshi',at:[-2.35,2.95],rot:3.5,pose:'idle',staged:true},
-      {character:'tanush',at:[-4.3,3.75],rot:2.85,pose:'idle',staged:true},
+      {character:'veer',at:[-3.0,2.95],rot:-.322,pose:'idle',staged:true},
+      {character:'enakshi',at:[-2.5,3.9],rot:-2.226,pose:'idle',staged:true},
+      {character:'tanush',at:[-3.45,4.15],rot:2.761,pose:'idle',staged:true},
     ];
   const capture=act.id==='act3'&&kind==='outro'&&sceneId==='ngo_hq';
   const discovery=act.id==='act4'&&kind==='outro'&&sceneId==='hospital';
