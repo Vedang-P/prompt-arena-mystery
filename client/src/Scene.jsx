@@ -1237,7 +1237,10 @@ function HospitalRoom({room,hot,actId,phase,paused=false,cast=[]}) {
   <DetailProp asset="nurse_station" position={[4.7,0,-2.2]}/>
   <DetailProp asset="monitor" position={[4.7,1.1175,-2.2]}/>
   <DetailProp asset="clipboard" position={[3.7,1.1175,-2.2]} scale={.6}/>
-  <DetailProp asset="pencil_cup" position={[5.7,1.1175,-2.2]}/>
+  {/* The nurse station's tall counter (top y=1.118) ends near local x≈0.5
+      (world x≈5.2); beyond that it steps down to the low accessible desk
+      (top y≈0.85). The cup sits on the tall counter beside the monitor. */}
+  <DetailProp asset="pencil_cup" position={[5.05,1.1175,-2.2]}/>
   <DetailProp asset="wheelchair_01" position={[6.1,0,.6]} rotation={[0,-.6,0]}/>
   {[4,5.15,6.3].map(x=><DetailProp key={x} asset="plastic_monobloc_chair_01" position={[x,0,3.2]} rotation={[0,Math.PI,0]}/>)}
   <DetailProp asset="filing_cabinet" position={[-7.4,0,-2.4]}/>
