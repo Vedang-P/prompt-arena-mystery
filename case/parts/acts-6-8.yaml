@@ -28,7 +28,7 @@ acts:
     entry_room: sameer_room
     rooms: [sameer_room, hospital, enakshi_house]
     intro:
-      - { speaker: narrator, text: "He goes home and finds the mask on his bed — decorated too, with beautiful lace tied around the horns. Why was it here, how was it here? Was it the police? Did he do the wrong thing by taking all the evidence to the police?" }
+      - { speaker: narrator, text: "On his bed, the mask — decorated too, with beautiful lace tied around the horns. Why was it here, how was it here? Was it the police? Did he do the wrong thing by taking all the evidence to the police?" }
       - { speaker: narrator, text: "Before he could fall into a spiral, he hears the door knock. Sameer peeked through — it was Veer. He looked unarmed, but Sameer kept his trusty hammer with him. He opened the door." }
       - { speaker: veer, text: "How the hell did you know about us? You couldn't keep your nose from sniffing about." }
       - { speaker: narrator, text: "Sameer saw for the first time how pathetic Veer looked." }
@@ -42,6 +42,7 @@ acts:
       - { speaker: narrator, text: "The leader wiped his eyes; the people in front of him wailed. A low-lying fog released. Damn, this man was dramatic." }
       - { speaker: leader, text: "Friends, I had seen divinity. The Moon Goddess had begged me to stop. Who am I but a humble mortal to follow her? I had to share this revelation with everyone I could. People rejected — the worst was when I couldn't share it with the future, our children." }
       - { speaker: leader, text: "Shouldn't they have the right to know their holy mother?" }
+      - { speaker: leader, text: "Shouldn't they be grateful for her protection from the horrors out there?" }
       - { speaker: narrator, text: "The crowd roared, then went animalistic — no different from a bunch of dogs barking. The smoke rose higher; the people were nothing more than their masks. Sameer felt numb." }
     complete: { clues: [], puzzles: [p_hand_owner, p_floor] }
 
@@ -144,7 +145,7 @@ rooms:
         type: travel
         to: hospital
         label: "To Shashdhar Hospital"
-        requires: { puzzles: [p_continue] }
+        requires: { puzzles: [p_nigeria] }
         position: [3.6, 0.2, 3.6]
 
   - id: hospital
@@ -520,7 +521,7 @@ clues:
     description: "Lines of cargo being loaded into trucks at the hospital gate."
   - id: c_disguise
     name: "The Lone Worker"
-    description: "A man working away from the group, clueless, mostly left to his own devices. Knocked out with the hammer and pushed into the trunk — once he had changed into worker clothes, his disguise was complete."
+    description: "The backdoor won't work this time and the hospital is closed to patients, but there is a way in: a man working away from the group, clueless, mostly left to his own devices. Knocked out with the hammer and pushed into the trunk — once he had changed into worker clothes, his disguise was complete."
     requires: [c_trucks]
   - id: c_caught
     name: "The Hand on His Neck"
@@ -755,7 +756,9 @@ puzzles:
       - "the leader"
       - "leader"
       - "tanush"
-    success: "The Leader — Tanush. A decorated mask, beautiful lace tied around the horns — left on his own bed. Why was it here, how was it here? Was it the police? Did he do the wrong thing by taking all the evidence to the police?"
+      - "the big bad"
+      - "big bad"
+    success: "The Leader — Tanush. It clearly belonged to the Big Bad."
     grants: [c_mask_owner]
     requires: { clues: [c_mask] }
 
@@ -769,7 +772,7 @@ puzzles:
       - "the wendigo mask"
       - "the mask"
       - "wendigo design"
-    success: "Veer hesitated. \"I mean — I've heard some being tailed around. Usually the aftermath is messy. If there is something like that happening, I suggest that you step down. It's not worth it man.\""
+    success: "Veer hesitated. \"I mean — I've heard some being tailed around. Usually the aftermath is messy. If there is something like that happening, I suggest that you step down. It's not worth it man.\" Veer then looks at him — \"Hey man, I'm sorry I blasted at you right now. I really didn't know the extent of what they had done. I don't want them to target my family too, man. Please don't send it.\" Sameer agreed and closed the door. Veer was in the first file he had sent."
     requires: { puzzles: [p_mask_owner] }
 
   - id: p_lua
@@ -781,7 +784,7 @@ puzzles:
       - "selenocide"
     success: "Lua Pharmaceuticals and Selenocide. Sameer dives into digital procurement logs and invoices — industrial solvents, specialised alkaloid reagents, pharmaceutical binders, sold in separate peptide packs. The amount had reached a level high only in the last year. It wasn't transported to India — it was transported to Nigeria."
     grants: [c_lua_files]
-    requires: { puzzles: [p_veer_mask] }
+    requires: { puzzles: [p_continue] }
 
   - id: p_nigeria
     kind: text
@@ -801,7 +804,7 @@ puzzles:
       - "workshop pamphlets"
       - "ngo workshop pamphlets"
       - "the ngo workshop pamphlets"
-    success: "The NGO pamphlet! Perigee had hosted a huge workshop in Nigeria just a year ago. He looked up the aftermath — an article on the second page of Google, connecting the same dots he was about to connect. This was the journalist's last article. He tries not to think about what happened to her."
+    success: "The NGO pamphlet! Perigee had hosted a huge workshop in Nigeria just a year ago. He looked up the aftermath — an article on the second page of Google, connecting the same dots he was about to connect. This was the journalist's last article. He tries not to think about what happened to her. The volunteers had mentioned a huge workshop today; he needs to stop it — if not to save himself or Parth, then to save the children. He thinks of contacting the police; the mask stares at him. He drops his phone and picks up the mask. He needs to do it himself."
     grants: [c_article]
     requires: { clues: [c_lua_files] }
 
@@ -813,7 +816,7 @@ puzzles:
       - "Stop"
     answers:
       - "Continue"
-    success: "He should continue. He can't let these days go to waste — he could make a big change by just doing a little more. The volunteers had mentioned a huge workshop today; he needs to stop it — if not to save himself or Parth, then to save the children. He thinks of contacting the police. The mask stares at him. He drops his phone and picks up the mask. He needs to do it himself."
+    success: "He should continue. He can't let these days go to waste — he could make a big change by just doing a little more."
     option_endings:
       Stop: ending_cult
     requires: { puzzles: [p_veer_mask] }
