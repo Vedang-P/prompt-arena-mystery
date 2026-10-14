@@ -1606,8 +1606,7 @@ export default function Scene({
 
   const [sceneStalled, setSceneStalled] = useState(false);
   const [sceneReady, setSceneReady] = useState(false);
-  const [sceneDismissed, setSceneDismissed] = useState(false);
-  useEffect(() => { setSceneStalled(false); setSceneReady(false); setSceneDismissed(false); }, [room.id]);
+  useEffect(() => { setSceneStalled(false); setSceneReady(false); }, [room.id]);
 
   const bounds = ROOM_BOUNDS[room.id] ?? { x: 6.5, zMin: -5.5, zMax: 9 };
   const bg = room.id==='abandoned_field' ? '#26394e' : isOutdoor ? '#05070d' : '#080604';
@@ -1650,8 +1649,8 @@ export default function Scene({
           <Vignette offset={0.3} darkness={room.id==='abandoned_field'?.16:.35} />
         </EffectComposer>}
       </Canvas>
-      {!sceneReady && !sceneDismissed && <SceneLoading label={sceneStalled ? 'Still starting 3D graphics' : 'Opening the scene'} onDismiss={() => setSceneDismissed(true)} />}
-      {sceneReady && sceneStalled && !sceneDismissed && <SceneLoading label="Restoring 3D graphics" onDismiss={() => setSceneDismissed(true)} />}
+      {!sceneReady && <SceneLoading label={sceneStalled ? 'Still starting 3D graphics' : 'Opening the scene'} />}
+      {sceneReady && sceneStalled && <SceneLoading label="Restoring 3D graphics" />}
       </div>
     </WorldBoundary>
   );

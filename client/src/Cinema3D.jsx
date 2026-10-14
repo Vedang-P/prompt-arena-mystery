@@ -68,8 +68,8 @@ export default function Cinema({sceneId='gazebo',shot='wide',cast=[],speaker,end
   const people=useMemo(()=>placeCast(sceneId,cast),[cast,sceneId]);
   const cinematicNight=['concert','ngo_hq'].includes(sceneId)&&['capture','departure'].includes(cinematicPhase);
   const backdrop=cinematicNight?'#26394e':'#10171c';
-  const [ready,setReady]=useState(false),[failed,setFailed]=useState(false),[stalled,setStalled]=useState(false),[dismissed,setDismissed]=useState(false);
-  useEffect(()=>{setReady(false);setFailed(false);setStalled(false);setDismissed(false);},[sceneId,cinematicPhase]);
+  const [ready,setReady]=useState(false),[failed,setFailed]=useState(false),[stalled,setStalled]=useState(false);
+  useEffect(()=>{setReady(false);setFailed(false);setStalled(false);},[sceneId,cinematicPhase]);
   const handleReady=()=>{setReady(true);onReady?.();};
   const handleFail=()=>{setFailed(true);onFail?.();};
   // The renderer factory inside `createRenderer` keeps retrying until the
@@ -97,8 +97,8 @@ export default function Cinema({sceneId='gazebo',shot='wide',cast=[],speaker,end
       <ShotCamera roomId={sceneId} shot={shot} cast={people} speaker={speaker} paused={paused} cinematicPhase={cinematicPhase}/>
       {quality==='high'&&<EffectComposer multisampling={0}><Bloom intensity={.12} luminanceThreshold={1} mipmapBlur/><Vignette offset={.22} darkness={.35}/></EffectComposer>}
     </Canvas>
-    {!ready&&!failed&&!dismissed&&<SceneLoading label={stalled?'Still starting 3D graphics':'Opening the scene'} onDismiss={()=>setDismissed(true)}/>}
-    {ready&&stalled&&!dismissed&&<SceneLoading label="Restoring 3D graphics" onDismiss={()=>setDismissed(true)}/>}
+    {!ready&&!failed&&<SceneLoading label={stalled?'Still starting 3D graphics':'Opening the scene'}/>}
+    {ready&&stalled&&<SceneLoading label="Restoring 3D graphics"/>}
     </div>
   </WorldBoundary>;
 }

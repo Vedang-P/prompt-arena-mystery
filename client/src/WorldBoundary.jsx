@@ -77,24 +77,17 @@ export function SceneWatchdog({ onState, timeoutMs = 10000 }) {
 // the player can dismiss it (button or Esc), a Reload action appears while it
 // lingers, and it always steps aside on its own — the stage can still light up
 // later, and the room stays playable through Explore and the room tabs.
-export function SceneLoading({ label = 'Opening the scene', onDismiss, expireMs = 15000 }){
+export function SceneLoading({ label = 'Opening the scene', expireMs = 15000 }){
   const {progress,total}=useProgress();
   const [expired,setExpired]=useState(false);
   const [waited,setWaited]=useState(false);
-  const dismiss=useRef(onDismiss);
-  dismiss.current=onDismiss;
-  const step=()=>{setExpired(true);dismiss.current?.();};
   useEffect(()=>{const timer=setTimeout(()=>setExpired(true),expireMs);return()=>clearTimeout(timer);},[expireMs]);
-  // Long enough that a normal load never shows the controls, short enough that a
-  // stuck scene can never hold the player hostage.
+  // Long enough that a normal load never shows the recovery action, short enough
+  // that a stuck scene can never hold the player hostage.
   useEffect(()=>{const timer=setTimeout(()=>setWaited(true),3500);return()=>clearTimeout(timer);},[]);
-  useEffect(()=>{
-    const key=(e)=>{if(e.key==='Escape')step();};
-    window.addEventListener('keydown',key);
-    return()=>window.removeEventListener('keydown',key);
-  },[]);
-  // The card must never leave a black stage unexplained: once it expires a small
-  // chip stays behind so the player can always bring the scene back.
+  // The card is not dismissible: the scene either arrives, expires into the
+  // recovery chip, or offers a reload once every asset has landed. Skipping
+  // ahead only ever walked players into an unlit stage.
   if(expired)return <button className="scene-recovery-chip" onClick={()=>window.location.reload()}>Scene not responding — reload ↺</button>;
   const known=total>0;
   const pct=known?Math.max(0,Math.min(100,Math.round(progress))):null;
@@ -106,9 +99,8 @@ export function SceneLoading({ label = 'Opening the scene', onDismiss, expireMs 
         <span style={pct===null?undefined:{width:`${pct}%`}}/>
       </div>
       <small>{pct===null?'Preparing…':`${pct}%`}</small>
-      {waited&&<div className="scene-loader-actions">
-        <button type="button" className="scene-loader-action" onClick={step}>Continue without waiting →</button>
-        {pct!==null&&pct>=100&&<button type="button" className="scene-loader-action ghost" onClick={()=>window.location.reload()}>Reload scene ↺</button>}
+      {waited&&pct!==null&&pct>=100&&<div className="scene-loader-actions">
+        <button type="button" className="scene-loader-action ghost" onClick={()=>window.location.reload()}>Reload scene ↺</button>
       </div>}
     </div>
   </div>;
