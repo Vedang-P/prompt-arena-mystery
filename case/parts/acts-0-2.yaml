@@ -452,6 +452,14 @@ characters:
     deflections:
       - "Sameer drums his fingers on his thigh and changes the subject."
       - "Sameer laughs too loudly. \"Yeah. Anyway —\""
+      - "Sameer stares at the ceiling and counts to five. It doesn't help."
+      - "He checks the door, the window, and the door again."
+      - "\"Okay. New question. Same panic.\""
+      - "\"Focus, Sameer. Focus.\""
+      - "Sameer rubs his face with both hands and laughs at nothing."
+      - "He types a reply, deletes it, and turns the phone face-down."
+      - "\"Right. Cool. Totally normal day.\""
+      - "\"I'm going to die asking stupid questions.\""
     snubs:
       - "Sameer stares. \"Are we doing this or not?\""
       - "Sameer shakes his head. \"That's not even a question.\""
@@ -480,6 +488,14 @@ characters:
     deflections:
       - "Parth laughs it off like it was a joke."
       - "Parth shrugs. \"It's nothing. You know me.\""
+      - "Parth smiles and steers the talk to literally anything else."
+      - "\"You're overthinking it, man. That's your whole thing.\""
+      - "Parth checks his phone like it just buzzed. It didn't."
+      - "Parth laughs, already halfway out the door."
+      - "\"I gotta go. I'll call you. I promise.\""
+      - "Parth looks at his watch. He isn't wearing one."
+      - "\"Sameer. Drop it.\""
+      - "\"Nothing's wrong. You worry too much.\""
     snubs:
       - "Parth's smile doesn't reach his eyes. \"Drop it, man.\""
       - "Parth suddenly finds his phone very interesting."
@@ -663,6 +679,14 @@ characters:
     deflections:
       - "Enakshi hisses, low in her throat."
       - "Enakshi glances at the closet door behind her."
+      - "Enakshi mutters a chant under her breath and looks through you."
+      - "She grips the candlestick tighter and says nothing."
+      - "\"The goddess hears everything you say.\""
+      - "Enakshi turns her back and busies herself at the shrine."
+      - "Her eyes flick to the closet door, then back to you."
+      - "\"Leave. Before she takes you too.\""
+      - "She rocks slowly, humming a tuneless prayer."
+      - "Enakshi pinches out a candle with two fingers, unflinching."
     snubs:
       - "Enakshi bares her teeth. \"The goddess will judge you.\""
       - "Enakshi starts to hum something tuneless and will not stop."
@@ -689,6 +713,14 @@ characters:
     deflections:
       - "Tanush straightens a paper that is already straight."
       - "Tanush smiles at a point just past you."
+      - "Tanush caps his pen and sets it down with a soft click."
+      - "\"I have a meeting. Ask something worth my time.\""
+      - "He slides the calendar face-down without looking at it."
+      - "\"You mistake curiosity for evidence.\""
+      - "Tanush smiles, patient, and lets the silence do the work."
+      - "\"Everything here runs on schedule. Including this conversation.\""
+      - "He glances at the door, and somehow that is a threat."
+      - "\"We are done here.\""
     snubs:
       - "Tanush checks his watch. \"Is there a point to this?\""
       - "Tanush keeps writing. He does not look up."
@@ -716,6 +748,14 @@ characters:
     deflections:
       - "The leader laughs, low and rumbling, even though nothing was funny."
       - "The leader raises a hand, as if blessing you."
+      - "The leader spreads his arms as if addressing a congregation."
+      - "\"Ask better questions, child. She hears everything.\""
+      - "A low laugh rolls out of the mask, unhurried."
+      - "\"Faith answers what you cannot.\""
+      - "The leader turns to the candles and murmurs a prayer."
+      - "\"You are asking the wrong mortal.\""
+      - "He steps closer; the room seems to shrink."
+      - "\"All in her time. Not yours.\""
     snubs:
       - "The leader turns his back and opens a door. \"The goddess is waiting.\""
       - "The leader tilts his masked face. \"You bore me, child.\""

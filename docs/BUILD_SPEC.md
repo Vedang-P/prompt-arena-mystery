@@ -102,7 +102,9 @@ endings:
 canonical_qa: [{ character, q, keywords: [word], a }]
   # an answer is revealed only when every keyword appears in the question
   # (typo-tolerant) AND the question is >= 70% similar to `q`; otherwise the
-  # character replies with a cycling deflection
+  # character replies with a cycling deflection. The same ladder is the outage
+  # floor: a live turn that has not produced a finished reply within ~10s, or
+  # whose pool hangs/fails/is unconfigured, falls back to it (`npm run test:chat`)
 ```
 
 Validation (W4 extends `scripts/build-case.mjs`): unique ids; hotspot refs valid; puzzle

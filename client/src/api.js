@@ -69,11 +69,12 @@ export const accuse = (payload) =>
   }).then(json);
 
 export async function interrogate(character, text, { onDelta, onReset, onDone, reqId } = {}) {
-  // The server may walk its whole failover chain (12s first token + up to 60s per model),
-  // so this call gets a wider budget than ordinary requests.
+  // The server caps a live turn at ~10s and then streams the authored reply,
+  // so the interview always closes quickly; this budget only covers a
+  // genuinely dead connection.
   const res = await request('/api/interrogate', {
     method: 'POST',
-    timeout: 150000,
+    timeout: 20000,
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ character, text, reqId }),
   });

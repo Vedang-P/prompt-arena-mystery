@@ -13,6 +13,7 @@
     "validate:case": "node scripts/build-case.mjs --check",
     "test:engine": "node scripts/run-engine-tests.mjs",
     "test:llm": "node scripts/test-llm.mjs",
+    "test:chat": "npm run build:case && node scripts/test-chat-fallback.mjs",
     "talk:review": "node scripts/talk-review.mjs",
     "test:stress": "node scripts/stress-chat.mjs",
     "test:scenes": "node scripts/measure-actors.mjs && node scripts/test-scene-staging.mjs",

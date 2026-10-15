@@ -26,7 +26,7 @@ import {
   unlockedFactList,
   WRONG_ANSWER_PENALTY_CAP,
 } from './engine.js';
-import { makeLLM, llmConfigured } from './llm.js';
+import { makeLLM, llmConfig, llmConfigured } from './llm.js';
 import { createSession, hashCode, readSession } from './auth.js';
 
 const app = new Hono();
@@ -39,6 +39,16 @@ const RATE_WINDOW_MAX = 12;
 // case a stream dies without cleanup.
 const LIVE_CHAT_MS = 45_000;
 const liveChats = new Map();
+
+// A live turn must never leave the player staring at typing dots: if the pool
+// has not produced a finished reply inside this budget, the authored turn
+// (canonical answer, snub or cycling deflection) is streamed instead. The
+// deadline also covers the pool's capacity wait, which sits outside the model
+// timeout, so every character answers in about ten seconds even when the whole
+// pool is hanging. Operators can shorten it via LLM_TURN_BUDGET_MS.
+const CHAT_REPLY_MS = 10_000;
+const CHAT_FIRST_TOKEN_MS = 6_000;
+const CHAT_REPLY_GRACE_MS = 500;
 
 // ---------- event control (fullscreen enforcement) ----------
 // A team that leaves the arena gets a window to come back. The window is the
@@ -1276,6 +1286,9 @@ app.post('/api/interrogate', async (c) => {
     let storedSource = fallbackSource;
     if (llm) {
       let text = '';
+      let expired = false;
+      const llmCfg = llmConfig(c.env);
+      const replyMs = Math.min(CHAT_REPLY_MS, llmCfg.turnBudgetMs);
       try {
         const rows = await c.env.DB.prepare(
           'SELECT role, content FROM messages WHERE team_id = ? AND character = ? ORDER BY id DESC LIMIT 14'
@@ -1292,15 +1305,34 @@ app.post('/api/interrogate', async (c) => {
           question,
           actId
         );
-        for await (const delta of llm.stream(messages, {
-          maxTokens: 320,
-          temperature: 0.75,
-          session: `pa-${auth.teamId}-${characterId}`,
-        })) {
-          text += delta;
-          await send('delta', { text: delta });
-        }
+        // The stream and a hard deadline race: whichever lands first wins, and
+        // once the deadline fires the authored turn replaces whatever the
+        // model was still drafting. The deadline covers the pool's capacity
+        // wait too, so a saturated pool cannot stretch a turn past the budget.
+        const turn = (async () => {
+          for await (const delta of llm.stream(messages, {
+            maxTokens: 320,
+            temperature: 0.75,
+            session: `pa-${auth.teamId}-${characterId}`,
+            firstTokenMs: Math.min(CHAT_FIRST_TOKEN_MS, llmCfg.firstTokenMs, replyMs),
+            timeoutMs: replyMs,
+          })) {
+            if (expired) break;
+            text += delta;
+            await send('delta', { text: delta });
+          }
+        })();
+        let timer;
+        await Promise.race([
+          turn.catch(() => {}),
+          new Promise((resolve) => {
+            timer = setTimeout(resolve, replyMs + CHAT_REPLY_GRACE_MS);
+          }),
+        ]);
+        clearTimeout(timer);
+        expired = true;
       } catch {
+        expired = true;
         // A limited or unreachable pool degrades to the authored turn.
       }
       const rawReply = text.trim();
