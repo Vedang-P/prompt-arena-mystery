@@ -2415,6 +2415,9 @@ app.post('/api/admin/teams/:id/reset', async (c) => {
   ).bind(addPenalty, JSON.stringify(nextFlags), id).run();
   const after = await ctx.env.DB.prepare('SELECT penalties FROM progress WHERE team_id = ?').bind(id).first();
   const penalties = Number(after?.penalties ?? Number(row.penalties ?? 0) + addPenalty);
+  // Last-passed reads the act_complete log, so a reset must clear this team's
+  // passes or the board keeps showing the run that just ended.
+  await ctx.env.DB.prepare("DELETE FROM events WHERE team_id = ? AND type = 'act_complete'").bind(id).run();
   await ctx.env.DB.prepare('INSERT INTO events(team_id, type, detail) VALUES (?,?,?)')
     .bind(id, 'admin_reset', JSON.stringify({ penalty: addPenalty })).run();
   await audit(ctx.env, 'reset', id, { penalty: addPenalty });
@@ -2481,6 +2484,9 @@ app.post('/api/admin/reset-all', async (c) => {
     `UPDATE teams SET disqualified = 0, disqualified_at = NULL, disqualify_reason = NULL,
       exit_strikes = 0, pending_exit_at = NULL, pending_exit_kind = NULL`
   ).run();
+  // Last-passed reads the act_complete log, so every team's old passes must go
+  // too — otherwise a reset board still reports the previous run's finale.
+  await ctx.env.DB.prepare("DELETE FROM events WHERE type = 'act_complete'").run();
   if (clearMessages) await ctx.env.DB.prepare('DELETE FROM messages').run();
   await audit(ctx.env, 'reset_all', null, { teams: rows.length, clearMessages });
   return c.json({ ok: true, teams: rows.length, messagesCleared: clearMessages });

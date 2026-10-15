@@ -212,6 +212,27 @@ assert.equal(resetTeam.team.act, 'act0');
 assert.equal(resetTeam.team.penalties, 5);
 assert.equal(resetTeam.team.strikes, 2);
 
+// ---- reset clears the pass log ----
+await request('/api/act/complete', alphaCookie, { act: 'act0' });
+const afterPass = await (await request(`/api/admin/teams/${alphaRow.id}`, adminCookie)).json();
+assert.equal(afterPass.team.act, 'act1');
+assert.equal(afterPass.team.lastPassedAct, 'act0');
+await request(`/api/admin/teams/${alphaRow.id}/reset`, adminCookie, {});
+const clearedPass = await (await request(`/api/admin/teams/${alphaRow.id}`, adminCookie)).json();
+assert.equal(clearedPass.team.act, 'act0');
+assert.equal(clearedPass.team.lastPassedAct, null, 'a reset run keeps no last-passed act');
+
+// A pass after the reset shows again, and reset-all wipes it for every team.
+await request('/api/act/complete', alphaCookie, { act: 'act0' });
+const beforeAll = await (await request('/api/admin/overview', adminCookie)).json();
+assert.equal(beforeAll.teams.find((t) => t.id === alphaRow.id).lastPassedAct, 'act0');
+await request('/api/admin/reset-all', adminCookie, { clearMessages: true });
+const afterAll = await (await request('/api/admin/overview', adminCookie)).json();
+assert(
+  afterAll.teams.every((t) => t.act === 'act0' && t.lastPassedAct === null),
+  'reset-all returns every team to a clean board'
+);
+
 // ---- announcements ----
 await request('/api/admin/announce', adminCookie, { text: 'Ten minutes remaining.', level: 'warning' });
 const ann = await (await request('/api/announcement')).json();
