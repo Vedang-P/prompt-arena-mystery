@@ -3524,13 +3524,14 @@ puzzles:
       - c_office
   - id: p_years
     kind: text
+    exact: true
     prompt: '"In my time this place flourished. Do you know how long I have been here?"'
     answers:
-      - "5"
-      - five
-      - 5 years
-      - five years
-    success: "\"You've barely been here for 5 years, old man — you haven't done shit.\" The leader looked at him, then looked at Parth."
+      - "6"
+      - six
+      - 6 years
+      - six years
+    success: "\"You've barely been here for 6 years, old man — you haven't done shit.\" The leader looked at him, then looked at Parth."
     requires:
       clues:
         - c_office

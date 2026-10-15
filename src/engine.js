@@ -194,6 +194,9 @@ function answerMatches(puzzle, raw) {
   }
 
   if (!normalized) return false;
+  // Puzzles flagged `exact` (codes, counts) accept only an authored answer —
+  // no typo tolerance, so a wrong number can never pass.
+  if (puzzle.exact) return accepted.includes(normalized);
   if (accepted.includes(normalized)) return true;
   if (puzzle.kind === 'choice') {
     // A letter stands for the option at that index — accepted only when that
