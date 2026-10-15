@@ -16,6 +16,16 @@ export function maskVisibleFor({hotspots=[],act=null,phase=null}={}) {
   if(phase==='mask_reveal')return true;
   return hotspots.some(h=>h.puzzle==='p_mask_owner')||act==='act7'||act==='act8';
 }
+// Act 7's hospital visit opens in the dispatch bay, where the cargo, lone
+// worker and service-lift beats happen. The moment the lift lead is recorded
+// he is upstairs: the act continues in the main hospital — the room where the
+// sacrifice happened — so the hand-on-neck lead waits by the altar, right
+// before the leader's speech, instead of floating over the cargo crates.
+// Acts 4–6 and every cinematic phase keep the ward game room.
+export function hospitalWingFor(actId, phase, solvedPuzzles = []) {
+  if (actId === 'act7' && phase !== 'ceremony' && !(solvedPuzzles ?? []).includes('p_floor')) return 'dispatch';
+  return 'ward';
+}
 export function locationFor(act, kind, index) {
   const scenes = {
     act1:{intro:['parth_home','parth_home','parth_home','parth_home','parth_home','parth_home','parth_room'],outro:['parth_home','parth_home']},

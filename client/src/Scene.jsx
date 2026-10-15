@@ -3,7 +3,7 @@ import { CinemaProp, ParkGround, WindTree, CeilingFan } from './CinemaAssets.jsx
 import {DetailProp,InstancedDetailScatter,TerrainSurface,WallSign,Cable,ComputerStation,ShelfContents,FencePanel} from './EnvironmentDetails.jsx';
 import { BEDROOM, SAMEER_BED, HOME_STAIRS, HOME_UPPER_DOORWAY, HOME_BEDROOM, backWallPanels, POLICE, HOSPITAL_BED, HOSPITAL_BED_GROUP, HOSPITAL_RITUAL_CROWD, DESK_TOP, DESK_SEAT, PARTH_ANCHORS, PARK, DETAIL_ANCHORS,FIELD,FIELD_TRACKS,FIELD_BACKGROUND_BUILDING,FIELD_OVERGROWTH,ROOM_VIEWS,ROOM_BOUNDS,updateFieldBackpackOrbit,updateHospitalSecurityOrbit,updateLoadingBayOrbit } from './SceneLayout.js';
 import DemonMask from './DemonMask.jsx';
-import {seatContact,maskVisibleFor} from './SceneStaging.js';
+import {seatContact,maskVisibleFor,hospitalWingFor} from './SceneStaging.js';
 import Actor from './Actor.jsx';
 import { useSettings } from './Settings.jsx';
 import { SceneLoading, SceneWatchdog, WorldBoundary, SceneReady, AssetBoundary } from './WorldBoundary.jsx';
@@ -1214,11 +1214,19 @@ function NgoArchiveRoom({room,hot}) {
 function HospitalRoom({room,hot,actId,phase,paused=false,cast=[]}) {
  if(actId==='act8'&&String(phase??'').startsWith('ending_'))return <HospitalEndingRoom phase={phase} paused={paused}/>;
  // Acts 7/8 share one ceremony tableau: the masked crowd rings the altar and
- // the leader (staged by the cinematic) officiates behind it. Act 7's own
- // gameplay stays in the loading bay, where the cargo beats happen.
+ // the leader (staged by the cinematic) officiates behind it. Act 7's hospital
+ // visit opens in the loading bay for the cargo beats; once the service lift
+ // lands him on the ritual floor the act plays on in the main hospital — the
+ // hand-on-neck lead waits by the altar with the ceremony already in place,
+ // right before the leader's speech.
  const ceremony=phase==='ceremony';
- const ritual=['act6','act8'].includes(actId)||ceremony;
- const cargo=actId==='act7'&&!ceremony;
+ const wing=hospitalWingFor(actId,phase,hot.solvedPuzzles);
+ const cargo=wing==='dispatch';
+ const ritual=['act6','act8'].includes(actId)||ceremony||(actId==='act7'&&!cargo);
+ // The bay owns the cargo leads: once the act moves to the ward they are all
+ // resolved, and their anchors only fit the dispatch set — floating them over
+ // the ritual room would stack the labels on the altar.
+ const markers=actId==='act7'?{...room,hotspots:(room.hotspots??[]).filter(h=>!['h7_trucks','h7_worker','h7_floor'].includes(h.id))}:room;
  // The cinematic owns whoever it stages; the room fills in the rest of the crowd.
  const staged=new Set(cast.map((member)=>member.character));
  if(cargo)return <HospitalDispatch room={room} hot={hot}/>;
@@ -1228,7 +1236,7 @@ function HospitalRoom({room,hot,actId,phase,paused=false,cast=[]}) {
   <WallSign position={[0,2.6,-4.93]} width={3.4} height={.7} title="SHASHDHAR HOSPITAL" lines={['WARD 03 / RESTRICTED ACCESS']} background="#325052" ink="#e4eee9"/>
   <DoorOpening position={[-5.8,0,-4.4]} label="SERVICE ACCESS"/>
   <DoorOpening position={[5.8,0,-4.4]} label="OPERATING THEATRE"/>
-  {!cargo&&<DetailProp asset="hospital_bed" position={HOSPITAL_BED.center} rotation={[0,.08,0]}/>}
+  <DetailProp asset="hospital_bed" position={HOSPITAL_BED.center} rotation={[0,.08,0]}/>
   <DetailProp asset="bedside_cabinet" position={[-6,0,-1.1]}/>
   <DetailProp asset="privacy_curtain" position={[-3,1.045,-2]} rotation={[0,Math.PI/2,0]}/>
   <DetailProp asset="medical_cart" position={[-5.8,0,1.3]}/>
@@ -1264,7 +1272,7 @@ function HospitalRoom({room,hot,actId,phase,paused=false,cast=[]}) {
   <WallSign position={[7.93,2,1]} rotation={[0,-Math.PI/2,0]} width={1.8} height={.55} title="SECURITY" lines={['AUTHORISED STAFF ONLY']}/>
   <Fluorescent position={[-3,3.3,-1]}/><Fluorescent position={[3,3.3,-1]} delay={3.2}/><Fluorescent position={[0,3.3,2.2]} delay={1.4}/>
   <pointLight position={[0,2.25,.3]} color="#e1eeef" intensity={7} distance={14}/>
-  <HotspotMarkers room={room} hot={hot}/>
+  <HotspotMarkers room={markers} hot={hot}/>
  </group>;
 }
 

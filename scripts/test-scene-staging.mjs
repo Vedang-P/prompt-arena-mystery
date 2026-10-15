@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {AnimationMixer,Box3,PerspectiveCamera,Raycaster,Vector3} from 'three';
 import {caseData} from '../src/case.js';
-import {locationFor,storyCast,placeCast,wideShot,roomWideShot,captureShot,crowdShot,cinematicPhaseFor,maskVisibleFor} from '../client/src/SceneStaging.js';
+import {locationFor,storyCast,placeCast,wideShot,roomWideShot,captureShot,crowdShot,cinematicPhaseFor,maskVisibleFor,hospitalWingFor} from '../client/src/SceneStaging.js';
 import {createFootContact} from '../client/src/FootContact.js';
 import {PARK,BEDROOM,SAMEER_BED,DETAIL_ANCHORS,HOME_STAIRS,HOME_UPPER_DOORWAY,HOME_BEDROOM,backWallPanels,DESK_TOP,FIELD,FIELD_TRACKS,ROOM_VIEWS,updateFieldBackpackOrbit,updateHospitalSecurityOrbit,HOSPITAL_BED,HOSPITAL_BED_GROUP,HOSPITAL_RITUAL_CROWD} from '../client/src/SceneLayout.js';
 import {loadGeometry} from './gltf-geometry.mjs';
@@ -119,6 +119,20 @@ assert(maskVisibleFor({hotspots:[],act:'act8'}),'The mask must still lie on the 
 assert(maskVisibleFor({hotspots:[],act:'act6',phase:'mask_reveal'}),'The reveal phase must force the mask visible');
 assert(!maskVisibleFor({hotspots:[],act:'act6'}),'The mask must not lie on the bed before Act 7');
 assert(!maskVisibleFor({hotspots:[maskHotspot],act:'act7',phase:'mask_taken'}),'Once taken, the mask must never return to the bed');
+// Act 7's hospital gameplay changes wings with the story: the dispatch bay
+// hosts the cargo beats, and the service lift lands him in the main hospital
+// where the hand-on-neck lead waits by the altar — right before the leader's
+// speech. The cinematic phases and every other act stay in the ward, so the
+// lead never floats over the cargo crates.
+assert.equal(hospitalWingFor('act7',null,[]),'dispatch','Act 7 must open in the loading bay before the lift');
+assert.equal(hospitalWingFor('act7',null,['p_floor']),'ward','The service lift must land Act 7 in the main hospital');
+assert.equal(hospitalWingFor('act7','ceremony',[]),'ward','The closing speech must stay in the ceremony room');
+assert.equal(hospitalWingFor('act6',null,[]),'ward','Act 6 gameplay keeps the ritual ward');
+assert.equal(hospitalWingFor('act5',null,[]),'ward','Act 5 keeps the ward');
+const neckHotspot=caseData.rooms.find(r=>r.id==='hospital').hotspots.find(h=>h.id==='h7_neck');
+assert(neckHotspot&&neckHotspot.puzzle==='p_hand_owner','The hand-on-neck lead must stand in the hospital room');
+assert.deepEqual(neckHotspot.position,[0,1.05,-2.1],'The hand-on-neck lead must wait in front of the ritual altar');
+assert.deepEqual(DETAIL_ANCHORS.hospital.h7_neck,neckHotspot.position,'The hand-on-neck marker must share its altar-line anchor');
 // Act 7 opening: Veer must not be on stage before the narration names him; he
 // arrives with the knock and the two stand face to face in the bedroom — not
 // Sameer sitting at his desk with his back turned — so the room, not a generic
