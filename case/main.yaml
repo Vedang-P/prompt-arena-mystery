@@ -3504,7 +3504,7 @@ puzzles:
       - plush carpets
       - mahogany furniture
       - plush carpets and mahogany
-    success: Plush carpets and mahogany furniture — a world apart from the sterile hospital corridors.
+    success: "Plush carpets and mahogany furniture — a world apart from the sterile hospital corridors. Parth still stands wide-eyed, looking at the leader. The leader calms himself down: \"I welcomed you in — I could have crushed you off like a bug. I didn't. I saw potential in you, yet you spit it back.\" Sameer genuinely hated this man; he couldn't care less what he had done for him — if he didn't bash his head in, then his name isn't his."
     fail_message: "Not quite — the office was a world apart from the hospital: plush carpets, mahogany furniture."
     grants:
       - c_office
