@@ -678,6 +678,8 @@ acts:
       - speaker: narrator
         text: Sameer is found back in his room, waking up to a new day. The birds are chirping and the sun is shining. He looks panicked — how did he get here? He was at the hospital, right?
       - speaker: narrator
+        text: The game has ended, player. You have won — Sameer has found Parth. The cult has been exposed. Now everything goes back to normal.
+      - speaker: narrator
         text: "There is a ping on his phone. A new voice note: \"You're not needed anymore. Your work is done. Now disappear.\" Sameer looks at the screen in confusion. The screen goes dark all of a sudden."
     complete:
       clues:
