@@ -294,12 +294,6 @@ rooms:
   - id: tanush_office
     hotspots:
       # Act VIII
-      - id: h8_office_clue
-        act: act8
-        type: clue
-        clue: c_office
-        label: "Plush carpets, mahogany"
-        position: [3.6, 0.9, 3.5]
       - id: h8_office
         act: act8
         type: puzzle
@@ -865,6 +859,7 @@ puzzles:
 
   - id: p_spiral
     kind: text
+    evidence: "/assets/pictures/evidence_fibonacci.jpg"
     prompt: "He looked at the hand pointing — wrinkled, veins protruding, spirals tattooed around his finger. He had learned about that in maths, hadn't he? What was it called again?"
     answers:
       - "fibonacci"
@@ -904,7 +899,7 @@ puzzles:
       - "plush carpets and mahogany"
     success: "Plush carpets and mahogany furniture — a world apart from the sterile hospital corridors."
     fail_message: "Not quite — the office was a world apart from the hospital: plush carpets, mahogany furniture."
-    requires: { clues: [c_office] }
+    grants: [c_office]
 
   - id: p_years
     kind: text
