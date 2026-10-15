@@ -14,6 +14,21 @@ process.env.ALLOW_CODE_LOGIN = 'true';
 process.env.DEV_TEAM_CODE = 'DEV-TEST-CODE';
 process.env.TEAM_CODES = 'Alpha=ALPHA-1';
 
+// A previous boot with an older sandbox code must not block the current one:
+// the seed realigns the stored hash with the environment, so boot once with a
+// stale code before the real test boot picks up DEV-TEST-CODE.
+const { spawnSync } = await import('node:child_process');
+const staleBoot = spawnSync(
+  process.execPath,
+  [
+    '--input-type=module',
+    '-e',
+    `process.env.DEV_TEAM_CODE='DEV-STALE-CODE';const {getEnv}=await import(${JSON.stringify(new URL('../lib/vercel-env.js', import.meta.url).href)});await getEnv();`,
+  ],
+  { env: { ...process.env, SQLITE_PATH: process.env.SQLITE_PATH }, encoding: 'utf8' }
+);
+assert.equal(staleBoot.status, 0, `stale seed boot failed: ${staleBoot.stderr}`);
+
 const { default: app } = await import('../src/worker.js');
 const { getEnv } = await import('../lib/vercel-env.js');
 const { caseData } = await import('../src/case.js');
@@ -36,6 +51,9 @@ const login = async (code) => {
 
 const devCookie = await login('DEV-TEST-CODE');
 const alphaCookie = await login('ALPHA-1');
+
+// The superseded code no longer opens the account: the environment owns it.
+assert.equal((await call('/api/login', null, { code: 'DEV-STALE-CODE' })).status, 401, 'the replaced sandbox code is refused');
 
 let state = await (await call('/api/state', devCookie)).json();
 assert.equal(state.dev, true, 'dev state flag');
