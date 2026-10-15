@@ -2360,15 +2360,24 @@ app.post('/api/admin/teams/:id/stage', async (c) => {
   if (!Number.isInteger(id) || id <= 0) return c.json({ error: 'unknown_team' }, 404);
   const act = String(ctx.body.act ?? '');
   if (!(caseData.acts ?? []).some((a) => a.id === act)) return c.json({ error: 'unknown_act' }, 400);
-  const row = await ctx.env.DB.prepare('SELECT id FROM teams WHERE id = ?').bind(id).first();
+  const row = await ctx.env.DB.prepare(
+    'SELECT t.id, p.discovered, p.solved_puzzles FROM teams t LEFT JOIN progress p ON p.team_id = t.id WHERE t.id = ?'
+  ).bind(id).first();
   if (!row) return c.json({ error: 'unknown_team' }, 404);
+  // A teleport never strands a team in an act it did not earn: the moved-to
+  // act arrives with every clue and puzzle of the acts behind it (the same
+  // checkpoint practice chapters start from), unioned with what the team
+  // already found so nothing earned is ever dropped.
+  const checkpoint = chapterCheckpoint(act);
+  const discovered = [...new Set([...parseJsonArray(row.discovered), ...checkpoint.discovered])];
+  const solvedPuzzles = [...new Set([...parseJsonArray(row.solved_puzzles), ...checkpoint.solvedPuzzles])];
   await ctx.env.DB.prepare(
-    "UPDATE progress SET act = ?, started_at = CASE WHEN started_at IS NULL AND ? != 'act0' THEN datetime('now') ELSE started_at END WHERE team_id = ?"
-  ).bind(act, act, id).run();
+    "UPDATE progress SET act = ?, discovered = ?, solved_puzzles = ?, started_at = CASE WHEN started_at IS NULL AND ? != 'act0' THEN datetime('now') ELSE started_at END WHERE team_id = ?"
+  ).bind(act, JSON.stringify(discovered), JSON.stringify(solvedPuzzles), act, id).run();
   await ctx.env.DB.prepare('INSERT INTO events(team_id, type, detail) VALUES (?,?,?)')
-    .bind(id, 'admin_stage', JSON.stringify({ act })).run();
-  await audit(ctx.env, 'stage', id, { act });
-  return c.json({ ok: true, act });
+    .bind(id, 'admin_stage', JSON.stringify({ act, clues: discovered.length, puzzles: solvedPuzzles.length })).run();
+  await audit(ctx.env, 'stage', id, { act, clues: discovered.length, puzzles: solvedPuzzles.length });
+  return c.json({ ok: true, act, discovered: discovered.length, solvedPuzzles: solvedPuzzles.length });
 });
 
 app.post('/api/admin/teams/:id/rename', async (c) => {

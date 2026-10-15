@@ -185,6 +185,17 @@ assert.equal(stage.act, 'act3');
 const stageState = await (await request('/api/state', alphaCookie)).json();
 assert.equal(stageState.act, 'act3');
 
+// ---- teleports carry the acts behind them ----
+assert(stageState.discovered.length > 0, 'a teleport grants the clues of the acts behind it');
+assert(stageState.discovered.includes('c_laptop_locked'), 'an Act 1 clue arrives when teleported to Act 3');
+assert.equal(stageState.discovered.length, stage.discovered);
+const stage8 = await (await request(`/api/admin/teams/${alphaRow.id}/stage`, adminCookie, { act: 'act8' })).json();
+assert(stage8.discovered > stage.discovered, 'a later teleport grants the acts in between');
+const stage8State = await (await request('/api/state', alphaCookie)).json();
+assert.equal(stage8State.act, 'act8');
+assert(stage8State.discovered.length === stage8.discovered, 'the full checkpoint is live for the team');
+assert(stage8State.discovered.includes('c_laptop_locked'), 'earlier grants survive a further teleport');
+
 const rename = await (await request(`/api/admin/teams/${alphaRow.id}/rename`, adminCookie, { name: 'Alpha Prime' })).json();
 assert.equal(rename.name, 'Alpha Prime');
 const clash = await request(`/api/admin/teams/${alphaRow.id}/rename`, adminCookie, { name: 'Bravo' });

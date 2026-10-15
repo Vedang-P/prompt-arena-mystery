@@ -1234,7 +1234,7 @@ function TeamDrawer({ teamId, now, version, busyAction, onClose, runAction }) {
                         ))}
                         {!detail.stages && <option value={team.act}>{team.act}</option>}
                       </select>
-                      <button className="admin-button" disabled={!!busyAction || stage === team.act} onClick={() => act('stage', { act: stage }, `Move ${team.name} to ${stage}?`, `Moved to ${stage}.`)}>
+                      <button className="admin-button" disabled={!!busyAction || stage === team.act} onClick={() => act('stage', { act: stage }, `Move ${team.name} to ${stage}? They keep their own progress and receive every clue and puzzle from the acts behind it.`, `Moved to ${stage} — previous acts granted.`)}>
                         Apply
                       </button>
                     </span>
