@@ -72,16 +72,12 @@ export function storyCast(act,kind,sceneId,index=0) {
     if(sceneId==='sameer_room')return [{character:'sameer',at:[.15,1.05],rot:Math.PI,pose:'idle',staged:true}];
     return [{character:'sameer',at:[0,-4.8],rot:Math.PI,pose:'idle',rotationX:index===0?-.12:0}];
   }
-  // Act 7 opens on the mask at Sameer's bed: he studies it alone until the
-  // narration names Veer at the knock. From then on the two stand face to face
-  // by the bed — Sameer never turns his back on his visitor, and the bedroom
-  // (not the desk or a generic home) frames the visit.
+  // Act 7 opens on the mask at Sameer's bed: he studies it alone and answers
+  // the mask lead before anyone knocks. Veer's arrival is not part of the
+  // opening — it plays as its own bedroom scene (p_veer_door) once the mask
+  // question is answered, so the conversation can never get ahead of it.
   if(act.id==='act7'&&kind==='intro'&&sceneId==='sameer_room'){
-    if(index<1)return [{character:'sameer',at:[-1.35,-.6],rot:-2.048,pose:'idle',staged:true}];
-    return [
-      {character:'sameer',at:[.9,.35],rot:-2.051,pose:'idle',staged:true},
-      {character:'veer',at:[-1.5,-.9],rot:1.091,pose:'idle',staged:true},
-    ];
+    return [{character:'sameer',at:[-1.35,-.6],rot:-2.048,pose:'idle',staged:true}];
   }
   // The NGO blitz: the canvassers crowd Sameer at the shopfront entrance — the
   // pamphlet pusher squared up in front of him in the doorway, the one reading

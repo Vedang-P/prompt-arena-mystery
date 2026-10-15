@@ -616,18 +616,6 @@ acts:
     intro:
       - speaker: narrator
         text: On his bed, the mask — decorated too, with beautiful lace tied around the horns. Why was it here, how was it here? Was it the police? Did he do the wrong thing by taking all the evidence to the police?
-      - speaker: narrator
-        text: Before he could fall into a spiral, he hears the door knock. Sameer peeked through — it was Veer. He looked unarmed, but Sameer kept his trusty hammer with him. He opened the door.
-      - speaker: veer
-        text: How the hell did you know about us? You couldn't keep your nose from sniffing about.
-      - speaker: narrator
-        text: Sameer saw for the first time how pathetic Veer looked.
-      - speaker: sameer
-        text: What are you talking about?
-      - speaker: veer
-        text: I'm hearing from my dad that you apparently got folders full of information. I swear to god, if my name comes in the cult, I will —
-      - speaker: narrator
-        text: Someone walks in hearing distance. Sameer looks at the guy, then back at Veer. He could get something from him right now.
     outro:
       - speaker: narrator
         text: The leader grabbed the mask from Sameer's bag, put it on him and pushed him into the room. Identical masks turned towards him. He took a seat near the back; the leader closed the door and walked to the podium.
@@ -653,6 +641,7 @@ acts:
         - p_hand_owner
         - p_floor
         - p_mask_owner
+        - p_veer_door
         - p_veer_mask
         - p_lua
         - p_nigeria
@@ -976,11 +965,11 @@ rooms:
           - -2.8
           - 0.705
           - -1.35
-      - id: sameer_room_a7_veer
+      - id: sameer_room_a7_knock
         act: act7
-        type: character
-        character: veer
-        label: The doorbell — Veer
+        type: puzzle
+        puzzle: p_veer_door
+        label: A knock at the door
         requires:
           puzzles:
             - p_mask_owner
@@ -988,6 +977,18 @@ rooms:
           - 3.6
           - 0.6
           - 2.6
+      - id: sameer_room_a7_veer
+        act: act7
+        type: character
+        character: veer
+        label: Veer at the door
+        requires:
+          puzzles:
+            - p_veer_door
+        position:
+          - -1.5
+          - 0.6
+          - -0.9
       - id: sameer_room_a7_follow
         act: act7
         type: puzzle
@@ -3318,6 +3319,37 @@ puzzles:
     requires:
       clues:
         - c_mask
+  - id: p_veer_door
+    kind: scene
+    prompt: A knock at the door.
+    lines:
+      - speaker: narrator
+        text: Before he could fall into a spiral, he hears the door knock. Sameer peeked through — it was Veer. He looked unarmed, but Sameer kept his trusty hammer with him. He opened the door.
+      - speaker: veer
+        text: How the hell did you know about us? You couldn't keep your nose from sniffing about.
+      - speaker: narrator
+        text: Sameer saw for the first time how pathetic Veer looked.
+      - speaker: sameer
+        text: What are you talking about?
+      - speaker: veer
+        text: I'm hearing from my dad that you apparently got folders full of information. I swear to god, if my name comes in the cult, I will —
+      - speaker: narrator
+        text: Someone walks in hearing distance. Sameer looks at the guy, then back at Veer. He could get something from him right now.
+    cast:
+      - character: sameer
+        at:
+          - 0.9
+          - 0.35
+        rot: -2.051
+      - character: veer
+        at:
+          - -1.5
+          - -0.9
+        rot: 1.091
+    success: Someone walks in hearing distance. Sameer looks at the guy, then back at Veer — he could get something from him right now.
+    requires:
+      puzzles:
+        - p_mask_owner
   - id: p_veer_mask
     kind: text
     prompt: What makes you think you're being followed?
@@ -3331,7 +3363,7 @@ puzzles:
     success: Veer hesitated. "I mean — I've heard some being tailed around. Usually the aftermath is messy. If there is something like that happening, I suggest that you step down. It's not worth it man." Veer then looks at him — "Hey man, I'm sorry I blasted at you right now. I really didn't know the extent of what they had done. I don't want them to target my family too, man. Please don't send it." Sameer agreed and closed the door. Veer was in the first file he had sent.
     requires:
       puzzles:
-        - p_mask_owner
+        - p_veer_door
   - id: p_lua
     kind: text
     prompt: There was a pharmaceutical company that he should look into. What was the company name, and what did he need to look into?

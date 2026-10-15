@@ -31,7 +31,7 @@ acts:
   - id: act7
     complete:
       clues: [c_trucks, c_disguise]
-      puzzles: [p_mask_owner, p_veer_mask, p_lua, p_nigeria, p_continue, p_hand_owner, p_floor]
+      puzzles: [p_mask_owner, p_veer_door, p_veer_mask, p_lua, p_nigeria, p_continue, p_hand_owner, p_floor]
   - id: act8
     complete:
       clues: [c_office, c_veer_death]

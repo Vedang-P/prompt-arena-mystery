@@ -248,7 +248,8 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 | p_police_where | text | ngo headquarters, the archive rooms, archive rooms in ngo headquarters | requires p_police_info |
 | p_police_video | text | pen camera, the pen camera, pen camera recording | requires p_police_where; grants c_mask |
 | p_mask_owner | text | the leader, leader, tanush, the big bad | requires c_mask; grants c_mask_owner |
-| p_veer_mask | text | wendigo, wendigo mask, mask | requires p_mask_owner |
+| p_veer_door | scene | — | the knock and Veer's arrival play as a story scene after the mask lead; requires p_mask_owner; unlocks the Veer conversation |
+| p_veer_mask | text | wendigo, wendigo mask, mask | requires p_veer_door |
 | p_lua | text | lua pharmaceuticals and selenocide, lua pharmaceuticals, selenocide | requires p_continue; grants c_lua_files |
 | p_nigeria | text | pamphlet(s), the pamphlet(s), ngo pamphlet(s), workshop pamphlet(s), ngo workshop pamphlet(s) | requires p_lua; grants c_article |
 | p_continue | choice | Continue | options [Continue, Stop]; option_endings {Stop: ending_cult} |

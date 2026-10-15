@@ -133,31 +133,52 @@ const neckHotspot=caseData.rooms.find(r=>r.id==='hospital').hotspots.find(h=>h.i
 assert(neckHotspot&&neckHotspot.puzzle==='p_hand_owner','The hand-on-neck lead must stand in the hospital room');
 assert.deepEqual(neckHotspot.position,[0,1.05,-2.1],'The hand-on-neck lead must wait in front of the ritual altar');
 assert.deepEqual(DETAIL_ANCHORS.hospital.h7_neck,neckHotspot.position,'The hand-on-neck marker must share its altar-line anchor');
-// Act 7 opening: Veer must not be on stage before the narration names him; he
-// arrives with the knock and the two stand face to face in the bedroom — not
-// Sameer sitting at his desk with his back turned — so the room, not a generic
-// home or office, frames the visit.
-const maskBeatCast=placeCast('sameer_room',storyCast(act7,'intro','sameer_room',0));
-assert.equal(maskBeatCast.length,1,'Veer must not appear before his name is mentioned');
-const maskBeatSameer=maskBeatCast[0];
+// Act 7 opening: the mask lead comes first. Veer must not be on stage — or in
+// the case at all — before the mask question is answered; his arrival is its
+// own scene (p_veer_door) whose hotspot waits on p_mask_owner, and only then
+// do the interview and the follow-up question unlock. The pair stands face to
+// face in the bedroom, not at the desk, so the room frames the visit.
+const room7=caseData.rooms.find(r=>r.id==='sameer_room');
+const order7=room7.hotspots.filter(h=>h.act==='act7').map(h=>h.id);
+assert(order7.indexOf('sameer_room_a7_mask')<order7.indexOf('sameer_room_a7_knock'),'The mask question must come before the knock');
+assert(order7.indexOf('sameer_room_a7_knock')<order7.indexOf('sameer_room_a7_veer'),'The knock must come before the Veer conversation');
+const knockHotspot=room7.hotspots.find(h=>h.id==='sameer_room_a7_knock');
+assert(knockHotspot&&knockHotspot.puzzle==='p_veer_door','The knock must play the p_veer_door scene');
+assert.deepEqual(knockHotspot.requires?.puzzles,['p_mask_owner'],'The knock must wait for the mask question');
+const veerHotspot=room7.hotspots.find(h=>h.id==='sameer_room_a7_veer');
+assert.deepEqual(veerHotspot.requires?.puzzles,['p_veer_door'],'The Veer conversation must wait for the knock');
+const maskOwnerPuzzle=caseData.puzzles.find(p=>p.id==='p_mask_owner');
+assert(maskOwnerPuzzle&&maskOwnerPuzzle.kind==='text','The mask lead stays a question');
+const doorScene=caseData.puzzles.find(p=>p.id==='p_veer_door');
+assert(doorScene&&doorScene.kind==='scene','The knock must play as a story scene');
+assert.deepEqual(doorScene.requires?.puzzles,['p_mask_owner'],'The knock scene must require the mask question');
+const veerMaskPuzzle=caseData.puzzles.find(p=>p.id==='p_veer_mask');
+assert.deepEqual(veerMaskPuzzle.requires?.puzzles,['p_veer_door'],'The follow-up question must wait for the knock');
+for(let i=0;i<3;i++){
+  const cast=placeCast('sameer_room',storyCast(act7,'intro','sameer_room',i));
+  assert.equal(cast.length,1,'Veer must not appear before the mask lead is answered');
+  assert.equal(cast[0].character,'sameer','The opening belongs to Sameer alone');
+}
+const maskBeatSameer=placeCast('sameer_room',storyCast(act7,'intro','sameer_room',0))[0];
 const turn=(a,b)=>Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)));
 const maskHeading=Math.atan2(SAMEER_BED.center[0]-maskBeatSameer.at[0],SAMEER_BED.center[2]-maskBeatSameer.at[1]);
 assert(turn(maskBeatSameer.rot,maskHeading)<.3,'Sameer must face the mask on his bed before the knock');
-const visitCast=placeCast('sameer_room',storyCast(act7,'intro','sameer_room',1));
+const visitCast=placeCast('sameer_room',doorScene.cast.map(m=>({...m,staged:true})));
 const visitSameer=visitCast.find(c=>c.character==='sameer'),visitVeer=visitCast.find(c=>c.character==='veer');
-assert(visitSameer&&visitVeer,'Veer must arrive once the narration names him');
+assert(visitSameer&&visitVeer,'Veer must arrive once the mask lead is answered');
 const visitHeading=Math.atan2(visitVeer.at[0]-visitSameer.at[0],visitVeer.at[1]-visitSameer.at[1]);
-assert(turn(visitSameer.rot,visitHeading)<.2,'Sameer must face Veer during the Act 7 opening');
-assert(turn(visitVeer.rot,visitHeading+Math.PI)<.2,'Veer must face Sameer during the Act 7 opening');
+assert(turn(visitSameer.rot,visitHeading)<.2,'Sameer must face Veer during the knock scene');
+assert(turn(visitVeer.rot,visitHeading+Math.PI)<.2,'Veer must face Sameer during the knock scene');
 assert(Math.hypot(visitVeer.at[0]-visitSameer.at[0],visitVeer.at[1]-visitSameer.at[1])>1.5,'The pair must have room to face one another');
+assert.deepEqual([veerHotspot.position[0],veerHotspot.position[2]],visitVeer.at,'Veer must stand where the knock scene leaves him');
 const inside=(p,rect)=>p[0]>rect[0]&&p[0]<rect[1]&&p[1]>rect[2]&&p[1]<rect[3];
 for(const c of [maskBeatSameer,visitSameer,visitVeer])
   for(const [name,rect] of [['bed',[-3.65,-1.95,-2.445,-.255]],['desk',[2.326,3.274,-2.5,-.5]],['chair',[1.429,2.131,-1.85,-1.15]],['bedside cabinet',[-1.856,-1.244,-2.276,-1.724]]])
-    assert(!inside(c.at,rect),`An Act 7 opening actor intersects the ${name}`);
+    assert(!inside(c.at,rect),`A knock-scene actor intersects the ${name}`);
 for(const aspect of [1280/600,1920/780,390/520,844/220]){
   const shot=wideShot(visitCast,aspect),camera=new PerspectiveCamera(39,aspect,.1,100);
   camera.position.set(...shot.at);camera.lookAt(new Vector3(...shot.center));camera.updateMatrixWorld();
-  for(const c of visitCast){const p=new Vector3(c.at[0],c.y,c.at[1]).project(camera);assert(Math.abs(p.x)<.88&&Math.abs(p.y)<.9,`The Act 7 opening pair is cropped at ${aspect}`);}
+  for(const c of visitCast){const p=new Vector3(c.at[0],c.y,c.at[1]).project(camera);assert(Math.abs(p.x)<.88&&Math.abs(p.y)<.9,`The knock-scene pair is cropped at ${aspect}`);}
 }
 // The service-yard capture set stays wired for the capture/departure phase —
 // keep its staging and framing regression-checked for whichever act stages it next.
