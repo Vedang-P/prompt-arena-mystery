@@ -42,7 +42,7 @@ try {
 let state = await call('/api/state');
 assert.equal(state.acts.length, 9);
 assert.equal(state.rooms.length, 14);
-assert.equal(state.puzzles.length, 58);
+assert.equal(state.puzzles.length, 59);
 await call('/api/puzzles/p_floor/solve', { answer: '3' }, 403);
 await call('/api/act/complete', { act: 'act0' });
 for (const act of caseData.acts.slice(1)) {
@@ -76,16 +76,16 @@ for (const act of caseData.acts.slice(1)) {
   console.log(`PASS deployed ${act.id}: all required evidence and puzzles, durable save`);
 }
 const finished = await call('/api/state');
-assert.equal(finished.solvedPuzzles.length, 57);
+assert.equal(finished.solvedPuzzles.length, 58);
 assert.equal(finished.penalties, 0);
 assert(finished.ending?.body);
 if (!health.env?.eventMode) {
   await call('/api/practice', { act: 'act7' });
   mode = 'practice';
   assert.equal((await call('/api/state')).act, 'act7');
-  for (const id of ['p_mask_owner', 'p_veer_mask', 'p_lua', 'p_nigeria']) {
+  for (const id of ['p_mask_owner', 'p_veer_door', 'p_veer_mask', 'p_lua', 'p_nigeria']) {
     const p = caseData.puzzles.find((x) => x.id === id);
-    assert((await call(`/api/puzzles/${id}/solve`, { answer: p.answers[0] })).correct, id);
+    assert((await call(`/api/puzzles/${id}/solve`, { answer: p.answers?.[0] ?? 'scene' })).correct, id);
   }
   await call('/api/puzzles/p_continue/solve', { answer: 'Stop' });
   assert((await call('/api/state')).ending?.body);

@@ -57,7 +57,7 @@ let state = await call('/api/state');
 assert.equal(state.act, 'act0');
 assert.equal(state.acts.length, 9);
 assert.equal(state.rooms.length, 14);
-assert.equal(state.puzzles.length, 58);
+assert.equal(state.puzzles.length, 59);
 assert(state.puzzles.every((p) => !('answers' in p) && !('grants' in p)));
 // The arrest cinematic must hand the player to the station, not back to the room.
 assert.equal(state.puzzles.find((p) => p.id === 'p_taken_in')?.lands_in, 'police_station');
@@ -104,10 +104,10 @@ for (const act of caseData.acts.slice(1)) {
 state = await call('/api/state');
 assert.equal(state.ending.id, 'ending_main');
 assert.match(state.ending.body, /now disappear/i);
-// 57 of 58: the café route skips p_cd_watch, which only exists on the laptop path.
-assert.equal(state.solvedPuzzles.length, 57);
+// 58 of 59: the café route skips p_cd_watch, which only exists on the laptop path.
+assert.equal(state.solvedPuzzles.length, 58);
 assert.equal(state.penalties, 0);
-assert.equal(state.score, state.discovered.length + 57);
+assert.equal(state.score, state.discovered.length + 58);
 const campaignSave = JSON.stringify(state);
 for (const act of caseData.acts) {
   mode = 'campaign';
@@ -127,6 +127,7 @@ mode = 'campaign';
 await call('/api/practice', { act: 'act7' });
 mode = 'practice';
 await call('/api/puzzles/p_mask_owner/solve', { answer: 'leader' });
+await call('/api/puzzles/p_veer_door/solve', { answer: 'scene' });
 await call('/api/puzzles/p_veer_mask/solve', { answer: 'mask' });
 const stop = await call('/api/puzzles/p_continue/solve', { answer: 'Stop' });
 assert.equal(stop.ending, 'ending_cult');
@@ -137,7 +138,7 @@ mode = 'campaign';
 const preserved = await call('/api/state');
 assert.equal(preserved.team, JSON.parse(campaignSave).team);
 assert.equal(preserved.ending.id, 'ending_main');
-assert.equal(preserved.solvedPuzzles.length, 57);
+assert.equal(preserved.solvedPuzzles.length, 58);
 console.log('PASS both endings, practice isolation, durable reload, score, and leaderboard');
 // A finished run must never loop back into its ending: resuming reopens the act
 // it ended on (prior acts restored from the practice checkpoint) for the heavy
