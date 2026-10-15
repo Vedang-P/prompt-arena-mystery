@@ -202,7 +202,7 @@ interrogation system stays grounded. `canonical_qa` entries for the scripted dia
 | c_trucks | hospital yard hotspot (act7) | p_continue | cargo into trucks |
 | c_disguise | hospital lone-worker hotspot | c_trucks | knocked out, clothes taken |
 | c_caught | grant of p_floor | — | the hand on his neck |
-| c_veer_death | hospital stage hotspot (act8) | c_caught | Veer's neck snaps |
+| c_veer_death | hospital stage hotspot (act8) | — | Veer's neck snaps; Act VIII must open for staged teams too, so this lead never gates on c_caught |
 | c_parth2 | grant of p_escape (act8) | p_spiral | Parth's hollow eyes outside the door |
 | c_office | tanush_office hotspot (act8) | — | plush carpets, mahogany |
 

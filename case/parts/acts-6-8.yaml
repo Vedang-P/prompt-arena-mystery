@@ -233,12 +233,15 @@ rooms:
         label: "The hand on his neck"
         position: [0, 1.05, -2.1]
       # Act VIII
+      # The act must play from its own opening: a team staged or moved into
+      # Act VIII arrives without Act VII's clues, so the death lead can never
+      # wait on c_caught — the bellow, the spiral and the escape all hang off
+      # this first hotspot. Every other act's entry lead is ungated too.
       - id: h8_veer_death
         act: act8
         type: clue
         clue: c_veer_death
         label: "Veer on the stage"
-        requires: { clues: [c_caught] }
         position: [3.6, 1.0, -3.5]
       - id: h8_refer
         act: act8

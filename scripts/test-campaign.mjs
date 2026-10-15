@@ -41,6 +41,15 @@ for (const [act,solved,discovered,puzzle,missingClue] of [
   assert(gate.missing.clues.includes(missingClue),`${puzzle} must name missing clue ${missingClue}`);
 }
 assert(clueGate('act5',[],[],'c_enakshi').ok,'Enakshi encounter must be available on entering the house');
+// Act VIII must play from its own start: a team staged or moved into the act
+// arrives without Act VII's clues, so the hospital's first lead can never wait
+// on c_caught, and the act completes only once every question - including
+// "Where is Parth?" and the wrong-answer capstone - has been answered.
+assert(clueGate('act8',[],[],'c_veer_death').ok,'Act 8 must open with the Veer lead for a staged team');
+assert(puzzleGate('act8',[],[],'p_refer').missing.clues.includes('c_veer_death'),'the death still gates the first question');
+const act8Gate=canAdvanceAct([],[],'act8');
+assert.deepEqual([...act8Gate.missing.puzzles].sort(),['p_burn','p_escape','p_found','p_office','p_refer','p_rooms','p_saved','p_spiral','p_where','p_why','p_wrong','p_years'],'Act 8 must not complete before every question is answered');
+assert.deepEqual(act8Gate.missing.clues,['c_office','c_veer_death'],'Act 8 completes with the office exhibit and the death lead');
 const cookies = new Map();
 let mode = 'campaign';
 async function call(path, payload, expected = 200) {
