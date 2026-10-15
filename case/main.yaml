@@ -1845,7 +1845,7 @@ rooms:
         act: act8
         type: puzzle
         puzzle: p_where
-        label: Where is Parth?
+        label: What happened to Parth?
         position:
           - -2.6
           - 1
@@ -3621,7 +3621,7 @@ puzzles:
         - p_found
   - id: p_where
     kind: text
-    prompt: Where is Parth?
+    prompt: What happened to Parth?
     answers:
       - dead
       - parth is dead

@@ -340,7 +340,7 @@ rooms:
         act: act8
         type: puzzle
         puzzle: p_where
-        label: "Where is Parth?"
+        label: "What happened to Parth?"
         position: [-2.6, 1.0, 3.6]
       - id: h8_wrong
         act: act8
@@ -988,7 +988,7 @@ puzzles:
 
   - id: p_where
     kind: text
-    prompt: "Where is Parth?"
+    prompt: "What happened to Parth?"
     answers:
       - "dead"
       - "parth is dead"
