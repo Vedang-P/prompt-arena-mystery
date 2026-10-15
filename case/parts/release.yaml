@@ -35,7 +35,7 @@ acts:
   - id: act8
     complete:
       clues: [c_office, c_veer_death]
-      puzzles: [p_refer, p_spiral, p_escape, p_office, p_years, p_burn, p_rooms, p_why, p_found, p_saved, p_where, p_wrong]
+      puzzles: [p_refer, p_spiral, p_escape, p_office, p_years, p_burn, p_rooms, p_why, p_found, p_saved]
 
 clues:
   - id: c_hq
