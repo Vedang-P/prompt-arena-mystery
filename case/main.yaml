@@ -1669,9 +1669,6 @@ rooms:
         type: clue
         clue: c_veer_death
         label: Veer on the stage
-        requires:
-          clues:
-            - c_caught
         position:
           - 3.6
           - 1

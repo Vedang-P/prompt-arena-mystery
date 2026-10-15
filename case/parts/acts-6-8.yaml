@@ -239,7 +239,6 @@ rooms:
         type: clue
         clue: c_veer_death
         label: "Veer on the stage"
-        requires: { clues: [c_caught] }
         position: [3.6, 1.0, -3.5]
       - id: h8_refer
         act: act8
