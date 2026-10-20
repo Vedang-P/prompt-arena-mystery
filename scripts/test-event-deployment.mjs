@@ -18,7 +18,7 @@ assert.equal((await(await call('/api/health')).json()).version,version);
 const config=await(await call('/api/auth/config')).json();assert.equal(config.eventMode,true);assert.equal(config.guest,true);
 const GUEST=`Instructor probe ${Date.now()%100000}`;
 await call('/api/guest',{username:GUEST});
-const state=await(await call('/api/state')).json();assert.equal(state.team,GUEST);assert.equal(state.acts.length,9);assert.equal(state.puzzles.length,48);
+const state=await(await call('/api/state')).json();assert.equal(state.team,GUEST);assert.equal(state.acts.length,9);assert.equal(state.puzzles.length,59);
 await call('/api/practice',{act:'act8'},403);await call('/api/accuse',{culprit:'sameer'},403);
 for (const path of ['/assets/cast/sameer.glb','/assets/cast/officer.glb','/assets/cinema/gazebo.glb','/assets/cinema/tree_small_02.glb','/assets/cinema/tree_background.glb','/assets/cinema/park_sunrise_1k.hdr','/assets/env/tiles_Diffuse.jpg','/assets/signs/police.svg','/assets/audio/dusk.mp3','/credits.html']) {
   const response=await call(path);assert((await response.arrayBuffer()).byteLength>100,path);
