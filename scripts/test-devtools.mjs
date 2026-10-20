@@ -1,6 +1,6 @@
 // Developer sandbox integration test: the dev account seeds from
-// DEV_TEAM_CODE, is exempt and off the leaderboard, and its routes edit the
-// dev save — while a normal team can never touch them.
+// DEV_TEAM_CODE (POST /api/dev/login), is off the leaderboard, and
+// its routes edit the dev save — while a normal account can never touch them.
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -10,9 +10,7 @@ import path from 'node:path';
 const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'arena-devtools-'));
 process.env.SQLITE_PATH = path.join(directory, 'devtools.db');
 process.env.EVENT_MODE = 'true';
-process.env.ALLOW_CODE_LOGIN = 'true';
 process.env.DEV_TEAM_CODE = 'DEV-TEST-CODE';
-process.env.TEAM_CODES = 'Alpha=ALPHA-1';
 
 // A previous boot with an older sandbox code must not block the current one:
 // the seed realigns the stored hash with the environment, so boot once with a
@@ -43,17 +41,20 @@ const call = (url, cookie, body) =>
     }),
     env
   );
-const login = async (code) => {
-  const res = await call('/api/login', null, { code });
-  assert.equal(res.status, 200, `login ${code}`);
-  return res.headers.get('set-cookie').split(';')[0];
+const loginDev = async (code, status = 200) => {
+  const res = await call('/api/dev/login', null, { code });
+  assert.equal(res.status, status, `dev login ${code}`);
+  return status === 200 ? res.headers.get('set-cookie').split(';')[0] : null;
 };
 
-const devCookie = await login('DEV-TEST-CODE');
-const alphaCookie = await login('ALPHA-1');
-
-// The superseded code no longer opens the account: the environment owns it.
-assert.equal((await call('/api/login', null, { code: 'DEV-STALE-CODE' })).status, 401, 'the replaced sandbox code is refused');
+const devCookie = await loginDev('DEV-TEST-CODE');
+// The seed realigned the stale boot's hash: the old code is dead, the new one
+// owns the account, and anything else is refused.
+assert.equal((await loginDev('DEV-STALE-CODE', 401)) === null, true, 'the replaced sandbox code is refused');
+// Players walk in as guests now — the guest account covers the "normal team".
+const guest = await call('/api/guest', null, { username: 'Alpha' });
+assert.equal(guest.status, 200, 'a team signs in as a guest');
+const alphaCookie = guest.headers.get('set-cookie').split(';')[0];
 
 let state = await (await call('/api/state', devCookie)).json();
 assert.equal(state.dev, true, 'dev state flag');
@@ -141,13 +142,11 @@ state = await (await call('/api/state', devCookie)).json();
 assert.equal(state.ending, null, 'an act jump clears the recorded ending');
 assert.equal(state.solved, false, 'an act jump clears the solved flag');
 
-// The leaderboard never lists the sandbox; the dev team is exempt.
+// The leaderboard never lists the sandbox.
 await call('/api/dev/bulk', devCookie, { mode: 'all' });
 await call('/api/dev/act', devCookie, { act: 'act8' });
 const board = await (await call('/api/leaderboard')).json();
 assert(!board.teams.some((t) => t.name === 'Dev Sandbox'), 'dev team stays off the leaderboard');
-const exempt = await (await call('/api/fullscreen/exit', devCookie, { kind: 'fullscreen' })).json();
-assert.equal(exempt.exempt, true, 'dev team is exempt from fullscreen enforcement');
 
 // A normal team can never reach the sandbox routes.
 for (const [url, body] of [['/api/dev/catalog', null], ['/api/dev/bulk', { mode: 'all' }], ['/api/dev/reset', {}], ['/api/dev/act', { act: 'act8' }]]) {
@@ -156,5 +155,5 @@ for (const [url, body] of [['/api/dev/catalog', null], ['/api/dev/bulk', { mode:
 }
 assert.equal((await call('/api/dev/catalog', null)).status, 401, 'no session, no catalogue');
 
-console.log('PASS developer sandbox: seeded dev account, full catalogue, act/room jumps, bulk reveal, toggles, reset, leaderboard exclusion, exemptions, and hard dev-only access');
+console.log('PASS developer sandbox: seeded dev account, full catalogue, act/room jumps, bulk reveal, toggles, reset, leaderboard exclusion, and hard dev-only access');
 process.exit(0);

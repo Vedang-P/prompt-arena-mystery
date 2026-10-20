@@ -4,17 +4,25 @@ import { useCaseDialog } from './InvestigationUI.jsx';
 import LogoutButton from './LogoutButton.jsx';
 const TITLE_CAST=[{character:'sameer',at:[-.54,.99],pose:'sit'},{character:'parth',at:[.54,.99],pose:'sit'}];
 export default function TitleScreen({config,state,busy,error,onGuest,onResume,onRestart,onDevLogin,onSettings,onLeaderboard}) {
-  const [entry,setEntry]=useState(false),[code,setCode]=useState('');
+  const [entry,setEntry]=useState(false),[username,setUsername]=useState(''),[devOpen,setDevOpen]=useState(false),[devCode,setDevCode]=useState('');
   const over=Boolean(state?.ending||state?.solved);
   const enter=()=>{if(over){onRestart?.();return;}if(state)onResume();else setEntry(true);};
-  const codeLogin=!!(config?.devLogin||config?.eventMode);
   const googleLogin=!!config?.google;
   return <main className="title-screen arena-title">
     <Suspense fallback={<div className="title-world" aria-hidden="true"/>}><div className="title-world"><Cinema sceneId="gazebo" shot="two" cast={TITLE_CAST}/></div></Suspense><div className="title-shade"/>
     <header className="title-header"><span className="brand">◒ Prompt Arena</span><div className="arena-account-actions"><button className="quiet-button" onClick={onLeaderboard}>Live leaderboard ↗</button><button className="quiet-button" onClick={onSettings}>Audio & settings</button>{state && <LogoutButton disabled={busy}/>}</div></header>
-    <div className="title-content"><p className="eyebrow">A disappearance. A voice. A trail of secrets.</p><h1>Prompt<br/>Arena<span className="title-period">.</span></h1><p className="title-description">The Moon’s Dark Side</p><button className="primary-play" onClick={enter} disabled={busy}><span>{over?'Play again':state?'Continue':'Enter'}<small>{over?'The case has ended':state?state.team:'Open your team’s case'}</small></span><span>→</span></button>{error&&!entry&&<p className="title-error" role="alert">{error}</p>}</div>
+    <div className="title-content"><p className="eyebrow">A disappearance. A voice. A trail of secrets.</p><h1>Prompt<br/>Arena<span className="title-period">.</span></h1><p className="title-description">The Moon’s Dark Side</p><button className="primary-play" onClick={enter} disabled={busy}><span>{over?'Play again':state?'Continue':'Enter'}<small>{over?'The case has ended':state?state.team:'Open your case file'}</small></span><span>→</span></button>{error&&!entry&&<p className="title-error" role="alert">{error}</p>}</div>
     <footer className="title-footer"><span>An interactive mystery</span><span className="build-stamp-inline">build {__BUILD__}</span></footer>
-    {entry&&<div className="modal-backdrop" onClick={()=>setEntry(false)}><section className="entry-card" role="dialog" aria-modal="true" aria-label="Enter the arena" onClick={e=>e.stopPropagation()}><p className="eyebrow">Your table. Your case.</p><h2>Enter the arena</h2>{codeLogin?<><p>Use the team code supplied by your invigilator.</p><form onSubmit={e=>{e.preventDefault();onDevLogin(code);}}><label htmlFor="team-code">Team code</label><input id="team-code" autoFocus autoComplete="off" autoCapitalize="characters" spellCheck={false} value={code} onChange={e=>setCode(e.target.value)} placeholder="Enter assigned code" required maxLength={48}/><button className="btn brass" disabled={busy||!code.trim()}>{busy?'Opening your case…':'Begin →'}</button></form></>:googleLogin?<><p>Sign in to open your case file.</p><a className="btn brass google-login" href="/api/auth/google">Continue with Google</a></>:<p className="title-error" role="alert">Sign-in is not configured on this deployment yet.</p>}{error&&<p className="title-error" role="alert">{error}</p>}{!config?.eventMode&&<button className="quiet-button" onClick={onGuest} disabled={busy}>Preview without a team code</button>}<button className="quiet-button" onClick={()=>setEntry(false)}>Back</button></section></div>}
+    {entry&&<div className="modal-backdrop" onClick={()=>setEntry(false)}><section className="entry-card" role="dialog" aria-modal="true" aria-label="Enter the arena" onClick={e=>e.stopPropagation()}><p className="eyebrow">Your table. Your case.</p><h2>How would you like to play?</h2>
+      {googleLogin&&<><a className="btn brass google-login" href="/api/auth/google">Continue with Google</a><p className="entry-or"><span>or play as a guest</span></p></>}
+      <form onSubmit={e=>{e.preventDefault();onGuest(username);}}>
+        <label htmlFor="guest-name">Detective name</label>
+        <input id="guest-name" autoFocus autoComplete="nickname" autoCapitalize="words" spellCheck={false} value={username} onChange={e=>setUsername(e.target.value)} placeholder="Choose a case name" maxLength={40}/>
+        <button className="btn brass" disabled={busy}>{busy?'Opening your case…':googleLogin?'Play as guest →':'Enter the arena →'}</button>
+      </form>
+      {error&&<p className="title-error" role="alert">{error}</p>}
+      {config?.devLogin&&(devOpen?<form onSubmit={e=>{e.preventDefault();onDevLogin(devCode);}}><label htmlFor="dev-code">Developer sign-in</label><input id="dev-code" type="password" value={devCode} onChange={e=>setDevCode(e.target.value)} placeholder="DEV_TEAM_CODE" autoCapitalize="off" autoComplete="off" required/><button className="btn ghost" disabled={busy||!devCode.trim()}>Enter sandbox</button></form>:<button className="quiet-button" onClick={()=>setDevOpen(true)}>Developer sign-in</button>)}
+      <button className="quiet-button" onClick={()=>setEntry(false)}>Back</button></section></div>}
   </main>;
 }
 

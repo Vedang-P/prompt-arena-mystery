@@ -29,10 +29,10 @@ async function json(res) {
 
 export const getAuthConfig = () => request('/api/auth/config').then(json);
 
-// Team-code sign-in: local development only (bridged for the login form when
-// the deployment enables ALLOW_CODE_LOGIN).
+// Developer sandbox sign-in: a secret operator code (DEV_TEAM_CODE), never on
+// the player login screen.
 export const devLogin = (code) =>
-  request('/api/login', {
+  request('/api/dev/login', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ code }),
@@ -40,7 +40,13 @@ export const devLogin = (code) =>
 
 export const getState = () => request('/api/state', { cache: 'no-store' }).then(json);
 
-export const startGuest = () => request('/api/guest', { method: 'POST' }).then(json);
+// Play as guest: the player picks a username at login and gets a durable save.
+export const startGuest = (username) =>
+  request('/api/guest', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ username }),
+  }).then(json);
 
 export const completeAct = (act) =>
   request('/api/act/complete', {
@@ -119,26 +125,10 @@ export const restartRun = (from = 'act0') =>
     body: JSON.stringify({ from }),
   }).then(json);
 
-// Fullscreen enforcement: every leave/return is reported; the server owns the
-// grace window and the strike count.
-export const fullscreenExit = (kind) =>
-  request('/api/fullscreen/exit', {
-    method: 'POST',
-    timeout: 10000,
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ kind }),
-  }).then(json);
-
-export const fullscreenReturn = () => request('/api/fullscreen/return', { method: 'POST', timeout: 10000 }).then(json);
-
-export const fullscreenUnsupported = () => request('/api/fullscreen/unsupported', { method: 'POST', timeout: 10000 }).then(json);
-
-export const heartbeat = (fullscreen = false) =>
+export const heartbeat = () =>
   request('/api/heartbeat', {
     method: 'POST',
     timeout: 10000,
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ fullscreen: !!fullscreen }),
   }).then(json);
 
 // The ending screen's feedback form: the server stores it permanently.

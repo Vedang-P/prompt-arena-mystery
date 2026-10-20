@@ -1,6 +1,6 @@
 # W3 — Acts VI–VIII ("Poornima", "The Mask", "The Revelation").
 # Owner: case/parts/acts-6-8.yaml. Do not edit case/main.yaml (generated).
-# Prose follows docs/FINAL_STORY.md and docs/FINAL_STORY_WITH_QUESTIONS.md (acts 6–8) nearly verbatim.
+# Prose follows docs/FINAL_STORY.md (acts 6–8) nearly verbatim.
 # This fragment only adds hotspots to existing rooms — it never redefines a room
 # it does not own. Act/room/puzzle/clue ids follow the frozen BUILD_SPEC registry.
 
@@ -1056,3 +1056,4 @@ canonical_qa:
   - { character: veer, q: "why did you come to my door", keywords: [come, door], a: "I'm hearing from my dad that you apparently got folders full of information. If my name comes in the cult, I swear to god —" }
   - { character: veer, q: "are you in the cult", keywords: [cult], a: "God, no. I play their events. I donate. That doesn't make me one of them — I didn't know, Sameer. I didn't want to know." }
   - { character: leader, q: "why did you start all of this", keywords: [start], a: "I was naive at the start, like we all are. I didn't know nor was taught about our holy mother. She was always protecting us." }
+

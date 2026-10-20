@@ -390,7 +390,7 @@ body::before {
   animation: pop 0.32s var(--ease) both;
 }
 
-/* ---------- team-code entry ---------- */
+/* ---------- entry: guest name + google ---------- */
 
 #entry .settings-body {
   gap: 0;
@@ -403,23 +403,42 @@ body::before {
 
 #entry input[type='text'] {
   width: 100%;
-  font-family: var(--font-mono);
-  font-size: 17px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  text-align: center;
+  font-family: var(--font-body);
+  font-size: 15px;
   color: var(--ink);
   background: rgba(9, 12, 22, 0.85);
   border: 1px solid var(--hairline);
   border-radius: 2px;
-  padding: 14px 12px;
+  padding: 13px 12px;
 }
 
 #entry input[type='text']::placeholder {
-  font-family: var(--font-body);
   font-size: 13px;
+  color: var(--muted);
+}
+
+#entry .google-login {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.entry-or {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 14px 0;
+  font-size: 11px;
+  text-transform: uppercase;
   letter-spacing: 0.14em;
   color: var(--muted);
+}
+
+.entry-or::before,
+.entry-or::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--hairline);
 }
 
 .entry-error {

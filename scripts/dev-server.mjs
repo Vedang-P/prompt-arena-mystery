@@ -2,7 +2,8 @@ import http from 'node:http';
 import { resolve } from 'node:path';
 import { createServer } from 'vite';
 process.env.SQLITE_PATH ??= resolve('.game-dev.local');
-process.env.ALLOW_CODE_LOGIN ??= 'true';
+// Local dev sandbox: sign in from the login screen's developer link with this code.
+process.env.DEV_TEAM_CODE ??= 'DEV-ARENA';
 const { default: handler } = await import('../api/index.js');
 const {caseData}=await import('../src/case.js');
 // Single-origin local development uses the exact Vercel API entry point.

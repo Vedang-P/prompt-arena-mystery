@@ -6,7 +6,7 @@
 //   npm run talk:review -- mother veer  only those characters
 //   npm run talk:review -- --ladder     authored ladder only (no network)
 //
-// Needs OPENCODE_GO_API_KEY / OPENCODE_API_KEY (or LLM_* variables) for the
+// Needs OPENCODE_API_KEY (or LLM_* variables) for the
 // live pass; the ladder pass always works.
 
 import { buildMessages, canonicalAnswer, chapterCheckpoint, deflection, isNoise, isRepeat } from '../src/engine.js';

@@ -8,7 +8,7 @@ import Leaderboard from './Leaderboard.jsx';
 const ActDirector = lazy(() => import('./ActDirector.jsx'));
 import DevPanel from './DevPanel.jsx';
 import LogoutButton from './LogoutButton.jsx';
-import FullscreenGate, { DisqualifiedScreen, tryEnterFullscreen } from './FullscreenGate.jsx';
+import { DisqualifiedScreen } from './DisqualifiedScreen.jsx';
 import {
   AccuseModal,
   DialogueOverlay,
@@ -384,26 +384,25 @@ export default function App() {
     return () => window.removeEventListener('pa-session-expired', onExpired);
   }, []);
 
-  // Presence + enforcement ping while the team is in play. It also notices an
-  // admin-side disqualification (or a requalification) without a reload.
+  // Presence ping while the team is in play. It also notices an admin-side
+  // disqualification (or a requalification) without a reload.
   useEffect(() => {
     if (!state || phase !== 'game') return;
     let alive = true;
     const ping = async () => {
       if (document.hidden) return;
       try {
-        const res = await heartbeat(Boolean(document.fullscreenElement));
+        const res = await heartbeat();
         if (!alive || !res) return;
         setState((s) => {
           if (!s) return s;
-          const strikesChanged = res.strikes != null && s.strikes !== res.strikes;
           const nextAnn = res.announcement ?? null;
           const annChanged =
             (s.announcement?.id ?? null) !== (nextAnn?.id ?? null) ||
             (s.announcement?.text ?? '') !== (nextAnn?.text ?? '') ||
             (s.announcement?.level ?? null) !== (nextAnn?.level ?? null);
-          if (!strikesChanged && !annChanged) return s;
-          return { ...s, strikes: res.strikes ?? s.strikes, announcement: nextAnn };
+          if (!annChanged) return s;
+          return { ...s, announcement: nextAnn };
         });
       } catch (e) {
         if (alive && e.status === 403 && e.data?.error === 'disqualified') handleDisqualified(e.data);
@@ -415,23 +414,17 @@ export default function App() {
   }, [state?.team, phase]);
 
   useEffect(() => {
-    // The cinematic title card is the only landing page: /play/ never shows a menu when a
-    // team code (or event mode) is how players sign in — no session bounces back to `/`, a
-    // session drops straight into the current act.
-    const params = new URLSearchParams(window.location.search);
-    const authError = params.get('auth_error');
+    // Resume straight into the current act when a live session exists; without
+    // one, /play/ presents the sign-in choice itself — a guest detective name
+    // or Google — so there is no bounce to a separate page.
     (async () => {
-      const config = await getAuthConfig().catch(() => ({ google: false, devLogin: false, eventMode: false }));
+      const config = await getAuthConfig().catch(() => ({ google: false, eventMode: false }));
       setAuthConfig(config);
-      const codeIsTheWay = Boolean(config.devLogin || config.eventMode || !config.google);
-      const entered = await loadGame(codeIsTheWay ? 'game' : 'menu');
+      await loadGame('game');
       const url = new URL(window.location.href);
       if (url.searchParams.has('resume')) {
         url.searchParams.delete('resume');
         window.history.replaceState(null, '', url);
-      }
-      if (entered === false && codeIsTheWay) {
-        window.location.replace(authError ? '/?auth_error=' + encodeURIComponent(authError) : '/');
       }
     })();
   }, []);
@@ -718,7 +711,6 @@ export default function App() {
   };
 
   const handleDevLogin = async (code) => {
-    if (authConfig?.fullscreen) tryEnterFullscreen();
     setLoginBusy(true);
     setLoginError(null);
     try {
@@ -727,7 +719,7 @@ export default function App() {
       clearIntros(); closeStory(); setRoomId(null); setChats({}); setActiveChar(null); setEvidence(null); setPuzzleSpot(null);
       await loadGame('game');
     } catch (e) {
-      setLoginError(e.status === 401 ? 'Wrong code. Check the label on your table.' : 'Sign-in failed.');
+      setLoginError(e.status === 401 ? 'Invalid developer code.' : 'Sign-in failed.');
     } finally {
       setLoginBusy(false);
     }
@@ -891,10 +883,10 @@ export default function App() {
   };
 
   const clearIntros = () => { for (let i = 0; i < 9; i++) sessionStorage.removeItem('pa-intro-act' + i); };
-  const beginGuest = async () => {
+  const beginGuest = async (username) => {
     setLoginBusy(true); setLoginError(null);
     try {
-      localStorage.setItem('moon-mode', 'campaign'); await startGuest();
+      localStorage.setItem('moon-mode', 'campaign'); await startGuest(username);
       clearIntros(); closeStory(); setRoomId(null); setChats({}); setNotice(null); setActiveChar(null); setEvidence(null); setPuzzleSpot(null);
       await loadGame('game');
     } catch { setLoginError('Could not open the case. Please try again.'); }
@@ -974,23 +966,6 @@ export default function App() {
   </>;
   const audio = <Soundtrack roomId={roomId ?? 'gazebo'} radio={!story} />;
 
-  // Fullscreen enforcement is active whenever the deployment enforces it and
-  // this team is a real event entry (practice saves and exempt teams step out).
-  // /api/state also carries the server's verdict, so a failed /api/auth/config
-  // can never silently switch enforcement off for the session.
-  const fsGate = (authConfig?.fullscreen || state?.fullscreen) && state && !state.practice && !state.exempt ? (
-    <FullscreenGate
-      enabled
-      graceMs={state.windowMs ?? authConfig.windowMs ?? state.graceMs ?? authConfig.graceMs ?? 10000}
-      maxStrikes={state.maxStrikes ?? authConfig.maxStrikes ?? 3}
-      strikes={state.strikes ?? 0}
-      onStrike={(res) => {
-        if (res?.strikes != null) setState((s) => (s ? { ...s, strikes: res.strikes } : s));
-      }}
-      onDisqualified={handleDisqualified}
-    />
-  ) : null;
-
   const announcement = state?.announcement && dismissedAnn !== state.announcement.id ? (
     <div className={`announce-bar ${state.announcement.level ?? 'info'}`} role="status">
       <strong>{state.announcement.level === 'urgent' ? 'Invigilator' : state.announcement.level === 'warning' ? 'Notice' : 'Event desk'}</strong>
@@ -1069,7 +1044,7 @@ export default function App() {
         onReload={() => loadGame('game')}
         onPlayIntro={() => playDevStory('intro')}
         onPlayOutro={() => playDevStory('outro')}
-      />}{overlays}{fsGate}</div>
+      />}{overlays}</div>
     );
   }
 
@@ -1108,7 +1083,6 @@ export default function App() {
           onPlayOutro={() => playDevStory('outro')}
         />}
         {overlays}
-        {fsGate}
       </div>
     );
   }
@@ -1134,13 +1108,13 @@ export default function App() {
         onReload={() => loadGame('game')}
         onPlayIntro={() => playDevStory('intro')}
         onPlayOutro={() => playDevStory('outro')}
-      />}{fsGate}</>
+      />}</>
     );
   }
 
   return (
     <div className={`app ${activeChar ? 'talking' : ''}`}>
-      {audio}{announcement}{overlays}{fsGate}
+      {audio}{announcement}{overlays}
       <div className="scene-layer">
         {!story && <Scene
           state={displayState}
@@ -1159,7 +1133,7 @@ export default function App() {
         <div className="location"><p className="location-kicker">{currentAct?.kicker} · {currentAct?.title}{state.practice ? ' · Practice' : ''}</p><h1 className="location-name">{room.name}</h1></div>
         <div className="release-tools">
           <span className="penalty-counter" title="Case penalties">{state.penalties ?? 0} {(state.penalties ?? 0) === 1 ? 'penalty' : 'penalties'}</span>
-          {(state.strikes ?? 0) > 0 && <span className="penalty-counter strike-counter" title="Three exits without returning inside the grace window disqualify the team">{state.strikes}/{state.maxStrikes ?? 3} exit strikes</span>}
+          {state.penalties > 0 && <span className="penalty-counter">{state.penalties} penalties</span>}
           <button className="quiet-button" onClick={() => setSettingsOpen(true)}>Settings</button>
           {!authConfig?.eventMode && <button className="quiet-button" onClick={() => setChaptersOpen(true)}>Chapters</button>}
           <button className="quiet-button" onClick={()=>setLeaderboardOpen(true)}>Live leaderboard</button>

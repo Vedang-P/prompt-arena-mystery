@@ -52,7 +52,7 @@ Browser (React + React Three Fiber)
   rooms, hotspots, interrogation panel, accusation form
         | HTTPS + SSE streaming
 Cloudflare Worker (Hono)
-  |- auth: team codes (HMAC cookie sessions)
+  |- auth: guest usernames or Google (HMAC cookie sessions)
   |- game state: unlock graph, clue discovery, accusations
   |- LLM pipeline: prompt build -> provider -> guardrails
   |- scoring + leaderboard API (projector + team views)
@@ -174,8 +174,8 @@ Tooling:
 
 ## 8. Event operations (BYO laptops)
 
-- One URL + 70 team codes. **Test day**: every team opens the game once so the 3D assets are
-  cached locally before the event.
+- One URL, sign-in at the door (a guest detective name or Google). **Test day**: every team opens
+  the game once so the 3D assets are cached locally before the event.
 - Asset budget: rooms kept under roughly 60-80 MB total; hashed filenames, immutable caching.
 - Devices with 3D graphics "switched off" still get the 3D game: the renderer asks for WebGL2 with
   permissive attributes so the browser's software rasteriser (ANGLE WARP / SwiftShader) draws the

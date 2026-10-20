@@ -345,7 +345,9 @@ App (W6):
   `completeAct(act.id)`. `?beat=` dev param and Act 0 behave as today.
 - Ending: when `state.ending`, show EndingCard with title/body + score/penalties;
   `ending_main` copy ends with the "now disappear" ping.
-- Login copy: keep. Demo code hint stays PANDA-7K2.
+- Login copy: both sign-in options at login — a player-chosen guest detective
+  name (`/api/guest`) and Google (`/api/auth/google`); the developer link only
+  appears when `DEV_TEAM_CODE` is configured.
 
 Panels (W6): `PuzzleModal`, `StoryOverlay`, `EndingCard`; extend `Notebook` with a
 "Sleuthing" section (puzzles solved, penalties, current objective). `Notice` gains optional

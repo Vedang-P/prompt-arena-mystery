@@ -17,16 +17,16 @@
 
 ## Play
 
-Choose **Enter** on the title card, then open your case with the team code supplied to you. Each chapter unlocks only once its required evidence and puzzles are complete; the notebook keeps every exhibit, statement and resolved lead.
+Choose **Enter** on the title card, then sign in the way you prefer — a Google account, or a guest detective name of your choosing. Each chapter unlocks only once its required evidence and puzzles are complete; the notebook keeps every exhibit, statement and resolved lead.
 
 ### Entry points
 
 | Route | What it is |
 | --- | --- |
-| `/` | The title card — a cinematic “KERNEL presents” intro, the wordmark over the gazebo art, a team-code dialog, the live leaderboard, and audio settings the game inherits (`client/index.html`, `client/src/site.js`) |
+| `/` | The title card — a cinematic “KERNEL presents” intro, the wordmark over the gazebo art, the sign-in dialog (Google or guest name), the live leaderboard, and audio settings the game inherits (`client/index.html`, `client/src/site.js`) |
 | `/play/` | The game — its own 3D title screen, sign-in, then the acts (`client/play/index.html`, `client/src/App.jsx`) |
 
-A code accepted on the title card posts to `/api/login` and hands off to `/play/?resume=1`, which drops straight into the team’s current act — Act 0’s cinematic for a new team — instead of the menu.
+A sign-in posts to `/api/guest` (with your chosen name) or routes through `/api/auth/google`, then hands off to `/play/?resume=1`, which drops straight into the current act — Act 0’s cinematic for a new case — instead of the menu. Every sign-in starts its own case: a guest name reused later is a fresh case, not a shared one.
 
 ### Controls
 
@@ -80,7 +80,7 @@ npm run dev:game
 # http://127.0.0.1:5173
 ```
 
-`dev:game` runs a single origin: Vite in middleware mode for the client, and the exact Vercel API entry (`api/index.js`) for `/api/*`, with an isolated SQLite file at `.game-dev.local`. No environment variables are needed locally — the server enables team-code login and falls back to development secrets on loopback hosts only.
+`dev:game` runs a single origin: Vite in middleware mode for the client, and the exact Vercel API entry (`api/index.js`) for `/api/*`, with an isolated SQLite file at `.game-dev.local`. No environment variables are needed locally — guests and Google sign-ins just work, and the dev sandbox opens with the default `DEV_TEAM_CODE` (`DEV-ARENA`) from the login screen's developer link. Development secrets fall back on loopback hosts only.
 
 ### Project layout
 
@@ -115,21 +115,19 @@ vercel.json             Build command and function configuration
 | `npm run test:campaign` | Full campaign walk: every act, puzzle, gate and ending |
 | `npm run test:penalties` | Penalty rules end-to-end: fee, cap, restart cost, practice, leaderboard order |
 | `npm run test:event` | 70 concurrent team sessions, event gates and timers |
-| `npm run test:admin` | Control room: strikes, disqualification, requalification, CRUD, audit |
-| `npm run test:admin-ui` | Browser smoke of the control room and fullscreen gate (needs `dev:game` running) |
+| `npm run test:admin` | Control room: disqualification, requalification, CRUD, audit |
+| `npm run test:admin-ui` | Browser smoke of the control room and the game shell (needs `dev:game` running) |
 | `npm run test:assets` | GLB integrity, draw budgets, surface contacts |
 | `npm run test:scenes` | Actor/camera staging against measured geometry |
 | `npm run test:deployment` | Hosted smoke walk (`-- https://your-deployment`) |
-| `npm run shot` | Puppeteer screenshots of the running game (`shots/`) |
-| `npm run gen:team` | Hash team codes for seeding |
-| `npm run gen:portraits` | Re-render the interview portraits from the cast rigs (needs `dev:game` running) |
+| `npm run dev:game` | Local dev server at `http://127.0.0.1:5173` |
 
 ### Testing
 
 ```sh
 npm run test:engine && npm run test:llm && npm run test:campaign && npm run test:penalties
 npm run test:event && npm run test:assets && npm run test:scenes
-npm run talk:review && npm run test:stress   # live pool: needs OPENCODE_GO_API_KEYS
+npm run talk:review && npm run test:stress   # live pool: needs OPENCODE_API_KEY
 npm run build
 ```
 
@@ -145,9 +143,7 @@ Edit `case/parts/*.yaml`; `npm run build:case` merges and validates the story in
 
 All nine characters are licensed Microsoft Rocketbox textured rigs with retargeted breathing and seated animation. Environments use finished CC0 Poly Haven and Innerscene models, with a published CC0 astronomy kit and retained Kenney rugs. Blender’s Python API prepares the existing source models; no new character geometry is generated. Kevin MacLeod music ships as static MP3s.
 
-Source URLs, licenses, provenance and modifications are catalogued in `client/public/assets/ASSETS.md`, with player-facing credits at `/credits.html`.
-
-Asset regeneration downloads original sources into ignored `.asset-cache/` folders via `scripts/download-*.mjs`, prepares them in Blender, optimises with `scripts/optimize-scene-assets.mjs`, and re-runs the asset and staging checks. Ordinary builds need none of this.
+Source URLs, licenses, provenance and modifications are catalogued in `client/public/assets/ASSETS.md`, with player-facing credits at `/credits.html`. The repo ships finished assets only; the one-off Blender/download pipelines that produced them are not part of the codebase.
 
 ---
 
@@ -166,7 +162,7 @@ api/index.js       Node 22 function (Vercel) / local dev server
         └── Postgres (DATABASE_URL)  ·  node:sqlite fallback in /tmp
 ```
 
-Team progress is server-authoritative: clue discovery, puzzle answers, act gates, penalties, endings and leaderboard timing all live behind the API. Sessions are HMAC-signed cookies; team codes are stored as salted hashes. Interrogation streams over SSE and falls back through authored answers and in-character deflections when no LLM key is configured — the game is fully playable without one.
+Team progress is server-authoritative: clue discovery, puzzle answers, act gates, penalties, endings and leaderboard timing all live behind the API. Sessions are HMAC-signed cookies. Interrogation streams over SSE and falls back through authored answers and in-character deflections when no LLM key is configured — the game is fully playable without one.
 
 ### Environment variables
 
@@ -175,17 +171,13 @@ Everything is optional in local development. Production needs the first three.
 | Variable | Purpose |
 | --- | --- |
 | `SESSION_SECRET` | Signs session cookies (required on public hosts) |
-| `CODE_PEPPER` | Salts team-code hashes (required when code login is on) |
 | `DATABASE_URL` | Postgres connection string (also `POSTGRES_URL`, `POSTGRES_PRISMA_URL`); without it the API falls back to per-instance `/tmp` SQLite |
-| `TEAM_CODES` | `Team name=assigned-code,Another=code,…` seeded on start |
-| `ALLOW_CODE_LOGIN` | Enables `POST /api/login` |
+| `DEV_TEAM_CODE` | Opens the developer sandbox save (`POST /api/dev/login`, see docs/DEVTOOLS.md) — never distribute it |
 | `EVENT_MODE` | Classroom rules — see below |
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD` | The `/admin/` control room (required in production) |
-| `FULLSCREEN_ENFORCE` | Force fullscreen enforcement on/off (default: on for event mode / team-code play) |
-| `EXIT_GRACE_MS` / `EXIT_MAX_STRIKES` | Grace window to return before a strike (10000); strikes before disqualification (3) |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google sign-in (optional sign-in method) |
-| `OPENCODE_GO_API_KEYS` / `OPENCODE_GO_API_KEY` | Live AI suspects: a pool of OpenCode Go keys running Muse Spark 1.3 Contributor via the Go Responses API. Teams are pinned to keys (stable prompt caching), usage limits and errors fail over across the pool, and the authored answers reply whenever the pool is exhausted |
-| `LLM_MODELS` / `LLM_REASONING_EFFORT` / `LLM_MAX_OUTPUT_TOKENS` | Model and Muse tuning (`muse-spark-1.3-contributor`, `minimal`, `800` by default). `OPENCODE_API_KEY` still selects the Console endpoint with its free pool; `LLM_BASE_URL` / `LLM_MODEL` / `LLM_FALLBACK_MODELS` override everything |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google sign-in (offered on the login screen when set; guest names are always offered) |
+| `OPENCODE_API_KEY` | Live AI suspects: every character answers from the Console free tier, led by `deepseek-v4.1-flash-free`, with the other free models (`big-pickle`, `mimo-v2.6-flash-free`, …) as failover. Usage limits and errors fail over across the pool, and the authored answers reply whenever the pool is exhausted |
+| `LLM_MODELS` / `LLM_MAX_OUTPUT_TOKENS` | Model and reply-budget overrides. `LLM_BASE_URL` / `LLM_API_KEY` / `LLM_FALLBACK_MODELS` override everything (any OpenAI-compatible chat endpoint) |
 | `LLM_FIRST_TOKEN_MS` / `LLM_TURN_BUDGET_MS` / `LLM_MAX_CONCURRENT` / `LLM_MAX_ATTEMPTS` | Pool timing and concurrency for 100 teams (9000 / 22000 / 32 / 16) |
 | `LLM_TEAM_DAILY_MAX` | Model answers per team per day (500). Past it, the authored answers reply so play continues |
 
@@ -205,18 +197,18 @@ The project is `prompt-arena-mystery`. `npm run build` produces `dist/` (two Vit
 A hosted smoke walk of the full campaign:
 
 ```sh
-npm run test:deployment -- https://your-deployment.vercel.app [team-code]
+npm run test:deployment -- https://your-deployment.vercel.app
 ```
 
 ---
 
 ## Classroom event
 
-Set `EVENT_MODE=true` and `ALLOW_CODE_LOGIN=true`. `TEAM_CODES` accepts comma-separated `Team name=assigned-code` entries.
+Set `EVENT_MODE=true`. Sign-in stays open at the door: every team picks a guest detective name (or signs in with Google) and lands on the live leaderboard with their progress.
 
-In event mode, guest and Google sign-in, practice starts, chapter selection and the accusation shortcut are disabled; only teams that have entered appear on the leaderboard, and elapsed time starts when Act 0 finishes and Act 1 opens. Instructor preview is excluded from rankings. Music and models are bundled static assets, so the campaign needs no network calls beyond the API itself.
+In event mode, practice starts, chapter selection and the accusation shortcut are disabled; only teams that have entered appear on the leaderboard (every guest or Google sign-in counts as entered), and elapsed time starts when Act 0 finishes and Act 1 opens. Music and models are bundled static assets, so the campaign needs no network calls beyond the API itself.
 
-The private roster lives in `event-private/team-codes.csv` (ignored by Git and Vercel); distribute one assigned code per team. Run `npm run test:event` for 70 concurrent local sessions and gate/timer checks, then rehearse on the actual classroom network before the event.
+Run `npm run test:event` for 70 concurrent local sessions and gate/timer checks, then rehearse on the actual classroom network before the event.
 
 ### Laptop requirements (publish to teams)
 
@@ -237,11 +229,11 @@ Every event deployment gets an invigilator console at **`/admin/`** — the game
 
 | What it shows | What it does |
 | --- | --- |
-| Live board of every team: current act, time in that act, the last act they passed and when, evidence, puzzles, penalties, hints, elapsed clock, presence (active / away / outside) | Search, filters and sorting; CSV export of the full board |
-| A dedicated **Disqualified** panel: who, when, why, and their strike count | One-click requalification — reset the strikes or keep them; "clear all" emergency release; per-team manual disqualification with a reason the team sees |
-| Full control per team in the drawer: rename, invigilator notes, penalties ±, jump to any act, reset the run, set strikes, enforcement exemption, delete | Admin audit log of every action, broadcast announcement bar on every team's screen |
+| Live board of every team: current act, time in that act, the last act they passed and when, evidence, puzzles, penalties, hints, elapsed clock, presence (active / away) | Search, filters and sorting; CSV export of the full board |
+| A dedicated **Disqualified** panel: who, when, and why | One-click requalification; "clear all" emergency release; per-team manual disqualification with a reason the team sees |
+| Full control per team in the drawer: rename, invigilator notes, penalties ±, jump to any act, reset the run, delete | Admin audit log of every action, broadcast announcement bar on every team's screen |
 
-**Fullscreen enforcement.** Event play forces fullscreen on entry and the server owns the rules: every leave (fullscreen lost, tab hidden, page unload) opens a 10-second grace window; returning in time costs nothing, missing it is one strike, and three strikes disqualify the team. A late return from a slow network is absorbed by a built-in tolerance, browsers that cannot do fullscreen report themselves and are never punished, and every team keeps a 12-hour signed admin session.
+**Disqualification and recovery.** An invigilator disqualifies a team for a reason the team's screen shows verbatim; the team drops off the leaderboard and every game route refuses the session. The player's screen explains the case and polls for a reprieve — the moment an invigilator requalifies the team, the game resumes exactly where it left off.
 
 **Credentials.** `ADMIN_USERNAME` / `ADMIN_PASSWORD` on public deployments. Local development (`npm run dev:game`) falls back to:
 

@@ -1,5 +1,5 @@
 # W2 — acts 3–5 ("The Concert", "Shashdhar", "The Big Bad").
-# Source: docs/FINAL_STORY.md and docs/FINAL_STORY_WITH_QUESTIONS.md (acts 3–5). Registry: docs/BUILD_SPEC.md.
+# Source: docs/FINAL_STORY.md (acts 3–5). Registry: docs/BUILD_SPEC.md.
 # Owns: acts 3/4/5, rooms concert/workshop/ngo_hq/ngo_archive, hospital act4
 # hotspots, tanush_office, enakshi_house, sameer_room act4/act5 hotspots.
 
@@ -432,3 +432,4 @@ puzzles:
     success: "The email — the folder he sent to himself. That is how they found him. Cats play with rats before swallowing them, and the cult has been playing with him all along."
     fail_message: "That's not it. Whatever exposed him was something he sent out himself, that night."
     requires: { puzzles: [p_connection] }
+

@@ -9,8 +9,10 @@ set on the deployment.
 Set `DEV_TEAM_CODE` (any secret string) and redeploy. On the next boot the
 server seeds a team called **Dev Sandbox**:
 
-- signs in through the normal team-code form with that code,
-- is **exempt** from fullscreen enforcement and exit strikes,
+- signs in with `POST /api/dev/login` and the code (the login screen exposes a
+  "Developer sign-in" link when the variable is set; it is never part of the
+  player-facing choice — guests and Google are all a player gets),
+- is **excluded** from the leaderboard,
 - never appears on the leaderboard (its progress flags carry `dev: true`),
 - carries a `dev` flag on every state response, which switches the client into
   developer mode.
@@ -56,6 +58,7 @@ cookie) cannot call them. They edit the dev team's own save.
 
 | Route | Body | Effect |
 | --- | --- | --- |
+| `POST /api/dev/login` | `{ code }` | open the dev session (404 when `DEV_TEAM_CODE` is unset, 401 on the wrong code) |
 | `GET /api/dev/catalog` | — | acts, rooms, clues, puzzles + answers |
 | `POST /api/dev/act` | `{ act }` | jump to any act; clears the parked room and any ending/solve |
 | `POST /api/dev/room` | `{ room }` or `{ room: null }` | park the room the client opens next, or release the park |
@@ -66,10 +69,14 @@ cookie) cannot call them. They edit the dev team's own save.
 
 ## Local development
 
-Add the code to your local env file and run the dev server as usual:
+The dev server already sets `DEV_TEAM_CODE=DEV-ARENA`, so run `dev:game` and
+open the login screen's "Developer sign-in" link with that code. For a
+production-like local run, add the code to your local env file:
 
 ```
-DEV_TEAM_CODE=DEV-ARENA-9F4K-2Q7Z
+DEV_TEAM_CODE=DEV-ARENA
 ```
 
-The dev team is seeded on boot alongside the other team codes.
+The dev team is seeded on boot from that environment value; overriding it
+aligns the seeded hash on the next boot, so an old code stops opening the
+account.

@@ -1,4 +1,4 @@
-// Browser smoke test for the control room and the fullscreen gate.
+// Browser smoke test for the control room and the game shell.
 // Expects `node scripts/dev-server.mjs` to be running at SHOT_BASE.
 //
 //   node scripts/test-admin-ui.mjs
@@ -10,7 +10,7 @@ import puppeteer from 'puppeteer-core';
 
 const BASE = process.env.SHOT_BASE ?? 'http://127.0.0.1:5173';
 const OUT = process.env.SHOT_OUT ?? 'shots';
-const TEAM_CODE = process.env.SHOT_CODE ?? 'PANDA-7K2';
+const GUEST_NAME = process.env.SHOT_GUEST ?? `UI Probe ${Date.now() % 100000}`;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'arena-admin';
 
 const CANDIDATES = [
@@ -119,7 +119,7 @@ await page.waitForSelector('.admin-dq', { timeout: 20000 });
 const dqText = await page.$eval('.admin-dq', (el) => el.textContent);
 assert(/disqualified team/i.test(dqText), 'DQ panel is clearly labelled');
 assert(dqText.includes('Removed by invigilator — smoke test'), 'the admin reason is shown in plain words');
-assert(!dqText.includes('left_fullscreen'), 'internal reason codes never leak');
+assert(!dqText.includes('admin_decision'), 'internal reason codes never leak');
 await page.screenshot({ path: path.join(OUT, 'admin-dq-panel.png') });
 await page.click('.admin-dq-actions .admin-button.primary');
 await page.waitForFunction(() => !document.querySelector('.admin-dq'), { timeout: 20000 });
@@ -163,42 +163,26 @@ await page.screenshot({ path: path.join(OUT, 'admin-event-log.png') });
 await page.click('.admin-tabs button:nth-child(1)');
 await page.waitForSelector('.admin-table tbody tr', { timeout: 20000 });
 
-// ---- fullscreen gate in the game ----
-// Sign the browser in the same way the title card does, then land in /play/.
-const loginStatus = await page.evaluate(async (code) => {
-  const res = await fetch('/api/login', {
+// ---- the game loads in the browser ----
+// Sign the browser in the same way the entry card does, then land in /play/.
+const loginStatus = await page.evaluate(async (username) => {
+  const res = await fetch('/api/guest', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ code }),
+    body: JSON.stringify({ username }),
   });
   return res.status;
-}, TEAM_CODE);
-assert.equal(loginStatus, 200, 'team code signs in through the API');
+}, GUEST_NAME);
+assert.equal(loginStatus, 200, 'guest sign-in works through the API');
 pageErrors.length = 0;
 await page.goto(`${BASE}/play/?resume=1`, { waitUntil: 'networkidle2' });
-try {
-  await page.waitForSelector('.fs-gate', { timeout: 60000 });
-  const gateHeadline = await page.$eval('.fs-gate h2', (el) => el.textContent);
-  assert.equal(gateHeadline, 'Fullscreen required', 'first entry asks for fullscreen, never a countdown');
-} catch (err) {
-  await page.screenshot({ path: path.join(OUT, 'play-failed.png') });
-  console.error('fullscreen gate missing. body:', (await page.$eval('body', (b) => b.innerText)).slice(0, 600));
-  console.error('page errors:', pageErrors);
-  throw err;
-}
-const gateText = await page.$eval('.fs-gate', (el) => el.textContent);
-assert(/Fullscreen required|Return within/.test(gateText), 'fullscreen gate blocks play');
-assert(/Exit strikes/.test(gateText), 'gate shows the strike budget');
-await page.screenshot({ path: path.join(OUT, 'fullscreen-gate.png') });
 
-// The broadcast is on the player's screen too (state load or heartbeat).
+// The broadcast is on the player's screen too (state load or heartbeat),
+// in whatever phase the team lands in.
 await page.waitForSelector('.announce-bar', { timeout: 20000 });
 const banner = await page.$eval('.announce-bar', (el) => el.textContent);
 assert(banner.includes('Two minutes until the final act.'), 'players see the broadcast');
-
-// Escape hatch appears after the grace period so no seat is ever stuck.
-await sleep(10000);
-await page.waitForSelector('.fs-gate-skip', { timeout: 15000 });
+await page.screenshot({ path: path.join(OUT, 'play-landing.png') });
 assert(pageErrors.length === 0, `no page errors: ${pageErrors.join(' | ')}`);
 
 // Leave the smoke database clean.
@@ -210,6 +194,6 @@ await page.evaluate(async () => {
   });
 });
 
-console.log(`PASS browser smoke: control room renders, team drawer opens, fullscreen gate blocks and offers the escape hatch (${teamRows} team row(s)).`);
+console.log(`PASS browser smoke: control room renders, team drawer opens, DQ/requalify works, the game loads with the broadcast live (${teamRows} team row(s)).`);
 await browser.close();
 process.exit(0);

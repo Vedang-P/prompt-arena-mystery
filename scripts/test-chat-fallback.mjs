@@ -11,7 +11,6 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 process.env.SQLITE_PATH = join(tmpdir(), `pa-chat-${crypto.randomUUID()}.db`);
-process.env.ALLOW_CODE_LOGIN = 'true';
 process.env.DEV_TEAM_CODE = 'FALLBACK-TEST';
 process.env.LLM_TURN_BUDGET_MS = '2000';
 process.env.LLM_FIRST_TOKEN_MS = '1000';
@@ -80,7 +79,7 @@ async function ask(character, text, useEnv = env) {
   return { events, elapsed: Date.now() - started };
 }
 
-await call('/api/login', { code: 'FALLBACK-TEST' });
+await call('/api/dev/login', { code: 'FALLBACK-TEST' });
 const state = await call('/api/state').then((res) => res.json());
 assert.equal(state.dev, true, 'the fallback test needs the dev sandbox team');
 assert.equal(state.act, 'act0');
@@ -139,7 +138,7 @@ mode = 'fail';
 // No pool at all (no keys configured): the authored turn is the only voice.
 {
   await sleep(1600);
-  const bare = { ...env, LLM_BASE_URL: '', LLM_API_KEY: '', LLM_API_KEYS: '', OPENCODE_API_KEY: '', OPENCODE_GO_API_KEY: '', OPENCODE_GO_API_KEYS: '' };
+  const bare = { ...env, LLM_BASE_URL: '', LLM_API_KEY: '', LLM_API_KEYS: '', OPENCODE_API_KEY: '' };
   const { events, elapsed } = await ask('ramu', 'what did parth order', bare);
   const meta = events.find((e) => e.event === 'meta');
   const reset = events.find((e) => e.event === 'reset');

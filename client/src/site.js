@@ -1,6 +1,7 @@
 /* Prompt Arena: Mystery — title card behaviour.
    Cinematic card, live leaderboard, audio settings the game inherits, and a
-   direct hand-off into the game once a team code is accepted. */
+   direct hand-off into the game once the player signs in (guest username or
+   Google). */
 
 import { registerAssetCache } from './registerSW.js';
 
@@ -101,14 +102,16 @@ import { registerAssetCache } from './registerSW.js';
     if (event.target === settings) settings.close();
   });
 
-  /* ---------- entry: team code, then straight into the game ---------- */
-  const codeInput = document.getElementById('team-code');
-  const codeError = document.getElementById('entry-error');
+  /* ---------- entry: pick a sign-in method, then straight into the game ---------- */
+  const nameInput = document.getElementById('guest-name');
+  const entryError = document.getElementById('entry-error');
   const beginBtn = document.getElementById('begin-btn');
+  const googleBtn = document.getElementById('google-entry');
+  const entryOr = document.getElementById('entry-or');
   let session = null;
-  let codeLogin = false;
   // Enter must not act before /api/auth/config answers, or a quick click races
-  // the request and bounces through /play/ for no reason.
+  // the request and bounces through /play/ for no reason. Guest play is always
+  // offered; the Google card appears only when the deployment configured it.
   let configKnown = false;
   let markConfigKnown = () => {};
   const configReady = new Promise((resolve) => { markConfigKnown = resolve; });
@@ -124,9 +127,9 @@ import { registerAssetCache } from './registerSW.js';
   const authError = new URLSearchParams(window.location.search).get('auth_error');
 
   const openEntry = (message = '') => {
-    codeError.textContent = message;
+    entryError.textContent = message;
     if (!entry.open) entry.showModal();
-    codeInput.focus();
+    if (googleBtn.hidden) nameInput.focus();
   };
 
   const closeEntry = () => entry.close();
@@ -137,8 +140,7 @@ import { registerAssetCache } from './registerSW.js';
       return;
     }
     if (!configKnown) await configReady;
-    if (codeLogin) openEntry();
-    else window.location.assign('/play/');
+    openEntry();
   });
 
   document.getElementById('entry-close').addEventListener('click', closeEntry);
@@ -147,23 +149,19 @@ import { registerAssetCache } from './registerSW.js';
   });
 
   const begin = async () => {
-    const code = codeInput.value.trim();
-    if (!code) {
-      codeError.textContent = 'Type the code from your table card.';
-      return;
-    }
+    const username = nameInput.value.trim();
     beginBtn.disabled = true;
     beginBtn.textContent = 'Opening your case…';
-    codeError.textContent = '';
+    entryError.textContent = '';
     try {
-      const res = await fetch('/api/login', {
+      const res = await fetch('/api/guest', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ username }),
         signal: withTimeout(30000),
       });
       if (res.ok) {
-        // A team-code sign-in is always the campaign save; a stale practice marker from the
+        // A guest sign-in is always the campaign save; a stale practice marker from the
         // chapter picker would make every later request look for the practice cookie.
         try {
           localStorage.setItem('moon-mode', 'campaign');
@@ -171,13 +169,13 @@ import { registerAssetCache } from './registerSW.js';
         window.location.assign(GAME);
         return;
       }
-      codeError.textContent =
-        res.status === 401 ? 'Wrong code. Check the label on your table.' : 'Sign-in failed. Try again.';
+      entryError.textContent =
+        res.status === 409 ? 'That name is already taken. Pick another.' : 'Sign-in failed. Try again.';
     } catch {
-      codeError.textContent = 'The case server is unavailable. Try again in a moment.';
+      entryError.textContent = 'The case server is unavailable. Try again in a moment.';
     }
     beginBtn.disabled = false;
-    beginBtn.textContent = 'Begin →';
+    beginBtn.textContent = 'Play as guest →';
   };
 
   document.getElementById('entry-form').addEventListener('submit', (event) => {
@@ -189,9 +187,13 @@ import { registerAssetCache } from './registerSW.js';
   fetch('/api/auth/config', { headers: { accept: 'application/json' }, signal: withTimeout(20000) })
     .then((res) => (res.ok ? res.json() : null))
     .then((config) => {
-      if (config) codeLogin = !!config.devLogin;
+      if (config?.google) {
+        beginBtn.textContent = 'Play as guest →';
+        googleBtn.hidden = false;
+        entryOr.hidden = false;
+      }
       // A Google round-trip that failed bounces here from /play/ — say why, in the dialog.
-      if (authError && codeLogin) openEntry(AUTH_ERRORS[authError] ?? 'Sign-in failed. Try again.');
+      if (authError) openEntry(AUTH_ERRORS[authError] ?? 'Sign-in failed. Try again.');
     })
     .catch(() => {})
     .finally(() => {

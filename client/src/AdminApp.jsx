@@ -56,18 +56,11 @@ const EVENT_LABELS = {
   puzzle_solve: 'Puzzle attempt',
   accusation: 'Accusation',
   restart: 'Run restarted',
-  exit: 'Left fullscreen',
-  exit_return: 'Returned in time',
-  exit_strike: 'Late return — strike',
   disqualified: 'Disqualified',
   requalified: 'Requalified',
   admin_penalties: 'Penalties adjusted',
   admin_stage: 'Stage moved',
   admin_reset: 'Run reset',
-  admin_strikes: 'Strikes set',
-  exempted: 'Enforcement exemption added',
-  unexempted: 'Enforcement exemption removed',
-  fullscreen_unsupported: 'Fullscreen unsupported here',
   guest_start: 'Guest preview started',
   practice_start: 'Practice started',
   team_created: 'Team created',
@@ -82,17 +75,10 @@ const LOG_TYPES = [
   ['puzzle_solve', 'Puzzle attempts'],
   ['accusation', 'Accusations'],
   ['restart', 'Restarts'],
-  ['exit', 'Left fullscreen'],
-  ['exit_return', 'Returns in time'],
-  ['exit_strike', 'Late returns'],
   ['disqualified', 'Disqualifications'],
   ['requalified', 'Requalifications'],
-  ['exempted', 'Exemptions added'],
-  ['unexempted', 'Exemptions removed'],
-  ['fullscreen_unsupported', 'Fullscreen unsupported'],
   ['admin_penalties', 'Admin: penalties'],
   ['admin_stage', 'Admin: stage moves'],
-  ['admin_strikes', 'Admin: strike edits'],
   ['admin_reset', 'Admin: run resets'],
   ['practice_start', 'Practice saves'],
   ['guest_start', 'Guest previews'],
@@ -105,9 +91,6 @@ const AUDIT_ACTIONS = [
   ['requalify', 'Requalify'],
   ['requalify_all', 'Requalify all'],
   ['disqualify', 'Disqualify'],
-  ['set_strikes', 'Set strikes'],
-  ['exempt', 'Exempt'],
-  ['unexempt', 'Unexempt'],
   ['penalties', 'Penalties'],
   ['stage', 'Stage moves'],
   ['rename', 'Renames'],
@@ -121,11 +104,11 @@ const AUDIT_ACTIONS = [
 ];
 
 const logTone = (type) =>
-  type === 'exit_strike' || type === 'disqualified'
+  type === 'disqualified'
     ? 'bad'
-    : type === 'exit' || type === 'restart'
+    : type === 'restart'
       ? 'warn'
-      : type === 'exit_return' || type === 'requalified'
+      : type === 'requalified'
         ? 'ok'
         : '';
 
@@ -138,20 +121,12 @@ const eventDetailText = (ev) => {
       return d.name ?? d.clue ?? '';
     case 'puzzle_solve':
       return `${d.puzzle ?? ''}${d.correct ? ' · correct' : ''}${d.penalty ? ` · +${d.penalty} penalties` : ''}${d.alreadySolved ? ' · repeat' : ''}`;
-    case 'exit':
-      return `${d.kind ?? 'fullscreen'} · grace ${Math.round((d.graceMs ?? 10000) / 1000)}s`;
-    case 'exit_return':
-      return `back in ${(Math.max(0, d.elapsedMs ?? 0) / 1000).toFixed(1)}s`;
-    case 'exit_strike':
-      return `away ${(Math.max(0, d.elapsedMs ?? 0) / 1000).toFixed(0)}s · strike ${d.strikes}/3`;
     case 'disqualified':
       return d.reason ?? '';
     case 'admin_penalties':
       return `${d.delta >= 0 ? '+' : ''}${d.delta} → ${d.penalties}`;
     case 'admin_stage':
       return `→ ${d.act}`;
-    case 'admin_strikes':
-      return `${d.from} → ${d.to}`;
     case 'restart':
       return `${d.from === 'recent' ? `resumed ${d.act ?? 'act'} · ` : ''}+${d.penalty} penalties`;
     default:
@@ -238,7 +213,6 @@ function Dashboard({ session, onLoggedOut }) {
   const [busyAction, setBusyAction] = useState(null);
   const [refreshTick, setRefreshTick] = useState(0);
   const [now, setNow] = useState(Date.now());
-  const [createOpen, setCreateOpen] = useState(false);
   // The insights rail opens by default only when the table still has room.
   const [insightsOpen, setInsightsOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1560);
   // Event log (every team's story) and admin log (who did what) each have
@@ -415,9 +389,9 @@ function Dashboard({ session, onLoggedOut }) {
       .map((t) => ({
         ...t,
         exclusion: t.disqualified
-          ? t.disqualifyReason === 'left_fullscreen'
-            ? 'Disqualified — left fullscreen 3×'
-            : 'Disqualified by an invigilator'
+          ? t.disqualifyReason === 'admin_decision'
+            ? 'Disqualified by an invigilator'
+            : `Disqualified — ${t.disqualifyReason ?? 'unknown reason'}`
           : t.kind !== 'team'
             ? t.kind === 'practice' ? 'Practice save' : t.kind === 'guest' ? 'Guest preview' : 'Google sign-in'
             : t.name === 'Instructor preview'
@@ -440,9 +414,7 @@ function Dashboard({ session, onLoggedOut }) {
         case 'playing': return t.actNumber > 0 && !t.solved && !t.disqualified;
         case 'notstarted': return t.actNumber === 0 && !t.solved && !t.disqualified;
         case 'solved': return t.solved;
-        case 'warned': return t.strikes > 0 && !t.disqualified;
         case 'dq': return t.disqualified;
-        case 'exempt': return t.exempt;
         case 'extras': return t.kind !== 'team';
         default: return true;
       }
@@ -451,7 +423,6 @@ function Dashboard({ session, onLoggedOut }) {
     return [...list].sort((a, b) => {
       switch (sort) {
         case 'penalties': return b.penalties - a.penalties || a.name.localeCompare(b.name);
-        case 'strikes': return b.strikes - a.strikes || b.penalties - a.penalties;
         case 'lastseen': return (Date.parse(b.lastSeenAt) || 0) - (Date.parse(a.lastSeenAt) || 0);
         case 'name': return a.name.localeCompare(b.name);
         case 'stage': return b.actNumber - a.actNumber || a.name.localeCompare(b.name);
@@ -478,17 +449,6 @@ function Dashboard({ session, onLoggedOut }) {
     }
   };
 
-  const createTeam = async (name, code) => {
-    try {
-      const res = await post('/api/admin/teams', { name, code });
-      setToast({ kind: 'ok', text: `Team ${res.name} created — code ${res.code}. Give this to the team; it is not shown again.` });
-      setCreateOpen(false);
-      await refresh();
-    } catch (err) {
-      setToast({ kind: 'error', text: err.data?.error === 'team_exists' ? 'That team name or code is already in use.' : 'Could not create the team.' });
-    }
-  };
-
   return (
     <div className="admin">
       <header className="admin-header">
@@ -508,7 +468,7 @@ function Dashboard({ session, onLoggedOut }) {
             disabled={busyAction === 'reset-all'}
             title="Return every team to the opening prologue"
             onClick={async () => {
-              const answer = window.prompt('This resets EVERY team to the opening prologue: progress, penalties, transcripts, strikes and disqualifications. Type RESET to confirm.');
+              const answer = window.prompt('This resets EVERY team to the opening prologue: progress, penalties, transcripts and disqualifications. Type RESET to confirm.');
               if (answer !== 'RESET') return;
               setBusyAction('reset-all');
               try {
@@ -559,9 +519,9 @@ function Dashboard({ session, onLoggedOut }) {
                 <button
                   className="admin-button"
                   onClick={async () => {
-                    if (!window.confirm('Requalify EVERY disqualified team and reset all strikes?')) return;
+                    if (!window.confirm('Requalify EVERY disqualified team?')) return;
                     await post('/api/admin/requalify-all');
-                    setToast({ kind: 'ok', text: 'All blacklists and strikes cleared.' });
+                    setToast({ kind: 'ok', text: 'All blacklists cleared.' });
                     await refresh();
                     setRefreshTick((n) => n + 1);
                   }}
@@ -575,23 +535,18 @@ function Dashboard({ session, onLoggedOut }) {
                     <div className="admin-dq-who">
                       <strong>{t.name}</strong>
                       <span>
-                        {t.disqualifyReason === 'left_fullscreen'
-                          ? 'Left fullscreen 3× without returning in time'
-                          : t.disqualifyReason && t.disqualifyReason !== 'admin_decision'
-                            ? `Removed by invigilator — ${t.disqualifyReason}`
-                            : 'Removed by invigilator'}
+                        {t.disqualifyReason && t.disqualifyReason !== 'admin_decision'
+                          ? `Removed by invigilator — ${t.disqualifyReason}`
+                          : 'Removed by invigilator'}
                       </span>
                     </div>
                     <div className="admin-dq-when">
                       <span title={t.disqualifiedAt ? fmtDateTime(t.disqualifiedAt) : ''}>{fmtAgo(t.disqualifiedAt, now)}</span>
-                      <small>{t.strikes} strikes · {fmtDateTime(t.disqualifiedAt)}</small>
+                      <small>{fmtDateTime(t.disqualifiedAt)}</small>
                     </div>
                     <div className="admin-dq-actions">
-                      <button className="admin-button primary" disabled={busyAction} onClick={() => runAction(t.id, 'requalify', { resetStrikes: true }, null, `${t.name} is back in play with a clean sheet.`)}>
-                        Requalify + reset strikes
-                      </button>
-                      <button className="admin-button" disabled={busyAction} onClick={() => runAction(t.id, 'requalify', { resetStrikes: false }, null, `${t.name} is back; strikes kept.`)}>
-                        Keep strikes
+                      <button className="admin-button primary" disabled={busyAction} onClick={() => runAction(t.id, 'requalify', null, null, `${t.name} is back in play.`)}>
+                        Requalify
                       </button>
                       <button className="admin-button quiet" onClick={() => setSelected(t.id)}>Open</button>
                     </div>
@@ -606,8 +561,7 @@ function Dashboard({ session, onLoggedOut }) {
             <StatCard label="Online now" value={stats.online} hint="seen in the last 45s" tone="ok" />
             <StatCard label="In play" value={stats.inPlay} hint={`${stats.notStarted} not started`} />
             <StatCard label="Solved" value={stats.solved} hint="case closed" />
-            <StatCard label="Strike warnings" value={stats.warned} hint={`${stats.pendingExits} out right now`} tone={stats.warned ? 'warn' : undefined} />
-            <StatCard label="Disqualified" value={stats.disqualified} hint={`${stats.exempt} exempt`} tone={stats.disqualified ? 'bad' : undefined} />
+            <StatCard label="Disqualified" value={stats.disqualified} tone={stats.disqualified ? 'bad' : undefined} />
           </section>
 
           <section className={`admin-split ${insightsOpen ? '' : 'solo'}`}>
@@ -631,20 +585,16 @@ function Dashboard({ session, onLoggedOut }) {
                       <option value="playing">Playing</option>
                       <option value="notstarted">Not started</option>
                       <option value="solved">Solved</option>
-                      <option value="warned">Strike warnings</option>
                       <option value="dq">Disqualified</option>
-                      <option value="exempt">Exempt</option>
                       <option value="extras">Guests & practice</option>
                     </select>
                     <select value={sort} onChange={(e) => setSort(e.target.value)}>
                       <option value="progress">Sort: progress</option>
                       <option value="stage">Sort: stage</option>
                       <option value="penalties">Sort: penalties</option>
-                      <option value="strikes">Sort: strikes</option>
                       <option value="lastseen">Sort: last seen</option>
                       <option value="name">Sort: name</option>
                     </select>
-                    <button className="admin-button" onClick={() => setCreateOpen((o) => !o)}>{createOpen ? 'Close' : '+ Team'}</button>
                     <button
                       className={`admin-button ${insightsOpen ? 'selected' : ''}`}
                       onClick={() => setInsightsOpen((o) => !o)}
@@ -653,10 +603,6 @@ function Dashboard({ session, onLoggedOut }) {
                       Insights
                     </button>
                   </div>
-
-                  {createOpen && (
-                    <CreateTeamForm onCreate={createTeam} />
-                  )}
 
                   <div className="admin-table-wrap">
                     <table className="admin-table">
@@ -669,29 +615,25 @@ function Dashboard({ session, onLoggedOut }) {
                           <th className="num">Clues</th>
                           <th className="num">Puzzles</th>
                           <th className="num">Penalties</th>
-                          <th className="num">Strikes</th>
                           <th className="seen-cell">Seen</th>
                           <th className="actions-cell" />
                         </tr>
                       </thead>
                       <tbody>
                         {visible.map((t) => (
-                          <tr key={t.id} className={t.disqualified ? 'dq' : t.pendingExit ? 'out' : ''}>
+                          <tr key={t.id} className={t.disqualified ? 'dq' : ''}>
                             <td>
                               <button className="admin-team-link" onClick={() => setSelected(t.id)}>
                                 <span className={`presence ${t.online ? 'on' : 'off'}`} />
                                 {t.name}
                               </button>
                               {t.kind !== 'team' && <small className="kind-chip">{KIND_LABEL[t.kind] ?? t.kind}</small>}
-                              {t.exempt && <small className="kind-chip exempt">exempt</small>}
                             </td>
                             <td>
                               {t.disqualified ? (
                                 <span className="pill bad">Disqualified</span>
                               ) : t.solved ? (
                                 <span className="pill ok">Solved</span>
-                              ) : t.pendingExit ? (
-                                <span className="pill warn">Outside</span>
                               ) : t.online ? (
                                 <span className="pill ok">Active</span>
                               ) : t.actNumber === 0 ? (
@@ -717,13 +659,12 @@ function Dashboard({ session, onLoggedOut }) {
                               <small>/{t.totalPuzzles}</small>
                             </td>
                             <td className={`num ${t.penalties > 0 ? 'bad-text' : ''}`}>{t.penalties}</td>
-                            <td className={`num ${t.strikes > 0 ? 'warn-text' : ''}`}>{t.strikes}/{t.maxStrikes}</td>
                             <td className="seen-cell" title={t.lastSeenAt ? fmtDateTime(t.lastSeenAt) : ''}>{fmtAgo(t.lastSeenAt, now)}</td>
                             <td className="actions-cell">
                               <div className="row-actions">
                                 <button className="admin-button quiet" onClick={() => setSelected(t.id)}>Manage</button>
                                 {t.disqualified ? (
-                                  <button className="admin-button" disabled={busyAction} onClick={() => runAction(t.id, 'requalify', { resetStrikes: true }, null, `${t.name} requalified.`)}>
+                                  <button className="admin-button" disabled={busyAction} onClick={() => runAction(t.id, 'requalify', null, null, `${t.name} requalified.`)}>
                                     Requalify
                                   </button>
                                 ) : (
@@ -767,7 +708,6 @@ function Dashboard({ session, onLoggedOut }) {
                           <th className="num">Clues</th>
                           <th className="num">Puzzles</th>
                           <th className="num">Penalties</th>
-                          <th className="num">Strikes</th>
                           <th className="num">Time</th>
                           <th />
                         </tr>
@@ -787,8 +727,6 @@ function Dashboard({ session, onLoggedOut }) {
                             <td>
                               {t.solved ? (
                                 <span className="pill ok">Solved</span>
-                              ) : t.pendingExit ? (
-                                <span className="pill warn">Outside</span>
                               ) : t.online ? (
                                 <span className="pill ok">Active</span>
                               ) : (
@@ -802,7 +740,6 @@ function Dashboard({ session, onLoggedOut }) {
                             <td className="num">{t.discovered}<small>/{t.totalClues}</small></td>
                             <td className="num">{t.solvedPuzzles}<small>/{t.totalPuzzles}</small></td>
                             <td className={`num ${t.penalties > 0 ? 'bad-text' : ''}`}>{t.penalties}</td>
-                            <td className={`num ${t.strikes > 0 ? 'warn-text' : ''}`}>{t.strikes}/{t.maxStrikes}</td>
                             <td className="num board-clock">{t.actNumber === 0 ? '—' : fmtDuration(boardClock(t))}</td>
                             <td className="actions-cell">
                               <div className="row-actions">
@@ -1065,26 +1002,6 @@ function AnnounceComposer({ current, onPost }) {
   );
 }
 
-function CreateTeamForm({ onCreate }) {
-  const [name, setName] = useState('');
-  const [code, setCode] = useState('');
-  const [busy, setBusy] = useState(false);
-  const submit = async (event) => {
-    event.preventDefault();
-    if (!name.trim()) return;
-    setBusy(true);
-    await onCreate(name.trim(), code.trim());
-    setBusy(false);
-  };
-  return (
-    <form className="admin-create" onSubmit={submit}>
-      <input placeholder="Team name" value={name} onChange={(e) => setName(e.target.value)} maxLength={40} />
-      <input placeholder="Assigned code (optional)" value={code} onChange={(e) => setCode(e.target.value)} maxLength={48} />
-      <button className="admin-button primary" disabled={busy || !name.trim()}>{busy ? 'Creating…' : 'Create team'}</button>
-    </form>
-  );
-}
-
 function TeamDrawer({ teamId, now, version, busyAction, onClose, runAction }) {
   const [detail, setDetail] = useState(null);
   const [error, setError] = useState(false);
@@ -1151,13 +1068,11 @@ function TeamDrawer({ teamId, now, version, busyAction, onClose, runAction }) {
                 <h2>
                   {team.name}
                   {team.disqualified && <span className="pill bad">Disqualified</span>}
-                  {team.exempt && <span className="pill">Exempt</span>}
                   {team.online && <span className="pill ok">Online</span>}
                 </h2>
                 <p className="admin-drawer-sub">
                   {team.actTitle ?? team.act}
                   {team.actEnteredAt ? ` · entered ${fmtAgo(team.actEnteredAt, now)}` : ''}
-                  {team.pendingExit ? ' · currently outside fullscreen' : ''}
                 </p>
               </div>
               <button className="admin-close" onClick={onClose} aria-label="Close">×</button>
@@ -1170,7 +1085,6 @@ function TeamDrawer({ teamId, now, version, busyAction, onClose, runAction }) {
                 <Metric label="Elapsed" value={fmtDuration(team.elapsedSeconds)} sub={team.solvedAt ? `solved ${fmtTime(team.solvedAt)}` : team.startedAt ? `started ${fmtTime(team.startedAt)}` : 'clock not started'} />
                 <Metric label="Evidence" value={`${team.discovered}/${team.totalClues}`} sub={`${team.solvedPuzzles}/${team.totalPuzzles} puzzles`} />
                 <Metric label="Penalties" value={team.penalties} tone={team.penalties > 0 ? 'bad' : undefined} sub={`${team.hintsUsed} hints`} />
-                <Metric label="Exit strikes" value={`${team.strikes}/${team.maxStrikes}`} tone={team.strikes > 0 ? 'warn' : undefined} sub={team.pendingExit ? `currently outside (${team.pendingExit.kind})` : 'in the arena'} />
                 <Metric label="Last seen" value={fmtAgo(team.lastSeenAt, now)} sub={team.lastSeenAt ? fmtDateTime(team.lastSeenAt) : 'never'} />
                 <Metric label="Created" value={fmtDateTime(team.createdAt)} sub={team.solved ? 'Case closed' : ''} />
               </div>
@@ -1186,29 +1100,15 @@ function TeamDrawer({ teamId, now, version, busyAction, onClose, runAction }) {
               )}
 
               <section className="admin-panel">
-                <h3>Enforcement</h3>
+                <h3>Suspension</h3>
                 <div className="admin-action-row">
-                  <button className="admin-button primary" disabled={!!busyAction} onClick={() => act('requalify', { resetStrikes: true }, null, 'Requalified with a clean sheet.')}>
-                    Requalify + reset strikes
-                  </button>
-                  <button className="admin-button" disabled={!!busyAction} onClick={() => act('requalify', { resetStrikes: false }, null, 'Requalified; strikes kept.')}>
-                    Requalify, keep strikes
-                  </button>
-                  <button className="admin-button" disabled={!!busyAction} onClick={() => act('exempt', { exempt: !team.exempt }, null, team.exempt ? 'Exemption removed.' : 'Team exempted from automatic disqualification.')}>
-                    {team.exempt ? 'Remove exemption' : 'Exempt from auto-DQ'}
-                  </button>
-                </div>
-                <div className="admin-action-row">
-                  <label>
-                    Set strikes
-                    <span className="admin-inline">
-                      {[0, 1, 2, 3].map((n) => (
-                        <button key={n} className={`admin-button quiet ${team.strikes === n ? 'selected' : ''}`} disabled={!!busyAction} onClick={() => act('strikes', { strikes: n }, null, `Strikes set to ${n}.`)}>
-                          {n}
-                        </button>
-                      ))}
-                    </span>
-                  </label>
+                  {team.disqualified ? (
+                    <button className="admin-button primary" disabled={!!busyAction} onClick={() => act('requalify', null, null, 'Requalified — back in play.')}>
+                      Requalify — back in play
+                    </button>
+                  ) : (
+                    <span className="admin-note">Blacklists a team from the leaderboard and locks it out of play.</span>
+                  )}
                 </div>
                 <div className="admin-action-row">
                   <input placeholder="Reason (optional)…" value={dqReason} onChange={(e) => setDqReason(e.target.value)} maxLength={200} />

@@ -301,7 +301,7 @@ h4 {
   color: rgba(143, 129, 104, 0.7);
 }
 
-/* ---------- fullscreen scene + HUD ---------- */
+/* ---------- scene + HUD ---------- */
 
 .app {
   position: relative;
@@ -2288,6 +2288,24 @@ h4 {
   gap: 10px;
   text-decoration: none;
   margin-top: 18px;
+}
+.entry-or {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  color: var(--muted, #8a8175);
+  margin: 15px 0 4px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+}
+.entry-or::before,
+.entry-or::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: currentColor;
+  opacity: .25;
 }
 .google-g { flex: none; }
 .login-note {

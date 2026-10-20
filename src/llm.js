@@ -1,20 +1,19 @@
-// Pooled provider adapter for OpenCode Go. The primary route is
-// muse-spark-1.3-contributor on the Responses API, with a pool of API keys
-// spread across conversations, per-key/per-model cooldowns on usage limits and
-// a hard per-turn budget. Chat-completions endpoints are still supported for
-// fallback models. Plain fetch + AbortController, so it runs in Workers and in
-// Node tests alike.
+// Pooled provider adapter for the OpenCode Console free tier. Every character
+// is served from deepseek-v4.1-flash-free on the chat-completions endpoint,
+// with a pool of API keys spread across conversations, per-key/per-model
+// cooldowns on usage limits and a hard per-turn budget. The other free models
+// act as fallback routes, and any OpenAI-compatible base URL still works via
+// LLM_BASE_URL. Plain fetch + AbortController, so it runs in the Node dev
+// server and in tests alike.
 
 const OPENCODE_BASE = 'https://opencode.ai/inference/v1';
-const OPENCODE_GO_BASE = 'https://opencode.ai/inference/go/v1';
 const USER_AGENT = 'prompt-arena-mystery/1.1';
 const OPENCODE_SESSION_HEADER = 'x-opencode-session';
 
-// The event runs on a pool of Go keys pinned to Muse Spark 1.3 Contributor.
-export const OPENCODE_GO_MODELS = ['muse-spark-1.3-contributor'];
-
-// Console free models, for deployments using a pay-as-you-go Console key.
+// The deepseek flash free tier leads; every other Console free model is a
+// fallback route for when the primary hits its usage limit.
 export const OPENCODE_FREE_MODELS = [
+  'deepseek-v4.1-flash-free',
   'big-pickle',
   'ling-3.1-flash-free',
   'cat-jam-free',
@@ -25,8 +24,6 @@ export const OPENCODE_FREE_MODELS = [
   'space-bunny-free',
 ];
 
-const RESPONSES_PROTOCOL_MODELS = ['muse-spark-1.3-contributor', 'muse-spark-1.3'];
-
 const DEFAULTS = {
   firstTokenMs: 9000,
   turnBudgetMs: 22000,
@@ -35,8 +32,7 @@ const DEFAULTS = {
   maxAttempts: 16,
   maxConcurrent: 32,
   acquireTimeoutMs: 15_000,
-  maxOutputTokens: 800,
-  reasoningEffort: 'minimal',
+  maxOutputTokens: 320,
 };
 
 const splitList = (value) =>
@@ -64,18 +60,14 @@ const hash32 = (value) => {
 };
 
 export function llmConfig(env = {}) {
-  const goKeys = dedupe([...splitList(env.OPENCODE_GO_API_KEYS), ...splitList(env.OPENCODE_GO_API_KEY)]);
   const consoleKeys = dedupe(splitList(env.OPENCODE_API_KEY));
   const explicitKeys = dedupe([...splitList(env.LLM_API_KEYS), ...splitList(env.LLM_API_KEY)]);
   const explicitBase = String(env.LLM_BASE_URL || '').replace(/\/+$/, '');
+  const isOpencodeUrl = (url) => !url || /opencode\.ai\/inference/.test(url);
   let base = explicitBase;
   let keys;
   if (explicitBase) {
-    const isOpencode = /opencode\.ai\/inference/.test(explicitBase) || !explicitBase;
-    keys = dedupe([...explicitKeys, ...(isOpencode ? [...goKeys, ...consoleKeys] : [])]);
-  } else if (goKeys.length) {
-    base = OPENCODE_GO_BASE;
-    keys = explicitKeys.length ? dedupe([...explicitKeys, ...goKeys]) : goKeys;
+    keys = explicitKeys.length ? explicitKeys : isOpencodeUrl(explicitBase) ? consoleKeys : [];
   } else if (consoleKeys.length) {
     base = OPENCODE_BASE;
     keys = explicitKeys.length ? explicitKeys : consoleKeys;
@@ -87,9 +79,11 @@ export function llmConfig(env = {}) {
     ...splitList(env.LLM_MODEL),
     ...splitList(env.LLM_FALLBACK_MODELS),
   ]);
-  if (!models.length) {
-    if (base === OPENCODE_GO_BASE) models.push(...OPENCODE_GO_MODELS);
-    else if (base === OPENCODE_BASE) models.push(...OPENCODE_FREE_MODELS);
+  // The free all-characters pool is the default: any operation against the
+  // opencode inference host with no explicit model list runs the flash tier
+  // plus its free fallbacks.
+  if (!models.length && (!explicitBase || base === OPENCODE_BASE)) {
+    models.push(...OPENCODE_FREE_MODELS);
   }
   const extraHeaders = Object.fromEntries(
     String(env.LLM_EXTRA_HEADERS || '')
@@ -101,19 +95,13 @@ export function llmConfig(env = {}) {
         return split === -1 ? [pair, ''] : [pair.slice(0, split).trim(), pair.slice(split + 1).trim()];
       })
   );
-  const protocolSetting = String(env.LLM_PROTOCOL || '').trim().toLowerCase();
   return {
     base,
     keys,
     models,
     extraHeaders,
     userAgent: String(env.LLM_USER_AGENT || '').trim() || USER_AGENT,
-    protocol: protocolSetting === 'responses' || protocolSetting === 'chat' ? protocolSetting : null,
-    responsesModels: dedupe([...RESPONSES_PROTOCOL_MODELS, ...splitList(env.LLM_RESPONSES_MODELS)]),
-    maxOutputTokens: parseNum(env.LLM_MAX_OUTPUT_TOKENS, DEFAULTS.maxOutputTokens, 200, 4000),
-    reasoningEffort: ['minimal', 'low', 'medium', 'high'].includes(String(env.LLM_REASONING_EFFORT || '').toLowerCase())
-      ? String(env.LLM_REASONING_EFFORT).toLowerCase()
-      : DEFAULTS.reasoningEffort,
+    maxOutputTokens: parseNum(env.LLM_MAX_OUTPUT_TOKENS, DEFAULTS.maxOutputTokens, 100, 4000),
     firstTokenMs: parseNum(env.LLM_FIRST_TOKEN_MS, DEFAULTS.firstTokenMs, 1500, 30000),
     turnBudgetMs: parseNum(env.LLM_TURN_BUDGET_MS, DEFAULTS.turnBudgetMs, 3000, 60000),
     cooldownMs: parseNum(env.LLM_COOLDOWN_MS, DEFAULTS.cooldownMs, 5000, DEFAULTS.maxCooldownMs),
@@ -169,18 +157,6 @@ const retryAfterMs = (res, fallback, cap) => {
   return Math.min(cap, Math.max(500, ms));
 };
 
-const toResponsesInput = (messages) =>
-  messages.map((m) => ({ role: m.role, content: m.content }));
-
-const responsesText = (data) =>
-  (data?.output ?? [])
-    .filter((item) => item?.type === 'message')
-    .flatMap((item) => item?.content ?? [])
-    .filter((part) => part?.type === 'output_text')
-    .map((part) => part?.text ?? '')
-    .join(' ')
-    .trim();
-
 export function makeLLM(env, onEvent = () => {}) {
   const cfg = llmConfig(env);
   if (!cfg.base || !cfg.keys.length || !cfg.models.length) return null;
@@ -189,9 +165,6 @@ export function makeLLM(env, onEvent = () => {}) {
   const limiter = limiterFor(base, cfg.maxConcurrent);
   const fallbackSession = `pa-${Math.random().toString(36).slice(2, 10)}`;
   let preferred = null;
-
-  const protocolFor = (model) =>
-    cfg.protocol ?? (cfg.responsesModels.includes(model) ? 'responses' : 'chat');
 
   async function acquire() {
     if (limiter.active < limiter.limit) {
@@ -287,7 +260,6 @@ export function makeLLM(env, onEvent = () => {}) {
     const firstTokenMs = Math.min(opts.firstTokenMs ?? cfg.firstTokenMs, remaining);
     const totalMs = Math.min(opts.timeoutMs ?? cfg.turnBudgetMs, remaining);
     const session = opts.session ?? fallbackSession;
-    const protocol = protocolFor(model);
     const controller = new AbortController();
     const firstToken = setTimeout(
       () => controller.abort(new Error('first_token_timeout')),
@@ -295,22 +267,14 @@ export function makeLLM(env, onEvent = () => {}) {
     );
     const total = setTimeout(() => controller.abort(new Error('llm_timeout')), totalMs);
     try {
-      const body = protocol === 'responses'
-        ? {
-            model,
-            input: toResponsesInput(messages),
-            stream: !!opts.stream,
-            max_output_tokens: opts.maxOutputTokens ?? cfg.maxOutputTokens,
-            reasoning: { effort: opts.reasoningEffort ?? cfg.reasoningEffort },
-          }
-        : {
-            model,
-            messages,
-            stream: !!opts.stream,
-            temperature: opts.temperature ?? 0.7,
-            max_tokens: opts.maxTokens ?? 220,
-          };
-      const res = await fetch(`${base}/${protocol === 'responses' ? 'responses' : 'chat/completions'}`, {
+      const body = {
+        model,
+        messages,
+        stream: !!opts.stream,
+        temperature: opts.temperature ?? 0.7,
+        max_tokens: opts.maxTokens ?? cfg.maxOutputTokens,
+      };
+      const res = await fetch(`${base}/chat/completions`, {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
@@ -330,7 +294,6 @@ export function makeLLM(env, onEvent = () => {}) {
       }
       return {
         res,
-        protocol,
         firstTokenDone: () => clearTimeout(firstToken),
         done: () => {
           clearTimeout(firstToken);
@@ -357,12 +320,10 @@ export function makeLLM(env, onEvent = () => {}) {
           break;
         }
         try {
-          const { res, protocol, done } = await request(model, key, messages, { ...opts, stream: false }, deadline);
+          const { res, done } = await request(model, key, messages, { ...opts, stream: false }, deadline);
           try {
             const data = await res.json();
-            const text = protocol === 'responses'
-              ? responsesText(data)
-              : (data?.choices?.[0]?.message?.content ?? '').trim();
+            const text = (data?.choices?.[0]?.message?.content ?? '').trim();
             if (!text) throw new Error('llm_empty');
             preferred = model;
             onEvent({ type: 'llm_ok', model, keyIndex: keyIndex.get(key), session: String(opts.session ?? fallbackSession) });
@@ -396,7 +357,7 @@ export function makeLLM(env, onEvent = () => {}) {
         }
         let yielded = false;
         try {
-          const { res, protocol, firstTokenDone, done } = await request(model, key, messages, { ...opts, stream: true }, deadline);
+          const { res, firstTokenDone, done } = await request(model, key, messages, { ...opts, stream: true }, deadline);
           try {
             const reader = res.body.getReader();
             const decoder = new TextDecoder();
@@ -422,27 +383,11 @@ export function makeLLM(env, onEvent = () => {}) {
                 } catch {
                   continue;
                 }
-                if (protocol === 'responses') {
-                  const type = chunk?.type;
-                  if (type === 'response.output_text.delta' && chunk.delta) {
-                    // The first-token clock measures visible text, not the
-                    // reasoning events that lead up to it.
-                    firstTokenDone();
-                    yielded = true;
-                    yield chunk.delta;
-                  } else if (type === 'response.completed') {
-                    finished = true;
-                    break;
-                  } else if (type === 'response.failed' || type === 'response.incomplete' || type === 'error') {
-                    throw new Error('llm_incomplete');
-                  }
-                } else {
-                  const delta = chunk?.choices?.[0]?.delta?.content;
-                  if (delta) {
-                    firstTokenDone();
-                    yielded = true;
-                    yield delta;
-                  }
+                const delta = chunk?.choices?.[0]?.delta?.content;
+                if (delta) {
+                  firstTokenDone();
+                  yielded = true;
+                  yield delta;
                 }
               }
             }

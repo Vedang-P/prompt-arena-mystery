@@ -50,37 +50,14 @@ const CHAT_REPLY_MS = 10_000;
 const CHAT_FIRST_TOKEN_MS = 6_000;
 const CHAT_REPLY_GRACE_MS = 500;
 
-// ---------- event control (fullscreen enforcement) ----------
-// A team that leaves the arena gets a window to come back. The window is the
-// configured grace plus a small network tolerance, and it is the same number
-// every client sees: a return inside it is free, a return after it is a
-// strike. Three strikes disqualify, unless the team is exempt or an admin has
-// cleared them. Verdicts are applied only where they can be reported — the
-// return endpoint — so the player always sees the strike that was recorded.
-const DEFAULT_EXIT_GRACE_MS = 10_000;
-const EXIT_RETURN_TOLERANCE_MS = 2_000;
-const DEFAULT_MAX_EXIT_STRIKES = 3;
+// ---------- event control ----------
 const ONLINE_WINDOW_MS = 45_000;
 const LAST_SEEN_MIN_MS = 10_000;
-const DISQUALIFY_REASON = 'left_fullscreen';
 const DISQUALIFY_REASON_MANUAL = 'admin_decision';
 
 const numEnv = (value, fallback) => {
   const n = Number(value);
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
-};
-
-const exitGraceMs = (env) => numEnv(env.EXIT_GRACE_MS, DEFAULT_EXIT_GRACE_MS);
-// The enforced window, and what every client countdown is measured against.
-const exitWindowMs = (env) => exitGraceMs(env) + EXIT_RETURN_TOLERANCE_MS;
-const maxExitStrikes = (env) => numEnv(env.EXIT_MAX_STRIKES, DEFAULT_MAX_EXIT_STRIKES);
-
-// Fullscreen enforcement follows event rules by default: on for classroom and
-// team-code play; force it on or off with FULLSCREEN_ENFORCE=true|false.
-const fullscreenEnforced = (env) => {
-  const raw = envString(env.FULLSCREEN_ENFORCE);
-  if (raw) return isTruthy(raw);
-  return isTruthy(env.EVENT_MODE) || isTruthy(env.ALLOW_CODE_LOGIN);
 };
 
 const isDisqualified = (row) => Number(row?.disqualified ?? 0) === 1;
@@ -120,14 +97,12 @@ app.get('/api/health', (c) =>
     // deployment actually has wired up.
     env: {
       sessionSecret: Boolean(c.env.SESSION_SECRET),
-      codePepper: Boolean(c.env.CODE_PEPPER),
       sessionSecretIsExample: envString(c.env.SESSION_SECRET) === DEV_SESSION_SECRET,
-      codePepperIsExample: envString(c.env.CODE_PEPPER) === DEV_CODE_PEPPER,
       eventMode: isTruthy(c.env.EVENT_MODE),
-      codeLogin: isTruthy(c.env.ALLOW_CODE_LOGIN),
+      guestLogin: true,
+      googleLogin: googleReady(c.env),
       llm: llmConfigured(c.env),
       adminConfigured: Boolean(c.env.ADMIN_PASSWORD),
-      fullscreenEnforced: fullscreenEnforced(c.env),
     },
   })
 );
@@ -135,89 +110,8 @@ app.get('/api/health', (c) =>
 // ---------- helpers ----------
 
 const TEAM_COLUMNS = `t.id, t.name, t.code_hash, t.created_at AS team_created_at,
-  t.disqualified, t.disqualified_at, t.disqualify_reason, t.exit_strikes,
-  t.pending_exit_at, t.pending_exit_kind, t.exempt, t.last_seen_at, t.admin_note`;
-
-/**
- * Resolve a pending exit into a return (inside the grace window) or a strike
- * (late). The pending row is claimed atomically with a conditional UPDATE so
- * two concurrent requests can never double-count one exit. Never throws about
- * a missing row — the caller keeps working with the state it had.
- */
-async function settlePendingExit(env, row) {
-  const current = {
-    strikes: Number(row.exit_strikes ?? 0),
-    disqualified: isDisqualified(row),
-    resolved: null,
-    elapsedMs: null,
-  };
-  if (!row.pending_exit_at) return current;
-
-  const startedMs = parseStamp(row.pending_exit_at);
-  const elapsedMs = startedMs === null ? Infinity : Date.now() - startedMs;
-  // The window already includes the network tolerance, so the verdict is
-  // exactly what the client countdown promised.
-  const late = !(elapsedMs <= exitWindowMs(env));
-  const exempt = Number(row.exempt ?? 0);
-  // Only a late return from a team still in the event counts. Exempt teams and
-  // teams already out keep their count; their pending exit is just cleared.
-  const struck = late && !current.disqualified && !exempt;
-  const strikes = struck ? current.strikes + 1 : current.strikes;
-  const crossesLimit = struck && strikes >= maxExitStrikes(env);
-  const nowIso = new Date().toISOString();
-
-  const sets = ['pending_exit_at = NULL', 'pending_exit_kind = NULL', 'exit_strikes = ?'];
-  const binds = [strikes];
-  const disqualified = current.disqualified || crossesLimit;
-  if (crossesLimit && !current.disqualified) {
-    sets.push('disqualified = 1', 'disqualified_at = ?', 'disqualify_reason = ?');
-    binds.push(nowIso, DISQUALIFY_REASON);
-  }
-
-  const claim = await env.DB.prepare(
-    `UPDATE teams SET ${sets.join(', ')} WHERE id = ? AND pending_exit_at = ?`
-  )
-    .bind(...binds, row.id, row.pending_exit_at)
-    .run();
-  if (!(Number(claim?.meta?.changes ?? 0) > 0)) {
-    // Another request settled this exit first (an admin board read, a second
-    // tab). Report what the row actually holds now, never a stale count.
-    const fresh = await env.DB.prepare('SELECT exit_strikes, disqualified FROM teams WHERE id = ?')
-      .bind(row.id)
-      .first();
-    return {
-      strikes: Number(fresh?.exit_strikes ?? current.strikes),
-      disqualified: isDisqualified(fresh ?? row),
-      resolved: null,
-      elapsedMs: null,
-    };
-  }
-
-  await env.DB.prepare('INSERT INTO events(team_id, type, detail) VALUES (?,?,?)')
-    .bind(
-      row.id,
-      struck ? 'exit_strike' : 'exit_return',
-      JSON.stringify({
-        elapsedMs: elapsedMs === Infinity ? null : Math.round(elapsedMs),
-        strikes,
-        graceMs: exitGraceMs(env),
-        windowMs: exitWindowMs(env),
-        late,
-        kind: row.pending_exit_kind ?? null,
-      })
-    )
-    .run();
-
-  // The automatic disqualification belongs in the timeline too, exactly like
-  // the manual one — the admin log must not show a team vanishing with no line.
-  if (crossesLimit && !current.disqualified) {
-    await env.DB.prepare('INSERT INTO events(team_id, type, detail) VALUES (?,?,?)')
-      .bind(row.id, 'disqualified', JSON.stringify({ reason: DISQUALIFY_REASON, automatic: true, strikes }))
-      .run();
-  }
-
-  return { strikes, disqualified, resolved: struck ? 'strike' : 'return', elapsedMs: elapsedMs === Infinity ? null : Math.round(elapsedMs) };
-}
+  t.disqualified, t.disqualified_at, t.disqualify_reason,
+  t.last_seen_at, t.admin_note`;
 
 async function touchTeam(env, row) {
   const last = parseStamp(row.last_seen_at);
@@ -231,7 +125,7 @@ async function touchTeam(env, row) {
   }
 }
 
-async function requireTeam(c, { settle = true } = {}) {
+async function requireTeam(c) {
   const secret = sessionSecretFor(c);
   if (!secret) return null;
   const teamId = await readSession(
@@ -245,39 +139,25 @@ async function requireTeam(c, { settle = true } = {}) {
     .bind(teamId)
     .first();
   if (!row) return null;
-  if (isTruthy(c.env.EVENT_MODE) && (/^(guest:|practice:|google:)/.test(row.code_hash) || row.name === 'TEAM-042')) return null;
 
-  // Most requests settle a stale pending exit lazily (a closed tab should not
-  // escape its strike). The heartbeat and the fullscreen return opt out: a ping
-  // must never consume the verdict the returning player is about to be shown.
-  const settlement = settle
-    ? await settlePendingExit(c.env, row)
-    : { strikes: Number(row.exit_strikes ?? 0), disqualified: isDisqualified(row), resolved: null, elapsedMs: null };
   await touchTeam(c.env, row);
-  const progress = { ...row, exit_strikes: settlement.strikes, disqualified: settlement.disqualified ? 1 : 0 };
   return {
     teamId,
     teamName: row.name,
     row,
-    progress,
+    progress: row,
     dev: !!parseJsonObject(row.flags).dev,
-    strikes: settlement.strikes,
-    disqualified: settlement.disqualified,
-    blocked: settlement.disqualified ? 'disqualified' : null,
-    settlement,
+    disqualified: isDisqualified(row),
+    blocked: isDisqualified(row) ? 'disqualified' : null,
   };
 }
 
-function blockedPayload(auth, env) {
+function blockedPayload(auth) {
   return {
     error: 'disqualified',
     team: auth.teamName,
-    strikes: auth.strikes,
-    maxStrikes: maxExitStrikes(env),
-    graceMs: exitGraceMs(env),
-    windowMs: exitWindowMs(env),
     disqualifiedAt: toIso(auth.progress.disqualified_at),
-    reason: auth.progress.disqualify_reason ?? DISQUALIFY_REASON,
+    reason: auth.progress.disqualify_reason ?? DISQUALIFY_REASON_MANUAL,
   };
 }
 
@@ -286,19 +166,18 @@ function blockedPayload(auth, env) {
  * (401 for no session, 403 with the full disqualification record for a
  * blacklisted team, so the client can explain itself instead of guessing).
  */
-async function requireActiveTeam(c, options) {
-  const auth = await requireTeam(c, options);
+async function requireActiveTeam(c) {
+  const auth = await requireTeam(c);
   if (!auth) return { error: c.json({ error: 'unauthorized' }, 401) };
-  if (auth.blocked) return { auth, error: c.json(blockedPayload(auth, c.env), 403) };
+  if (auth.blocked) return { auth, error: c.json(blockedPayload(auth), 403) };
   return { auth };
 }
 
-// Loopback and private-LAN hosts may fall back to the built-in literals (they run over plain
+// Loopback and private-LAN hosts may fall back to the built-in literal (it runs over plain
 // http, where a Secure cookie would be dropped). A *configured* value is always honoured,
 // even if it happens to be the documented example — the hole being closed is a deployment
 // that never set one at all. Health reports whether an example value is still in place.
 const DEV_SESSION_SECRET = 'dev-secret';
-const DEV_CODE_PEPPER = 'dev-pepper';
 
 const hostOf = (c) => new URL(c.req.url).hostname;
 
@@ -311,12 +190,6 @@ const sessionSecretFor = (c) => {
   const secret = envString(c.env.SESSION_SECRET);
   if (secret) return secret;
   return isInsecureHost(c) ? DEV_SESSION_SECRET : null;
-};
-
-const codePepperFor = (c) => {
-  const pepper = envString(c.env.CODE_PEPPER);
-  if (pepper) return pepper;
-  return isInsecureHost(c) ? DEV_CODE_PEPPER : null;
 };
 
 const misconfigured = (c) =>
@@ -366,29 +239,20 @@ const parseJsonLoose = (value) => {
  */
 function eventSummary(type, detail) {
   const d = detail ?? {};
-  const seconds = (ms) => (Math.max(0, Number(ms) || 0) / 1000).toFixed(1);
   switch (type) {
-    case 'login': return d.method === 'google' ? 'Signed in with Google' : 'Signed in with a team code';
+    case 'login': return d.method === 'google' ? 'Signed in with Google' : 'Guest sign-in';
     case 'act_complete': return `Completed ${d.act ?? 'an act'}${d.next ? ` → ${d.next}` : ''}${d.ending ? ` · ending ${d.ending}` : ''}`;
     case 'clue_found': return `Found evidence: ${d.name ?? d.clue ?? 'unknown'}`;
     case 'puzzle_solve': return `${d.puzzle ?? 'Puzzle'} — ${d.correct ? 'correct' : 'wrong'}${d.penalty ? ` · +${d.penalty} penalties` : ''}${d.alreadySolved ? ' · repeat' : ''}`;
     case 'accusation': return `Accused ${d.culprit ?? 'someone'} — ${d.correct ? 'correct' : 'rejected'}${d.judge ? ` (${d.judge})` : ''}`;
     case 'restart': return d.practice ? 'Restarted the practice run (free)' : `Restarted the run (+${d.penalty ?? 0} penalties)`;
-    case 'exit': return `Left fullscreen (${d.kind ?? 'fullscreen'})`;
-    case 'exit_return': return `Returned after ${seconds(d.elapsedMs)}s — no strike`;
-    case 'exit_strike': return `Late return after ${Math.round((Number(d.elapsedMs) || 0) / 1000)}s — strike ${d.strikes}`;
     case 'disqualified': return `Disqualified — ${d.reason ?? 'no reason given'}`;
-    case 'requalified': return `Requalified${d.resetStrikes ? ' · strikes reset' : ' · strikes kept'}`;
+    case 'requalified': return 'Requalified — back in play';
     case 'admin_penalties': return `Penalties ${Number(d.delta) >= 0 ? '+' : ''}${d.delta ?? 0} → ${d.penalties}`;
     case 'admin_stage': return `Moved to ${d.act}`;
-    case 'admin_strikes': return `Strikes ${d.from} → ${d.to}`;
     case 'admin_reset': return `Run reset${d.penalty ? ` (+${d.penalty} penalties)` : ''}`;
-    case 'exempted': return 'Exempted from automatic disqualification';
-    case 'unexempted': return 'Exemption removed';
-    case 'fullscreen_unsupported': return 'Browser cannot enter fullscreen';
     case 'guest_start': return 'Guest preview started';
     case 'practice_start': return `Practice save started at ${d.act ?? 'act0'}`;
-    case 'team_created': return 'Team created by an invigilator';
     default: return d && Object.keys(d).length ? JSON.stringify(d) : '';
   }
 }
@@ -465,32 +329,47 @@ async function upsertGoogleTeam(env, profile) {
 // Which sign-in methods this deployment offers (the login screen asks first).
 app.get('/api/auth/config', (c) =>
   c.json({
-    google: !isTruthy(c.env.EVENT_MODE) && googleReady(c.env),
-    guest: !isTruthy(c.env.EVENT_MODE),
-    devLogin: isTruthy(c.env.ALLOW_CODE_LOGIN),
+    google: googleReady(c.env),
+    guest: true,
+    devLogin: Boolean(c.env.DEV_TEAM_CODE),
     eventMode: isTruthy(c.env.EVENT_MODE),
-    fullscreen: fullscreenEnforced(c.env),
-    graceMs: exitGraceMs(c.env),
-    windowMs: exitWindowMs(c.env),
-    maxStrikes: maxExitStrikes(c.env),
   })
 );
 
-// A solo run gets its own durable save, never the shared demo team's progress.
+// Play as guest: the player picks a username at login and gets their own
+// durable save. Event deployments use this as one of the two sign-in methods.
 app.post('/api/guest', async (c) => {
-  if (isTruthy(c.env.EVENT_MODE)) return c.json({ error: 'assigned_code_required' }, 403);
+  const body = await c.req.json().catch(() => ({}));
+  // The generated alias applies only to a blank username; a chosen name is the
+  // player's identity on the leaderboard.
+  const chosen = body.username
+    ? sanitizeName(body.username)
+    : `Detective-${crypto.randomUUID().slice(0, 8)}`;
   const id = crypto.randomUUID();
-  const name = `Detective-${id.slice(0, 8)}`;
-  await c.env.DB.prepare('INSERT INTO teams(name, code_hash) VALUES (?, ?)')
-    .bind(name, `guest:${id}`).run();
-  const team = await c.env.DB.prepare('SELECT id FROM teams WHERE code_hash = ?')
-    .bind(`guest:${id}`).first();
+  let team = null;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const candidate = attempt ? `${chosen.slice(0, 40 - 5)}-${Math.random().toString(36).slice(2, 6)}` : chosen;
+    try {
+      await c.env.DB.prepare('INSERT INTO teams(name, code_hash) VALUES (?, ?)')
+        .bind(candidate, `guest:${id}`).run();
+      team = await c.env.DB.prepare('SELECT id, name FROM teams WHERE code_hash = ?')
+        .bind(`guest:${id}`).first();
+      break;
+    } catch {
+      // The name is taken: retry with a unique suffix.
+    }
+  }
+  if (!team) return c.json({ error: 'name_taken' }, 409);
   await c.env.DB.prepare("INSERT INTO progress(team_id, started_at) VALUES (?, datetime('now'))")
     .bind(team.id).run();
+  if (isTruthy(c.env.EVENT_MODE)) {
+    await c.env.DB.prepare("UPDATE progress SET flags = ? WHERE team_id = ?")
+      .bind(JSON.stringify({ eventEntered: true }), team.id).run();
+  }
   await c.env.DB.prepare('INSERT INTO events(team_id, type, detail) VALUES (?,?,?)')
-    .bind(team.id, 'guest_start', null).run();
+    .bind(team.id, 'guest_start', JSON.stringify({ username: team.name })).run();
   await setSessionCookie(c, team.id);
-  return c.json({ team: name });
+  return c.json({ team: team.name });
 });
 
 app.post('/api/practice', async (c) => {
@@ -518,7 +397,6 @@ app.post('/api/practice', async (c) => {
 
 // Google OAuth 2.0 authorization-code flow.
 app.get('/api/auth/google', (c) => {
-  if (isTruthy(c.env.EVENT_MODE)) return c.json({ error: 'assigned_code_required' }, 403);
   if (!googleReady(c.env)) return authErrorRedirect(c, 'google_not_configured');
   const state = crypto.randomUUID();
   setCookie(c, 'pa_oauth_state', state, {
@@ -581,6 +459,11 @@ app.get('/api/auth/google/callback', async (c) => {
   await c.env.DB.prepare('INSERT INTO events(team_id, type, detail) VALUES (?,?,?)')
     .bind(teamId, 'login', JSON.stringify({ provider: 'google' }))
     .run();
+  if (isTruthy(c.env.EVENT_MODE)) {
+    await c.env.DB.prepare("UPDATE progress SET flags = ? WHERE team_id = ?")
+      .bind(JSON.stringify({ ...parseJsonObject((await c.env.DB.prepare('SELECT flags FROM progress WHERE team_id = ?').bind(teamId).first())?.flags), eventEntered: true }), teamId)
+      .run();
+  }
   await setSessionCookie(c, teamId);
   return c.redirect('/play/');
 });
@@ -592,36 +475,28 @@ app.get('/api/auth/logout', (c) => {
   return c.redirect('/');
 });
 
-// Team-code sign-in survives for local development and offline events only.
-// Disabled unless the deployment sets ALLOW_CODE_LOGIN.
-app.post('/api/login', async (c) => {
-  if (!isTruthy(c.env.ALLOW_CODE_LOGIN)) return c.json({ error: 'code_login_disabled' }, 404);
+// Developer-only sign-in for the sandbox save (see docs/DEVTOOLS.md). It lives
+// off the player login screen entirely: DEV_TEAM_CODE is an operator secret,
+// never a code handed over a table.
+app.post('/api/dev/login', async (c) => {
+  if (!envString(c.env.DEV_TEAM_CODE).trim()) return c.json({ error: 'dev_not_configured' }, 404);
   const body = await c.req.json().catch(() => ({}));
   const code = String(body.code || '').trim();
   if (!code) return c.json({ error: 'code_required' }, 400);
-
-  const pepper = codePepperFor(c);
-  if (!pepper) return misconfigured(c);
-  const hash = await hashCode(code, pepper);
+  const hash = await hashCode(code, 'dev-pepper');
   const team = await c.env.DB.prepare('SELECT id, name FROM teams WHERE code_hash = ?')
     .bind(hash)
     .first();
   if (!team) return c.json({ error: 'invalid_code' }, 401);
-
   await c.env.DB.prepare(
     "INSERT OR IGNORE INTO progress(team_id, started_at) VALUES (?, datetime('now'))"
   )
     .bind(team.id)
     .run();
-
-  await setSessionCookie(c, team.id);
-  if (isTruthy(c.env.EVENT_MODE)) {
-    const progress = await c.env.DB.prepare('SELECT flags FROM progress WHERE team_id = ?').bind(team.id).first();
-    await c.env.DB.prepare('UPDATE progress SET flags = ? WHERE team_id = ?')
-      .bind(JSON.stringify({ ...parseJsonObject(progress?.flags), eventEntered: true }), team.id).run();
-  }
   await c.env.DB.prepare('INSERT INTO events(team_id, type, detail) VALUES (?,?,?)')
-    .bind(team.id, 'login', JSON.stringify({ method: 'code' })).run();
+    .bind(team.id, 'login', JSON.stringify({ method: 'dev' }))
+    .run();
+  await setSessionCookie(c, team.id);
   return c.json({ team: team.name });
 });
 
@@ -716,17 +591,8 @@ app.get('/api/state', async (c) => {
     startedAt: toIso(auth.progress.started_at),
     solvedAt: toIso(auth.progress.solved_at),
     elapsedSeconds: runElapsedSeconds(auth.progress),
-    strikes: auth.strikes,
-    maxStrikes: maxExitStrikes(c.env),
-    graceMs: exitGraceMs(c.env),
-    windowMs: exitWindowMs(c.env),
     restartPenalty: RESTART_PENALTY,
     resumePenalty: RESUME_PENALTY,
-    fullscreen: fullscreenEnforced(c.env),
-    exempt: !!Number(auth.progress.exempt ?? 0),
-    pendingExit: auth.progress.pending_exit_at
-      ? { at: toIso(auth.progress.pending_exit_at), kind: auth.progress.pending_exit_kind ?? 'fullscreen' }
-      : null,
     announcement: await activeAnnouncement(c.env),
     serverTime: new Date().toISOString(),
   });
@@ -757,142 +623,16 @@ app.post('/api/feedback', async (c) => {
   return c.json({ ok: true });
 });
 
-// ---------- fullscreen enforcement ----------
-
-// The client reports every time it leaves fullscreen (or the tab goes hidden),
-// and every time it comes back. A return inside the window clears the pending
-// exit; a late return is a strike, settled and reported by the return endpoint.
-// The server clock is the authority, and the window it enforces is the window
-// every countdown shows.
-app.post('/api/fullscreen/exit', async (c) => {
-  const { auth, error } = await requireActiveTeam(c);
-  if (error) return error;
-  if (!fullscreenEnforced(c.env)) return c.json({ enforced: false, strikes: auth.strikes });
-  if (Number(auth.progress.exempt ?? 0)) return c.json({ enforced: true, exempt: true, strikes: auth.strikes });
-
-  const body = await c.req.json().catch(() => ({}));
-  const kind = ['fullscreen', 'hidden', 'unload', 'blur'].includes(body.kind) ? body.kind : 'fullscreen';
-  const graceMs = exitGraceMs(c.env);
-  const windowMs = exitWindowMs(c.env);
-
-  const row = await c.env.DB.prepare('SELECT pending_exit_at FROM teams WHERE id = ?').bind(auth.teamId).first();
-  if (!row?.pending_exit_at) {
-    const nowIso = new Date().toISOString();
-    await c.env.DB.prepare(
-      'UPDATE teams SET pending_exit_at = ?, pending_exit_kind = ? WHERE id = ? AND pending_exit_at IS NULL'
-    )
-      .bind(nowIso, kind, auth.teamId)
-      .run();
-    await c.env.DB.prepare('INSERT INTO events(team_id, type, detail) VALUES (?,?,?)')
-      .bind(auth.teamId, 'exit', JSON.stringify({ kind, graceMs, windowMs }))
-      .run();
-  }
-
-  const current = await c.env.DB.prepare('SELECT pending_exit_at, exit_strikes FROM teams WHERE id = ?')
-    .bind(auth.teamId)
-    .first();
-  const started = parseStamp(current?.pending_exit_at) ?? Date.now();
-  return c.json({
-    enforced: true,
-    graceMs,
-    windowMs,
-    deadline: new Date(started + windowMs).toISOString(),
-    strikes: Number(current?.exit_strikes ?? auth.strikes),
-    maxStrikes: maxExitStrikes(c.env),
-  });
-});
-
-// Coming back: this is where the pending exit is settled, so the verdict the
-// player is shown is always the verdict the server just recorded. Returns 200
-// even for a disqualifying strike — the payload carries the full record, and
-// the client explains it on the disqualification screen.
-app.post('/api/fullscreen/return', async (c) => {
-  const { auth, error } = await requireActiveTeam(c, { settle: false });
-  if (error) return error;
-  const settlement = await settlePendingExit(c.env, auth.row);
-  // A disqualifying return carries the full record so the player's screen can
-  // explain exactly what happened without a second round trip.
-  let reason = null;
-  let disqualifiedAt = null;
-  if (settlement.disqualified) {
-    const dq = await c.env.DB.prepare('SELECT disqualify_reason, disqualified_at FROM teams WHERE id = ?')
-      .bind(auth.teamId)
-      .first();
-    reason = dq?.disqualify_reason ?? DISQUALIFY_REASON;
-    disqualifiedAt = toIso(dq?.disqualified_at);
-  }
-  return c.json({
-    ok: settlement.resolved !== 'strike',
-    late: settlement.resolved === 'strike',
-    applied: settlement.resolved !== null,
-    elapsedMs: settlement.elapsedMs,
-    strikes: settlement.strikes,
-    maxStrikes: maxExitStrikes(c.env),
-    graceMs: exitGraceMs(c.env),
-    windowMs: exitWindowMs(c.env),
-    disqualified: settlement.disqualified,
-    team: auth.teamName,
-    reason,
-    disqualifiedAt,
-  });
-});
-
-// A browser that cannot do fullscreen (some phones, embedded browsers) reports
-// once so the admin can see why that seat is never asked to return.
-app.post('/api/fullscreen/unsupported', async (c) => {
-  const { auth, error } = await requireActiveTeam(c);
-  if (error) return error;
-  await c.env.DB.prepare('INSERT INTO events(team_id, type, detail) VALUES (?,?,?)')
-    .bind(auth.teamId, 'fullscreen_unsupported', JSON.stringify({ userAgent: c.req.header('user-agent')?.slice(0, 180) ?? null }))
-    .run();
-  return c.json({ ok: true });
-});
-
 // Presence ping while a team is in play: keeps the admin board's online state
-// honest. Verdicts stay with the return endpoint and the admin board so a ping
-// can never consume the strike a returning player should be shown.
+// honest, and carries the live announcement so an invigilator's broadcast
+// reaches every playing team within one heartbeat, not on their next action.
 app.post('/api/heartbeat', async (c) => {
-  const { auth, error } = await requireActiveTeam(c, { settle: false });
+  const { auth, error } = await requireActiveTeam(c);
   if (error) return error;
   await c.env.DB.prepare('UPDATE teams SET last_seen_at = ? WHERE id = ?')
     .bind(new Date().toISOString(), auth.teamId)
     .run();
-  // A reloaded tab returns with no client-side pending handle. If the team
-  // reports being in fullscreen again inside the grace window, the pending exit
-  // is cleared here — otherwise it would settle as a late strike they never
-  // earned. A late return is still left for the return endpoint to settle.
-  const body = await c.req.json().catch(() => ({}));
-  if (body?.fullscreen === true && auth.row?.pending_exit_at) {
-    const startedMs = parseStamp(auth.row.pending_exit_at);
-    const elapsedMs = startedMs === null ? Infinity : Date.now() - startedMs;
-    if (elapsedMs <= exitWindowMs(c.env)) {
-      const claim = await c.env.DB.prepare(
-        'UPDATE teams SET pending_exit_at = NULL, pending_exit_kind = NULL WHERE id = ? AND pending_exit_at = ?'
-      )
-        .bind(auth.teamId, auth.row.pending_exit_at)
-        .run();
-      if (Number(claim?.meta?.changes ?? 0) > 0) {
-        await c.env.DB.prepare('INSERT INTO events(team_id, type, detail) VALUES (?,?,?)')
-          .bind(
-            auth.teamId,
-            'exit_return',
-            JSON.stringify({
-              elapsedMs: elapsedMs === Infinity ? null : Math.round(elapsedMs),
-              strikes: auth.strikes,
-              graceMs: exitGraceMs(c.env),
-              windowMs: exitWindowMs(c.env),
-              late: false,
-              kind: auth.row.pending_exit_kind ?? null,
-              via: 'heartbeat',
-            })
-          )
-          .run();
-      }
-    }
-  }
-  // The ping also carries the live announcement so an invigilator's broadcast
-  // reaches every playing team within one heartbeat, not on their next action.
-  return c.json({ ok: true, strikes: auth.strikes, announcement: await activeAnnouncement(c.env) });
+  return c.json({ ok: true, announcement: await activeAnnouncement(c.env) });
 });
 
 // What every player sees right now, if the invigilator has posted something.
@@ -1465,7 +1205,7 @@ app.post('/api/accuse', async (c) => {
 
 app.get('/api/leaderboard', async (c) => {
   const rows = await c.env.DB.prepare(
-    `SELECT t.name, t.code_hash, p.act, p.started_at, p.solved, p.solved_at,
+    `SELECT t.name, p.act, p.started_at, p.solved, p.solved_at,
             json_array_length(COALESCE(p.discovered, '[]')) AS clues_found,
             json_array_length(COALESCE(p.solved_puzzles, '[]')) AS puzzles_solved,
             p.hints_used, COALESCE(p.penalties, 0) AS penalties
@@ -1483,8 +1223,10 @@ app.get('/api/leaderboard', async (c) => {
   ).all();
   const now = Date.now();
   const timestamp = value => value ? Date.parse(value.includes('T') ? value : value.replace(' ','T')+'Z') : null;
-  const teams = rows.results.filter(row => !isTruthy(c.env.EVENT_MODE) || (!/^(guest:|practice:|google:)/.test(row.code_hash) && row.name !== 'TEAM-042'))
-    .map(({ code_hash, ...row }) => ({ ...row, actTitle: `${caseData.acts.find(a=>a.id===row.act)?.kicker ?? row.act} · ${caseData.acts.find(a=>a.id===row.act)?.title ?? ''}`,
+  // Every sign-in method (guest username or Google) marks eventEntered during
+  // an event, so the board ranks exactly the event's participants.
+  const teams = rows.results
+    .map(({ ...row }) => ({ ...row, actTitle: `${caseData.acts.find(a=>a.id===row.act)?.kicker ?? row.act} · ${caseData.acts.find(a=>a.id===row.act)?.title ?? ''}`,
       elapsedSeconds: row.act === 'act0' || !row.started_at ? 0 : Math.max(0, Math.floor(((timestamp(row.solved_at) ?? now) - timestamp(row.started_at)) / 1000)) }));
   // The SQL already orders: solved teams by earliest solve, then every other
   // team by score (evidence + puzzles − penalties), then fewest penalties.
@@ -1497,8 +1239,7 @@ app.get('/api/leaderboard', async (c) => {
 // A dev team (seeded from DEV_TEAM_CODE) gets the whole case at once: every act,
 // room, clue and puzzle is reachable, and these routes edit its save directly.
 // Every route is hard-scoped to a dev session — there is no admin cookie, and
-// no other team can call them. The dev team never appears on the leaderboard
-// and is exempt from fullscreen enforcement.
+// no other team can call them. The dev team never appears on the leaderboard.
 
 const isDevSession = (auth) => !!auth?.dev;
 const devDenied = (auth, c) => (isDevSession(auth) ? null : c.json({ error: 'not_dev' }, 403));
@@ -1633,7 +1374,7 @@ app.post('/api/dev/reset', async (c) => {
     .bind(JSON.stringify({ dev: true }), auth.teamId)
     .run();
   await c.env.DB.prepare(
-    'UPDATE teams SET disqualified = 0, disqualified_at = NULL, disqualify_reason = NULL, exit_strikes = 0, pending_exit_at = NULL, pending_exit_kind = NULL, exempt = 1 WHERE id = ?'
+    'UPDATE teams SET disqualified = 0, disqualified_at = NULL, disqualify_reason = NULL WHERE id = ?'
   )
     .bind(auth.teamId)
     .run();
@@ -1778,20 +1519,10 @@ function shapeTeamRow(row, env, options = {}) {
     solvedAt: toIso(row.solved_at),
     startedAt: toIso(row.started_at),
     elapsedSeconds: actId === 'act0' || startedMs === null ? 0 : Math.max(0, Math.floor(((solvedMs ?? now) - startedMs) / 1000)),
-    strikes: Number(row.exit_strikes ?? 0),
-    maxStrikes: maxExitStrikes(env),
     disqualified,
     disqualifiedAt: toIso(row.disqualified_at),
     disqualifyReason: row.disqualify_reason ?? null,
-    exempt: !!Number(row.exempt ?? 0),
-    pendingExit: row.pending_exit_at
-      ? {
-          at: toIso(row.pending_exit_at),
-          kind: row.pending_exit_kind ?? 'fullscreen',
-          expiresAt: new Date((parseStamp(row.pending_exit_at) ?? now) + exitWindowMs(env)).toISOString(),
-        }
-      : null,
-    online: lastSeenMs !== null && now - lastSeenMs <= ONLINE_WINDOW_MS && !row.pending_exit_at && !disqualified,
+    online: lastSeenMs !== null && now - lastSeenMs <= ONLINE_WINDOW_MS && !disqualified,
     lastSeenAt: toIso(row.last_seen_at),
     adminNote: row.admin_note ?? null,
     ending: row.ending ?? null,
@@ -1802,23 +1533,6 @@ function shapeTeamRow(row, env, options = {}) {
 
 async function adminOverview(env) {
   const rows = (await env.DB.prepare(`SELECT ${TEAM_DETAIL_COLUMNS} FROM teams t LEFT JOIN progress p ON p.team_id = t.id ORDER BY t.id ASC`).all()).results;
-
-  // Pending exits that timed out become strikes even if the team never came
-  // back, so the board always shows the enforcement's own verdict.
-  for (const row of rows) {
-    if (!row.pending_exit_at) continue;
-    const settled = await settlePendingExit(env, row);
-    if (settled.resolved !== null) {
-      row.exit_strikes = settled.strikes;
-      row.pending_exit_at = null;
-      row.pending_exit_kind = null;
-      if (settled.disqualified) {
-        row.disqualified = 1;
-        row.disqualified_at = row.disqualified_at ?? new Date().toISOString();
-        row.disqualify_reason = row.disqualify_reason ?? DISQUALIFY_REASON;
-      }
-    }
-  }
 
   const actEvents = (await env.DB.prepare("SELECT team_id, detail, created_at FROM events WHERE type = 'act_complete' ORDER BY id ASC").all()).results;
   const historyByTeam = new Map();
@@ -1859,9 +1573,6 @@ async function adminOverview(env) {
     notStarted: opponent.filter((t) => t.actNumber === 0 && !t.solved && !t.disqualified).length,
     solved: opponent.filter((t) => t.solved).length,
     disqualified: shaped.filter((t) => t.disqualified).length,
-    warned: shaped.filter((t) => t.strikes > 0 && !t.disqualified).length,
-    exempt: shaped.filter((t) => t.exempt).length,
-    pendingExits: shaped.filter((t) => t.pendingExit).length,
   };
 
   const distribution = (caseData.acts ?? []).map((a) => ({
@@ -1878,11 +1589,7 @@ async function adminOverview(env) {
     announcement: await activeAnnouncement(env),
     config: {
       eventMode: isTruthy(env.EVENT_MODE),
-      codeLogin: isTruthy(env.ALLOW_CODE_LOGIN),
-      fullscreen: fullscreenEnforced(env),
-      graceMs: exitGraceMs(env),
-      windowMs: exitWindowMs(env),
-      maxStrikes: maxExitStrikes(env),
+      googleLogin: googleReady(env),
       llm: llmConfigured(env),
       admin: adminUsername(env),
     },
@@ -1929,11 +1636,6 @@ app.get('/api/admin/session', async (c) => {
     authed: true,
     username: adminUsername(c.env),
     eventMode: isTruthy(c.env.EVENT_MODE),
-    codeLogin: isTruthy(c.env.ALLOW_CODE_LOGIN),
-    fullscreen: fullscreenEnforced(c.env),
-    graceMs: exitGraceMs(c.env),
-    windowMs: exitWindowMs(c.env),
-    maxStrikes: maxExitStrikes(c.env),
     llm: llmConfigured(c.env),
   });
 });
@@ -1981,9 +1683,6 @@ app.get('/api/admin/teams/:id', async (c) => {
     events,
     chatCounts: chatCounts.map((r) => ({ character: r.character, messages: Number(r.n ?? 0) })),
     stages: (caseData.acts ?? []).map((a) => ({ id: a.id, title: `${a.kicker ?? a.id} · ${a.title ?? ''}` })),
-    maxStrikes: maxExitStrikes(c.env),
-    graceMs: exitGraceMs(c.env),
-    windowMs: exitWindowMs(c.env),
   });
 });
 
@@ -2084,8 +1783,8 @@ app.get('/api/admin/export', async (c) => {
   const header = [
     'rank', 'team', 'status', 'kind', 'current_act', 'current_act_title', 'act_entered_at',
     'last_passed_act', 'last_passed_title', 'last_passed_at', 'clues', 'puzzles', 'score',
-    'penalties', 'hints', 'exit_strikes', 'max_exit_strikes', 'disqualified',
-    'disqualified_at', 'disqualify_reason', 'exempt', 'solved', 'solved_at',
+    'penalties', 'hints', 'disqualified',
+    'disqualified_at', 'disqualify_reason', 'solved', 'solved_at',
     'elapsed_seconds', 'online', 'last_seen_at', 'admin_note',
   ];
   const rows = data.teams.map((t) => [
@@ -2094,8 +1793,8 @@ app.get('/api/admin/export', async (c) => {
     t.disqualified ? 'DISQUALIFIED' : t.solved ? 'solved' : t.act === 'act0' ? 'not started' : 'playing',
     t.kind, t.act, t.actTitle, t.actEnteredAt, t.lastPassedAct, t.lastPassedTitle, t.lastPassedAt,
     t.discovered, t.solvedPuzzles, t.discovered + t.solvedPuzzles - t.penalties,
-    t.penalties, t.hintsUsed, t.strikes, t.maxStrikes,
-    t.disqualified ? 'yes' : 'no', t.disqualifiedAt, t.disqualifyReason, t.exempt ? 'yes' : 'no',
+    t.penalties, t.hintsUsed,
+    t.disqualified ? 'yes' : 'no', t.disqualifiedAt, t.disqualifyReason,
     t.solved ? 'yes' : 'no', t.solvedAt, t.elapsedSeconds, t.online ? 'yes' : 'no', t.lastSeenAt, t.adminNote,
   ]);
   return csvResponse(c, `prompt-arena-results-${stampSlug()}.csv`, header, rows);
@@ -2245,47 +1944,22 @@ app.get('/api/admin/export/feedback', async (c) => {
   return csvResponse(c, `prompt-arena-feedback-${stampSlug()}.csv`, header, body);
 });
 
-// Create a team with an assigned code (generated when omitted). The plaintext
-// code is returned once to the admin; only its hash is stored.
-app.post('/api/admin/teams', async (c) => {
-  const ctx = await adminContext(c);
-  if (ctx.error) return ctx.error;
-  const rawName = String(ctx.body.name ?? '').trim();
-  if (!rawName) return c.json({ error: 'name_required' }, 400);
-  const name = sanitizeName(rawName);
-  const code = String(ctx.body.code ?? '').trim().toUpperCase() || `ARENA-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
-  const pepper = codePepperFor(c);
-  if (!pepper) return misconfigured(c);
-  const hash = await hashCode(code, pepper);
-  const taken = await ctx.env.DB.prepare('SELECT id FROM teams WHERE name = ? OR code_hash = ?').bind(name, hash).first();
-  if (taken) return c.json({ error: 'team_exists' }, 409);
-  await ctx.env.DB.prepare('INSERT INTO teams(name, code_hash) VALUES (?, ?)').bind(name, hash).run();
-  const team = await ctx.env.DB.prepare('SELECT id FROM teams WHERE code_hash = ?').bind(hash).first();
-  await ctx.env.DB.prepare('INSERT OR IGNORE INTO progress(team_id, started_at) VALUES (?, datetime(\'now\'))').bind(team.id).run();
-  await ctx.env.DB.prepare('INSERT INTO events(team_id, type, detail) VALUES (?,?,?)')
-    .bind(team.id, 'team_created', JSON.stringify({ by: 'admin' })).run();
-  await audit(ctx.env, 'create_team', team.id, { name });
-  return c.json({ ok: true, id: team.id, name, code });
-});
-
-// Clear a blacklist and, by default, reset the strikes that caused it. This is
-// the "whitelist a team manually" path: the team resumes exactly where it was.
+// Clear a blacklist: the "whitelist a team manually" path. The team resumes
+// exactly where it was.
 app.post('/api/admin/teams/:id/requalify', async (c) => {
   const ctx = await adminContext(c);
   if (ctx.error) return ctx.error;
   const id = Number(c.req.param('id'));
   if (!Number.isInteger(id) || id <= 0) return c.json({ error: 'unknown_team' }, 404);
-  const row = await ctx.env.DB.prepare('SELECT id, name, exit_strikes FROM teams WHERE id = ?').bind(id).first();
+  const row = await ctx.env.DB.prepare('SELECT id, name FROM teams WHERE id = ?').bind(id).first();
   if (!row) return c.json({ error: 'unknown_team' }, 404);
-  const resetStrikes = ctx.body.resetStrikes !== false;
-  const strikes = resetStrikes ? 0 : Number(row.exit_strikes ?? 0);
   await ctx.env.DB.prepare(
-    'UPDATE teams SET disqualified = 0, disqualified_at = NULL, disqualify_reason = NULL, exit_strikes = ?, pending_exit_at = NULL, pending_exit_kind = NULL WHERE id = ?'
-  ).bind(strikes, id).run();
+    'UPDATE teams SET disqualified = 0, disqualified_at = NULL, disqualify_reason = NULL WHERE id = ?'
+  ).bind(id).run();
   await ctx.env.DB.prepare('INSERT INTO events(team_id, type, detail) VALUES (?,?,?)')
-    .bind(id, 'requalified', JSON.stringify({ resetStrikes, strikes })).run();
-  await audit(ctx.env, 'requalify', id, { resetStrikes });
-  return c.json({ ok: true, strikes });
+    .bind(id, 'requalified', JSON.stringify({})).run();
+  await audit(ctx.env, 'requalify', id);
+  return c.json({ ok: true });
 });
 
 app.post('/api/admin/teams/:id/disqualify', async (c) => {
@@ -2303,38 +1977,6 @@ app.post('/api/admin/teams/:id/disqualify', async (c) => {
     .bind(id, 'disqualified', JSON.stringify({ reason, manual: true })).run();
   await audit(ctx.env, 'disqualify', id, { reason });
   return c.json({ ok: true });
-});
-
-app.post('/api/admin/teams/:id/strikes', async (c) => {
-  const ctx = await adminContext(c);
-  if (ctx.error) return ctx.error;
-  const id = Number(c.req.param('id'));
-  if (!Number.isInteger(id) || id <= 0) return c.json({ error: 'unknown_team' }, 404);
-  const row = await ctx.env.DB.prepare('SELECT id, exit_strikes FROM teams WHERE id = ?').bind(id).first();
-  if (!row) return c.json({ error: 'unknown_team' }, 404);
-  const strikes = Math.max(0, Math.min(99, Math.trunc(Number(ctx.body.strikes ?? 0) || 0)));
-  await ctx.env.DB.prepare('UPDATE teams SET exit_strikes = ? WHERE id = ?').bind(strikes, id).run();
-  await ctx.env.DB.prepare('INSERT INTO events(team_id, type, detail) VALUES (?,?,?)')
-    .bind(id, 'admin_strikes', JSON.stringify({ from: Number(row.exit_strikes ?? 0), to: strikes })).run();
-  await audit(ctx.env, 'set_strikes', id, { strikes });
-  return c.json({ ok: true, strikes });
-});
-
-app.post('/api/admin/teams/:id/exempt', async (c) => {
-  const ctx = await adminContext(c);
-  if (ctx.error) return ctx.error;
-  const id = Number(c.req.param('id'));
-  if (!Number.isInteger(id) || id <= 0) return c.json({ error: 'unknown_team' }, 404);
-  const row = await ctx.env.DB.prepare('SELECT id, exempt FROM teams WHERE id = ?').bind(id).first();
-  if (!row) return c.json({ error: 'unknown_team' }, 404);
-  const exempt = ctx.body.exempt === true || Number(ctx.body.exempt) === 1;
-  await ctx.env.DB.prepare(
-    `UPDATE teams SET exempt = ?${exempt ? ', pending_exit_at = NULL, pending_exit_kind = NULL' : ''} WHERE id = ?`
-  ).bind(exempt ? 1 : 0, id).run();
-  await ctx.env.DB.prepare('INSERT INTO events(team_id, type, detail) VALUES (?,?,?)')
-    .bind(id, exempt ? 'exempted' : 'unexempted', null).run();
-  await audit(ctx.env, exempt ? 'exempt' : 'unexempt', id);
-  return c.json({ ok: true, exempt });
 });
 
 app.post('/api/admin/teams/:id/penalties', async (c) => {
@@ -2452,19 +2094,19 @@ app.post('/api/admin/teams/:id/delete', async (c) => {
 app.post('/api/admin/requalify-all', async (c) => {
   const ctx = await adminContext(c);
   if (ctx.error) return ctx.error;
-  const rows = (await ctx.env.DB.prepare('SELECT id FROM teams WHERE disqualified = 1 OR exit_strikes > 0 OR pending_exit_at IS NOT NULL').all()).results;
+  const rows = (await ctx.env.DB.prepare('SELECT id FROM teams WHERE disqualified = 1').all()).results;
   await ctx.env.DB.prepare(
-    'UPDATE teams SET disqualified = 0, disqualified_at = NULL, disqualify_reason = NULL, exit_strikes = 0, pending_exit_at = NULL, pending_exit_kind = NULL'
+    'UPDATE teams SET disqualified = 0, disqualified_at = NULL, disqualify_reason = NULL'
   ).run();
   await audit(ctx.env, 'requalify_all', null, { teams: rows.length });
   return c.json({ ok: true, teams: rows.length });
 });
 
 // Full event reset: every team back to the opening prologue with a clean
-// sheet — run progress, penalties, rate-limit counters, strikes and
-// disqualifications. Identity flags (practice, eventEntered) survive so
-// practice saves stay separate and entered teams stay on the leaderboard.
-// Interrogation transcripts are cleared unless the invigilator opts out.
+// sheet — run progress, penalties, rate-limit counters and disqualifications.
+// Identity flags (practice, eventEntered) survive so practice saves stay
+// separate and entered teams stay on the leaderboard. Interrogation
+// transcripts are cleared unless the invigilator opts out.
 app.post('/api/admin/reset-all', async (c) => {
   const ctx = await adminContext(c);
   if (ctx.error) return ctx.error;
@@ -2490,8 +2132,7 @@ app.post('/api/admin/reset-all', async (c) => {
       .run();
   }
   await ctx.env.DB.prepare(
-    `UPDATE teams SET disqualified = 0, disqualified_at = NULL, disqualify_reason = NULL,
-      exit_strikes = 0, pending_exit_at = NULL, pending_exit_kind = NULL`
+    'UPDATE teams SET disqualified = 0, disqualified_at = NULL, disqualify_reason = NULL'
   ).run();
   // Last-passed reads the act_complete log, so every team's old passes must go
   // too — otherwise a reset board still reports the previous run's finale.

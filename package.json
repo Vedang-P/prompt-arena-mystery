@@ -27,10 +27,6 @@
     "test:3d": "node scripts/test-3d.mjs",
     "test:signs": "node scripts/test-signs.mjs",
     "test:deployment": "npm run build:case && node scripts/test-deployment.mjs",
-    "prepare:facade": "node scripts/prepare-factory-facade.mjs",
-    "gen:team": "node scripts/make-team.mjs",
-    "gen:portraits": "node scripts/make-portraits.mjs",
-    "shot": "node scripts/shot.mjs",
     "dev:game": "npm run build:case && node scripts/dev-server.mjs",
     "build": "npm run build:case && vite build",
     "deploy:vercel": "vercel deploy --prod"

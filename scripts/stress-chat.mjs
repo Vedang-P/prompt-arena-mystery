@@ -6,7 +6,7 @@
 //   npm run test:stress                      100 teams, 2 waves, real pool
 //   npm run test:stress -- --teams 100 --waves 2 --gap 1500
 //
-// Needs OPENCODE_GO_API_KEYS (or LLM_* variables) in the environment.
+// Needs OPENCODE_API_KEY (or LLM_* variables) in the environment.
 
 import { buildMessages, canonicalAnswer, chapterCheckpoint, deflection, isNoise } from '../src/engine.js';
 import { makeLLM, llmConfigured } from '../src/llm.js';
@@ -20,7 +20,7 @@ const WAVES = arg('waves', 2);
 const GAP_MS = arg('gap', 1500);
 
 if (!llmConfigured(process.env)) {
-  console.log('test:stress skipped — set OPENCODE_GO_API_KEYS (or LLM_* variables) to run it.');
+  console.log('test:stress skipped — set OPENCODE_API_KEY (or LLM_* variables) to run it.');
   process.exit(0);
 }
 

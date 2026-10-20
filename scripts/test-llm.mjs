@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { makeLLM, llmConfig, llmConfigured, OPENCODE_FREE_MODELS, OPENCODE_GO_MODELS } from '../src/llm.js';
+import { makeLLM, llmConfig, llmConfigured, OPENCODE_FREE_MODELS } from '../src/llm.js';
 
 const calls = [];
 let handler = () => {};
@@ -36,20 +36,6 @@ const sse = (res, text) => {
   res.write('data: [DONE]\n\n');
   res.end();
 };
-const responsesSse = (res, text) => {
-  res.writeHead(200, { 'content-type': 'text/event-stream' });
-  res.write(`event: response.created\ndata: ${JSON.stringify({ type: 'response.created' })}\n\n`);
-  for (const part of text.match(/.{1,6}/gs) ?? []) {
-    res.write(`event: response.output_text.delta\ndata: ${JSON.stringify({ type: 'response.output_text.delta', delta: part })}\n\n`);
-  }
-  res.write(`event: response.completed\ndata: ${JSON.stringify({ type: 'response.completed' })}\n\n`);
-  res.end();
-};
-const responsesFailed = (res) => {
-  res.writeHead(200, { 'content-type': 'text/event-stream' });
-  res.write(`event: response.failed\ndata: ${JSON.stringify({ type: 'response.failed' })}\n\n`);
-  res.end();
-};
 const emptyStream = (res) => {
   res.writeHead(200, { 'content-type': 'text/event-stream' });
   res.write('data: [DONE]\n\n');
@@ -72,22 +58,10 @@ test('opencode keys default to the free model pool', () => {
   assert.equal(cfg.base, 'https://opencode.ai/inference/v1');
   assert.deepEqual(cfg.keys, ['sk-test']);
   assert.deepEqual(cfg.models.slice(0, OPENCODE_FREE_MODELS.length), OPENCODE_FREE_MODELS);
+  assert.equal(cfg.models[0], 'deepseek-v4.1-flash-free', 'the free deepseek flash tier must lead the pool');
   assert.equal(llmConfigured({ OPENCODE_API_KEY: 'sk-test' }), true);
   assert.equal(llmConfigured({}), false);
   assert.equal(llmConfigured({ OPENCODE_API_KEY: 'sk-test', LLM_MODEL: '' }), true);
-});
-
-test('a go key defaults to the go endpoint and pool', () => {
-  const cfg = llmConfig({ OPENCODE_GO_API_KEY: 'go-key' });
-  assert.equal(cfg.base, 'https://opencode.ai/inference/go/v1');
-  assert.deepEqual(cfg.keys, ['go-key']);
-  assert.deepEqual(cfg.models, OPENCODE_GO_MODELS);
-  const pooled = llmConfig({ OPENCODE_GO_API_KEYS: 'k1,k2 k3;k1' });
-  assert.equal(pooled.base, 'https://opencode.ai/inference/go/v1');
-  assert.deepEqual(pooled.keys, ['k1', 'k2', 'k3']);
-  const both = llmConfig({ OPENCODE_API_KEY: 'console', OPENCODE_GO_API_KEY: 'go-key' });
-  assert.equal(both.base, 'https://opencode.ai/inference/go/v1');
-  assert.deepEqual(both.keys, ['go-key']);
 });
 
 test('requests identify the agent and carry the conversation session', async () => {
@@ -108,38 +82,27 @@ test('explicit configuration still wins', () => {
   assert.equal(llmConfigured({ LLM_BASE_URL: 'https://example.test/v1', LLM_API_KEY: 'a', LLM_MODEL: '' }), false);
 });
 
-test('streams muse-spark through the Responses API', async () => {
+test('an explicit opencode base runs the free pool without an OPENCODE key', () => {
+  const cfg = llmConfig({ LLM_BASE_URL: 'https://opencode.ai/inference/v1', LLM_API_KEY: 'ck' });
+  assert.equal(cfg.base, 'https://opencode.ai/inference/v1');
+  assert.deepEqual(cfg.keys, ['ck']);
+  assert.deepEqual(cfg.models, OPENCODE_FREE_MODELS);
+});
+
+test('streams through the chat-completions endpoint', async () => {
   const env = {
     LLM_BASE_URL: baseFor('responses'),
     LLM_API_KEY: 'k1',
-    LLM_MODEL: 'muse-spark-1.3-contributor',
+    LLM_MODEL: 'deepseek-v4.1-flash-free',
     LLM_TURN_BUDGET_MS: '4000',
   };
   calls.length = 0;
-  handler = (json, req, res) => responsesSse(res, 'I only know what I saw.');
+  handler = (json, req, res) => sse(res, 'I only know what I saw.');
   const llm = makeLLM(env);
   let text = '';
   for await (const delta of llm.stream([{ role: 'user', content: 'hi' }], { session: 'pa-1-ramu' })) text += delta;
   assert.equal(text, 'I only know what I saw.');
-  assert.ok(calls[0].path.endsWith('/responses'), calls[0].path);
-});
-
-test('falls over from the Responses protocol to a chat model', async () => {
-  const env = {
-    LLM_BASE_URL: baseFor('mixed'),
-    LLM_API_KEY: 'k1',
-    LLM_MODEL: 'muse-spark-1.3-contributor',
-    LLM_FALLBACK_MODELS: 'backup',
-    LLM_TURN_BUDGET_MS: '4000',
-  };
-  calls.length = 0;
-  handler = (json, req, res) => (json.model === 'muse-spark-1.3-contributor' ? responsesFailed(res) : sse(res, 'Backup speaking.'));
-  const llm = makeLLM(env);
-  let text = '';
-  for await (const delta of llm.stream([{ role: 'user', content: 'hi' }])) text += delta;
-  assert.equal(text, 'Backup speaking.');
-  assert.ok(calls.some((c) => c.path.endsWith('/responses')));
-  assert.ok(calls.some((c) => c.path.endsWith('/chat/completions')));
+  assert.ok(calls[0].path.endsWith('/chat/completions'), calls[0].path);
 });
 
 test('each conversation keeps a sticky key and sessions spread across the pool', async () => {

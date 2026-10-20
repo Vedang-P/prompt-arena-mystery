@@ -48,25 +48,26 @@
     <dialog id="entry" aria-labelledby="entry-title">
       <div class="board__head">
         <h2 id="entry-title">Enter the arena</h2>
-        <button class="board__close" type="button" id="entry-close" aria-label="Close team entry">&times;</button>
+        <button class="board__close" type="button" id="entry-close" aria-label="Close sign-in">&times;</button>
       </div>
       <div class="settings-body">
-        <p class="settings-note" style="margin-top: 0">Use the team code supplied by your invigilator.</p>
+        <p class="settings-note" style="margin-top: 0">Sign in with Google, or play as a guest with a case name of your choosing.</p>
+        <a class="btn google-login" id="google-entry" href="/api/auth/google" hidden>Continue with Google</a>
+        <p class="entry-or" id="entry-or" hidden><span>or play as a guest</span></p>
         <form id="entry-form">
-          <label class="settings-row" for="team-code">Team code</label>
+          <label class="settings-row" for="guest-name">Detective name</label>
           <input
-            id="team-code"
-            name="code"
+            id="guest-name"
+            name="username"
             type="text"
-            autocomplete="off"
-            autocapitalize="characters"
+            autocomplete="nickname"
+            autocapitalize="words"
             spellcheck="false"
-            maxlength="48"
-            placeholder="Enter assigned code"
-            required
+            maxlength="40"
+            placeholder="Choose a case name"
           />
           <p class="entry-error" id="entry-error" role="alert"></p>
-          <button class="btn entry-submit" id="begin-btn" type="submit">Begin &rarr;</button>
+          <button class="btn entry-submit" id="begin-btn" type="submit">Play as guest &rarr;</button>
         </form>
       </div>
     </dialog>

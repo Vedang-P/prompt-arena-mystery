@@ -15,7 +15,8 @@ import puppeteer from 'puppeteer-core';
 
 const BASE = process.env.SHOT_BASE ?? 'http://127.0.0.1:5173';
 const OUT = process.env.SHOT_OUT ?? 'shots/3d-check';
-const TEAM_CODE = process.env.SHOT_CODE ?? 'PANDA-7K2';
+// Each run signs in as a guest under a fresh name.
+const GUEST_NAME = process.env.SHOT_GUEST ?? `Rig Probe ${Date.now() % 100000}`;
 const DEAD_TEXT = '3D graphics switched off';
 
 const CANDIDATES = [
@@ -74,11 +75,11 @@ const check = (label, value) => {
 try {
   // ---- sign in, then the reported Act I opening beat ----
   await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded', timeout: 60000 });
-  const loginStatus = await page.evaluate(async (code) => {
-    const res = await fetch('/api/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code }) });
+  const loginStatus = await page.evaluate(async (username) => {
+    const res = await fetch('/api/guest', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ username }) });
     return res.status;
-  }, TEAM_CODE);
-  check('team sign-in succeeds', loginStatus === 200);
+  }, GUEST_NAME);
+  check('guest sign-in succeeds', loginStatus === 200);
 
   await page.evaluateOnNewDocument(transientWebglFailure);
   await page.goto(`${BASE}/play/index.html?beat=hall_mother`, { waitUntil: 'domcontentloaded', timeout: 60000 });

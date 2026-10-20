@@ -1,9 +1,9 @@
 // Hosted smoke test: plays the full campaign against a live deployment.
 //
-//   node scripts/test-deployment.mjs https://example.vercel.app [team-code]
+//   node scripts/test-deployment.mjs https://example.vercel.app
 //
-// A deployment in event mode needs the assigned team code as the second
-// argument; guest sign-in is used otherwise.
+// Sign-in is a guest username — each run takes a fresh name so it never
+// collides with a previous probe.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { caseData } from '../src/case.js';
@@ -11,7 +11,6 @@ import { clueGate, puzzleGate } from '../src/engine.js';
 
 const base = process.argv[2];
 assert(base?.startsWith('https://'), 'Pass the HTTPS deployment URL');
-const teamCode = process.argv[3] || process.env.TEAM_CODE || '';
 const version = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
 const cookies = new Map();
 let mode = 'campaign';
@@ -33,12 +32,7 @@ async function call(path, body, expected = 200) {
 }
 assert.equal((await call('/api/health')).version, version);
 const health = await call('/api/health');
-try {
-  await call('/api/guest', {});
-} catch (error) {
-  assert(health.env?.eventMode && teamCode, 'Deployment requires a team code: pass it as the second argument');
-  await call('/api/login', { code: teamCode });
-}
+await call('/api/guest', { username: `Deploy Probe ${Date.now() % 100000}` });
 let state = await call('/api/state');
 assert.equal(state.acts.length, 9);
 assert.equal(state.rooms.length, 14);
