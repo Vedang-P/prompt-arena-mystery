@@ -57,6 +57,7 @@ acts:
       - { speaker: narrator, text: "He reaches the end of the corridor. He climbs on the window frame. He gazes at the burning room — the leader's face melted, muscle fibers charred." }
       - { speaker: narrator, text: "The entire point of this ordeal was to find Parth, and though he found him, he was unable to save him." }
       - { speaker: narrator, text: "Sameer is found back in his room, waking up to a new day. The birds are chirping and the sun is shining. He looks panicked — how did he get here? He was at the hospital, right?" }
+      - { speaker: narrator, text: "The game has ended, player. You have won — Sameer has found Parth. The cult has been exposed. Now everything goes back to normal." }
       - { speaker: narrator, text: "There is a ping on his phone. A new voice note: \"You're not needed anymore. Your work is done. Now disappear.\" Sameer looks at the screen in confusion. The screen goes dark all of a sudden." }
     complete: { clues: [c_office], puzzles: [p_office, p_found, p_saved] }
 
@@ -347,18 +348,6 @@ rooms:
         puzzle: p_saved
         label: "Were you able to save him?"
         position: [-2.6, 0.9, 2.6]
-      - id: h8_where
-        act: act8
-        type: puzzle
-        puzzle: p_where
-        label: "Where is Parth?"
-        position: [-2.6, 1.0, 3.6]
-      - id: h8_wrong
-        act: act8
-        type: puzzle
-        puzzle: p_wrong
-        label: "What if you had answered wrong?"
-        position: [-3.6, 0.9, 2.6]
 
 characters:
   # Officer Rao is needed for the act6 police-station hotspot. Values mirror the
@@ -927,19 +916,20 @@ puzzles:
       - "plush carpets"
       - "mahogany furniture"
       - "plush carpets and mahogany"
-    success: "Plush carpets and mahogany furniture — a world apart from the sterile hospital corridors."
+    success: "Plush carpets and mahogany furniture — a world apart from the sterile hospital corridors. Parth still stands wide-eyed, looking at the leader. The leader calms himself down: \"I welcomed you in — I could have crushed you off like a bug. I didn't. I saw potential in you, yet you spit it back.\" Sameer genuinely hated this man; he couldn't care less what he had done for him — if he didn't bash his head in, then his name isn't his."
     fail_message: "Not quite — the office was a world apart from the hospital: plush carpets, mahogany furniture."
     grants: [c_office]
 
   - id: p_years
     kind: text
+    exact: true
     prompt: "\"In my time this place flourished. Do you know how long I have been here?\""
     answers:
-      - "5"
-      - "five"
-      - "5 years"
-      - "five years"
-    success: "\"You've barely been here for 5 years, old man — you haven't done shit.\" The leader looked at him, then looked at Parth."
+      - "6"
+      - "six"
+      - "6 years"
+      - "six years"
+    success: "\"You've barely been here for 6 years, old man — you haven't done shit.\" The leader looked at him, then looked at Parth."
     requires: { clues: [c_office], puzzles: [p_office] }
 
   - id: p_burn
@@ -1015,36 +1005,6 @@ puzzles:
     success: "No. He was unable to save him."
     fail_message: "No — the truth of it: he could not save him."
     requires: { puzzles: [p_found] }
-
-  - id: p_where
-    kind: text
-    prompt: "Where is Parth?"
-    answers:
-      - "dead"
-      - "parth is dead"
-      - "he is dead"
-      - "parth was dead"
-      - "he was dead"
-      - "died"
-      - "parth died"
-      - "he died"
-    success: "Dead. Parth's head was banged on the table corner, stained red. He didn't get up."
-    requires: { puzzles: [p_saved] }
-
-  - id: p_wrong
-    kind: text
-    prompt: "Sameer looks at the player. What would have happened if you had given the wrong answer?"
-    answers:
-      - "lose"
-      - "i would lose"
-      - "game over"
-      - "he would lose"
-      - "would lose"
-      - "losing"
-      - "he loses"
-      - "it would be a loss"
-    success: "I would lose. The game has ended — Sameer can leave, before it restarts, he can go back to his life. Sameer closes his eyes, he breathes."
-    requires: { puzzles: [p_where] }
 
 canonical_qa:
   - { character: officer, q: "where did he get it", keywords: [where, get], a: "Archive rooms in the NGO headquarters." }
